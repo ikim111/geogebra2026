@@ -261,14 +261,12 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__extend'; // student6.html과 반드시 동일해야 함
 
 // 학생용 파일의 과제 구성과 맞춰주세요 (id, 짧은 제목)
-// 과제1·3(이등변·정삼각형의 외심+내심 작도), 과제5(외심·내심+각도 측정)는 "작도/탐구", 과제2·4·6은 "성질 서술"입니다.
+// 네 과제 모두 "작도(또는 관찰)+서술"이 한 페이지로 묶인 형태입니다(verify 유형).
 const TASK_LABELS = [
   {id:1, label:'이등변삼각형 외심+내심'},
-  {id:2, label:'특징 서술 1'},
-  {id:3, label:'정삼각형 외심+내심'},
-  {id:4, label:'특징 서술 2'},
-  {id:5, label:'각도 측정 탐구'},
-  {id:6, label:'특징 서술 3'}
+  {id:2, label:'정삼각형 외심+내심'},
+  {id:3, label:'외심 탐구(∠A vs ∠BOC)'},
+  {id:4, label:'내심 탐구(∠A vs ∠BIC)'}
 ];
 
 let app=null, db=null, studentsRef=null, controlRef=null;
@@ -721,6 +719,19 @@ function bisectorDir(a,b,c){
   if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
   return d;
 }
+// 학생 화면(student6.html)의 "각도 재기"(∠A, ∠BOC, ∠BIC 등) 표시를 교사 화면 미리보기에도
+// 그대로 그리기 위한 함수 — student6.html의 arcInfo와 동일하다.
+function arcInfo(b,a,c,r){
+  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+  let diff=a2-a1;
+  while(diff<=-Math.PI) diff+=2*Math.PI;
+  while(diff>Math.PI) diff-=2*Math.PI;
+  const end=a1+diff;
+  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
+  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
+  const sweep = diff>0?1:0;
+  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, deg: Math.abs(diff)*180/Math.PI, mid:{x:b.x+(r+16)*Math.cos(a1+diff/2), y:b.y+(r+16)*Math.sin(a1+diff/2)}};
+}
 const OVERLAY_COLORS=['#e53935','#1e88e5','#43a047','#fb8c00','#8e24aa','#00897b','#d81b60','#3949ab','#c0ca33','#6d4c41'];
 
 let teacherViewMode='cards';
@@ -774,6 +785,29 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
     el.setAttribute('fill',color); el.setAttribute('fill-opacity','0.12');
     el.setAttribute('stroke',color); el.setAttribute('stroke-width','2'); el.setAttribute('opacity',String(opacity));
     svg.appendChild(el);
+  }else if(o.type==='angleLabel'){
+    const a=ptById[o.a], b=ptById[o.b], c=ptById[o.c]; if(!a||!b||!c) return;
+    const info=arcInfo(b,a,c,28);
+    const path=document.createElementNS(NS,'path');
+    path.setAttribute('d',info.path); path.setAttribute('stroke',color); path.setAttribute('fill','none');
+    path.setAttribute('stroke-width','2'); path.setAttribute('opacity',String(opacity));
+    svg.appendChild(path);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',info.mid.x); t.setAttribute('y',info.mid.y); t.setAttribute('fill',color);
+    t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+    t.setAttribute('opacity',String(opacity));
+    t.textContent=info.deg.toFixed(1)+'°';
+    svg.appendChild(t);
+  }else if(o.type==='lengthLabel'){
+    const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
+    drawOverlayLine(svg, p1.x, p1.y, p2.x, p2.y, color, opacity);
+    const m=mid(p1,p2);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill',color);
+    t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+    t.setAttribute('opacity',String(opacity));
+    t.textContent=(dist(p1,p2)/40).toFixed(2);
+    svg.appendChild(t);
   }
 }
 
