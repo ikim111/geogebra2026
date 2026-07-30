@@ -788,7 +788,8 @@ function checkIncenterConstruct(c){
   const bisA=hasBisAt(A,B,Cc), bisB=hasBisAt(B,A,Cc), bisC=hasBisAt(Cc,A,B);
   const bisCount=[bisA,bisB,bisC].filter(Boolean).length;
   if(bisCount<2) return fail('먼저 두 각(예: ∠A, ∠B)의 이등분선을 각각 그려보세요. ("각의 이등분선" 도구로 변→꼭짓점→변 순서로 클릭)');
-  const D=c.points.find(p=>!p.locked
+  // 주의: "교점" 도구로 만든 점은 locked:true로 생성되므로 locked 여부로 거르지 않는다.
+  const D=c.points.find(p=>p!==A && p!==B && p!==Cc
     && Math.abs(distToLine(p,A,B)-distToLine(p,B,Cc))<10
     && Math.abs(distToLine(p,B,Cc)-distToLine(p,Cc,A))<10
     && distToLine(p,A,B)>15);
