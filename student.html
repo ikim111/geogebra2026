@@ -1380,7 +1380,7 @@ if(PREVIEW_MODE){
   /* 같은 기기에서 최근에 사용한 이름/반이 있으면 시작 화면을 건너뛰고 자동으로 이어서 시작 */
   (function(){
     const id = loadIdentity();
-    if(!id) return;
+    if(!id || !id.room) return;
     document.getElementById('studentName').value = id.name;
     document.getElementById('roomCode').value = id.room || '';
     startApp(id.name, id.room || '');
