@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5. 삼각형의 내심 (웹 버전)</title>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
+  header{background:#1a237e;color:#fff;padding:20px 16px;text-align:center;}
+  header h1{margin:0 0 4px;font-size:22px;}
+  header p{margin:0;font-size:13px;opacity:.85;}
+  .wrap{max-width:720px;margin:0 auto;padding:16px;}
+  .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .panel label{font-size:13px;color:#555;display:block;margin-bottom:6px;}
+  .panel input[type=text]{width:100%;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:15px;}
+  .progress-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
+  .progress-bar{flex:1;height:10px;background:#e0e0e0;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#555;white-space:nowrap;}
+  .task{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 8px;gap:10px;}
+  .task-head h2{font-size:15px;margin:0;line-height:1.4;}
+  .task-head h2 .num{color:var(--blue);}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .task-body{display:flex;flex-direction:column;}
+  .task-left, .task-right{flex:1 1 100%;max-width:100%;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;}
+  .toolbar button{font-size:12.5px;padding:6px 10px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#333;}
+  .toolbar button.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .toolbar button.reset{margin-left:auto;background:#fff3e0;border-color:#ffcc80;color:#e65100;}
+  .toolbar button.undo{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+  .canvas-wrap{padding:0 16px 14px;}
+  svg.gcanvas{width:100%;max-width:600px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
+  .hint{font-size:12px;color:#888;padding:0 16px 12px;}
+  .input-row{display:flex;gap:8px;padding:0 16px 14px;align-items:center;flex-wrap:wrap;}
+  .input-row input[type=number]{width:120px;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+  .input-row textarea{flex:1;min-width:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;}
+  .input-row textarea:disabled{background:#f5f5f5;color:#555;resize:none;}
+  .input-row button.cancel{background:#fdecea;color:var(--red);border:1px solid #ef9a9a;}
+  .text-min-note{font-size:11.5px;color:#999;padding:0 16px 8px;}
+  .input-row button{padding:8px 14px;border:none;background:var(--blue);color:#fff;border-radius:6px;cursor:pointer;font-size:13px;align-self:flex-start;}
+  .feedback{font-size:13px;padding:0 16px 14px;font-weight:bold;}
+  .feedback.ok{color:var(--green);}
+  .feedback.no{color:var(--red);}
+  .class-answers{margin:0 16px 14px;border-top:1px dashed #e0e0e0;padding-top:12px;}
+  .class-answers .ca-title{font-size:12.5px;font-weight:bold;color:#555;margin-bottom:8px;}
+  .class-answers .ca-list{display:flex;flex-direction:column;gap:8px;}
+  .class-answers .ca-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;}
+  .class-answers .ca-name{font-size:11.5px;font-weight:bold;color:var(--blue);margin-bottom:3px;}
+  .class-answers .ca-text{font-size:13px;color:#333;white-space:pre-wrap;word-break:break-word;}
+  .class-answers .ca-empty{font-size:12.5px;color:#999;}
+  .class-answers .ca-locked{font-size:12px;color:#999;background:#fafafa;border:1px dashed #ddd;border-radius:8px;padding:10px;text-align:center;}
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+  .free .toolbar button{background:#e3f2fd;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin:0 16px 14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .canvas-wrap, body.app-paused .toolbar, body.app-paused .input-row,
+  body.app-paused #pagerNav button, body.app-paused #handBtn{
+    pointer-events:none !important;
+  }
+  body.app-paused .gcanvas{ user-select:none; }
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:19px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card select, .gate-card input[type=text]{width:100%;padding:11px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  #profileMissingBox a{color:#e65100;}
+
+  #appScreen{display:none;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:10px 16px;display:flex;align-items:center;gap:12px;}
+  #stickyBar .progress-row{flex:1;margin-top:0;}
+  #stickyBar .progress-bar{background:#3a3f44;}
+  #stickyBar .progress-text{color:#e8eaed;}
+  #stickyBar button.hand{flex:0 0 auto;padding:8px 12px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap;}
+  #stickyBar button.hand.active{background:#e65100;color:#fff;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pageWrap{padding-top:14px;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pagerNav button{padding:11px 20px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;cursor:pointer;font-weight:bold;}
+  #pagerNav button:disabled{background:#ccc;cursor:not-allowed;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>5. 삼각형의 내심 (웹 버전)</h1>
+    <p class="gate-sub">원본: geogebra.org/m/fqjzufas — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <input type="hidden" id="roomCode">
+    <input type="hidden" id="studentName">
+    <input type="hidden" id="studentNumber">
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+
+  <div id="stickyBar">
+    <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+    <button id="prevBtn">◀ 이전</button>
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">완료 0 / 3</div>
+    </div>
+    <button id="handBtn" class="hand">🖐 질문있어요</button>
+    <button id="nextBtn">다음 ▶</button>
+  </div>
+
+  <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+  <div class="wrap" id="pageWrap">
+
+    <div id="taskContainer"></div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 1</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   이 파일은 "0. 지오지브라 연습" (student.html)과 같은 엔진을 쓰는
+   자매 파일입니다. 새 활동: "5. 삼각형의 내심"
+   (원본 geogebra.org/m/fqjzufas, 저자 김형준)
+
+   선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
+   1) forms.google.com 에서 새 설문지 생성
+   2) 질문 2개 추가: "이름"(단답형), "결과"(장문형)
+   3) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
+      생성된 링크에서 entry.숫자 부분을 확인 (예: entry.123456789)
+   4) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
+   5. 아래 CONFIG를 채우면 "제출하기" 클릭 시 자동으로 구글 설문지(연결된 시트)에 저장됩니다.
+      비워두면 백업 파일 저장만 동작합니다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const CONFIG = {
+  GOOGLE_FORM_URL: '', // 예: 'https://docs.google.com/forms/d/e/xxxxxxxx/formResponse'
+  ENTRY_NAME: '',       // 예: 'entry.111111111'
+  ENTRY_DATA: ''        // 예: 'entry.222222222'
+};
+
+/* ============================================================
+   선생님 설정 안내 (실시간 확인 기능을 쓰려면 — Firebase)
+   "0. 지오지브라 연습"과 같은 Firebase 프로젝트를 그대로 재사용해도 됩니다.
+   단, 같은 프로젝트를 여러 활동이 같이 쓰면 "반" 데이터가 서로 덮어써질 수 있어서,
+   아래 ACTIVITY_SUFFIX로 방(room) 경로를 활동별로 구분해요
+   (rooms/1반 이 아니라 rooms/1반__incenter 처럼 저장됨 — 기존에 게시한 Realtime Database
+   규칙을 그대로 써도 되고, teacher5.html과 반드시 짝을 맞춰야 해요).
+   이 파일과 "teacher5.html" 두 곳에 FIREBASE_CONFIG를 똑같이 붙여넣으세요.
+   비워두면 실시간 확인 기능 없이 기존처럼 동작합니다 (다른 기능엔 영향 없음).
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__incenter'; // teacher5.html과 반드시 동일해야 함
+
+const GRID = 40;
+let _uid = 0;
+const uid = () => 'o' + (_uid++);
+
+/* ---------- 기하 수학 유틸 ---------- */
+const sub = (a,b) => ({x:a.x-b.x, y:a.y-b.y});
+const add = (a,b) => ({x:a.x+b.x, y:a.y+b.y});
+const scl = (a,s) => ({x:a.x*s, y:a.y*s});
+const norm = a => { const m = Math.hypot(a.x,a.y)||1; return {x:a.x/m,y:a.y/m}; };
+const perp = a => ({x:-a.y, y:a.x});
+const mid = (a,b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const samePt = (a,b,tol=5) => a && b && dist(a,b) < tol;
+
+function distToLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
+  return Math.abs((p.x-a.x)*dy - (p.y-a.y)*dx)/len;
+}
+function distToSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+  let t = len2===0?0:((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t = Math.max(0,Math.min(1,t));
+  return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
+}
+function lineLineIntersection(a1,b1,a2,b2){
+  const x1=a1.x,y1=a1.y,x2=b1.x,y2=b1.y,x3=a2.x,y3=a2.y,x4=b2.x,y4=b2.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-9) return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+}
+function circleLineIntersection(center,r,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const fx=a.x-center.x, fy=a.y-center.y;
+  const A=dx*dx+dy*dy, B=2*(fx*dx+fy*dy), C=fx*fx+fy*fy-r*r;
+  let disc=B*B-4*A*C;
+  if(disc<0) return [];
+  disc=Math.sqrt(disc);
+  const t1=(-B-disc)/(2*A), t2=(-B+disc)/(2*A);
+  const pts=[];
+  [t1,t2].forEach(t=>pts.push({x:a.x+t*dx, y:a.y+t*dy}));
+  return pts;
+}
+function circleCircleIntersection(c1,r1,c2,r2){
+  const d=dist(c1,c2);
+  if(d>r1+r2||d<Math.abs(r1-r2)||d===0) return [];
+  const a=(r1*r1-r2*r2+d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0,r1*r1-a*a));
+  const xm=c1.x+a*(c2.x-c1.x)/d, ym=c1.y+a*(c2.y-c1.y)/d;
+  return [
+    {x:xm+h*(c2.y-c1.y)/d, y:ym-h*(c2.x-c1.x)/d},
+    {x:xm-h*(c2.y-c1.y)/d, y:ym+h*(c2.x-c1.x)/d}
+  ];
+}
+function projectOntoLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoCircle(p,center,r){
+  const d=norm(sub(p,center));
+  return {x:center.x+d.x*r, y:center.y+d.y*r};
+}
+function angleDeg(a,b,c){
+  const v1=sub(a,b), v2=sub(c,b);
+  const mag=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y) || 1;
+  let cos=(v1.x*v2.x+v1.y*v2.y)/mag;
+  cos=Math.max(-1,Math.min(1,cos));
+  return Math.acos(cos)*180/Math.PI;
+}
+function bisectorDir(a,b,c){
+  const u=norm(sub(a,b)), v=norm(sub(c,b));
+  let d=norm(add(u,v));
+  if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
+  return d;
+}
+function arcInfo(b,a,c,r){
+  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+  let diff=a2-a1;
+  while(diff<=-Math.PI) diff+=2*Math.PI;
+  while(diff>Math.PI) diff-=2*Math.PI;
+  const end=a1+diff;
+  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
+  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
+  const sweep = diff>0?1:0;
+  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, deg: Math.abs(diff)*180/Math.PI, mid:{x:b.x+(r+16)*Math.cos(a1+diff/2), y:b.y+(r+16)*Math.sin(a1+diff/2)}};
+}
+const ok = msg => ({ok:true,msg});
+const fail = msg => ({ok:false,msg});
+
+/* 이등변삼각형 판정: 캔버스 안에 "세 꼭짓점 다각형"이 있고, 그중 두 변의 길이가
+   거의 같으면(허용오차 이내) 이등변삼각형으로 인정한다. 학생이 어떤 방법으로
+   만들었는지는 따지지 않고 결과만 확인한다 (과제 3·4·5에서 공통으로 사용). */
+function isIsoscelesTriangle(c){
+  return c.objects.find(o=>{
+    if(o.type!=='polygon' || !o.ids || o.ids.length!==3) return false;
+    const pts=o.ids.map(id=>c.resolvePoint(id));
+    if(pts.some(p=>!p)) return false;
+    const [p1,p2,p3]=pts;
+    const area=Math.abs((p2.x-p1.x)*(p3.y-p1.y)-(p3.x-p1.x)*(p2.y-p1.y))/2;
+    if(area<300) return false; // 거의 일직선인(찌그러진) 삼각형은 제외
+    const d12=dist(p1,p2), d23=dist(p2,p3), d31=dist(p3,p1);
+    const tol=8;
+    const eq=(a,b)=>Math.abs(a-b)<tol;
+    return eq(d12,d23)||eq(d23,d31)||eq(d31,d12);
+  });
+}
+
+/* ---------- 도구 메타 ---------- */
+const TOOL_META = {
+  move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
+  circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'},
+  intersect:{label:'교점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  angleInput:{label:'각도 입력 작도'}
+};
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','perpBisector','angleBisector','intersect','polygon','lengthTool','angleTool','angleInput'];
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector'];
+
+/* ---------- GeoCanvas 클래스 ----------
+   "0. 지오지브라 연습"의 엔진과 같지만, 이 활동에서는 "주어진 대로 이미 움직일 수 있는 점"
+   (예: 과제1의 수직이등분선 위의 점 D)이 필요해서 두 가지를 추가했다.
+   - movablePoints: 시작부터 존재하지만 잠겨있지 않은(드래그 가능한) 점. 필요하면
+     constraintRef로 presetObjects의 refName을 참조해 그 도형 위로만 움직이게 제한한다.
+   - postObjects: movablePoints가 만들어진 "다음"에 추가되는 잠긴 도형(예: 그 점을 이용한
+     삼각형, 길이/각도 표시). presetObjects보다 나중에 실행되어 movablePoints를 라벨로 참조할 수 있다. */
+class GeoCanvas{
+  constructor(svgEl, cfg, onChange){
+    this.svg = svgEl;
+    this.width = cfg.width || 600;
+    this.height = cfg.height || 400;
+    this.points = [];
+    this.objects = [];
+    this.history = [];
+    this.tool = 'move';
+    this.pending = [];
+    this.pendingObjs = [];
+    this.dragging = null;
+    this.onChange = onChange || (()=>{});
+
+    (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
+
+    const refMap = {};
+    const resolveObj = (o)=>{
+      const resolved = Object.assign({}, o);
+      delete resolved.refName;
+      ['p1','p2','center','through','r1','r2','a','b','c'].forEach(k=>{
+        if(resolved[k] && typeof resolved[k]==='string'){ const pt=this.points.find(p=>p.label===resolved[k]); if(pt) resolved[k]=pt.id; }
+      });
+      if(resolved.ids) resolved.ids = resolved.ids.map(l=>{ const pt=this.points.find(p=>p.label===l); return pt?pt.id:l; });
+      return resolved;
+    };
+    (cfg.presetObjects||[]).forEach(o => {
+      const resolved = resolveObj(o);
+      const obj = Object.assign({id:uid(), locked:true}, resolved);
+      this.objects.push(obj);
+      if(o.refName) refMap[o.refName]=obj.id;
+    });
+    (cfg.movablePoints||[]).forEach(p=>{
+      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
+      if(p.constraintRef && refMap[p.constraintRef]) pt.constraint = {objId: refMap[p.constraintRef]};
+    });
+    (cfg.postObjects||[]).forEach(o => {
+      const resolved = resolveObj(o);
+      const obj = Object.assign({id:uid(), locked:true}, resolved);
+      this.objects.push(obj);
+    });
+
+    this._wire();
+    this.render();
+  }
+  addPoint(x,y,opts={}){
+    const used = new Set(this.points.map(p=>p.label));
+    const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
+    const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
+    this.points.push(p);
+    if((!opts.locked || opts.trackHistory) && !opts.skipHistory) this.history.push({kind:'point', id:p.id});
+    return p;
+  }
+  addObject(o){
+    const obj = Object.assign({id:uid(), locked:false}, o);
+    this.objects.push(obj);
+    this.history.push({kind:'object', id:obj.id});
+    return obj;
+  }
+  resolvePoint(id){ return this.points.find(p=>p.id===id); }
+  byLabel(label){ return this.points.find(p=>p.label===label); }
+  pickPoint(pt){ return this.findPointNear(pt,12) || this.addPoint(pt.x,pt.y); }
+  findPointNear(pt,tol){
+    let best=null,bd=tol;
+    for(const p of this.points){ const d=dist(p,pt); if(d<bd){bd=d;best=p;} }
+    return best;
+  }
+  getObjGeom(o){
+    switch(o.type){
+      case 'line': case 'segment': case 'perpBisector':
+        return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'circleCP': return {center:this.resolvePoint(o.center), through:this.resolvePoint(o.through)};
+      case 'circleCR': return {center:this.resolvePoint(o.center), r1:this.resolvePoint(o.r1), r2:this.resolvePoint(o.r2)};
+      case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
+      case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
+      case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+    }
+  }
+  asLine(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
+    if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
+    if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
+    return null;
+  }
+  asCircle(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='circleCP') return {center:g.center, r: dist(g.center,g.through)};
+    if(o.type==='circleCR') return {center:g.center, r: dist(g.r1,g.r2)};
+    return null;
+  }
+  _projectOntoObject(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(c) return projectOntoCircle(pt,c.center,c.r);
+    if(l) return o.type==='segment' ? projectOntoSegment(pt,l[0],l[1]) : projectOntoLine(pt,l[0],l[1]);
+    return pt;
+  }
+  objDistToPoint(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(l){ return o.type==='segment' ? distToSegment(pt,l[0],l[1]) : distToLine(pt,l[0],l[1]); }
+    if(c){ return Math.abs(dist(c.center,pt)-c.r); }
+    return Infinity;
+  }
+  findObjectNear(pt,tol){
+    let best=null,bd=tol;
+    for(const o of this.objects){
+      if(!INTERSECTABLE.includes(o.type)) continue;
+      const g=this.getObjGeom(o);
+      if(Object.values(g).some(v=>!v)) continue;
+      const d=this.objDistToPoint(o,pt);
+      if(d<bd){bd=d;best=o;}
+    }
+    return best;
+  }
+  computeIntersections(o1,o2){
+    const l1=this.asLine(o1), c1=this.asCircle(o1), l2=this.asLine(o2), c2=this.asCircle(o2);
+    if(l1&&l2){ const p=lineLineIntersection(l1[0],l1[1],l2[0],l2[1]); return p?[p]:[]; }
+    if(l1&&c2) return circleLineIntersection(c2.center,c2.r,l1[0],l1[1]);
+    if(c1&&l2) return circleLineIntersection(c1.center,c1.r,l2[0],l2[1]);
+    if(c1&&c2) return circleCircleIntersection(c1.center,c1.r,c2.center,c2.r);
+    return [];
+  }
+  setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
+  reset(){
+    this.points = this.points.filter(p=>p.locked||p.keep);
+    this.objects = this.objects.filter(o=>o.locked);
+    this.history=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
+    this.render();
+  }
+  undo(){
+    const last = this.history.pop();
+    if(!last) return;
+    if(last.kind==='point'){
+      this.points = this.points.filter(p=>p.id!==last.id);
+      this.objects = this.objects.filter(o=>!this._refsPoint(o,last.id));
+    } else {
+      this.objects = this.objects.filter(o=>o.id!==last.id);
+    }
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  _refsPoint(o,pid){
+    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c].includes(pid) || (o.ids && o.ids.includes(pid));
+  }
+  getSvgCoords(e){
+    const pt = this.svg.createSVGPoint();
+    const t = e.touches && e.touches[0] ? e.touches[0] : e;
+    pt.x=t.clientX; pt.y=t.clientY;
+    const ctm = this.svg.getScreenCTM().inverse();
+    const loc = pt.matrixTransform(ctm);
+    return {x:loc.x, y:loc.y};
+  }
+  _wire(){
+    const down = e=>{
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      if(this.tool==='move'){
+        const p=this.findPointNear(pt,12);
+        if(p && !p.locked) this.dragging=p;
+        return;
+      }
+      this.handleToolClick(pt);
+    };
+    const move = e=>{
+      if(!this.dragging) return;
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      let nx=pt.x, ny=pt.y;
+      if(this.dragging.constraint){
+        const o=this.objects.find(ob=>ob.id===this.dragging.constraint.objId);
+        if(o){ const proj=this._projectOntoObject(o,pt); nx=proj.x; ny=proj.y; }
+      }
+      this.dragging.x = Math.max(0,Math.min(this.width,nx));
+      this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      this.render();
+    };
+    const up = ()=>{ this.dragging=null; };
+    this.svg.addEventListener('mousedown', down);
+    this.svg.addEventListener('touchstart', down, {passive:false});
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move, {passive:false});
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+  }
+  handleToolClick(pt){
+    switch(this.tool){
+      case 'point': {
+        if(this.findPointNear(pt,10)) break;
+        const o=this.findObjectNear(pt,10);
+        if(o){ const proj=this._projectOntoObject(o,pt); this.addPoint(proj.x,proj.y,{constraint:{objId:o.id}}); }
+        else { this.addPoint(pt.x,pt.y); }
+        break;
+      }
+      case 'line': case 'segment': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; if(a!==b) this.addObject({type:this.tool,p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'circleCP': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [c,t]=this.pending; if(c!==t) this.addObject({type:'circleCP',center:c,through:t}); this.pending=[]; }
+        break;
+      }
+      case 'circleCR': {
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt); this.pending.push(p.id);
+          break;
+        }
+        const segObj=this.findObjectNear(pt,12);
+        if(segObj && segObj.type==='segment'){
+          const cId=this.pending[0]; this.pending=[];
+          this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
+          break;
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [c,r1,r2]=this.pending; this.addObject({type:'circleCR',center:c,r1,r2}); this.pending=[]; }
+        break;
+      }
+      case 'perpBisector': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,12);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'perpBisector',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleBisector': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleBisector',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'polygon': {
+        const p=this.pickPoint(pt);
+        if(this.pending.length>=3 && p.id===this.pending[0]){ this.addObject({type:'polygon', ids:[...this.pending]}); this.pending=[]; }
+        else this.pending.push(p.id);
+        break;
+      }
+      case 'intersect': {
+        const o=this.findObjectNear(pt,12);
+        if(o){
+          this.pendingObjs.push(o);
+          if(this.pendingObjs.length>=2){
+            const [o1,o2]=this.pendingObjs;
+            if(o1!==o2){
+              const pts=this.computeIntersections(o1,o2);
+              pts.forEach(ip=>{
+                if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true});
+                }
+              });
+            }
+            this.pendingObjs=[];
+          }
+        }
+        break;
+      }
+      case 'lengthTool': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,12);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'lengthLabel',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleTool': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleLabel',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'angleInput': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [bId,aId]=this.pending; this.pending=[];
+          const val=window.prompt('꼭짓점 → 팔 순서로 두 점을 선택했어요.\n각의 크기를 입력하세요 (도, 0~360):','60');
+          if(val!==null){
+            const deg=parseFloat(val);
+            if(!isNaN(deg)){
+              const B=this.resolvePoint(bId), A=this.resolvePoint(aId);
+              if(B&&A){
+                const dir=norm(sub(A,B)), rad=deg*Math.PI/180, len=dist(A,B)||100;
+                const rot={x:dir.x*Math.cos(rad)-dir.y*Math.sin(rad), y:dir.x*Math.sin(rad)+dir.y*Math.cos(rad)};
+                const C=this.addPoint(B.x+rot.x*len, B.y+rot.y*len, {});
+                this.addObject({type:'angleLabel', a:aId, b:bId, c:C.id});
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+    this.render();
+  }
+  render(){
+    const NS='http://www.w3.org/2000/svg';
+    while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+    const g0=document.createElementNS(NS,'g');
+    for(let x=0;x<=this.width;x+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x); l.setAttribute('y1',0); l.setAttribute('x2',x); l.setAttribute('y2',this.height);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    for(let y=0;y<=this.height;y+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',this.width); l.setAttribute('y2',y);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    this.svg.appendChild(g0);
+
+    const extend=(origin,dir,len=1000)=>({x1:origin.x-dir.x*len,y1:origin.y-dir.y*len,x2:origin.x+dir.x*len,y2:origin.y+dir.y*len});
+    const mkLine=(x1,y1,x2,y2,color,dash)=>{
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+      l.setAttribute('stroke',color); l.setAttribute('stroke-width',2);
+      if(dash) l.setAttribute('stroke-dasharray',dash);
+      this.svg.appendChild(l);
+    };
+
+    this.objects.forEach(o=>{
+      const g=this.getObjGeom(o);
+      if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
+      if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
+      else if(o.type==='segment'){ mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#1565c0'); }
+      else if(o.type==='perpBisector'){
+        const M=mid(g.p1,g.p2), d=perp(norm(sub(g.p2,g.p1))); const e=extend(M,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#6a1b9a');
+      }
+      else if(o.type==='angleBisector'){
+        const d=bisectorDir(g.a,g.b,g.c);
+        mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
+      }
+      else if(o.type==='circleCP'||o.type==='circleCR'){
+        const c=this.asCircle(o);
+        const el=document.createElementNS(NS,'circle');
+        el.setAttribute('cx',c.center.x); el.setAttribute('cy',c.center.y); el.setAttribute('r',Math.max(c.r,0.1));
+        el.setAttribute('stroke','#2e7d32'); el.setAttribute('fill','none'); el.setAttribute('stroke-width',2);
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='polygon'){
+        const pts=g.pts.map(p=>`${p.x},${p.y}`).join(' ');
+        const el=document.createElementNS(NS,'polygon');
+        el.setAttribute('points',pts); el.setAttribute('fill','#1565c0'); el.setAttribute('fill-opacity','0.12');
+        el.setAttribute('stroke','#1565c0'); el.setAttribute('stroke-width','2');
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='lengthLabel'){
+        mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#999','3,3');
+        const m=mid(g.p1,g.p2);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(2);
+        this.svg.appendChild(t);
+      }
+      else if(o.type==='angleLabel'){
+        const info=arcInfo(g.b,g.a,g.c,28);
+        const path=document.createElementNS(NS,'path');
+        path.setAttribute('d',info.path); path.setAttribute('stroke','#c62828'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+        this.svg.appendChild(path);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',info.mid.x); t.setAttribute('y',info.mid.y); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=info.deg.toFixed(1)+'°';
+        this.svg.appendChild(t);
+      }
+    });
+
+    [...this.pending].forEach(id=>{
+      const p=this.resolvePoint(id); if(!p) return;
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10);
+      c.setAttribute('fill','none'); c.setAttribute('stroke','#fbc02d'); c.setAttribute('stroke-width','3');
+      this.svg.appendChild(c);
+    });
+
+    this.points.forEach(p=>{
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+      c.setAttribute('fill', p.locked ? '#212121' : '#0277bd');
+      c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+      this.svg.appendChild(c);
+      const t=document.createElementNS(NS,'text');
+      t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8);
+      t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
+      t.textContent=p.label;
+      this.svg.appendChild(t);
+    });
+
+    this.onChange(this);
+  }
+}
+
+/* ---------- 과제 정의 ----------
+   총 6과제. 삼각형의 세 변으로부터 같은 거리에 있는 점(내심)을 자유롭게 점을 움직여
+   찾아보고 → 실제로 두 각의 이등분선을 작도해 정확한 내심·내접원을 그려보고 →
+   서로 다른 모양(예각·직각·둔각)의 삼각형에 같은 작도를 반복해 "모든 삼각형은 내심이
+   있다"는 사실을 확인하도록 구성했다(외심과 달리 내심은 항상 삼각형 안쪽에 있다는
+   점이 좋은 대조가 된다). 과제 3·6은 서술형으로, 일정 글자 수 이상을 쓰면 진행
+   완료로 인정한다. */
+const TRI_ACUTE  = [ {label:'A',x:300,y:100}, {label:'B',x:140,y:320}, {label:'C',x:460,y:320} ];
+const TRI_RIGHT  = [ {label:'A',x:150,y:100}, {label:'B',x:150,y:320}, {label:'C',x:450,y:320} ];
+const TRI_OBTUSE = [ {label:'A',x:320,y:200}, {label:'B',x:170,y:330}, {label:'C',x:480,y:330} ];
+const triPreset = (pts)=>[
+  {type:'segment',p1:pts[0].label,p2:pts[1].label},
+  {type:'segment',p1:pts[1].label,p2:pts[2].label},
+  {type:'segment',p1:pts[2].label,p2:pts[0].label}
+];
+
+function checkIncenterConstruct(c){
+  const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
+  const hasBisAt=(V,X,Y)=>c.objects.some(o=>{
+    if(o.type!=='angleBisector') return false;
+    const g=c.getObjGeom(o); if(!g.b) return false;
+    return samePt(g.b,V) && ((samePt(g.a,X)&&samePt(g.c,Y))||(samePt(g.a,Y)&&samePt(g.c,X)));
+  });
+  const bisA=hasBisAt(A,B,Cc), bisB=hasBisAt(B,A,Cc), bisC=hasBisAt(Cc,A,B);
+  const bisCount=[bisA,bisB,bisC].filter(Boolean).length;
+  if(bisCount<2) return fail('먼저 두 각(예: ∠A, ∠B)의 이등분선을 각각 그려보세요. ("각의 이등분선" 도구로 변→꼭짓점→변 순서로 클릭)');
+  const D=c.points.find(p=>!p.locked
+    && Math.abs(distToLine(p,A,B)-distToLine(p,B,Cc))<10
+    && Math.abs(distToLine(p,B,Cc)-distToLine(p,Cc,A))<10
+    && distToLine(p,A,B)>15);
+  if(!D) return fail('두 각의 이등분선의 교점을 "교점" 도구로 표시해보세요.');
+  const footBC=projectOntoLine(D,B,Cc);
+  const hasFoot=c.points.some(p=>p!==D && dist(p,footBC)<14);
+  if(!hasFoot) return fail('교점에서 변 BC에 내린 수선의 발을 점으로 찍어보세요.');
+  const hasCircle=c.objects.some(o=>{
+    if(o.type!=='circleCP') return false;
+    const g=c.getObjGeom(o); if(!g.center||!g.through) return false;
+    return samePt(g.center,D) && dist(g.through,footBC)<14;
+  });
+  if(!hasCircle) return fail('교점을 중심으로 하고, 변 BC 위의 수선의 발을 지나는 원을 그려보세요. ("원(중심,통과점)" 도구)');
+  return ok('내심과 내접원을 잘 작도했어요!');
+}
+
+const TASKS = [
+  { id:1, title:'[과제 1] 점 P를 움직여서 삼각형 ABC의 세 변 AB, BC, CA로부터 모두 같은 거리에 있는 위치를 찾아봅시다.',
+    noTools:true,
+    hint:'점 P를(파란 점) 자유롭게 드래그해보세요. "길이 재기" 도구로 P에서 각 변까지의 거리를 재보며 세 거리가 같아지는 위치를 찾아보세요.',
+    points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
+    movablePoints: [ {label:'P', x:300, y:220} ],
+    check(c){
+      const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C'), P=c.byLabel('P');
+      if(!P) return fail('점 P를 찾을 수 없어요.');
+      const d1=distToLine(P,A,B), d2=distToLine(P,B,Cc), d3=distToLine(P,Cc,A);
+      const okEq = Math.abs(d1-d2)<10 && Math.abs(d2-d3)<10 && d1>15;
+      return okEq ? ok('세 변으로부터 같은 거리에 있는 점을 잘 찾았어요!') : fail('점 P를 움직여서 세 변 AB, BC, CA까지의 거리가 모두 같아지도록 맞춰보세요.');
+    } },
+
+  { id:2, title:'[과제 2] 다음 순서대로 작도해봅시다. ① ∠A의 이등분선을 그린다. ② ∠B의 이등분선을 그린다. ③ 두 이등분선의 교점 D를 표시한다. ④ D에서 변 BC에 내린 수선의 발 E를 표시한다. ⑤ 중심이 D이고 E를 지나는 원을 그린다.',
+    tools:['angleBisector','point','circleCP'],
+    hint:'"각의 이등분선" 도구로 B→A→C 순서, C→B→A 순서로 각각 클릭해 ∠A, ∠B의 이등분선을 그리세요. "교점" 도구로 두 이등분선의 교점 D를 찍고, "점" 도구로 D에서 변 BC에 내린 수선의 발 E를 찍은 뒤, D를 중심으로 E를 지나는 원을 그려보세요.',
+    points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
+    check: checkIncenterConstruct },
+
+  { id:3, title:'[과제 3] [과제 2]에서 그린 원은 삼각형의 세 변과 모두 접한다고 할 수 있을까요? 그 이유는 무엇일까요?',
+    type:'text', noFigure:true, minLen:20 },
+
+  { id:4, title:'[과제 4] [과제 2]와 같은 방법으로 이 직각삼각형의 내심과 내접원을 그려봅시다.',
+    tools:['angleBisector','point','circleCP'],
+    hint:'∠A, ∠B의 이등분선을 그리고 교점 D를 찾은 뒤, D에서 변 BC에 내린 수선의 발 E를 찍고 D를 중심으로 E를 지나는 원을 그려보세요.',
+    points: TRI_RIGHT, presetObjects: triPreset(TRI_RIGHT),
+    check: checkIncenterConstruct },
+
+  { id:5, title:'[과제 5] [과제 2]와 같은 방법으로 이 둔각삼각형의 내심과 내접원을 그려봅시다.',
+    tools:['angleBisector','point','circleCP'],
+    hint:'∠A, ∠B의 이등분선을 그리고 교점 D를 찾은 뒤, D에서 변 BC에 내린 수선의 발 E를 찍고 D를 중심으로 E를 지나는 원을 그려보세요. 이 내심은 삼각형의 안쪽에 있나요, 바깥쪽에 있나요? (외심과 비교해보세요)',
+    points: TRI_OBTUSE, presetObjects: triPreset(TRI_OBTUSE),
+    check: checkIncenterConstruct },
+
+  { id:6, title:'[과제 6] 모든 삼각형은 내심과 내접원이 있을까요? [과제 2], [과제 4], [과제 5]의 결과를 바탕으로 그 이유를 설명해봅시다.',
+    type:'text', noFigure:true, minLen:20 },
+];
+
+const FREE_TOOLS = ALL_TOOLS;
+
+/* ---------- 렌더링 & 초기화 ---------- */
+const container = document.getElementById('taskContainer');
+const results = {};
+const canvasByTaskId = {};
+
+function buildTaskCard(task){
+  const el=document.createElement('div');
+  el.className='task';
+  const isTextLike = (task.type==='text' || task.type==='verify');
+  const hintHtml = task.hint ? `<div class="hint">${task.hint}</div>` : '';
+  const hiddenHintHtml = task.hiddenHint ? `
+            <button type="button" id="hintToggle-${task.id}" style="margin:0 16px 10px;background:#fff;border:1px solid #ffcc80;color:#e65100;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;">💡 힌트 보기</button>
+            <div class="hint" id="hiddenHintBox-${task.id}" style="display:none;">${task.hiddenHint}</div>` : '';
+  el.innerHTML = `
+    <div class="task-head">
+      <h2>${task.title}</h2>
+      <span class="badge pending" id="badge-${task.id}">미완료</span>
+    </div>
+    <div class="task-body ${task.noFigure ? 'no-figure' : ''}">
+      ${task.noFigure ? '' : `<div class="task-right">
+        <div class="toolbar" id="tools-${task.id}"></div>
+        <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
+      </div>`}
+      <div class="task-left">
+        ${(task.type==='input'||task.type==='hybrid') ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
+            <input type="number" step="0.01" id="input-${task.id}" placeholder="숫자 입력">
+            <span>${task.unit||''}</span>
+            <button id="check-${task.id}">확인</button>
+          </div><div class="feedback" id="fb-${task.id}"></div>`
+          : isTextLike ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
+            <textarea id="input-${task.id}" rows="3" placeholder="여기에 생각을 적어보세요 (${task.minLen||10}자 이상)"></textarea>
+            <button id="check-${task.id}">확인</button>
+          </div>
+          <div class="text-min-note">✏️ ${task.minLen||10}자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-${task.id}"></div>
+          <div class="class-answers" id="classAnswers-${task.id}" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-${task.id}"></div>
+          </div>`
+          : `${hintHtml || `<div class="hint">"${(task.tools||[]).map(t=>TOOL_META[t].label).join('", "')}" 도구를 사용해보세요.</div>`}${hiddenHintHtml}
+             <div class="feedback" id="fb-${task.id}"></div>`}
+      </div>
+    </div>
+  `;
+  container.appendChild(el);
+  if(task.hiddenHint){
+    const btn=el.querySelector(`#hintToggle-${task.id}`);
+    const box=el.querySelector(`#hiddenHintBox-${task.id}`);
+    if(btn && box){
+      btn.addEventListener('click', ()=>{
+        const showing = box.style.display!=='none';
+        box.style.display = showing ? 'none' : 'block';
+        btn.textContent = showing ? '💡 힌트 보기' : '🙈 힌트 숨기기';
+      });
+    }
+  }
+  return el;
+}
+
+function buildToolbar(task, cv, toolsEl){
+  if(task.noTools){ toolsEl.style.display='none'; return {move:null}; }
+  const mkBtn=(id,label,cls)=>{ const b=document.createElement('button'); b.textContent=label; if(cls) b.className=cls; b.id=id; return b; };
+  const moveBtn=mkBtn(`tool-move-${task.id}`,'이동'); moveBtn.classList.add('active');
+  toolsEl.appendChild(moveBtn);
+  const buttons={move:moveBtn};
+  FREE_TOOLS.forEach(t=>{
+    const b=mkBtn(`tool-${t}-${task.id}`, TOOL_META[t].label);
+    toolsEl.appendChild(b); buttons[t]=b;
+    b.addEventListener('click', ()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  });
+  moveBtn.addEventListener('click', ()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
+  const undoBtn=mkBtn(`undo-${task.id}`,'되돌리기','undo'); undoBtn.addEventListener('click',()=>cv.undo());
+  const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
+  toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
+  return buttons;
+}
+
+function initConstructTask(task){
+  buildTaskCard(task);
+  const svg=document.getElementById(`svg-${task.id}`);
+  const toolsEl=document.getElementById(`tools-${task.id}`);
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
+  canvasByTaskId[task.id] = cv;
+
+  buildToolbar(task, cv, toolsEl);
+
+  function onChange(inst){
+    if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); return; }
+    const r = task.check(inst);
+    results[task.id]={done:r.ok};
+    badge.textContent = r.ok?'완료':'미완료';
+    badge.className = 'badge ' + (r.ok?'done':'pending');
+    fb.textContent = r.msg;
+    fb.className = 'feedback ' + (r.ok?'ok':'no');
+    updateProgress();
+    RT.pushObjectsDebounced(task.id, inst);
+  }
+  onChange(cv);
+}
+
+function initTextTask(task){
+  buildTaskCard(task);
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+
+  function checkAnswer(){
+    const val=(input.value||'').trim();
+    const minLen = task.minLen||10;
+    const okFlag = val.length>=minLen;
+    results[task.id]={done:okFlag, value:input.value};
+    badge.textContent = okFlag?'완료':'미완료';
+    badge.className='badge ' + (okFlag?'done':'pending');
+    fb.textContent = okFlag ? '답변을 저장했어요!' : `조금 더 자세히 적어볼까요? (${minLen}자 이상)`;
+    fb.className = 'feedback ' + (okFlag?'ok':'no');
+    updateProgress();
+    renderClassAnswersFor(task);
+  }
+  btn.addEventListener('click', checkAnswer);
+  results[task.id]={done:false, value:''};
+}
+
+function initVerifyTask(task){
+  buildTaskCard(task);
+  const svg=document.getElementById(`svg-${task.id}`);
+  const toolsEl=document.getElementById(`tools-${task.id}`);
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+
+  // GeoCanvas 생성자는 내부에서 render()를 즉시 한 번 호출하고, 그 render()가 onCanvasChange ->
+  // refreshFeedback을 동기적으로 부른다. 그 시점엔 아래 "const cv = new GeoCanvas(...)" 대입은 물론
+  // 그 뒤에 선언하는 지역변수(let)들도 아직 초기화 전이라(TDZ), refreshFeedback 안에서 cv나 locked를
+  // 참조하면 "Cannot access ... before initialization" 에러가 난다. 그래서 GeoCanvas를 만들기 "전에"
+  // cv/locked를 먼저 선언해 두고, refreshFeedback은 인자로 넘어온 inst를 우선 쓰도록 만든다.
+  let cv;
+  // locked=true: "확인"을 눌러 제출을 마친 상태 -> 글을 수정할 수 없고, 버튼이 "취소"로 바뀐다.
+  // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "확인"으로 돌아온다.
+  let locked = false;
+
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
+  canvasByTaskId[task.id] = cv;
+  buildToolbar(task, cv, toolsEl);
+
+  function checkReady(instArg){
+    const target = instArg || cv;
+    if(!target) return {constructOk:false, textOk:false};
+    const constructOk = task.verify ? !!task.verify(target) : !!isIsoscelesTriangle(target);
+    const textOk = (input.value||'').trim().length>=10;
+    return {constructOk, textOk};
+  }
+  // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
+  // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
+  function refreshFeedback(instArg){
+    const {constructOk, textOk} = checkReady(instArg);
+    if(!locked){
+      const canSubmit = constructOk && textOk;
+      fb.textContent = !constructOk
+        ? (task.failMsg || '아직 이등변삼각형을 만들지 않았어요. 두 변의 길이가 같은 삼각형을 만들어보세요.')
+        : (!textOk ? (task.textPrompt || '어떻게 만들었는지 설명을 적어주세요. (10자 이상)') : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
+      fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
+    }
+    return constructOk && textOk;
+  }
+  function onCanvasChange(inst){
+    RT.pushObjectsDebounced(task.id, inst);
+    refreshFeedback(inst);
+  }
+  function doSubmit(){
+    const canSubmit = refreshFeedback();
+    if(!canSubmit) return; // 아직 조건을 못 채웠으면 잠그지 않고, 안내 문구만 갱신한다
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+    results[task.id] = {done:true, value:input.value};
+    badge.textContent = '완료';
+    badge.className = 'badge done';
+    fb.textContent = task.doneMsg || '제출을 완료했어요! "취소"를 누르면 다시 고칠 수 있어요.';
+    fb.className = 'feedback ok';
+    updateProgress();
+    renderClassAnswersFor(task);
+  }
+  function doCancel(){
+    locked = false;
+    input.disabled = false;
+    input.classList.remove('locked-fixed');
+    btn.textContent = '확인';
+    btn.classList.remove('cancel');
+    results[task.id] = {done:false, value:input.value};
+    updateProgress();
+    refreshFeedback();
+    renderClassAnswersFor(task); // 취소하면 친구들 답변 패널도 다시 잠긴다
+  }
+  btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
+  results[task.id]={done:false, value:''};
+  refreshFeedback();
+}
+
+function initInputTask(task){
+  buildTaskCard(task);
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+  let cv;
+  if(task.noFigure){
+    cv = { byLabel:(label)=> (task.points||[]).find(p=>p.label===label) };
+  } else {
+    const svg=document.getElementById(`svg-${task.id}`);
+    cv = new GeoCanvas(svg, {points: task.points, presetObjects: task.presetObjects||[]}, ()=>{});
+    document.getElementById(`tools-${task.id}`).remove();
+  }
+
+  function checkAnswer(){
+    const val=parseFloat(input.value);
+    const trueVal=task.trueValue(cv);
+    const okFlag = !isNaN(val) && Math.abs(val-trueVal) < task.tol;
+    results[task.id]={done:okFlag, value:input.value};
+    badge.textContent = okFlag?'완료':'미완료';
+    badge.className='badge ' + (okFlag?'done':'pending');
+    fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
+    fb.className = 'feedback ' + (okFlag?'ok':'no');
+    updateProgress();
+  }
+  btn.addEventListener('click', checkAnswer);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
+  results[task.id]={done:false, value:''};
+}
+
+function initHybridTask(task){
+  buildTaskCard(task);
+  const svg=document.getElementById(`svg-${task.id}`);
+  const toolsEl=document.getElementById(`tools-${task.id}`);
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+  let solved=false;
+
+  const cfg = {points: task.points||[], presetObjects: (task.presetObjects||[])};
+  const cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
+  canvasByTaskId[task.id] = cv;
+  buildToolbar(task, cv, toolsEl);
+
+  function onCanvasChange(inst){
+    RT.pushObjectsDebounced(task.id, inst);
+    if(solved) return;
+    const measured = task.measureCheck ? task.measureCheck(inst) : false;
+    fb.textContent = measured
+      ? (task.afterMsg || '측정한 값을 입력칸에 입력하고 "확인" 버튼을 눌러보세요.')
+      : (task.beforeMsg || '도구를 사용해 값을 측정해보세요.');
+    fb.className = 'feedback no';
+  }
+
+  function checkAnswer(){
+    const val=parseFloat(input.value);
+    const trueVal=task.trueValue(cv);
+    const okFlag = !isNaN(val) && Math.abs(val-trueVal) < task.tol;
+    solved = okFlag;
+    results[task.id]={done:okFlag, value:input.value};
+    badge.textContent = okFlag?'완료':'미완료';
+    badge.className='badge ' + (okFlag?'done':'pending');
+    fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
+    fb.className = 'feedback ' + (okFlag?'ok':'no');
+    updateProgress();
+  }
+  btn.addEventListener('click', checkAnswer);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
+  results[task.id]={done:false, value:''};
+
+  onCanvasChange(cv);
+}
+
+function updateProgress(){
+  const total = TASKS.length;
+  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  document.getElementById('progressText').textContent = `완료 ${done} / ${total}`;
+  document.getElementById('progressFill').style.width = (done/total*100)+'%';
+  RT.pushProgressDebounced(done, total);
+}
+
+function restoreProgress(progress){
+  if(!progress) return;
+  TASKS.forEach(t=>{
+    const p = progress[t.id];
+    if(!p || !p.done) return;
+    results[t.id] = { done:true, value: p.value };
+    const badge=document.getElementById(`badge-${t.id}`);
+    if(badge){ badge.textContent='완료'; badge.className='badge done'; }
+    const fb=document.getElementById(`fb-${t.id}`);
+    if(fb){ fb.textContent='이전에 이미 완료한 문제예요.'; fb.className='feedback ok'; }
+    const input=document.getElementById(`input-${t.id}`);
+    if(input && p.value!=null && p.value!==''){ input.value = p.value; }
+    // 서술형 칸(text/verify)은 새로고침 후 그림(도형)이 복원되지 않으므로, 이전에 제출한
+    // 칸은 다시 편집/제출하지 못하게 잠가둔다 (버튼을 눌러도 초기화된 도형 때문에 검증이
+    // 실패해 혼란스러운 상태가 되는 것을 막기 위함).
+    if((t.type==='text' || t.type==='verify') && input){
+      input.disabled = true;
+      input.classList.add('locked-fixed');
+      const btn=document.getElementById(`check-${t.id}`);
+      if(btn){ btn.disabled = true; btn.classList.add('locked-fixed'); btn.textContent='제출됨'; }
+    }
+  });
+  updateProgress();
+}
+
+/* ---------- 친구들의 답변 보기(데스모스 클래스룸 스타일) ----------
+   서술형 칸이 있는 과제(type이 'text' 또는 'verify')마다, 자기 답변을 먼저 완료해야만
+   같은 반 다른 학생들의 답변이 보인다. RT.allStudents가 갱신될 때(다른 학생이 새로 답을
+   적었을 때)와, 내 답변 상태가 바뀔 때(잠금이 풀릴 때) 모두 다시 그린다. */
+function renderAllClassAnswers(){
+  TASKS.forEach(t=>{
+    if(t.type==='text' || t.type==='verify') renderClassAnswersFor(t);
+  });
+}
+function renderClassAnswersFor(task){
+  const wrap=document.getElementById(`classAnswers-${task.id}`);
+  const list=document.getElementById(`classAnswersList-${task.id}`);
+  if(!wrap || !list) return;
+  const myDone = !!(results[task.id] && results[task.id].done);
+  if(!RT.connected || !myDone){
+    wrap.style.display='none';
+    return;
+  }
+  wrap.style.display='block';
+  list.textContent='';
+  const entries = Object.keys(RT.allStudents||{})
+    .filter(k=>k!==RT.studentKey)
+    .map(k=>({key:k, ...RT.allStudents[k]}))
+    .filter(s=> s.progress && s.progress[task.id] && s.progress[task.id].value && String(s.progress[task.id].value).trim().length>0)
+    .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+
+  if(entries.length===0){
+    const empty=document.createElement('div'); empty.className='ca-empty';
+    empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
+    list.appendChild(empty);
+    return;
+  }
+  entries.forEach(s=>{
+    const item=document.createElement('div'); item.className='ca-item';
+    const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
+    item.appendChild(name); item.appendChild(text);
+    list.appendChild(item);
+  });
+}
+
+/* ---------- 실시간 확인(Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, lastSeenAnnounceTs:0, viewingTaskId:null, heartbeatTimer:null, minTaskId:null, maxTaskId:null, paused:false, visitedTasks:new Set(), allStudents:{},
+
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){
+      statusEl.textContent = '⚠️ 선생님이 아직 실시간 기능을 설정하지 않았어요. 과제는 그대로 이용할 수 있어요.';
+      return;
+    }
+    if(!name || !room){
+      statusEl.textContent = '이름을 입력하고 반을 선택해주세요.';
+      return;
+    }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 로그인 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => {
+          statusEl.textContent = '⚠️ 로그인 실패: ' + err.message;
+          console.error(err);
+        });
+    }catch(err){
+      statusEl.textContent = '⚠️ 연결 실패: ' + err.message;
+      console.error(err);
+    }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    // Firebase 익명 로그인은 "브라우저(기기)당 하나"로 유지된다. 그래서 같은 브라우저에서 탭을
+    // 여러 개 열어 이름을 다르게 입력해도(예: 테스트로 두 학생을 흉내낼 때) uid만으로 학생을
+    // 구분하면 전부 같은 uid라 서로 덮어써서 한 명만 보이게 된다. 그걸 막기 위해 학생 키를
+    // "uid + 이름"으로 만든다 — 같은 브라우저/같은 이름이면 기존 기록에 이어서 진행되고(새로고침
+    // 대응), 이름이 다르면 새 기록으로 따로 보인다.
+    const key = uid + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.controlRef = this.roomRef.child('control');
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        Object.keys(existing.progress).forEach(id=>{
+          if(existing.progress[id] && existing.progress[id].visited) this.visitedTasks.add(parseInt(id,10));
+        });
+        if(typeof restoreProgress==='function') restoreProgress(existing.progress);
+        if(typeof goToResumePage==='function') goToResumePage();
+      }
+      this.studentRef.update({
+        name: name,
+        number: number || null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online: true,
+        raisedHand: false
+      });
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    /* 데스모스 클래스룸처럼, 서술형 답변을 적으면 같은 반 다른 학생들의 답변도 볼 수 있게
+       같은 방의 학생 전체 목록을 구독한다. 보안 규칙이 "이 방에 로그인한 사람은 모두 읽고
+       쓸 수 있음"이라 이미 다른 학생 데이터를 읽을 권한은 있다(teacher.html과 동일한 트레이드오프). */
+    this.studentsRef = this.roomRef.child('students');
+    this.studentsRef.on('value', snap=>{
+      this.allStudents = snap.val() || {};
+      if(typeof renderAllClassAnswers==='function') renderAllClassAnswers();
+    });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      document.getElementById('lockOverlay').style.display = this.paused ? 'flex' : 'none';
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      if(typeof clampToPacing==='function') clampToPacing();
+      if(typeof updateNavButtons==='function') updateNavButtons();
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+
+    const total = TASKS.length;
+    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+    this.pushProgress(done, total);
+  },
+  pushProgress(done, total){
+    if(!this.connected) return;
+    const progress = {};
+    TASKS.forEach(t=>{
+      const r = results[t.id];
+      progress[t.id] = { done: !!(r&&r.done), value: (r&&r.value!==undefined&&r.value!==null) ? String(r.value) : null, visited: this.visitedTasks.has(t.id) };
+    });
+    this.studentRef.update({
+      progress, completed: done, total,
+      currentTaskId: this.viewingTaskId,
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
+  },
+  pushProgressDebounced(done, total){
+    if(!this.connected) return;
+    clearTimeout(this._progressTimer);
+    this._progressTimer = setTimeout(()=> this.pushProgress(done, total), 150);
+  },
+  _objTimers: {},
+  pushObjectsDebounced(taskId, cv){
+    if(!this.connected || !cv) return;
+    clearTimeout(this._objTimers[taskId]);
+    this._objTimers[taskId] = setTimeout(()=>{
+      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids'];
+      // 잠긴(locked) 도형도 함께 보낸다 - 이 활동은 직사각형/원처럼 "주어진 도형"이 학생이 그린
+      // 도형을 이해하는 데 중요한 배경이라서, 잠긴 도형만 빼고 보내면 교사 화면에 그 배경이
+      // 통째로 안 보이게 된다(과제1의 선분 AB·수직이등분선·삼각형 ABD도 마찬가지).
+      // locked 여부도 같이 보낸다 - 교사 화면에서 "문제가 준 배경(직사각형/원 등)"과
+      // "학생이 직접 그린 것"을 다른 색으로 구분해서 그리기 위해 필요하다.
+      const snap = {
+        taskId,
+        points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label, locked:!!p.locked})),
+        objects: cv.objects.map(o=>{
+          const out={id:o.id, type:o.type, locked:!!o.locked};
+          keys.forEach(k=>{ if(o[k]!=null) out[k]=o[k]; });
+          return out;
+        }),
+        ts: firebase.database.ServerValue.TIMESTAMP
+      };
+      this.studentRef.child('objectSnapshots/'+taskId).set(snap);
+    }, 150);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      const total = TASKS.length;
+      const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+      this.pushProgress(done, total);
+      if(taskId!=null && canvasByTaskId[taskId]) this.pushObjectsDebounced(taskId, canvasByTaskId[taskId]);
+    }
+  },
+  toggleHand(){
+    if(!this.connected){ alert('반을 선택하고 시작해야 이 기능을 쓸 수 있어요.'); return; }
+    const btn=document.getElementById('handBtn');
+    const active = btn.classList.toggle('active');
+    btn.textContent = active ? '🖐 질문 취소' : '🖐 질문있어요';
+    this.studentRef.update({ raisedHand: active });
+  }
+};
+
+TASKS.forEach(t=>{
+  try{
+    if(t.type==='input') initInputTask(t);
+    else if(t.type==='hybrid') initHybridTask(t);
+    else if(t.type==='text') initTextTask(t);
+    else if(t.type==='verify') initVerifyTask(t);
+    else initConstructTask(t);
+  }catch(err){
+    const box=document.createElement('div');
+    box.style.cssText='background:#ffebee;color:#b71c1c;border:2px solid #e57373;padding:10px;margin:10px 16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+    box.textContent = `[디버그] 과제 ${t.id} 처리 중 오류: ${err.message}\n${err.stack||''}`;
+    container.appendChild(box);
+    console.error('Task', t.id, err);
+  }
+});
+
+/* ---------- 자유시간 ---------- */
+(function(){
+  const el=document.createElement('div');
+  el.className='task free';
+  el.dataset.taskId='free';
+  el.innerHTML=`<div class="task-head"><h2>[자유시간] 지오지브라로 하고 싶은 것들을 자유롭게 해봅시다.</h2></div>
+    <div class="toolbar" id="tools-free"></div>
+    <div class="canvas-wrap"><svg class="gcanvas" id="svg-free" viewBox="0 0 600 400"></svg></div>`;
+  container.appendChild(el);
+  const svg=document.getElementById('svg-free');
+  const cv=new GeoCanvas(svg, {points:[{label:'A',x:150,y:200},{label:'B',x:400,y:200}]}, ()=>{});
+  const toolsEl=document.getElementById('tools-free');
+  const mkBtn=(label)=>{ const b=document.createElement('button'); b.textContent=label; return b; };
+  const buttons={};
+  const moveBtn=mkBtn('이동'); moveBtn.classList.add('active'); toolsEl.appendChild(moveBtn); buttons.move=moveBtn;
+  moveBtn.addEventListener('click',()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
+  FREE_TOOLS.forEach(t=>{
+    const b=mkBtn(TOOL_META[t].label); toolsEl.appendChild(b); buttons[t]=b;
+    b.addEventListener('click',()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  });
+  const resetBtn=mkBtn('초기화'); resetBtn.className='reset'; resetBtn.addEventListener('click',()=>cv.reset());
+  toolsEl.appendChild(resetBtn);
+})();
+
+/* ---------- 실시간 UI 연결 ----------
+   반(roomCode)/이름(studentName)/번호(studentNumber)는 더 이상 이 화면에서 직접 입력하지 않고,
+   student.html에서 넘어온 값을 그대로 쓰는 hidden input이라 옵션을 채울 필요가 없다. */
+
+document.querySelectorAll('.task').forEach(el=>{
+  const m = el.querySelector('.badge[id^="badge-"]');
+  const idMatch = m && m.id.match(/badge-(\d+)/);
+  if(idMatch){ el.dataset.taskId = idMatch[1]; }
+});
+
+document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand());
+document.getElementById('announceClose').addEventListener('click', ()=>{
+  document.getElementById('announceBanner').style.display='none';
+});
+
+/* ---------- 페이지 넘기기 ---------- */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+
+function pageTaskNum(idx){
+  const p = pages[idx];
+  if(!p) return null;
+  const n = parseInt(p.dataset.taskId, 10);
+  return isNaN(n) ? null : n;
+}
+function taskIdToPageIdx(n){
+  return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n);
+}
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  const label=document.getElementById('pageLabel');
+  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  // "확인"으로 제출을 마쳐 잠긴 서술형 칸(locked-fixed 클래스)은, 선생님이 일시정지를 풀어도
+  // 다시 활성화되면 안 되므로 paused 여부와 상관없이 계속 비활성 상태를 유지한다.
+  document.querySelectorAll('.toolbar button, .input-row input, .input-row textarea, .input-row button, #handBtn').forEach(el=>{
+    el.disabled = paused || el.classList.contains('locked-fixed');
+  });
+  if(typeof updateNavButtons==='function') updateNavButtons();
+}
+
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){
+    const idx = taskIdToPageIdx(RT.maxTaskId);
+    if(idx>=0){ showPage(idx); return; }
+  }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){
+    const idx = taskIdToPageIdx(RT.minTaskId);
+    if(idx>=0){ showPage(idx); }
+  }
+}
+function updateNavButtons(){
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  const pacingMsg=document.getElementById('pacingMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0;
+  const isLast = currentPage===pages.length-1;
+  const nextNum = pageTaskNum(currentPage+1);
+  const prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused;
+  nextBtn.disabled = isLast || blockedNext || RT.paused;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}~${RT.maxTaskId}번 화면만 진행하도록 설정했어요.`;
+    } else if(RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.maxTaskId}번까지만 진행하도록 설정했어요.`;
+    } else if(RT.minTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}번부터 진행하도록 설정했어요.`;
+    }
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+}
+document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+function goToResumePage(){
+  for(let i=0;i<pages.length;i++){
+    const n = pageTaskNum(i);
+    if(n!=null && (!results[n] || !results[n].done)){ showPage(i); return; }
+  }
+  showPage(pages.length-1);
+}
+
+/* ---------- 반/번호/이름: student.html에서 가져오기 ----------
+   이 화면에서는 더 이상 반/번호/이름을 직접 입력받지 않는다. student.html에서
+   과제 링크를 클릭할 때 붙여준 URL 쿼리(classNo/number/name)를 최우선으로 쓰고,
+   없으면 같은 브라우저에 저장된 프로필(localStorage)을 사용한다. */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfileFromUrl(){
+  const p = new URLSearchParams(location.search);
+  const classNo=(p.get('classNo')||'').trim();
+  const number=(p.get('number')||'').trim();
+  const name=(p.get('name')||'').trim();
+  if(classNo && name) return {classNo, number, name};
+  return null;
+}
+function loadProfile(){
+  const fromUrl = loadProfileFromUrl();
+  if(fromUrl){
+    try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({...fromUrl, ts:Date.now()})); }catch(e){}
+    return fromUrl;
+  }
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+
+/* ---------- 시작 화면 → 과제 화면 전환 ---------- */
+const IDENTITY_KEY = 'ggb_identity_incenter_v1';
+function saveIdentity(name, room, number){
+  try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){}
+}
+function loadIdentity(){
+  try{
+    const raw = localStorage.getItem(IDENTITY_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+function clearIdentity(){
+  try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){}
+}
+function startApp(name, room, number){
+  if(room){ RT.connect(name, room, number); }
+  saveIdentity(name, room, number);
+  document.getElementById('gateScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  showPage(currentPage);
+}
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('studentName').value.trim();
+  const room = document.getElementById('roomCode').value.trim();
+  const number = document.getElementById('studentNumber').value.trim();
+  const statusEl = document.getElementById('syncStatus');
+  if(!name || !room){ statusEl.textContent = 'student.html에서 반/번호/이름을 먼저 입력해주세요.'; return; }
+  startApp(name, room, number);
+});
+document.getElementById('switchUserBtn').addEventListener('click', (e)=>{
+  e.preventDefault();
+  clearIdentity();
+  location.reload();
+});
+
+if(PREVIEW_MODE){
+  document.getElementById('previewBanner').style.display = 'block';
+  document.getElementById('gateScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      // 과제를 전환하면 카드 높이가 바로 바뀌는데, ResizeObserver/setInterval이 반영하기 전
+      // 잠깐이라도 교사 화면의 iframe이 이전 높이로 남아 내용이 잘려 보일 수 있다.
+      // 전환 직후 + 한 프레임 뒤 두 번 즉시 보고해서 그 틈을 없앤다.
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(reportPreviewHeight).observe(document.body);
+  }
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}else{
+  const profile = loadProfile();
+  if(!profile){
+    // student.html을 거치지 않고 이 파일에 바로 들어온 경우: 반/번호/이름을 알 수 없으므로
+    // 안내 문구만 보여주고 "시작하기"는 노출하지 않는다.
+    document.getElementById('profileMissingBox').style.display = 'block';
+    document.getElementById('profileBox').style.display = 'none';
+  } else {
+    document.getElementById('roomCode').value = profile.classNo;
+    document.getElementById('studentName').value = profile.name;
+    document.getElementById('studentNumber').value = profile.number || '';
+    document.getElementById('profileClassView').textContent = profile.classNo + '반';
+    document.getElementById('profileNumberView').textContent = (profile.number || '-') + '번';
+    document.getElementById('profileNameView').textContent = profile.name;
+    document.getElementById('profileMissingBox').style.display = 'none';
+    document.getElementById('profileBox').style.display = 'block';
+
+    /* 같은 기기에서 이미 이 반·이름으로 시작한 적이 있으면(새로고침 등) 시작 화면을
+       건너뛰고 자동으로 이어서 시작한다. */
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(id.name, id.room, id.number);
+      document.getElementById('switchUserName').textContent = id.name;
+      document.getElementById('switchUserWrap').style.display = 'block';
+    }
+  }
+}
+
+document.addEventListener('contextmenu', e=>{
+  if(document.body.classList.contains('app-paused')) e.preventDefault();
+});
+
+updateProgress();
+
+/* ---------- 제출 / 백업 ---------- */
+function buildPayload(){
+  const name=document.getElementById('studentName').value.trim();
+  const list = TASKS.map(t=>({id:t.id, title:t.title, done: results[t.id]? !!results[t.id].done : false, value: results[t.id]?results[t.id].value:undefined}));
+  const completed=list.filter(r=>r.done).length;
+  return {name, submittedAt:new Date().toISOString(), completed, total:list.length, results:list};
+}
+function downloadBackup(payload){
+  const blob=new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`내심활동_${payload.name||'무명'}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function submitToGoogleForm(name,jsonStr){
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  const form=document.createElement('form');
+  form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+  const f1=document.createElement('input'); f1.name=CONFIG.ENTRY_NAME; f1.value=name; form.appendChild(f1);
+  const f2=document.createElement('input'); f2.name=CONFIG.ENTRY_DATA; f2.value=jsonStr; form.appendChild(f2);
+  document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+}
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const name=document.getElementById('studentName').value.trim();
+  const statusEl=document.getElementById('submitStatus');
+  if(!name){ alert('이름을 입력해주세요.'); return; }
+  const payload=buildPayload();
+  if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_DATA){
+    submitToGoogleForm(name, JSON.stringify(payload));
+    statusEl.textContent = `제출되었습니다! (완료 ${payload.completed}/${payload.total})`;
+  } else {
+    downloadBackup(payload);
+    statusEl.textContent = `⚠️ 구글 설문지가 아직 설정되지 않아, 결과를 파일로 저장했어요. (완료 ${payload.completed}/${payload.total}) 코드 상단 CONFIG를 채워주세요.`;
+  }
+  if(RT.connected){
+    RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+  }
+});
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  downloadBackup(buildPayload());
+});
+</script>
+</body>
+</html>
