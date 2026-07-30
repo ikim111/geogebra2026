@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생용 — 반/번호/이름 입력 및 과제 선택</title>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --gray:#616161; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#1a237e;margin:0;min-height:100vh;color:#222;}
+
+  #page1{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:19px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card select, .gate-card input[type=text], .gate-card input[type=number]{width:100%;padding:11px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #gateMsg{margin-top:12px;font-size:13px;color:#c62828;min-height:16px;}
+
+  #page2{display:none;min-height:100vh;padding:24px 16px;}
+  .wrap2{max-width:640px;margin:0 auto;}
+  .top-card{background:#fff;border-radius:14px;padding:20px 22px;margin-bottom:18px;box-shadow:0 4px 24px rgba(0,0,0,.2);}
+  .top-card h1{font-size:18px;margin:0 0 6px;color:#1a237e;}
+  .top-card .who{font-size:14px;color:#444;}
+  .top-card .who b{color:var(--blue);}
+  .top-card .editBtn{margin-top:12px;font-size:12.5px;background:#fff3e0;border:1px solid #ffcc80;color:#e65100;padding:7px 12px;border-radius:6px;cursor:pointer;}
+
+  .task-list{display:flex;flex-direction:column;gap:10px;}
+  .task-link{display:flex;align-items:center;gap:14px;background:#fff;border-radius:12px;padding:16px 18px;text-decoration:none;color:#222;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .1s;}
+  .task-link:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.22);}
+  .task-link .num{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:15px;}
+  .task-link .title{font-size:15px;font-weight:bold;}
+  .task-link .arrow{margin-left:auto;color:#bbb;font-size:18px;}
+</style>
+</head>
+<body>
+
+<div id="page1">
+  <div class="gate-card">
+    <h1>학생 정보 입력</h1>
+    <p class="gate-sub">반 · 번호 · 이름을 입력하면 과제를 선택할 수 있어요</p>
+    <label for="classNo">반</label>
+    <select id="classNo">
+      <option value="">반 선택</option>
+    </select>
+    <label for="studentNumber">번호</label>
+    <input type="number" id="studentNumber" placeholder="번호를 입력하세요" min="1" max="99">
+    <label for="studentName">이름</label>
+    <input type="text" id="studentName" placeholder="이름을 입력하세요">
+    <button id="nextBtn" class="gate-start">다음 →</button>
+    <div id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="page2">
+  <div class="wrap2">
+    <div class="top-card">
+      <h1>과제를 선택하세요</h1>
+      <div class="who"><b id="viewClass"></b>반 <b id="viewNumber"></b>번 <b id="viewName"></b></div>
+      <button class="editBtn" id="editBtn">✏️ 정보 다시 입력하기</button>
+    </div>
+    <div class="task-list" id="taskList"></div>
+  </div>
+</div>
+
+<script>
+const PROFILE_KEY = 'ggb_profile_v1';
+const BASE_URL = 'https://geogebra2026.netlify.app/';
+const TASKS = [
+  {n:0, title:'지오지브라 연습', file:'student0.html'},
+  {n:1, title:'이등변삼각형의 성질', file:'student1.html'},
+  {n:2, title:'수직이등분선의 성질', file:'student2.html'},
+  {n:3, title:'각이등분선의 성질', file:'student3.html'},
+  {n:4, title:'삼각형의 외심', file:'student4.html'},
+  {n:5, title:'삼각형의 내심', file:'student5.html'},
+  {n:6, title:'생각 넓히기', file:'student6.html'}
+];
+
+// 반 선택 옵션 채우기 (1~12반)
+(function(){
+  const sel=document.getElementById('classNo');
+  for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=i+'반'; sel.appendChild(o); }
+})();
+
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+function saveProfile(p){
+  try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({...p, ts:Date.now()})); }catch(e){}
+}
+
+function buildTaskLinks(profile){
+  const list=document.getElementById('taskList');
+  list.textContent='';
+  TASKS.forEach(t=>{
+    const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
+    const a=document.createElement('a');
+    a.className='task-link';
+    a.href = BASE_URL + t.file + '?' + params.toString();
+    const num=document.createElement('span'); num.className='num'; num.textContent=t.n;
+    const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
+    const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
+    a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
+    list.appendChild(a);
+  });
+}
+
+function showPage2(profile){
+  document.getElementById('viewClass').textContent = profile.classNo;
+  document.getElementById('viewNumber').textContent = profile.number || '-';
+  document.getElementById('viewName').textContent = profile.name;
+  buildTaskLinks(profile);
+  document.getElementById('page1').style.display='none';
+  document.getElementById('page2').style.display='block';
+}
+
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  const classNo = document.getElementById('classNo').value.trim();
+  const number = document.getElementById('studentNumber').value.trim();
+  const name = document.getElementById('studentName').value.trim();
+  const msg = document.getElementById('gateMsg');
+  if(!classNo){ msg.textContent = '반을 선택해주세요.'; return; }
+  if(!number){ msg.textContent = '번호를 입력해주세요.'; return; }
+  if(!name){ msg.textContent = '이름을 입력해주세요.'; return; }
+  msg.textContent = '';
+  const profile = {classNo, number, name};
+  saveProfile(profile);
+  showPage2(profile);
+});
+
+document.getElementById('editBtn').addEventListener('click', ()=>{
+  const profile = loadProfile();
+  if(profile){
+    document.getElementById('classNo').value = profile.classNo;
+    document.getElementById('studentNumber').value = profile.number || '';
+    document.getElementById('studentName').value = profile.name;
+  }
+  document.getElementById('page2').style.display='none';
+  document.getElementById('page1').style.display='flex';
+});
+
+// 이미 입력된 정보가 있으면 바로 과제 선택 화면으로
+(function(){
+  const profile = loadProfile();
+  if(profile) showPage2(profile);
+})();
+</script>
+</body>
+</html>
