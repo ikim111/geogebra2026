@@ -1080,10 +1080,12 @@ const RT = {
       this.paused = !!c.paused;
       document.getElementById('lockOverlay').style.display = this.paused ? 'flex' : 'none';
       applyPauseLock(this.paused);
-      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+            if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
         this.lastSeenAnnounceTs = c.announcementTs;
         document.getElementById('announceText').textContent = c.announcement;
         document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
       }
       this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
