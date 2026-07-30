@@ -67,7 +67,10 @@
 
 <script>
 const PROFILE_KEY = 'ggb_profile_v1';
-const BASE_URL = 'https://geogebra2026.netlify.app/';
+// 배포 도메인이 나중에 바뀌어도(Netlify → Vercel 등) 코드를 다시 고치지 않도록,
+// 도메인을 하드코딩하지 않고 "같은 사이트의 상대 경로"로만 링크한다.
+// student.html과 student0~6.html이 항상 같은 폴더(루트)에 함께 배포되어 있다면 이대로 잘 동작한다.
+const BASE_URL = '';
 const TASKS = [
   {n:0, title:'지오지브라 연습', file:'student0.html'},
   {n:1, title:'이등변삼각형의 성질', file:'student1.html'},
