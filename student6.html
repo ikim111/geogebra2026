@@ -312,6 +312,19 @@ function bisectorDir(a,b,c){
   if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
   return d;
 }
+/* [탐구 페이지] 삼각형 ABC의 외심/내심을 "학생이 작도"하지 않고 좌표식으로 바로 계산해,
+   A/B/C를 자유롭게 드래그해도 항상 최신 위치를 따라가도록 한다 (GeoCanvas.computedPoints에서 사용). */
+function circumcenterOf(A,B,C){
+  const mAB=mid(A,B), mBC=mid(B,C);
+  const dAB=perp(sub(B,A)), dBC=perp(sub(C,B));
+  const p=lineLineIntersection(mAB, add(mAB,dAB), mBC, add(mBC,dBC));
+  return p || mid(mAB,mBC);
+}
+function incenterOf(A,B,C){
+  const a=dist(B,C), b=dist(C,A), c=dist(A,B);
+  const sum=a+b+c || 1;
+  return {x:(a*A.x+b*B.x+c*C.x)/sum, y:(a*A.y+b*B.y+c*C.y)/sum};
+}
 function arcInfo(b,a,c,r){
   const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
   let diff=a2-a1;
@@ -376,7 +389,9 @@ class GeoCanvas{
     this.dragging = null;
     this.onChange = onChange || (()=>{});
 
-    (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
+    // p.locked을 명시적으로 넘기면(예: 자유롭게 움직이는 삼각형의 꼭짓점) 그 값을 쓰고,
+    // 생략하면 기존과 동일하게 잠긴(고정) 점으로 만든다.
+    (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked: (p.locked!==undefined ? p.locked : true)}));
 
     const refMap = {};
     const resolveObj = (o)=>{
@@ -393,6 +408,13 @@ class GeoCanvas{
       const obj = Object.assign({id:uid(), locked:true}, resolved);
       this.objects.push(obj);
       if(o.refName) refMap[o.refName]=obj.id;
+    });
+    // computedPoints: 매 render()마다 좌표를 "공식으로" 다시 계산해 넣는 점(예: 삼각형의 외심/내심).
+    // cfg.points로 넘긴 꼭짓점이 자유롭게 움직여도(locked:false) 항상 최신 위치를 따라간다.
+    // 학생이 직접 작도하는 게 아니라 "이미 주어진" 점이라 늘 locked:true로 만든다.
+    (cfg.computedPoints||[]).forEach(cp=>{
+      const v = this._computePointValue(cp);
+      this.addPoint(v.x, v.y, {label:cp.label, locked:true, computed:cp});
     });
     (cfg.movablePoints||[]).forEach(p=>{
       const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
@@ -411,7 +433,7 @@ class GeoCanvas{
     const used = new Set(this.points.map(p=>p.label));
     const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory) this.history.push({kind:'point', id:p.id});
     return p;
@@ -424,6 +446,21 @@ class GeoCanvas{
   }
   resolvePoint(id){ return this.points.find(p=>p.id===id); }
   byLabel(label){ return this.points.find(p=>p.label===label); }
+  _computePointValue(cp){
+    const pts = cp.of.map(l=>this.byLabel(l));
+    if(pts.some(p=>!p)) return {x:cp.fallbackX||300, y:cp.fallbackY||200};
+    const [A,B,C] = pts;
+    if(cp.kind==='circumcenter') return circumcenterOf(A,B,C);
+    if(cp.kind==='incenter') return incenterOf(A,B,C);
+    return {x:A.x, y:A.y};
+  }
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed) return;
+      const v = this._computePointValue(p.computed);
+      p.x = v.x; p.y = v.y;
+    });
+  }
   pickPoint(pt){ return this.findPointNear(pt,12) || this.addPoint(pt.x,pt.y); }
   findPointNear(pt,tol){
     let best=null,bd=tol;
@@ -664,6 +701,7 @@ class GeoCanvas{
     this.render();
   }
   render(){
+    this._recomputeComputedPoints();
     const NS='http://www.w3.org/2000/svg';
     while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     const g0=document.createElementNS(NS,'g');
@@ -763,17 +801,23 @@ class GeoCanvas{
 }
 
 /* ---------- 과제 정의 ----------
-   총 6과제, 두 파트로 구성했다.
-   [1] 이등변삼각형·정삼각형에서 외심과 내심을 각각 작도해보고(과제1·3), 그 위치의
-       특징을 서술한다(과제2·4) — 정삼각형에서는 외심과 내심이 정확히 일치한다.
-   [2] 일반 삼각형에서 외심 O, 내심 I를 작도한 뒤, "각도 재기" 도구로 ∠A, ∠BOC, ∠BIC를
-       측정하여(과제5) 중심각 정리(∠BOC=2∠A)와 내심의 각 공식(∠BIC=90°+∠A/2)을
-       스스로 발견하도록 한다(과제6, 서술형).
-   과제 2·4·6은 정답이 정해져 있지 않은 서술형으로, 일정 글자 수 이상을 쓰면 진행
-   완료로 인정한다. */
+   총 4과제(작도+서술을 한 페이지로 묶은 "verify" 유형).
+   [1] 이등변삼각형에서 외심·내심을 직접 작도하고, 그 자리에서 바로 특징을 적는다.
+   [2] 정삼각형에서 같은 작도를 반복하고, 특징을 적는다 — 외심과 내심이 정확히 일치한다.
+   [3] 외심 탐구: 점 A,B,C가 자유롭게 움직이는 삼각형에 외심 O와 ∠A, ∠BOC가 "이미" 표시돼
+       있다. 학생은 작도/측정을 하지 않고 점을 움직이며 두 각의 관계(∠BOC=2∠A)를 스스로
+       추론해 적는다.
+   [4] 내심 탐구: 같은 방식으로 내심 I와 ∠A, ∠BIC를 관찰하며 관계(∠BIC=90°+∠A/2)를 추론한다.
+   모든 과제는 "verify" 유형이라 작도(또는 탐구) 조건과 글자 수 조건을 모두 채워야
+   "확인" 버튼으로 제출할 수 있다. */
 const ISO_POINTS  = [ {label:'A',x:300,y:100}, {label:'B',x:180,y:320}, {label:'C',x:420,y:320} ];
 const EQ_POINTS   = [ {label:'A',x:320,y:147}, {label:'B',x:220,y:320}, {label:'C',x:420,y:320} ];
-const SCALENE_POINTS = [ {label:'A',x:250,y:90}, {label:'B',x:120,y:330}, {label:'C',x:470,y:300} ];
+// 탐구용 삼각형(과제3·4): A,B,C를 locked:false로 넘겨 자유롭게 드래그할 수 있게 한다.
+const EXPLORE_POINTS = [
+  {label:'A',x:250,y:90, locked:false},
+  {label:'B',x:120,y:330, locked:false},
+  {label:'C',x:470,y:300, locked:false}
+];
 const triPreset = (pts)=>[
   {type:'segment',p1:pts[0].label,p2:pts[1].label},
   {type:'segment',p1:pts[1].label,p2:pts[2].label},
@@ -804,57 +848,59 @@ function findIncenter(c,A,B,Cc,exclude){
     && Math.abs(distToLine(p,B,Cc)-distToLine(p,Cc,A))<10
     && distToLine(p,A,B)>10);
 }
+// {ok,msg}를 반환한다 — verify()가 이 형태를 반환하면, 아직 못 채운 단계에 맞는 안내 문구가
+// 자동으로 바뀐다: 수직이등분선을 아직 안 그렸으면 "수직이등분선..." 문구, 외심을 찾은
+// 다음에는 "각의 이등분선..." 문구로 정확히 전환된다.
 function checkBothCenters(c){
   const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
   const O=findCircumcenter(c,A,B,Cc);
-  if(!O) return fail('먼저 두 변의 수직이등분선을 그리고, 그 교점(외심)을 "교점" 도구로 표시해보세요.');
+  if(!O) return fail('먼저 "수직이등분선" 도구로 두 변의 수직이등분선을 그리고, "교점" 도구로 그 교점(외심)을 표시해보세요.');
   const I=findIncenter(c,A,B,Cc,O);
-  if(!I) return fail('두 각의 이등분선을 그리고, 그 교점(내심)도 "교점" 도구로 표시해보세요.');
-  return ok('외심과 내심을 모두 잘 찾았어요!');
+  if(!I) return fail('외심을 잘 찾았어요! 이제 "각의 이등분선" 도구로 두 각의 이등분선을 그리고, "교점" 도구로 그 교점(내심)도 표시해보세요.');
+  return ok('외심과 내심을 모두 잘 찾았어요! 이제 알게 된 특징을 아래에 적어보세요.');
+}
+function checkExploreMoved(c, initPts){
+  const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
+  const moved = dist(A,initPts[0])>25 || dist(B,initPts[1])>25 || dist(Cc,initPts[2])>25;
+  return moved
+    ? ok('점을 움직이며 잘 관찰했어요! 이제 알게 된 사실을 적어보세요.')
+    : fail('점 A, B, C를(검은 점) 자유롭게 드래그해서 삼각형의 모양을 여러 번 바꿔가며 각의 변화를 관찰해보세요.');
 }
 
 const TASKS = [
-  { id:1, title:'[활동1] 이등변삼각형 ABC(AB=AC)의 외심과 내심을 각각 그려봅시다.',
+  { id:1, title:'[활동1] 이등변삼각형 ABC(AB=AC)의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
+    type:'verify', minLen:20,
     tools:['perpBisector','angleBisector','intersect'],
-    hint:'"수직이등분선" 도구로 두 변의 수직이등분선을 그리고 "교점" 도구로 교점(외심)을 표시하세요. 이어서 "각의 이등분선" 도구로 두 각의 이등분선을 그리고 그 교점(내심)도 표시해보세요.',
+    hint:'아래 안내 문구를 순서대로 따라가며 외심과 내심을 찾아보세요.',
+    textPrompt:'이등변삼각형의 외심과 내심은 어떤 특징이 있나요? (20자 이상)',
     points: ISO_POINTS, presetObjects: triPreset(ISO_POINTS),
-    check: checkBothCenters },
+    verify: checkBothCenters },
 
-  { id:2, title:'[Q] 이등변삼각형의 외심과 내심은 어떤 특징이 있는지 적어봅시다.',
-    type:'text', noFigure:true, minLen:20 },
-
-  { id:3, title:'[활동2] 정삼각형 ABC의 외심과 내심을 각각 그려봅시다.',
+  { id:2, title:'[활동2] 정삼각형 ABC의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
+    type:'verify', minLen:20,
     tools:['perpBisector','angleBisector','intersect'],
-    hint:'이등변삼각형과 같은 방법으로 두 변의 수직이등분선(외심)과 두 각의 이등분선(내심)을 각각 그려서 교점을 표시해보세요.',
+    hint:'이등변삼각형과 같은 방법으로 외심과 내심을 찾아보세요.',
+    textPrompt:'정삼각형의 외심과 내심은 어떤 특징이 있나요? (20자 이상)',
     points: EQ_POINTS, presetObjects: triPreset(EQ_POINTS),
-    check: checkBothCenters },
+    verify: checkBothCenters },
 
-  { id:4, title:'[Q] 정삼각형의 외심과 내심은 어떤 특징이 있는지 적어봅시다.',
-    type:'text', noFigure:true, minLen:20 },
+  { id:3, title:'[탐구1: 외심] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 외심 O와 두 각(∠A, ∠BOC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
+    type:'verify', noTools:true, minLen:20,
+    hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 외심 O와 ∠A, ∠BOC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
+    textPrompt:'∠A와 ∠BOC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
+    points: EXPLORE_POINTS, presetObjects: triPreset(EXPLORE_POINTS),
+    computedPoints: [ {label:'O', kind:'circumcenter', of:['A','B','C']} ],
+    postObjects: [ {type:'angleLabel', a:'B', b:'A', c:'C'}, {type:'angleLabel', a:'B', b:'O', c:'C'} ],
+    verify(c){ return checkExploreMoved(c, EXPLORE_POINTS); } },
 
-  { id:5, title:'[탐구] 삼각형 ABC의 외심 O와 내심 I를 각각 찾고, "각도 재기" 도구로 ∠A, ∠BOC, ∠BIC를 모두 측정해봅시다.',
-    tools:['perpBisector','angleBisector','intersect','angleTool'],
-    hint:'먼저 외심 O(수직이등분선 교점)와 내심 I(각의 이등분선 교점)를 찾으세요. 그다음 "각도 재기" 도구로 B→A→C, B→O→C, B→I→C 순서로 각각 클릭해 세 각의 크기를 측정해보세요.',
-    points: SCALENE_POINTS, presetObjects: triPreset(SCALENE_POINTS),
-    check(c){
-      const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
-      const O=findCircumcenter(c,A,B,Cc);
-      if(!O) return fail('먼저 외심(두 수직이등분선의 교점)을 찾아 "교점" 도구로 표시해보세요.');
-      const I=findIncenter(c,A,B,Cc,O);
-      if(!I) return fail('내심(두 각의 이등분선의 교점)도 찾아 "교점" 도구로 표시해보세요.');
-      const hasAngleAt=(V)=>c.objects.some(o=>{
-        if(o.type!=='angleLabel') return false;
-        const g=c.getObjGeom(o); if(!g.b) return false;
-        return samePt(g.b,V) && ((samePt(g.a,B)&&samePt(g.c,Cc))||(samePt(g.a,Cc)&&samePt(g.c,B)));
-      });
-      if(!hasAngleAt(A)) return fail('"각도 재기" 도구로 B → A → C 순서로 클릭해 ∠A를 측정해보세요.');
-      if(!hasAngleAt(O)) return fail('"각도 재기" 도구로 B → O → C 순서로 클릭해 ∠BOC를 측정해보세요.');
-      if(!hasAngleAt(I)) return fail('"각도 재기" 도구로 B → I → C 순서로 클릭해 ∠BIC를 측정해보세요.');
-      return ok('외심, 내심과 ∠A, ∠BOC, ∠BIC까지 모두 잘 표시했어요!');
-    } },
-
-  { id:6, title:'[Q] [탐구]에서 측정한 ∠A, ∠BOC, ∠BIC 값을 비교하여, ∠A와 ∠BOC의 관계, 그리고 ∠A와 ∠BIC의 관계를 각각 설명해봅시다.',
-    type:'text', noFigure:true, minLen:30 },
+  { id:4, title:'[탐구2: 내심] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 내심 I와 두 각(∠A, ∠BIC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
+    type:'verify', noTools:true, minLen:20,
+    hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 내심 I와 ∠A, ∠BIC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
+    textPrompt:'∠A와 ∠BIC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
+    points: EXPLORE_POINTS, presetObjects: triPreset(EXPLORE_POINTS),
+    computedPoints: [ {label:'I', kind:'incenter', of:['A','B','C']} ],
+    postObjects: [ {type:'angleLabel', a:'B', b:'A', c:'C'}, {type:'angleLabel', a:'B', b:'I', c:'C'} ],
+    verify(c){ return checkExploreMoved(c, EXPLORE_POINTS); } },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
@@ -1012,20 +1058,30 @@ function initVerifyTask(task){
 
   function checkReady(instArg){
     const target = instArg || cv;
-    if(!target) return {constructOk:false, textOk:false};
-    const constructOk = task.verify ? !!task.verify(target) : !!isIsoscelesTriangle(target);
-    const textOk = (input.value||'').trim().length>=10;
-    return {constructOk, textOk};
+    if(!target) return {constructOk:false, textOk:false, constructMsg:null};
+    // task.verify는 boolean을 반환해도 되고(예전 방식), {ok,msg}를 반환해도 된다.
+    // {ok,msg}를 쓰면 "아직 못한 단계"에 따라 안내 문구가 그때그때 바뀐다
+    // (예: 외심을 찾기 전엔 "수직이등분선..." → 외심을 찾은 뒤엔 "각의 이등분선..."로 전환).
+    let constructOk=false, constructMsg=null;
+    if(task.verify){
+      const r = task.verify(target);
+      if(r && typeof r==='object'){ constructOk=!!r.ok; constructMsg=r.msg||null; }
+      else constructOk = !!r;
+    } else constructOk = !!isIsoscelesTriangle(target);
+    const minLen = task.minLen||10;
+    const textOk = (input.value||'').trim().length>=minLen;
+    return {constructOk, textOk, constructMsg};
   }
   // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
   // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
   function refreshFeedback(instArg){
-    const {constructOk, textOk} = checkReady(instArg);
+    const {constructOk, textOk, constructMsg} = checkReady(instArg);
     if(!locked){
       const canSubmit = constructOk && textOk;
+      const minLen = task.minLen||10;
       fb.textContent = !constructOk
-        ? (task.failMsg || '아직 이등변삼각형을 만들지 않았어요. 두 변의 길이가 같은 삼각형을 만들어보세요.')
-        : (!textOk ? (task.textPrompt || '어떻게 만들었는지 설명을 적어주세요. (10자 이상)') : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
+        ? (constructMsg || task.failMsg || '아직 조건을 만족하지 않았어요.')
+        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
       fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
     return constructOk && textOk;
