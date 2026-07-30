@@ -801,15 +801,19 @@ class GeoCanvas{
 }
 
 /* ---------- 과제 정의 ----------
-   총 4과제(작도+서술을 한 페이지로 묶은 "verify" 유형).
-   [1] 이등변삼각형에서 외심·내심을 직접 작도하고, 그 자리에서 바로 특징을 적는다.
-   [2] 정삼각형에서 같은 작도를 반복하고, 특징을 적는다 — 외심과 내심이 정확히 일치한다.
-   [3] 외심 탐구: 점 A,B,C가 자유롭게 움직이는 삼각형에 외심 O와 ∠A, ∠BOC가 "이미" 표시돼
-       있다. 학생은 작도/측정을 하지 않고 점을 움직이며 두 각의 관계(∠BOC=2∠A)를 스스로
-       추론해 적는다.
-   [4] 내심 탐구: 같은 방식으로 내심 I와 ∠A, ∠BIC를 관찰하며 관계(∠BIC=90°+∠A/2)를 추론한다.
+   총 4과제(작도+서술을 한 페이지로 묶은 "verify" 유형). 원본 자료의 두 섹션 구성을 그대로 따른다.
+   [1] 정삼각형과 이등변삼각형의 내심 위치 알아보기
+     - 활동1(과제1): 이등변삼각형에서 외심·내심을 직접 작도하고, 그 자리에서 바로 특징을 적는다.
+     - 활동2(과제2): 정삼각형에서 같은 작도를 반복하고, 특징을 적는다 — 외심과 내심이 정확히 일치한다.
+   [2] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기
+     - 활동1(과제3, 외심 탐구): 점 A,B,C가 자유롭게 움직이는 삼각형에 외심 O와 ∠A, ∠BOC가
+       "이미" 표시돼 있다. 학생은 작도/측정을 하지 않고 점을 움직이며 두 각의 관계
+       (∠BOC=2∠A)를 스스로 추론해 적는다.
+     - 활동2(과제4, 내심 탐구): 같은 방식으로 내심 I와 ∠A, ∠BIC를 관찰하며 관계
+       (∠BIC=90°+∠A/2)를 추론한다.
    모든 과제는 "verify" 유형이라 작도(또는 탐구) 조건과 글자 수 조건을 모두 채워야
-   "확인" 버튼으로 제출할 수 있다. */
+   "제출" 버튼으로 제출할 수 있다("제출"을 누르면 "취소"로 바뀌며 잠기고, "취소"를 누르면
+   다시 "제출"로 돌아와 고칠 수 있다). */
 const ISO_POINTS  = [ {label:'A',x:300,y:100}, {label:'B',x:180,y:320}, {label:'C',x:420,y:320} ];
 const EQ_POINTS   = [ {label:'A',x:320,y:147}, {label:'B',x:220,y:320}, {label:'C',x:420,y:320} ];
 // 탐구용 삼각형(과제3·4): A,B,C를 locked:false로 넘겨 자유롭게 드래그할 수 있게 한다.
@@ -868,7 +872,7 @@ function checkExploreMoved(c, initPts){
 }
 
 const TASKS = [
-  { id:1, title:'[활동1] 이등변삼각형 ABC(AB=AC)의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
+  { id:1, title:'[1] 정삼각형과 이등변삼각형의 내심 위치 알아보기<br>[활동1] 이등변삼각형 ABC(AB=AC)의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
     type:'verify', minLen:20,
     tools:['perpBisector','angleBisector','intersect'],
     hint:'아래 안내 문구를 순서대로 따라가며 외심과 내심을 찾아보세요.',
@@ -876,7 +880,7 @@ const TASKS = [
     points: ISO_POINTS, presetObjects: triPreset(ISO_POINTS),
     verify: checkBothCenters },
 
-  { id:2, title:'[활동2] 정삼각형 ABC의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
+  { id:2, title:'[1] 정삼각형과 이등변삼각형의 내심 위치 알아보기<br>[활동2] 정삼각형 ABC의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
     type:'verify', minLen:20,
     tools:['perpBisector','angleBisector','intersect'],
     hint:'이등변삼각형과 같은 방법으로 외심과 내심을 찾아보세요.',
@@ -884,7 +888,7 @@ const TASKS = [
     points: EQ_POINTS, presetObjects: triPreset(EQ_POINTS),
     verify: checkBothCenters },
 
-  { id:3, title:'[탐구1: 외심] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 외심 O와 두 각(∠A, ∠BOC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
+  { id:3, title:'[2] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기<br>[활동1] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 외심 O와 두 각(∠A, ∠BOC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
     type:'verify', noTools:true, minLen:20,
     hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 외심 O와 ∠A, ∠BOC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
     textPrompt:'∠A와 ∠BOC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
@@ -893,7 +897,7 @@ const TASKS = [
     postObjects: [ {type:'angleLabel', a:'B', b:'A', c:'C'}, {type:'angleLabel', a:'B', b:'O', c:'C'} ],
     verify(c){ return checkExploreMoved(c, EXPLORE_POINTS); } },
 
-  { id:4, title:'[탐구2: 내심] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 내심 I와 두 각(∠A, ∠BIC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
+  { id:4, title:'[2] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기<br>[활동2] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 내심 I와 두 각(∠A, ∠BIC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
     type:'verify', noTools:true, minLen:20,
     hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 내심 I와 ∠A, ∠BIC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
     textPrompt:'∠A와 ∠BIC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
@@ -927,6 +931,7 @@ function buildTaskCard(task){
       ${task.noFigure ? '' : `<div class="task-right">
         <div class="toolbar" id="tools-${task.id}"></div>
         <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
+        ${isTextLike ? `<div class="feedback" id="fb-${task.id}"></div>` : ''}
       </div>`}
       <div class="task-left">
         ${(task.type==='input'||task.type==='hybrid') ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
@@ -936,10 +941,10 @@ function buildTaskCard(task){
           </div><div class="feedback" id="fb-${task.id}"></div>`
           : isTextLike ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
             <textarea id="input-${task.id}" rows="3" placeholder="여기에 생각을 적어보세요 (${task.minLen||10}자 이상)"></textarea>
-            <button id="check-${task.id}">확인</button>
+            <button id="check-${task.id}">${task.type==='verify' ? '제출' : '확인'}</button>
           </div>
           <div class="text-min-note">✏️ ${task.minLen||10}자 이상 적어야 완료로 인정돼요.</div>
-          <div class="feedback" id="fb-${task.id}"></div>
+          ${task.noFigure ? `<div class="feedback" id="fb-${task.id}"></div>` : ''}
           <div class="class-answers" id="classAnswers-${task.id}" style="display:none;">
             <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
             <div class="ca-list" id="classAnswersList-${task.id}"></div>
@@ -989,7 +994,7 @@ function initConstructTask(task){
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], computedPoints: task.computedPoints||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
   const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
   canvasByTaskId[task.id] = cv;
 
@@ -1047,11 +1052,11 @@ function initVerifyTask(task){
   // 참조하면 "Cannot access ... before initialization" 에러가 난다. 그래서 GeoCanvas를 만들기 "전에"
   // cv/locked를 먼저 선언해 두고, refreshFeedback은 인자로 넘어온 inst를 우선 쓰도록 만든다.
   let cv;
-  // locked=true: "확인"을 눌러 제출을 마친 상태 -> 글을 수정할 수 없고, 버튼이 "취소"로 바뀐다.
-  // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "확인"으로 돌아온다.
+  // locked=true: "제출"을 눌러 제출을 마친 상태 -> 글을 수정할 수 없고, 버튼이 "취소"로 바뀐다.
+  // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "제출"로 돌아온다.
   let locked = false;
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], computedPoints: task.computedPoints||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
   cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
   canvasByTaskId[task.id] = cv;
   buildToolbar(task, cv, toolsEl);
@@ -1081,7 +1086,7 @@ function initVerifyTask(task){
       const minLen = task.minLen||10;
       fb.textContent = !constructOk
         ? (constructMsg || task.failMsg || '아직 조건을 만족하지 않았어요.')
-        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
+        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "제출" 버튼을 눌러 제출해보세요.');
       fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
     return constructOk && textOk;
@@ -1110,7 +1115,7 @@ function initVerifyTask(task){
     locked = false;
     input.disabled = false;
     input.classList.remove('locked-fixed');
-    btn.textContent = '확인';
+    btn.textContent = '제출';
     btn.classList.remove('cancel');
     results[task.id] = {done:false, value:input.value};
     updateProgress();
@@ -1263,7 +1268,9 @@ function renderClassAnswersFor(task){
     list.appendChild(empty);
     return;
   }
-  entries.forEach(s=>{
+  // 너무 많이 보여주면 다른 친구 답변을 베끼는 데만 집중할 수 있어서, 3명분만 무작위로 보여준다.
+  const shuffled = [...entries].sort(()=>Math.random()-0.5);
+  shuffled.slice(0,3).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
