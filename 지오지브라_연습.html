@@ -100,6 +100,7 @@
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -186,14 +187,20 @@ const CONFIG = {
 /* ============================================================
    선생님 설정 안내 (실시간 확인 기능을 쓰려면 — Firebase)
    1) https://console.firebase.google.com 에서 새 프로젝트 생성 (구글 계정으로 로그인)
-   2) 왼쪽 메뉴 "빌드 > Realtime Database" → "데이터베이스 만들기" (위치는 아무거나, 테스트 모드로 시작)
-   3) 데이터베이스 화면 우측 상단 "규칙" 탭에서 아래 규칙을 붙여넣고 게시:
-        { "rules": { "rooms": { "$room": { ".read": true, ".write": true } } } }
-      (같은 방 코드를 아는 사람만 읽고 쓸 수 있어요. 민감한 개인정보는 넣지 마세요.)
-   4) 프로젝트 설정(톱니바퀴) → "일반" → 하단 "내 앱"에서 웹 앱 추가(</> 아이콘) → 이름 아무거나 입력
-   5) 나오는 firebaseConfig 객체 값을 아래 FIREBASE_CONFIG에 그대로 붙여넣기
-   6) 이 파일과 "교사용_대시보드.html" 두 곳에 똑같이 붙여넣어야 해요.
+   2) 왼쪽 메뉴 "빌드 > Realtime Database" → "데이터베이스 만들기"
+   3) 왼쪽 메뉴 "빌드 > Authentication" → "시작하기" → Sign-in method에서 "익명(Anonymous)"을 사용 설정
+      (학생용/교사용 파일 둘 다 이 익명 로그인 하나만 써요. 별도의 교사 로그인 화면은 없어요.)
+   4) Realtime Database 화면 우측 상단 "규칙" 탭에서, 교사용_대시보드.html 상단 주석에 있는
+      보안 규칙(JSON)을 붙여넣고 게시하세요. (이제 "Firebase에 로그인한 사람만" 읽고 쓸 수 있어요.
+      절대 ".read": true, ".write": true 같은 전체 공개 규칙을 쓰지 마세요.)
+   5) 프로젝트 설정(톱니바퀴) → "일반" → 하단 "내 앱"에서 웹 앱 추가(</> 아이콘) → 이름 아무거나 입력
+   6) 나오는 firebaseConfig 객체 값을 아래 FIREBASE_CONFIG에 그대로 붙여넣기
+   7) 이 파일과 "교사용_대시보드.html" 두 곳에 똑같이 붙여넣어야 해요.
    비워두면 실시간 확인 기능 없이 기존처럼 동작합니다 (다른 기능엔 영향 없음).
+   * 학생은 이 파일에서 "반을 선택하고 시작"하면 자동으로 Firebase 익명 로그인이 되고,
+     그 로그인 UID가 학생 기록의 키가 됩니다(이름이 아님). 같은 기기/브라우저면 로그인이
+     유지되어 새로고침해도 이어지지만, 다른 기기로 접속하면 새 UID가 발급되어 별개의
+     기록으로 취급됩니다(= 기기를 바꾸면 이어하기가 안 됩니다. 이름 기준 통합은 보안상 제거함).
    ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
@@ -1013,68 +1020,89 @@ const RT = {
       return;
     }
     try{
+      // firebase.apps.length를 확인해서, 이미 다른 곳에서 앱이 초기화돼 있으면 재사용한다
+      // (initializeApp을 중복 호출하면 "Firebase App named '[DEFAULT]' already exists" 에러가 남)
       if(!this.app){
-        this.app = firebase.initializeApp(FIREBASE_CONFIG);
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
         this.db = firebase.database();
       }
-      const roomKey = this.sanitize(room);
-      // 이름을 기준으로 학생을 식별해요. 같은 이름으로 다시 접속하면(다른 기기여도) 새로 생기지 않고 기존 기록을 그대로 이어가요.
-      this.studentKey = this.sanitize(name);
-      this.roomRef = this.db.ref('rooms/'+roomKey);
-      this.studentRef = this.roomRef.child('students/'+this.studentKey);
-      this.controlRef = this.roomRef.child('control');
-
-      this.studentRef.once('value').then(snap=>{
-        const existing = snap.val();
-        if(existing && existing.progress){
-          Object.keys(existing.progress).forEach(id=>{
-            if(existing.progress[id] && existing.progress[id].visited) this.visitedTasks.add(parseInt(id,10));
-          });
-          if(typeof restoreProgress==='function') restoreProgress(existing.progress);
-          if(typeof goToResumePage==='function') goToResumePage();
-        }
-        this.studentRef.update({
-          name: name,
-          joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
-          lastActive: firebase.database.ServerValue.TIMESTAMP,
-          online: true,
-          raisedHand: false
+      statusEl.textContent = '🔄 로그인 중...';
+      // 학생은 이름/비밀번호 없이 Firebase 익명 인증으로 로그인해요.
+      // 이후 이 로그인 세션의 uid가 학생 기록의 키가 됩니다(더 이상 이름을 키로 쓰지 않음 — 보안 규칙이
+      // "자기 uid 데이터만 읽고 쓸 수 있음"으로 학생을 보호하기 때문).
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, statusEl))
+        .catch(err => {
+          statusEl.textContent = '⚠️ 로그인 실패: ' + err.message;
+          console.error(err);
         });
-      });
-      this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
-
-      this.controlRef.on('value', snap=>{
-        const c = snap.val() || {};
-        this.paused = !!c.paused;
-        document.getElementById('lockOverlay').style.display = this.paused ? 'flex' : 'none';
-        document.body.classList.toggle('app-paused', this.paused);
-        if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
-          this.lastSeenAnnounceTs = c.announcementTs;
-          document.getElementById('announceText').textContent = c.announcement;
-          document.getElementById('announceBanner').style.display = 'flex';
-        }
-        this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
-        this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
-        if(typeof clampToPacing==='function') clampToPacing();
-        if(typeof updateNavButtons==='function') updateNavButtons();
-      });
-
-      this.connected = true;
-      statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
-      statusEl.className = 'on';
-
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = setInterval(()=>{
-        if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
-      }, 15000);
-
-      const total = TASKS.length;
-      const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-      this.pushProgress(done, total);
     }catch(err){
       statusEl.textContent = '⚠️ 연결 실패: ' + err.message;
       console.error(err);
     }
+  },
+  /* 익명 로그인이 끝난 뒤 실제 방/학생 데이터에 연결하는 내부 함수.
+     studentKey가 uid이기 때문에, 같은 이름으로 "다른 기기"에서 접속하면 새 uid가 발급되어
+     별개의 학생 기록으로 취급됩니다(기기를 바꾸면 이어하기가 안 됨). 같은 기기/브라우저에서는
+     익명 로그인 세션이 유지되므로 새로고침해도 같은 uid로 자동 로그인되어 이어집니다. */
+  _afterAuth(uid, name, room, statusEl){
+    const roomKey = this.sanitize(room);
+    this.studentKey = uid;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+uid);
+    this.controlRef = this.roomRef.child('control');
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        Object.keys(existing.progress).forEach(id=>{
+          if(existing.progress[id] && existing.progress[id].visited) this.visitedTasks.add(parseInt(id,10));
+        });
+        // 참고: 여기서 복원하는 건 완료 여부/입력값뿐입니다. 학생이 캔버스에 그렸던 점·도형(작도 과정)은
+        // 복원되지 않아요 — 과제 화면을 다시 열면 GeoCanvas가 항상 그 과제의 초기 상태로 새로 만들어지기
+        // 때문입니다. (교사용 화면에는 objectSnapshots가 남아있지만, 학생 화면이 그걸 다시 읽어와
+        // 캔버스에 그려주지는 않습니다.)
+        if(typeof restoreProgress==='function') restoreProgress(existing.progress);
+        if(typeof goToResumePage==='function') goToResumePage();
+      }
+      this.studentRef.update({
+        name: name,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online: true,
+        raisedHand: false
+      });
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      document.getElementById('lockOverlay').style.display = this.paused ? 'flex' : 'none';
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      if(typeof clampToPacing==='function') clampToPacing();
+      if(typeof updateNavButtons==='function') updateNavButtons();
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+
+    const total = TASKS.length;
+    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+    this.pushProgress(done, total);
   },
   pushProgress(done, total){
     if(!this.connected) return;
@@ -1216,7 +1244,22 @@ function showPage(idx){
   window.scrollTo(0,0);
   updateNavButtons();
 }
-/* 교사가 설정한 화면 범위(min~max) 밖에 학생이 있으면 범위 안으로 되돌린다 */
+/* 일시정지 시 캔버스/도구/입력을 실제로 조작 불가능하게 만든다.
+   CSS pointer-events:none은 마우스 클릭만 막을 뿐, Tab으로 포커스를 옮긴 뒤 Enter/Space를 누르는
+   식의 키보드 조작은 막지 못한다. 그래서 실제 버튼/입력칸에 disabled 속성을 직접 건다.
+   (SVG 캔버스 자체는 disabled 속성이 없는 요소라 CSS pointer-events:none으로 계속 막는다 — body.app-paused 규칙) */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  document.querySelectorAll('.toolbar button, .input-row input, .input-row button, #handBtn').forEach(el=>{
+    el.disabled = paused;
+  });
+  if(typeof updateNavButtons==='function') updateNavButtons(); // 이전/다음 버튼은 여기서 RT.paused를 반영해 disabled 처리됨
+}
+
+/* 교사가 설정한 화면 범위(min~max) 밖에 학생이 있으면 범위 안으로 되돌린다.
+   참고: 이건 어디까지나 "브라우저에서 실행되는 코드" 수준의 제한이다. 개발자 도구로 JS 변수를
+   직접 조작하거나 네트워크 요청을 가로채는 등의 방법을 쓰면 이 제한은 우회될 수 있다.
+   일반적인 수업 진행 통제용으로는 충분하지만, 부정행위를 원천 차단하는 보안 장치는 아니다. */
 function clampToPacing(){
   if(RT.minTaskId==null && RT.maxTaskId==null) return;
   const curNum = pageTaskNum(currentPage);
@@ -1312,15 +1355,19 @@ if(PREVIEW_MODE){
   const idx = taskIdToPageIdx(PREVIEW_TASK);
   showPage(idx >= 0 ? idx : 0);
   window.addEventListener('message', (e)=>{
+    // 발신 창(교사용 대시보드)이 이 페이지와 같은 출처(도메인)에서 보낸 메시지인지 확인 —
+    // 다른 출처에서 보낸 위조 메시지로 화면이 조작되는 것을 막는다.
+    if(e.origin !== window.location.origin) return;
     if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
       const i = taskIdToPageIdx(e.data.taskId);
       if(i >= 0) showPage(i);
     }
   });
   // 교사 화면(iframe) 안에 스크롤바가 생기지 않도록, 실제 내용 높이를 부모창에 계속 알려준다
+  // (부모창과 이 파일은 항상 같은 사이트에서 같이 배포되므로 targetOrigin을 '*'가 아닌 현재 출처로 한정한다)
   function reportPreviewHeight(){
     if(window.parent && window.parent !== window){
-      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, '*');
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
     }
   }
   reportPreviewHeight();
