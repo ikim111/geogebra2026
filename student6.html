@@ -837,11 +837,13 @@ function findCircumcenter(c,A,B,Cc){
   const perpCount=[hasBisFor(A,B),hasBisFor(B,Cc),hasBisFor(A,Cc)].filter(Boolean).length;
   if(perpCount<2) return null;
   // 주의: "교점" 도구로 만든 점은 locked:true로 생성된다(잠긴 배경 도형과 같은 취급).
-  // 그래서 여기서는 locked 여부로 거르지 않고, A/B/C 자기 자신만 제외한다.
-  return c.points.find(p=>p!==A && p!==B && p!==Cc
-    && Math.abs(dist(p,A)-dist(p,B))<12 && Math.abs(dist(p,B)-dist(p,Cc))<12 && dist(p,A)>15);
+  // 그래서 locked 여부로 거르지 않고, "실제 외심 좌표"(circumcenterOf)와 가까운 점을 직접 찾는다.
+  // (거리/변 사이 간접 비교 방식은 정삼각형처럼 외심·내심이 겹치는 경우 오작동할 수 있어서
+  // 좌표를 직접 계산해 비교하는 방식으로 바꿨다.)
+  const trueO = circumcenterOf(A,B,Cc);
+  return c.points.find(p=>p!==A && p!==B && p!==Cc && dist(p,trueO)<15);
 }
-function findIncenter(c,A,B,Cc,exclude){
+function findIncenter(c,A,B,Cc){
   const hasAngBisAt=(V,X,Y)=>c.objects.some(o=>{
     if(o.type!=='angleBisector') return false;
     const g=c.getObjGeom(o); if(!g.b) return false;
@@ -849,11 +851,12 @@ function findIncenter(c,A,B,Cc,exclude){
   });
   const angBisCount=[hasAngBisAt(A,B,Cc),hasAngBisAt(B,A,Cc),hasAngBisAt(Cc,A,B)].filter(Boolean).length;
   if(angBisCount<2) return null;
-  // 마찬가지로 "교점"으로 만든 점도 locked:true라서 locked 여부로 걸러내면 안 된다.
-  return c.points.find(p=>p!==A && p!==B && p!==Cc && p!==exclude
-    && Math.abs(distToLine(p,A,B)-distToLine(p,B,Cc))<10
-    && Math.abs(distToLine(p,B,Cc)-distToLine(p,Cc,A))<10
-    && distToLine(p,A,B)>10);
+  // 정삼각형처럼 외심과 내심이 같은 자리에 있으면, "교점" 도구는 이미 그 자리에 점(O)이
+  // 있다고 보고 새 점을 또 만들지 않는다(중복 방지 로직). 그래서 여기서도 O를 배제하지
+  // 않고, "실제 내심 좌표"와 가까운 점을 찾는다 — O가 곧 내심의 좌표와도 일치하면
+  // 같은 점이 외심이자 내심으로 함께 인정된다(정삼각형에서는 이게 정답이다).
+  const trueI = incenterOf(A,B,Cc);
+  return c.points.find(p=>p!==A && p!==B && p!==Cc && dist(p,trueI)<15);
 }
 // {ok,msg}를 반환한다 — verify()가 이 형태를 반환하면, 아직 못 채운 단계에 맞는 안내 문구가
 // 자동으로 바뀐다: 수직이등분선을 아직 안 그렸으면 "수직이등분선..." 문구, 외심을 찾은
@@ -862,7 +865,7 @@ function checkBothCenters(c){
   const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
   const O=findCircumcenter(c,A,B,Cc);
   if(!O) return fail('먼저 "수직이등분선" 도구로 두 변의 수직이등분선을 그리고, "교점" 도구로 그 교점(외심)을 표시해보세요.');
-  const I=findIncenter(c,A,B,Cc,O);
+  const I=findIncenter(c,A,B,Cc);
   if(!I) return fail('외심을 잘 찾았어요! 이제 "각의 이등분선" 도구로 두 각의 이등분선을 그리고, "교점" 도구로 그 교점(내심)도 표시해보세요.');
   return ok('외심과 내심을 모두 잘 찾았어요! 이제 알게 된 특징을 아래에 적어보세요.');
 }
@@ -876,25 +879,25 @@ function checkExploreMoved(c, initPts){
 
 const TASKS = [
   { id:1, title:'[1] 정삼각형과 이등변삼각형의 내심 위치 알아보기<br>[활동1] 이등변삼각형 ABC(AB=AC)의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
-    type:'verify', minLen:20,
+    type:'verify', minLen:15,
     tools:['perpBisector','angleBisector','intersect'],
     hint:'아래 안내 문구를 순서대로 따라가며 외심과 내심을 찾아보세요.',
-    textPrompt:'이등변삼각형의 외심과 내심은 어떤 특징이 있나요? (20자 이상)',
+    textPrompt:'이등변삼각형의 외심과 내심은 어떤 특징이 있나요? (15자 이상)',
     points: ISO_POINTS, presetObjects: triPreset(ISO_POINTS),
     verify: checkBothCenters },
 
   { id:2, title:'[1] 정삼각형과 이등변삼각형의 내심 위치 알아보기<br>[활동2] 정삼각형 ABC의 외심과 내심을 각각 찾고, 알게 된 특징을 적어봅시다.',
-    type:'verify', minLen:20,
+    type:'verify', minLen:15,
     tools:['perpBisector','angleBisector','intersect'],
     hint:'이등변삼각형과 같은 방법으로 외심과 내심을 찾아보세요.',
-    textPrompt:'정삼각형의 외심과 내심은 어떤 특징이 있나요? (20자 이상)',
+    textPrompt:'정삼각형의 외심과 내심은 어떤 특징이 있나요? (15자 이상)',
     points: EQ_POINTS, presetObjects: triPreset(EQ_POINTS),
     verify: checkBothCenters },
 
   { id:3, title:'[2] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기<br>[활동1] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 외심 O와 두 각(∠A, ∠BOC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
-    type:'verify', noTools:true, minLen:20,
+    type:'verify', noTools:true, minLen:15,
     hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 외심 O와 ∠A, ∠BOC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
-    textPrompt:'∠A와 ∠BOC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
+    textPrompt:'∠A와 ∠BOC 사이에 어떤 관계가 있는지 적어보세요. (15자 이상)',
     points: EXPLORE_POINTS, presetObjects: triPreset(EXPLORE_POINTS),
     computedPoints: [ {label:'O', kind:'circumcenter', of:['A','B','C']} ],
     postObjects: [
@@ -904,9 +907,9 @@ const TASKS = [
     verify(c){ return checkExploreMoved(c, EXPLORE_POINTS); } },
 
   { id:4, title:'[2] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기<br>[활동2] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 내심 I와 두 각(∠A, ∠BIC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
-    type:'verify', noTools:true, minLen:20,
+    type:'verify', noTools:true, minLen:15,
     hint:'점 A, B, C를(검은 점) 자유롭게 드래그해보세요. 내심 I와 ∠A, ∠BIC의 각도 표시가 실시간으로 바뀝니다. 이 둘 사이의 관계를 찾아보세요.',
-    textPrompt:'∠A와 ∠BIC 사이에 어떤 관계가 있는지 적어보세요. (20자 이상)',
+    textPrompt:'∠A와 ∠BIC 사이에 어떤 관계가 있는지 적어보세요. (15자 이상)',
     points: EXPLORE_POINTS, presetObjects: triPreset(EXPLORE_POINTS),
     computedPoints: [ {label:'I', kind:'incenter', of:['A','B','C']} ],
     postObjects: [
@@ -1088,17 +1091,25 @@ function initVerifyTask(task){
   }
   // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
   // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
+  //
+  // 그림(작도/탐구)과 서술형 제출은 "독립 사건"으로 둔다 - 그림을 완벽하게 못 그려도
+  // 글자 수만 채우면 제출할 수 있다. 다만 그림 관련 안내 문구는 계속 보여줘서, 아직
+  // 안 끝냈다면 마저 완성해보라고 유도는 한다(강제는 아님).
   function refreshFeedback(instArg){
     const {constructOk, textOk, constructMsg} = checkReady(instArg);
+    const canSubmit = textOk;
     if(!locked){
-      const canSubmit = constructOk && textOk;
       const minLen = task.minLen||10;
-      fb.textContent = !constructOk
-        ? (constructMsg || task.failMsg || '아직 조건을 만족하지 않았어요.')
-        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "제출" 버튼을 눌러 제출해보세요.');
+      if(!textOk){
+        fb.textContent = task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`;
+      } else if(!constructOk){
+        fb.textContent = (constructMsg || task.failMsg || '') + ' (그림을 다 완성하지 않아도 지금 "제출"할 수 있어요.)';
+      } else {
+        fb.textContent = '준비됐어요! "제출" 버튼을 눌러 제출해보세요.';
+      }
       fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
-    return constructOk && textOk;
+    return canSubmit;
   }
   function onCanvasChange(inst){
     RT.pushObjectsDebounced(task.id, inst);
