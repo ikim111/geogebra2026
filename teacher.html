@@ -984,6 +984,11 @@ document.getElementById('announceBtn').addEventListener('click', ()=>{
   input.value='';
 });
 
+document.getElementById('announceClearBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 방에 접속해주세요.'); return; }
+  controlRef.update({ announcement: '', announcementTs: Date.now() });
+});
+
 buildHead();
 </script>
 </body>
