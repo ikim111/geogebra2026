@@ -351,19 +351,22 @@ const TOOL_META = {
   move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
   circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
   perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'},
-  intersect:{label:'교점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
   angleInput:{label:'각도 입력 작도'}
 };
-const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','perpBisector','angleBisector','intersect','polygon','lengthTool','angleTool','angleInput'];
-const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector'];
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','ray'];
 
 /* ---------- GeoCanvas 클래스 ----------
    "0. 지오지브라 연습"의 엔진과 같지만, 이 활동에서는 "주어진 대로 이미 움직일 수 있는 점"
-   (예: 과제1의 수직이등분선 위의 점 D)이 필요해서 두 가지를 추가했다.
+   (예: 과제1의 수직이등분선 위의 점 D)이 필요해서 몇 가지를 추가했다.
    - movablePoints: 시작부터 존재하지만 잠겨있지 않은(드래그 가능한) 점. 필요하면
      constraintRef로 presetObjects의 refName을 참조해 그 도형 위로만 움직이게 제한한다.
+     trace:true를 주면 드래그하는 동안 지나온 자리를 옅은 점으로 남긴다(자취/궤적).
    - postObjects: movablePoints가 만들어진 "다음"에 추가되는 잠긴 도형(예: 그 점을 이용한
-     삼각형, 길이/각도 표시). presetObjects보다 나중에 실행되어 movablePoints를 라벨로 참조할 수 있다. */
+     삼각형, 길이/각도 표시). presetObjects보다 나중에 실행되어 movablePoints를 라벨로 참조할 수 있다.
+   - computedPoints: 매 render()마다 좌표를 공식으로 다시 계산해 넣는 점(예: 점 P에서 반직선에
+     내린 수선의 발). movablePoints가 만들어진 "다음"에 계산되어, movablePoints를 참조할 수 있다. */
 class GeoCanvas{
   constructor(svgEl, cfg, onChange){
     this.svg = svgEl;
@@ -397,8 +400,13 @@ class GeoCanvas{
       if(o.refName) refMap[o.refName]=obj.id;
     });
     (cfg.movablePoints||[]).forEach(p=>{
-      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
+      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true, trace: !!p.trace});
       if(p.constraintRef && refMap[p.constraintRef]) pt.constraint = {objId: refMap[p.constraintRef]};
+    });
+    // movablePoints "다음"에 계산해야, 아래에서 P 같은 movablePoint를 참조하는 계산이 가능하다.
+    (cfg.computedPoints||[]).forEach(cp=>{
+      const v = this._computePointValue(cp);
+      this.addPoint(v.x, v.y, {label:cp.label, locked:true, computed:cp});
     });
     (cfg.postObjects||[]).forEach(o => {
       const resolved = resolveObj(o);
@@ -413,10 +421,32 @@ class GeoCanvas{
     const used = new Set(this.points.map(p=>p.label));
     const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null,
+      computed: opts.computed||null, trace: !!opts.trace, traceHistory: opts.trace ? [] : null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory) this.history.push({kind:'point', id:p.id});
     return p;
+  }
+  // computedPoints 계산: 'footPerp'는 점 P에서 O-X 직선(반직선)에 내린 수선의 발.
+  _computePointValue(cp){
+    const pts = cp.of.map(l=>this.byLabel(l));
+    if(pts.some(p=>!p)) return {x:cp.fallbackX||300, y:cp.fallbackY||200};
+    if(cp.kind==='footPerp'){
+      const [P,O,X] = pts;
+      return projectOntoLine(P,O,X);
+    }
+    return {x:pts[0].x, y:pts[0].y};
+  }
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed) return;
+      const v = this._computePointValue(p.computed);
+      p.x = v.x; p.y = v.y;
+    });
+  }
+  clearTrace(){
+    this.points.forEach(p=>{ if(p.trace) p.traceHistory=[]; });
+    this.render();
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
@@ -434,7 +464,7 @@ class GeoCanvas{
   }
   getObjGeom(o){
     switch(o.type){
-      case 'line': case 'segment': case 'perpBisector':
+      case 'line': case 'segment': case 'perpBisector': case 'ray':
         return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
       case 'circleCP': return {center:this.resolvePoint(o.center), through:this.resolvePoint(o.through)};
       case 'circleCR': return {center:this.resolvePoint(o.center), r1:this.resolvePoint(o.r1), r2:this.resolvePoint(o.r2)};
@@ -445,7 +475,7 @@ class GeoCanvas{
   }
   asLine(o){
     const g=this.getObjGeom(o);
-    if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
+    if(o.type==='line'||o.type==='segment'||o.type==='ray') return [g.p1,g.p2];
     if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
     if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
     return null;
@@ -539,6 +569,13 @@ class GeoCanvas{
       }
       this.dragging.x = Math.max(0,Math.min(this.width,nx));
       this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      // 자취(trace) 기록: 너무 촘촘하게 쌓이지 않도록 마지막 기록점에서 일정 거리 이상
+      // 떨어졌을 때만 새 자취점을 추가한다.
+      if(this.dragging.trace){
+        const hist=this.dragging.traceHistory;
+        const last=hist[hist.length-1];
+        if(!last || dist(last,this.dragging)>6){ hist.push({x:this.dragging.x, y:this.dragging.y}); }
+      }
       this.render();
     };
     const up = ()=>{ this.dragging=null; };
@@ -625,6 +662,20 @@ class GeoCanvas{
         }
         break;
       }
+      case 'midpoint': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [aId,bId]=this.pending; this.pending=[];
+          if(aId!==bId){
+            const A=this.resolvePoint(aId), B=this.resolvePoint(bId);
+            if(A&&B){
+              const m=mid(A,B);
+              if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true});
+            }
+          }
+        }
+        break;
+      }
       case 'lengthTool': {
         if(this.pending.length===0){
           const segObj=this.findObjectNear(pt,12);
@@ -666,6 +717,7 @@ class GeoCanvas{
     this.render();
   }
   render(){
+    this._recomputeComputedPoints();
     const NS='http://www.w3.org/2000/svg';
     while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     const g0=document.createElementNS(NS,'g');
@@ -695,6 +747,12 @@ class GeoCanvas{
       if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
       if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
       else if(o.type==='segment'){ mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#1565c0'); }
+      else if(o.type==='ray'){
+        // 반직선: p1(시작점)에서 p2 방향으로만 뻗어나간다(p1 반대쪽으로는 그리지 않음).
+        const dir=norm(sub(g.p2,g.p1));
+        const end={x:g.p1.x+dir.x*1000, y:g.p1.y+dir.y*1000};
+        mkLine(g.p1.x,g.p1.y,end.x,end.y,'#1565c0');
+      }
       else if(o.type==='perpBisector'){
         const M=mid(g.p1,g.p2), d=perp(norm(sub(g.p2,g.p1))); const e=extend(M,d);
         mkLine(e.x1,e.y1,e.x2,e.y2,'#6a1b9a');
@@ -747,6 +805,17 @@ class GeoCanvas{
       this.svg.appendChild(c);
     });
 
+    // 자취(trace): 드래그하며 지나온 자리를 옅은 점으로 남겨서 궤적을 보여준다.
+    this.points.forEach(p=>{
+      if(!p.trace || !p.traceHistory || !p.traceHistory.length) return;
+      p.traceHistory.forEach(tp=>{
+        const c=document.createElementNS(NS,'circle');
+        c.setAttribute('cx',tp.x); c.setAttribute('cy',tp.y); c.setAttribute('r',2.5);
+        c.setAttribute('fill','#90caf9'); c.setAttribute('opacity','0.7');
+        this.svg.appendChild(c);
+      });
+    });
+
     this.points.forEach(p=>{
       const c=document.createElementNS(NS,'circle');
       c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
@@ -765,68 +834,65 @@ class GeoCanvas{
 }
 
 /* ---------- 과제 정의 ----------
-   총 6과제. 각 O를 두 변(반직선) OC, OD로 나타내고, 그 이등분선의 성질을 세 가지
-   방법(움직이기 → 자유롭게 점 찍어 확인 → 직접 작도)으로 반복 확인하도록 구성했다.
-   과제 2·4·6은 정답이 정해져 있지 않은 서술형으로, 일정 글자 수(15자) 이상을 쓰면
-   진행 완료로 인정한다. */
-const ANG_POINTS = [ {label:'O',x:120,y:320}, {label:'C',x:480,y:140}, {label:'D',x:480,y:320} ];
-const ANG_PRESET = [ {type:'segment',p1:'O',p2:'C'}, {type:'segment',p1:'O',p2:'D'} ];
+   총 3과제(원래 6과제를 2개씩 통합). 각 O를 두 반직선 OA, OB로 나타내고, 그 이등분선의
+   성질을 세 가지 방법(움직이기 → 자유롭게 점 찍어 확인 → 직접 작도)으로 반복 확인하도록
+   구성했다. 각 과제는 "작도/관찰(construct)"과 "서술형 설명(text)"을 하나의 카드에 합쳐
+   type:'verify'로 운영한다 - 조건을 만족해야 서술형 입력이 열리고, "제출" 후에는 "취소"를
+   눌러야 다시 고칠 수 있다.
+   과제1: 이등분선 위의 점 P를 움직이며 관찰 (수선의 발 C,D와 거리 PC,PD를 자동으로 표시)
+   과제2: 점 P를 자유롭게 드래그해 두 반직선까지 같은 거리인 위치를 찾고, 자취로 확인
+   과제3: 이등분선·수선의 발·원을 직접 작도 */
+const ANG_POINTS = [ {label:'O',x:120,y:320}, {label:'A',x:480,y:140}, {label:'B',x:480,y:320} ];
+const ANG_PRESET = [ {type:'ray',p1:'O',p2:'A'}, {type:'ray',p1:'O',p2:'B'} ];
 
 const TASKS = [
-  { id:1, title:'[과제 1] 점 P는 각 COD(꼭짓점 O)의 이등분선 위의 한 점입니다. 점 P를 움직여봅시다.',
-    noTools:true,
-    hint:'점 P를(파란 점) 이등분선을 따라 위아래로 드래그해보세요. 두 변 OC, OD까지의 거리가 어떻게 되는지 살펴보세요.',
+  { id:1, title:'[과제 1] 점 P는 각 AOB(꼭짓점 O)의 이등분선 위의 한 점입니다. 점 P를 움직이며 두 반직선까지의 거리(선분 PC, PD)를 관찰하고, 발견한 특징을 적어봅시다.',
+    type:'verify', noTools:true, minLen:15,
+    hint:'점 P를(파란 점) 이등분선을 따라 위아래로 드래그해보세요. 점 P에서 두 반직선 OA, OB에 내린 수선의 발이 각각 C, D이고, 선분 PC, PD의 길이가 어떻게 되는지 살펴보세요.',
     points: ANG_POINTS,
-    presetObjects: [ ...ANG_PRESET, {type:'angleBisector', a:'C', b:'O', c:'D', refName:'bis'} ],
+    presetObjects: [ ...ANG_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
     movablePoints: [ {label:'P', x:266, y:286, constraintRef:'bis'} ],
-    check(c){ const P=c.byLabel('P'); return (P && dist(P,{x:266,y:286})>15) ? ok('점 P를 잘 움직여봤어요!') : fail('점 P를(파란 점) 이등분선을 따라 움직여보세요.'); } },
+    computedPoints: [ {label:'C', kind:'footPerp', of:['P','O','A']}, {label:'D', kind:'footPerp', of:['P','O','B']} ],
+    postObjects: [ {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'} ],
+    verify(c){ const P=c.byLabel('P'); return (P && dist(P,{x:266,y:286})>15) ? ok('점 P를 잘 움직여봤어요!') : fail('점 P를(파란 점) 이등분선을 따라 움직여보세요.'); } },
 
-  { id:2, title:'[과제 2] 각의 이등분선 위의 점에서 발견할 수 있는 특징을 적어봅시다.',
-    type:'text', noFigure:true, minLen:15 },
-
-  { id:3, title:'[과제 3] "점" 도구로 점 하나를 찍고, 각의 두 변(반직선)으로부터 같은 거리에 있도록 그 점을 움직여봅시다.',
-    tools:['point'],
-    hint:'점을 찍은 뒤 "이동" 도구로 옮기면서, 두 변까지의 거리가 같아지는 위치를 찾아보세요. ("길이 재기" 도구로 직접 거리를 재봐도 좋아요)',
+  { id:2, title:'[과제 2] 점 P를 자유롭게 움직여서, 각 AOB의 두 반직선(OA, OB)으로부터 같은 거리에 있는 위치를 찾아봅시다. 그런 점들은 어떤 특징을 가질까요? 자취를 보며 적어봅시다.',
+    type:'verify', noTools:true, hasTraceReset:true, minLen:15,
+    hint:'점 P(파란 점)를 이리저리 드래그해보세요. P에서 두 반직선에 내린 수선의 발 C, D까지의 거리인 선분 PC, PD의 길이가 같아지는 위치를 찾고, 그 점들이 남기는 자취(옅은 점)를 관찰해보세요.',
     points: ANG_POINTS, presetObjects: ANG_PRESET,
-    check(c){
-      const O=c.byLabel('O'),Cc=c.byLabel('C'),D=c.byLabel('D');
-      const candidates=c.points.filter(p=>!p.locked);
-      if(candidates.length===0) return fail('"점" 도구로 각의 안쪽에 점을 하나 찍어보세요.');
-      const found=candidates.some(p=>{
-        const d1=distToLine(p,O,Cc), d2=distToLine(p,O,D);
-        return Math.abs(d1-d2)<8 && d1>10 && d2>10;
-      });
-      return found ? ok('두 변으로부터 같은 거리에 있는 점을 잘 찾았어요!') : fail('점을 "이동" 도구로 움직여서 두 변까지의 거리가 같아지도록 맞춰보세요.');
+    movablePoints: [ {label:'P', x:350, y:300, trace:true} ],
+    computedPoints: [ {label:'C', kind:'footPerp', of:['P','O','A']}, {label:'D', kind:'footPerp', of:['P','O','B']} ],
+    postObjects: [ {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'} ],
+    verify(c){
+      const O=c.byLabel('O'),A=c.byLabel('A'),B=c.byLabel('B'),P=c.byLabel('P');
+      if(!P) return fail('점 P를 찾을 수 없어요.');
+      const d1=distToLine(P,O,A), d2=distToLine(P,O,B);
+      return (Math.abs(d1-d2)<8 && d1>10 && d2>10) ? ok('두 반직선으로부터 같은 거리에 있는 점을 잘 찾았어요!') : fail('점 P를 움직여서 선분 PC, PD의 길이가 같아지도록 맞춰보세요.');
     } },
 
-  { id:4, title:'[과제 4] 각의 두 변으로부터 같은 거리에 있는 점들은 어떤 특징을 가질까요? 적어봅시다.',
-    type:'text', noFigure:true, minLen:15 },
-
-  { id:5, title:'[과제 5] 다음 순서대로 작도해봅시다. ① 각 O의 이등분선을 그리고 그 위에 점을 찍는다. ② 그 점에서 두 변에 내린 수선의 발을 각각 점으로 표시한다. ③ 그 점을 중심으로 하고, 수선의 발 하나를 지나는 원을 그린다.',
+  { id:3, title:'[과제 3] 다음 순서대로 작도해봅시다. ① 각 O의 이등분선을 그리고 그 위에 점을 찍는다. ② 그 점에서 두 반직선에 내린 수선의 발을 각각 점으로 표시한다. ③ 그 점을 중심으로 하고, 수선의 발 하나를 지나는 원을 그린다. 이 작도를 통해 알 수 있는 특징을 적어봅시다.',
+    type:'verify', minLen:15,
     tools:['angleBisector','point','circleCP'],
     hint:'③에서 수선의 발을 정확히 찍었는지는 "각도 재기" 도구로 확인해보세요 — 이등분선 위의 점·수선의 발·꼭짓점 O가 이루는 각이 90°에 가까워야 해요.',
     points: ANG_POINTS, presetObjects: ANG_PRESET,
-    check(c){
-      const O=c.byLabel('O'),Cc=c.byLabel('C'),D=c.byLabel('D');
-      const bisOk=c.objects.some(o=>{ if(o.type!=='angleBisector') return false; const g=c.getObjGeom(o); return g.b && samePt(g.b,O)&&((samePt(g.a,Cc)&&samePt(g.c,D))||(samePt(g.a,D)&&samePt(g.c,Cc))); });
-      if(!bisOk) return fail('먼저 "각의 이등분선" 도구로 C → O → D 순서로 클릭해 각 O의 이등분선을 그려보세요.');
-      const dir=bisectorDir(Cc,O,D);
-      const onBis=c.points.filter(p=>p!==O&&p!==Cc&&p!==D).find(p=>{
+    verify(c){
+      const O=c.byLabel('O'),A=c.byLabel('A'),B=c.byLabel('B');
+      const bisOk=c.objects.some(o=>{ if(o.type!=='angleBisector') return false; const g=c.getObjGeom(o); return g.b && samePt(g.b,O)&&((samePt(g.a,A)&&samePt(g.c,B))||(samePt(g.a,B)&&samePt(g.c,A))); });
+      if(!bisOk) return fail('먼저 "각의 이등분선" 도구로 A → O → B 순서로 클릭해 각 O의 이등분선을 그려보세요.');
+      const dir=bisectorDir(A,O,B);
+      const onBis=c.points.filter(p=>p!==O&&p!==A&&p!==B).find(p=>{
         const v=sub(p,O); const proj=v.x*dir.x+v.y*dir.y; const perpDist=Math.hypot(v.x-dir.x*proj, v.y-dir.y*proj);
         return proj>20 && perpDist<10;
       });
       if(!onBis) return fail('이등분선 위에 점을 하나 찍어보세요. ("점" 도구로 이등분선을 클릭)');
-      const footC=projectOntoLine(onBis,O,Cc), footD=projectOntoLine(onBis,O,D);
-      const hasFootC=c.points.some(p=>p!==onBis && dist(p,footC)<14);
-      const hasFootD=c.points.some(p=>p!==onBis && dist(p,footD)<14);
-      if(!hasFootC || !hasFootD) return fail('이등분선 위의 점에서 두 변에 내린 수선의 발을 각각 점으로 찍어보세요.');
-      const hasCircle=c.objects.some(o=>{ if(o.type!=='circleCP') return false; const g=c.getObjGeom(o); if(!g.center||!g.through) return false; return samePt(g.center,onBis) && (dist(g.through,footC)<14 || dist(g.through,footD)<14); });
+      const footA=projectOntoLine(onBis,O,A), footB=projectOntoLine(onBis,O,B);
+      const hasFootA=c.points.some(p=>p!==onBis && dist(p,footA)<14);
+      const hasFootB=c.points.some(p=>p!==onBis && dist(p,footB)<14);
+      if(!hasFootA || !hasFootB) return fail('이등분선 위의 점에서 두 반직선에 내린 수선의 발을 각각 점으로 찍어보세요.');
+      const hasCircle=c.objects.some(o=>{ if(o.type!=='circleCP') return false; const g=c.getObjGeom(o); if(!g.center||!g.through) return false; return samePt(g.center,onBis) && (dist(g.through,footA)<14 || dist(g.through,footB)<14); });
       if(!hasCircle) return fail('이등분선 위의 점을 중심으로 하고, 수선의 발을 지나는 원을 그려보세요. ("원(중심,통과점)" 도구)');
       return ok('각의 이등분선, 수선의 발, 원까지 모두 잘 그렸어요!');
     } },
-
-  { id:6, title:'[과제 6] [과제 5]에서 그린 그림을 통해 알 수 있는 특징들을 모두 적어봅시다.',
-    type:'text', noFigure:true, minLen:15 },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
@@ -862,7 +928,7 @@ function buildTaskCard(task){
           </div><div class="feedback" id="fb-${task.id}"></div>`
           : isTextLike ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
             <textarea id="input-${task.id}" rows="3" placeholder="여기에 생각을 적어보세요 (${task.minLen||10}자 이상)"></textarea>
-            <button id="check-${task.id}">확인</button>
+            <button id="check-${task.id}">${task.type==='verify' ? '제출' : '확인'}</button>
           </div>
           <div class="text-min-note">✏️ ${task.minLen||10}자 이상 적어야 완료로 인정돼요.</div>
           <div class="feedback" id="fb-${task.id}"></div>
@@ -891,7 +957,19 @@ function buildTaskCard(task){
 }
 
 function buildToolbar(task, cv, toolsEl){
-  if(task.noTools){ toolsEl.style.display='none'; return {move:null}; }
+  if(task.noTools){
+    // noTools여도 "자취 초기화" 버튼은 필요할 수 있다(점을 드래그하며 궤적을 관찰하는 과제).
+    if(task.hasTraceReset){
+      toolsEl.style.display='flex';
+      const traceBtn=document.createElement('button');
+      traceBtn.textContent='자취 초기화'; traceBtn.className='reset';
+      traceBtn.addEventListener('click', ()=>cv.clearTrace());
+      toolsEl.appendChild(traceBtn);
+    } else {
+      toolsEl.style.display='none';
+    }
+    return {move:null};
+  }
   const mkBtn=(id,label,cls)=>{ const b=document.createElement('button'); b.textContent=label; if(cls) b.className=cls; b.id=id; return b; };
   const moveBtn=mkBtn(`tool-move-${task.id}`,'이동'); moveBtn.classList.add('active');
   toolsEl.appendChild(moveBtn);
@@ -905,6 +983,11 @@ function buildToolbar(task, cv, toolsEl){
   const undoBtn=mkBtn(`undo-${task.id}`,'되돌리기','undo'); undoBtn.addEventListener('click',()=>cv.undo());
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
   toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
+  if(task.hasTraceReset){
+    const traceBtn=mkBtn(`trace-reset-${task.id}`,'자취 초기화','reset');
+    traceBtn.addEventListener('click', ()=>cv.clearTrace());
+    toolsEl.appendChild(traceBtn);
+  }
   return buttons;
 }
 
@@ -989,20 +1072,25 @@ function initVerifyTask(task){
 
   function checkReady(instArg){
     const target = instArg || cv;
-    if(!target) return {constructOk:false, textOk:false};
-    const constructOk = task.verify ? !!task.verify(target) : !!isIsoscelesTriangle(target);
-    const textOk = (input.value||'').trim().length>=10;
-    return {constructOk, textOk};
+    if(!target) return {constructOk:false, textOk:false, constructMsg:null};
+    const raw = task.verify ? task.verify(target) : isIsoscelesTriangle(target);
+    let constructOk, constructMsg;
+    if(raw && typeof raw==='object' && 'ok' in raw){ constructOk = !!raw.ok; constructMsg = raw.msg||null; }
+    else { constructOk = !!raw; constructMsg = null; }
+    const minLen = task.minLen||10;
+    const textOk = (input.value||'').trim().length>=minLen;
+    return {constructOk, textOk, constructMsg};
   }
   // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
   // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
   function refreshFeedback(instArg){
-    const {constructOk, textOk} = checkReady(instArg);
+    const {constructOk, textOk, constructMsg} = checkReady(instArg);
+    const minLen = task.minLen||10;
     if(!locked){
       const canSubmit = constructOk && textOk;
       fb.textContent = !constructOk
-        ? (task.failMsg || '아직 이등변삼각형을 만들지 않았어요. 두 변의 길이가 같은 삼각형을 만들어보세요.')
-        : (!textOk ? (task.textPrompt || '어떻게 만들었는지 설명을 적어주세요. (10자 이상)') : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
+        ? (constructMsg || task.failMsg || '아직 조건을 만족하지 않았어요.')
+        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "제출" 버튼을 눌러 제출해보세요.');
       fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
     return constructOk && textOk;
@@ -1032,7 +1120,7 @@ function initVerifyTask(task){
     locked = false;
     input.disabled = false;
     input.classList.remove('locked-fixed');
-    btn.textContent = '확인';
+    btn.textContent = task.type==='verify' ? '제출' : '확인';
     btn.classList.remove('cancel');
     results[task.id] = {done:false, value:input.value};
     updateProgress();
@@ -1178,8 +1266,7 @@ function renderClassAnswersFor(task){
   const entries = Object.keys(RT.allStudents||{})
     .filter(k=>k!==RT.studentKey)
     .map(k=>({key:k, ...RT.allStudents[k]}))
-    .filter(s=> s.progress && s.progress[task.id] && s.progress[task.id].value && String(s.progress[task.id].value).trim().length>0)
-    .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    .filter(s=> s.progress && s.progress[task.id] && s.progress[task.id].value && String(s.progress[task.id].value).trim().length>0);
 
   if(entries.length===0){
     const empty=document.createElement('div'); empty.className='ca-empty';
@@ -1187,7 +1274,9 @@ function renderClassAnswersFor(task){
     list.appendChild(empty);
     return;
   }
-  entries.forEach(s=>{
+  // 전체가 아니라 무작위로 3명만 보여준다.
+  const shuffled = [...entries].sort(()=>Math.random()-0.5);
+  shuffled.slice(0,3).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
@@ -1380,30 +1469,6 @@ TASKS.forEach(t=>{
     console.error('Task', t.id, err);
   }
 });
-
-/* ---------- 자유시간 ---------- */
-(function(){
-  const el=document.createElement('div');
-  el.className='task free';
-  el.dataset.taskId='free';
-  el.innerHTML=`<div class="task-head"><h2>[자유시간] 지오지브라로 하고 싶은 것들을 자유롭게 해봅시다.</h2></div>
-    <div class="toolbar" id="tools-free"></div>
-    <div class="canvas-wrap"><svg class="gcanvas" id="svg-free" viewBox="0 0 600 400"></svg></div>`;
-  container.appendChild(el);
-  const svg=document.getElementById('svg-free');
-  const cv=new GeoCanvas(svg, {points:[{label:'A',x:150,y:200},{label:'B',x:400,y:200}]}, ()=>{});
-  const toolsEl=document.getElementById('tools-free');
-  const mkBtn=(label)=>{ const b=document.createElement('button'); b.textContent=label; return b; };
-  const buttons={};
-  const moveBtn=mkBtn('이동'); moveBtn.classList.add('active'); toolsEl.appendChild(moveBtn); buttons.move=moveBtn;
-  moveBtn.addEventListener('click',()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
-  FREE_TOOLS.forEach(t=>{
-    const b=mkBtn(TOOL_META[t].label); toolsEl.appendChild(b); buttons[t]=b;
-    b.addEventListener('click',()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
-  });
-  const resetBtn=mkBtn('초기화'); resetBtn.className='reset'; resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(resetBtn);
-})();
 
 /* ---------- 실시간 UI 연결 ----------
    반(roomCode)/이름(studentName)/번호(studentNumber)는 더 이상 이 화면에서 직접 입력하지 않고,
