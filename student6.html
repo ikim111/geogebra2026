@@ -1509,30 +1509,6 @@ TASKS.forEach(t=>{
   }
 });
 
-/* ---------- 자유시간 ---------- */
-(function(){
-  const el=document.createElement('div');
-  el.className='task free';
-  el.dataset.taskId='free';
-  el.innerHTML=`<div class="task-head"><h2>[자유시간] 지오지브라로 하고 싶은 것들을 자유롭게 해봅시다.</h2></div>
-    <div class="toolbar" id="tools-free"></div>
-    <div class="canvas-wrap"><svg class="gcanvas" id="svg-free" viewBox="0 0 600 400"></svg></div>`;
-  container.appendChild(el);
-  const svg=document.getElementById('svg-free');
-  const cv=new GeoCanvas(svg, {points:[{label:'A',x:150,y:200},{label:'B',x:400,y:200}]}, ()=>{});
-  const toolsEl=document.getElementById('tools-free');
-  const mkBtn=(label)=>{ const b=document.createElement('button'); b.textContent=label; return b; };
-  const buttons={};
-  const moveBtn=mkBtn('이동'); moveBtn.classList.add('active'); toolsEl.appendChild(moveBtn); buttons.move=moveBtn;
-  moveBtn.addEventListener('click',()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
-  FREE_TOOLS.forEach(t=>{
-    const b=mkBtn(TOOL_META[t].label); toolsEl.appendChild(b); buttons[t]=b;
-    b.addEventListener('click',()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
-  });
-  const resetBtn=mkBtn('초기화'); resetBtn.className='reset'; resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(resetBtn);
-})();
-
 /* ---------- 실시간 UI 연결 ----------
    반(roomCode)/이름(studentName)/번호(studentNumber)는 더 이상 이 화면에서 직접 입력하지 않고,
    student.html에서 넘어온 값을 그대로 쓰는 hidden input이라 옵션을 채울 필요가 없다. */
