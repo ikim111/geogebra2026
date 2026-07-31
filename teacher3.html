@@ -261,14 +261,11 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__angbis'; // student3.html과 반드시 동일해야 함
 
 // 학생용 파일의 과제 구성과 맞춰주세요 (id, 짧은 제목)
-// 과제1(이등분선 위 점 이동), 과제3(등거리점 찾기), 과제5(수선의 발+원)는 "작도/탐구", 과제2·4·6은 "성질 서술"입니다.
+// 총 3과제(원래 6과제를 2개씩 통합, 각 카드에 작도/탐구 + 성질 서술이 함께 들어있습니다).
 const TASK_LABELS = [
-  {id:1, label:'이등분선 위 점 이동'},
-  {id:2, label:'특징 서술 1'},
-  {id:3, label:'등거리점 찾기'},
-  {id:4, label:'특징 서술 2'},
-  {id:5, label:'수선의 발+원'},
-  {id:6, label:'특징 서술 3'}
+  {id:1, label:'이등분선 위 점 이동+서술'},
+  {id:2, label:'등거리점 찾기+서술'},
+  {id:3, label:'수선의 발+원 작도+서술'}
 ];
 
 let app=null, db=null, studentsRef=null, controlRef=null;
@@ -750,6 +747,24 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
     }else{
       drawOverlayLine(svg, p1.x, p1.y, p2.x, p2.y, color, opacity);
     }
+  }else if(o.type==='ray'){
+    // 반직선: p1(시작점)에서 p2 방향으로만 뻗어나간다(student3.html의 render()와 동일한 규칙).
+    const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
+    const d=norm(sub(p2,p1));
+    drawOverlayLine(svg, p1.x, p1.y, p1.x+d.x*ext, p1.y+d.y*ext, color, opacity);
+  }else if(o.type==='lengthLabel'){
+    const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
+    const NS='http://www.w3.org/2000/svg';
+    const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',p1.x); l.setAttribute('y1',p1.y); l.setAttribute('x2',p2.x); l.setAttribute('y2',p2.y);
+    l.setAttribute('stroke',color); l.setAttribute('stroke-width','2'); l.setAttribute('stroke-dasharray','3,3'); l.setAttribute('opacity',String(opacity));
+    svg.appendChild(l);
+    const m=mid(p1,p2);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill',color);
+    t.setAttribute('font-size','12'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle'); t.setAttribute('opacity',String(opacity));
+    t.textContent=(dist(p1,p2)/40).toFixed(2);
+    svg.appendChild(t);
   }else if(o.type==='perpBisector'){
     const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
     const M=mid(p1,p2), d=perp(norm(sub(p2,p1)));
