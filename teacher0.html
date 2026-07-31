@@ -789,6 +789,10 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
     const a=ptById[o.a], b=ptById[o.b], c=ptById[o.c]; if(!a||!b||!c) return;
     const d=bisectorDir(a,b,c);
     drawOverlayLine(svg, b.x, b.y, b.x+d.x*500, b.y+d.y*500, color, opacity);
+  }else if(o.type==='perp'){
+    const p=ptById[o.p], refP1=ptById[o.refP1], refP2=ptById[o.refP2]; if(!p||!refP1||!refP2) return;
+    const d=perp(norm(sub(refP2,refP1)));
+    drawOverlayLine(svg, p.x-d.x*ext, p.y-d.y*ext, p.x+d.x*ext, p.y+d.y*ext, color, opacity);
   }else if(o.type==='circleCP'||o.type==='circleCR'){
     let center,r;
     if(o.type==='circleCP'){ center=ptById[o.center]; const through=ptById[o.through]; if(!center||!through) return; r=dist(center,through); }

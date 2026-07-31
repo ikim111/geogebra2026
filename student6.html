@@ -375,12 +375,12 @@ function isIsoscelesTriangle(c){
 const TOOL_META = {
   move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
   circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
-  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'},
-  intersect:{label:'교점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'},
+  intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
   angleInput:{label:'각도 입력 작도'}
 };
-const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','perpBisector','angleBisector','intersect','polygon','lengthTool','angleTool','angleInput'];
-const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector'];
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp'];
 
 /* ---------- GeoCanvas 클래스 ----------
    "0. 지오지브라 연습"의 엔진과 같지만, 이 활동에서는 "주어진 대로 이미 움직일 수 있는 점"
@@ -411,7 +411,7 @@ class GeoCanvas{
     const resolveObj = (o)=>{
       const resolved = Object.assign({}, o);
       delete resolved.refName;
-      ['p1','p2','center','through','r1','r2','a','b','c'].forEach(k=>{
+      ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{
         if(resolved[k] && typeof resolved[k]==='string'){ const pt=this.points.find(p=>p.label===resolved[k]); if(pt) resolved[k]=pt.id; }
       });
       if(resolved.ids) resolved.ids = resolved.ids.map(l=>{ const pt=this.points.find(p=>p.label===l); return pt?pt.id:l; });
@@ -490,6 +490,7 @@ class GeoCanvas{
       case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
       case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
       case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'perp': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
     }
   }
   asLine(o){
@@ -497,6 +498,7 @@ class GeoCanvas{
     if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
     if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
     if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
+    if(o.type==='perp'){ const d=perp(norm(sub(g.refP2,g.refP1))); return [g.p, add(g.p,d)]; }
     return null;
   }
   asCircle(o){
@@ -556,7 +558,7 @@ class GeoCanvas{
     this.render();
   }
   _refsPoint(o,pid){
-    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c].includes(pid) || (o.ids && o.ids.includes(pid));
+    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c,o.p,o.refP1,o.refP2].includes(pid) || (o.ids && o.ids.includes(pid));
   }
   getSvgCoords(e){
     const pt = this.svg.createSVGPoint();
@@ -674,6 +676,35 @@ class GeoCanvas{
         }
         break;
       }
+      case 'midpoint': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [aId,bId]=this.pending; this.pending=[];
+          if(aId!==bId){
+            const A=this.resolvePoint(aId), B=this.resolvePoint(bId);
+            if(A&&B){
+              const m=mid(A,B);
+              if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true});
+            }
+          }
+        }
+        break;
+      }
+      case 'perp': {
+        // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
+        if(this.pendingObjs.length===0){
+          const o=this.findObjectNear(pt,12);
+          if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
+          break;
+        }
+        // 2단계: 그 직선에 수직인 선이 지나갈 점을 클릭(기존 점 또는 새 점).
+        const refObj=this.pendingObjs[0]; this.pendingObjs=[];
+        const p2=this.pickPoint(pt);
+        if(p2.id!==refObj.p1 && p2.id!==refObj.p2){
+          this.addObject({type:'perp', p:p2.id, refP1:refObj.p1, refP2:refObj.p2});
+        }
+        break;
+      }
       case 'lengthTool': {
         if(this.pending.length===0){
           const segObj=this.findObjectNear(pt,12);
@@ -752,6 +783,10 @@ class GeoCanvas{
       else if(o.type==='angleBisector'){
         const d=bisectorDir(g.a,g.b,g.c);
         mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
+      }
+      else if(o.type==='perp'){
+        const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#00838f');
       }
       else if(o.type==='circleCP'||o.type==='circleCR'){
         const c=this.asCircle(o);
@@ -1453,7 +1488,7 @@ const RT = {
     if(!this.connected || !cv) return;
     clearTimeout(this._objTimers[taskId]);
     this._objTimers[taskId] = setTimeout(()=>{
-      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids'];
+      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
       // 잠긴(locked) 도형도 함께 보낸다 - 이 활동은 직사각형/원처럼 "주어진 도형"이 학생이 그린
       // 도형을 이해하는 데 중요한 배경이라서, 잠긴 도형만 빼고 보내면 교사 화면에 그 배경이
       // 통째로 안 보이게 된다(과제1의 선분 AB·수직이등분선·삼각형 ABD도 마찬가지).

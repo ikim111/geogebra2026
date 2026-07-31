@@ -330,16 +330,17 @@ const fail = msg => ({ok:false,msg});
 const TOOL_META = {
   move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
   circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
-  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'},
-  intersect:{label:'교점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'},
+  intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
   angleInput:{label:'각도 입력 작도'}
 };
-const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','perpBisector','angleBisector','intersect','polygon','lengthTool','angleTool','angleInput'];
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
 const TOOL_HELP = {
   lengthTool: '"길이 재기" 도구를 클릭한 뒤, 선분을 바로 클릭하거나 점 두 개를 순서대로 클릭하세요. 화면에 길이 값이 나타나요.',
-  angleTool: '"각도 재기" 도구를 클릭한 뒤, 점 세 개를 순서대로 클릭하세요(가운데 점이 꼭짓점). 화면에 각도 값이 나타나요.'
+  angleTool: '"각도 재기" 도구를 클릭한 뒤, 점 세 개를 순서대로 클릭하세요(가운데 점이 꼭짓점). 화면에 각도 값이 나타나요.',
+  perp: '"수선" 도구를 클릭한 뒤, 기준이 되는 직선/선분/반직선을 먼저 클릭하고, 그다음 그 직선에 수직인 선이 지나갈 점을 클릭하세요.'
 };
-const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector'];
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp'];
 
 /* ---------- GeoCanvas 클래스 ---------- */
 class GeoCanvas{
@@ -358,7 +359,7 @@ class GeoCanvas{
     (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
     (cfg.presetObjects||[]).forEach(o => {
       const resolved = Object.assign({}, o);
-      ['p1','p2','center','through','r1','r2','a','b','c'].forEach(k=>{
+      ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{
         if(resolved[k] && typeof resolved[k]==='string'){ const pt=this.points.find(p=>p.label===resolved[k]); if(pt) resolved[k]=pt.id; }
       });
       if(resolved.ids) resolved.ids = resolved.ids.map(l=>{ const pt=this.points.find(p=>p.label===l); return pt?pt.id:l; });
@@ -400,6 +401,7 @@ class GeoCanvas{
       case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
       case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
       case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'perp': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
     }
   }
   asLine(o){
@@ -407,6 +409,7 @@ class GeoCanvas{
     if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
     if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
     if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
+    if(o.type==='perp'){ const d=perp(norm(sub(g.refP2,g.refP1))); return [g.p, add(g.p,d)]; }
     return null;
   }
   asCircle(o){
@@ -466,7 +469,7 @@ class GeoCanvas{
     this.render();
   }
   _refsPoint(o,pid){
-    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c].includes(pid) || (o.ids && o.ids.includes(pid));
+    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c,o.p,o.refP1,o.refP2].includes(pid) || (o.ids && o.ids.includes(pid));
   }
   getSvgCoords(e){
     const pt = this.svg.createSVGPoint();
@@ -585,6 +588,35 @@ class GeoCanvas{
         }
         break;
       }
+      case 'midpoint': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [aId,bId]=this.pending; this.pending=[];
+          if(aId!==bId){
+            const A=this.resolvePoint(aId), B=this.resolvePoint(bId);
+            if(A&&B){
+              const m=mid(A,B);
+              if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true});
+            }
+          }
+        }
+        break;
+      }
+      case 'perp': {
+        // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
+        if(this.pendingObjs.length===0){
+          const o=this.findObjectNear(pt,12);
+          if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
+          break;
+        }
+        // 2단계: 그 직선에 수직인 선이 지나갈 점을 클릭(기존 점 또는 새 점).
+        const refObj=this.pendingObjs[0]; this.pendingObjs=[];
+        const p=this.pickPoint(pt);
+        if(p.id!==refObj.p1 && p.id!==refObj.p2){
+          this.addObject({type:'perp', p:p.id, refP1:refObj.p1, refP2:refObj.p2});
+        }
+        break;
+      }
       case 'lengthTool': {
         if(this.pending.length===0){
           const segObj=this.findObjectNear(pt,12);
@@ -663,6 +695,10 @@ class GeoCanvas{
       else if(o.type==='angleBisector'){
         const d=bisectorDir(g.a,g.b,g.c);
         mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
+      }
+      else if(o.type==='perp'){
+        const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#00838f');
       }
       else if(o.type==='circleCP'||o.type==='circleCR'){
         const c=this.asCircle(o);
@@ -1158,7 +1194,7 @@ const RT = {
     if(!this.connected || !cv) return;
     clearTimeout(this._objTimers[taskId]);
     this._objTimers[taskId] = setTimeout(()=>{
-      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids'];
+      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
       const snap = {
         taskId,
         points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label})),
