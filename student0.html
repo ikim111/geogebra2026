@@ -179,13 +179,10 @@
 <script>
 /* ============================================================
    선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
-   1) forms.google.com 에서 새 설문지 생성
-   2) 질문 2개 추가: "이름"(단답형), "결과"(장문형)
-   3) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
-      생성된 링크에서 entry.숫자 부분을 확인 (예: entry.123456789)
-   4) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
-   5. 아래 CONFIG를 채우면 "제출하기" 클릭 시 자동으로 구글 설문지(연결된 시트)에 저장됩니다.
-      비워두면 백업 파일 저장만 동작합니다.
+   student0~6이 모두 같은 설문지 1개를 공유한다("단원" 필드로 구분). 설문지에는 질문 7개가
+   있다: 단원/반/번호/이름/과제/성공여부(이상 단답형)/답변(장문형). 이 파일(연습 단원)은
+   서술형 답이 없는 작도 연습이라 "답변" 칸은 빈 문자열로 전송된다 - 과제를 처음 성공한
+   순간에만 1건씩 기록되어, 어떤 학생이 어떤 연습을 통과했는지 확인할 수 있다.
    ============================================================ */
 /* 교사용 대시보드의 "학생용 뷰" 미리보기 모드: ?preview=1&task=N 으로 열리면
    이름/반 입력 없이 바로 N번 과제 화면을 보여주고, Firebase에는 아무것도 기록하지 않아요. */
@@ -193,10 +190,16 @@ const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
 const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
 
+const UNIT_LABEL = '0. 지오지브라 연습';
 const CONFIG = {
-  GOOGLE_FORM_URL: '', // 예: 'https://docs.google.com/forms/d/e/xxxxxxxx/formResponse'
-  ENTRY_NAME: '',       // 예: 'entry.111111111'
-  ENTRY_DATA: ''        // 예: 'entry.222222222'
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',      // "단원"
+  ENTRY_ROOM: 'entry.2051553698',     // "반"
+  ENTRY_NUMBER: 'entry.553461765',    // "번호"
+  ENTRY_NAME: 'entry.1279750620',     // "이름"
+  ENTRY_TASK: 'entry.863803595',      // "과제"
+  ENTRY_SUCCESS: 'entry.172713041',   // "성공여부"
+  ENTRY_ANSWER: 'entry.1090948288'    // "답변"
 };
 
 /* ============================================================
@@ -889,6 +892,9 @@ function initConstructTask(task){
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
   toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
 
+  // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
+  // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
+  let everSubmitted = false;
   function onChange(inst){
     if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); return; }
     const r = task.check(inst);
@@ -899,6 +905,7 @@ function initConstructTask(task){
     fb.className = 'feedback ' + (r.ok?'ok':'no');
     updateProgress();
     RT.pushObjectsDebounced(task.id, inst);
+    if(r.ok && !everSubmitted){ everSubmitted = true; submitTaskToGoogleForm(task.id, '성공', ''); }
   }
   onChange(cv);
 }
@@ -928,6 +935,7 @@ function initInputTask(task){
     fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
     fb.className = 'feedback ' + (okFlag?'ok':'no');
     updateProgress();
+    if(okFlag) submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   btn.addEventListener('click', checkAnswer);
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
@@ -985,6 +993,7 @@ function initHybridTask(task){
     fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
     fb.className = 'feedback ' + (okFlag?'ok':'no');
     updateProgress();
+    if(okFlag) submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   btn.addEventListener('click', checkAnswer);
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
@@ -1469,13 +1478,26 @@ function downloadBackup(payload){
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
-function submitToGoogleForm(name,jsonStr){
+// 과제 1건(단원/반/번호/이름/과제/성공여부/답변)을 즉시 구글 설문지로 전송한다.
+// 각 과제 카드에서 "미완료 -> 완료"로 처음 바뀌는 순간 바로 호출된다 - "결과 제출하기"를
+// 따로 안 눌러도 과제별로 그때그때 시트에 기록되게 하기 위함.
+function submitTaskToGoogleForm(taskId, statusText, answerText){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
+  const room=document.getElementById('roomCode').value.trim();
+  const number=document.getElementById('studentNumber').value.trim();
+  const name=document.getElementById('studentName').value.trim();
   let iframe=document.getElementById('hiddenSubmitFrame');
   if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
   const form=document.createElement('form');
   form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-  const f1=document.createElement('input'); f1.name=CONFIG.ENTRY_NAME; f1.value=name; form.appendChild(f1);
-  const f2=document.createElement('input'); f2.name=CONFIG.ENTRY_DATA; f2.value=jsonStr; form.appendChild(f2);
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+  addField(CONFIG.ENTRY_ROOM, room);
+  addField(CONFIG.ENTRY_NUMBER, number);
+  addField(CONFIG.ENTRY_NAME, name);
+  addField(CONFIG.ENTRY_TASK, taskId);
+  addField(CONFIG.ENTRY_SUCCESS, statusText);
+  addField(CONFIG.ENTRY_ANSWER, answerText);
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
 document.getElementById('submitBtn').addEventListener('click', ()=>{
@@ -1483,13 +1505,8 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
   const statusEl=document.getElementById('submitStatus');
   if(!name){ alert('이름을 입력해주세요.'); return; }
   const payload=buildPayload();
-  if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_DATA){
-    submitToGoogleForm(name, JSON.stringify(payload));
-    statusEl.textContent = `제출되었습니다! (완료 ${payload.completed}/${payload.total})`;
-  } else {
-    downloadBackup(payload);
-    statusEl.textContent = `⚠️ 구글 설문지가 아직 설정되지 않아, 결과를 파일로 저장했어요. (완료 ${payload.completed}/${payload.total}) 코드 상단 CONFIG를 채워주세요.`;
-  }
+  // 과제별 기록은 각 과제를 처음 성공했을 때 이미 구글 설문지로 전송됐다.
+  statusEl.textContent = `확인했어요! (완료 ${payload.completed}/${payload.total}) 과제별 결과는 처음 성공하는 순간 자동으로 기록돼요.`;
   if(RT.connected){
     RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
   }
