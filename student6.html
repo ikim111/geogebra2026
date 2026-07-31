@@ -192,7 +192,10 @@
 
    선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
    1) forms.google.com 에서 새 설문지 생성
-   2) 질문 4개 추가: "반"(단답형), "번호"(단답형), "이름"(단답형), "결과"(장문형)
+   2) 질문을 추가: "반"(단답형), "번호"(단답형), "이름"(단답형), "과제 성공 여부"(단답형),
+      그리고 4개 과제(TASKS)의 서술형 답변을 각각 담을 질문 4개(장문형) — 시트에서
+      과제별로 열이 따로 생겨야 바로 읽고 채점할 수 있어서, "결과"에 JSON을 통째로
+      넣지 않고 이렇게 나눴다.
    3) 설문지 "응답" 탭에서 스프레드시트 아이콘을 눌러 시트를 연결해두면, 제출될 때마다
       그 시트에 한 줄씩 자동으로 쌓인다.
    4) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
@@ -207,10 +210,17 @@ const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
 
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
-  ENTRY_ROOM: 'entry.2051553698',   // "반"
-  ENTRY_NUMBER: 'entry.553461765',  // "번호"
-  ENTRY_NAME: 'entry.1279750620',   // "이름"
-  ENTRY_DATA: 'entry.863803595'     // "결과"(전체 답변 JSON)
+  ENTRY_ROOM: 'entry.2051553698',    // "반"
+  ENTRY_NUMBER: 'entry.553461765',   // "번호"
+  ENTRY_NAME: 'entry.1279750620',    // "이름"
+  ENTRY_STATUS: 'entry.863803595',   // "과제 성공 여부" (예: "4/4 완료")
+  // 과제별 서술형 답변을 각각 별도 열로 보낸다 - 시트에서 바로 읽을 수 있도록.
+  ENTRY_TASK: {
+    1: 'entry.1757796230', // [활동1] 이등변삼각형 외심·내심
+    2: 'entry.1389741500', // [활동2] 정삼각형 외심·내심
+    3: 'entry.846756124',  // [활동1] 외심 탐구 (∠A vs ∠BOC)
+    4: 'entry.1090948288'  // [활동2] 내심 탐구 (∠A vs ∠BIC)
+  }
 };
 
 /* ============================================================
@@ -1752,16 +1762,21 @@ function downloadBackup(payload){
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
-function submitToGoogleForm(room,number,name,jsonStr){
+function submitToGoogleForm(payload){
   let iframe=document.getElementById('hiddenSubmitFrame');
   if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
   const form=document.createElement('form');
   form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=val; form.appendChild(f); };
-  addField(CONFIG.ENTRY_ROOM, room);
-  addField(CONFIG.ENTRY_NUMBER, number);
-  addField(CONFIG.ENTRY_NAME, name);
-  addField(CONFIG.ENTRY_DATA, jsonStr);
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  addField(CONFIG.ENTRY_ROOM, payload.room);
+  addField(CONFIG.ENTRY_NUMBER, payload.number);
+  addField(CONFIG.ENTRY_NAME, payload.name);
+  addField(CONFIG.ENTRY_STATUS, `${payload.completed}/${payload.total} 완료`);
+  // 과제별 답변을 각각 자기 열로 - 시트에서 JSON을 안 풀어봐도 바로 읽을 수 있게.
+  payload.results.forEach(r=>{
+    const entryName = CONFIG.ENTRY_TASK && CONFIG.ENTRY_TASK[r.id];
+    if(entryName) addField(entryName, r.value);
+  });
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
 document.getElementById('submitBtn').addEventListener('click', ()=>{
@@ -1769,8 +1784,8 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
   const statusEl=document.getElementById('submitStatus');
   if(!name){ alert('이름을 입력해주세요.'); return; }
   const payload=buildPayload();
-  if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_DATA){
-    submitToGoogleForm(payload.room, payload.number, name, JSON.stringify(payload));
+  if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_TASK){
+    submitToGoogleForm(payload);
     statusEl.textContent = `제출되었습니다! (완료 ${payload.completed}/${payload.total})`;
   } else {
     downloadBackup(payload);
