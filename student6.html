@@ -192,11 +192,13 @@
 
    선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
    1) forms.google.com 에서 새 설문지 생성
-   2) 질문 2개 추가: "이름"(단답형), "결과"(장문형)
-   3) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
+   2) 질문 4개 추가: "반"(단답형), "번호"(단답형), "이름"(단답형), "결과"(장문형)
+   3) 설문지 "응답" 탭에서 스프레드시트 아이콘을 눌러 시트를 연결해두면, 제출될 때마다
+      그 시트에 한 줄씩 자동으로 쌓인다.
+   4) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
       생성된 링크에서 entry.숫자 부분을 확인 (예: entry.123456789)
-   4) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
-   5. 아래 CONFIG를 채우면 "제출하기" 클릭 시 자동으로 구글 설문지(연결된 시트)에 저장됩니다.
+   5) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
+   6. 아래 CONFIG를 채우면 "제출하기" 클릭 시 자동으로 구글 설문지(연결된 시트)에 저장됩니다.
       비워두면 백업 파일 저장만 동작합니다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
@@ -204,9 +206,11 @@ const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
 const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
 
 const CONFIG = {
-  GOOGLE_FORM_URL: '', // 예: 'https://docs.google.com/forms/d/e/xxxxxxxx/formResponse'
-  ENTRY_NAME: '',       // 예: 'entry.111111111'
-  ENTRY_DATA: ''        // 예: 'entry.222222222'
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_ROOM: 'entry.2051553698',   // "반"
+  ENTRY_NUMBER: 'entry.553461765',  // "번호"
+  ENTRY_NAME: 'entry.1279750620',   // "이름"
+  ENTRY_DATA: 'entry.863803595'     // "결과"(전체 답변 JSON)
 };
 
 /* ============================================================
@@ -1734,9 +1738,11 @@ updateProgress();
 /* ---------- 제출 / 백업 ---------- */
 function buildPayload(){
   const name=document.getElementById('studentName').value.trim();
+  const room=document.getElementById('roomCode').value.trim();
+  const number=document.getElementById('studentNumber').value.trim();
   const list = TASKS.map(t=>({id:t.id, title:t.title, done: results[t.id]? !!results[t.id].done : false, value: results[t.id]?results[t.id].value:undefined}));
   const completed=list.filter(r=>r.done).length;
-  return {name, submittedAt:new Date().toISOString(), completed, total:list.length, results:list};
+  return {room, number, name, submittedAt:new Date().toISOString(), completed, total:list.length, results:list};
 }
 function downloadBackup(payload){
   const blob=new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
@@ -1746,13 +1752,16 @@ function downloadBackup(payload){
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
-function submitToGoogleForm(name,jsonStr){
+function submitToGoogleForm(room,number,name,jsonStr){
   let iframe=document.getElementById('hiddenSubmitFrame');
   if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
   const form=document.createElement('form');
   form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-  const f1=document.createElement('input'); f1.name=CONFIG.ENTRY_NAME; f1.value=name; form.appendChild(f1);
-  const f2=document.createElement('input'); f2.name=CONFIG.ENTRY_DATA; f2.value=jsonStr; form.appendChild(f2);
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=val; form.appendChild(f); };
+  addField(CONFIG.ENTRY_ROOM, room);
+  addField(CONFIG.ENTRY_NUMBER, number);
+  addField(CONFIG.ENTRY_NAME, name);
+  addField(CONFIG.ENTRY_DATA, jsonStr);
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
 document.getElementById('submitBtn').addEventListener('click', ()=>{
@@ -1761,7 +1770,7 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
   if(!name){ alert('이름을 입력해주세요.'); return; }
   const payload=buildPayload();
   if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_DATA){
-    submitToGoogleForm(name, JSON.stringify(payload));
+    submitToGoogleForm(payload.room, payload.number, name, JSON.stringify(payload));
     statusEl.textContent = `제출되었습니다! (완료 ${payload.completed}/${payload.total})`;
   } else {
     downloadBackup(payload);
