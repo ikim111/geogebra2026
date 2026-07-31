@@ -769,13 +769,25 @@ class GeoCanvas{
    AB=AC인 이등변삼각형 ABC와, 이등변삼각형이 아닌 삼각형 DEF를 나란히 두고 같은 작도를
    해보면서 이등변삼각형만의 특별한 성질을 스스로 발견하도록 구성했다.
    과제3은 정답이 정해져 있지 않으므로, 일정 글자 수(20자) 이상을 쓰면 진행 완료로 인정한다. */
+// B,C,E,F가 한 직선(y=330) 위에 놓이도록 F의 y좌표를 E/B/C와 맞췄다 - 두 삼각형이
+// 같은 밑변 선 위에 나란히 서 있는 모양이 되어 비교하기 쉽다.
 const TRI_POINTS = [
   {label:'A',x:150,y:100},{label:'B',x:70,y:330},{label:'C',x:230,y:330},
-  {label:'D',x:430,y:80},{label:'E',x:360,y:330},{label:'F',x:570,y:280}
+  {label:'D',x:430,y:80},{label:'E',x:360,y:330},{label:'F',x:570,y:330}
 ];
 const TRI_PRESET = [
   {type:'segment',p1:'A',p2:'B'},{type:'segment',p1:'A',p2:'C'},{type:'segment',p1:'B',p2:'C'},
   {type:'segment',p1:'D',p2:'E'},{type:'segment',p1:'D',p2:'F'},{type:'segment',p1:'E',p2:'F'}
+];
+// [과제 3] 전용: [과제 1]의 각의 이등분선 + [과제 2]의 중선을 겹쳐서 미리 그려둔 정적 그림.
+// M=변 BC의 중점, N=변 EF의 중점(좌표는 TRI_POINTS로부터 미리 계산).
+const TASK3_POINTS = [...TRI_POINTS, {label:'M',x:150,y:330}, {label:'N',x:465,y:330}];
+const TASK3_PRESET = [
+  ...TRI_PRESET,
+  {type:'angleBisector', a:'B', b:'A', c:'C'},
+  {type:'angleBisector', a:'E', b:'D', c:'F'},
+  {type:'segment', p1:'A', p2:'M'},
+  {type:'segment', p1:'D', p2:'N'}
 ];
 const TASKS = [
   { id:1, title:'[과제 1] AB=AC인 이등변삼각형 ABC와 이등변삼각형이 아닌 삼각형 DEF가 있습니다. 각 A와 각 D를 이등분하는 선을 각각 그려봅시다.',
@@ -805,8 +817,12 @@ const TASKS = [
       return fail('이어서 변 EF의 중점을 찾아 D와 이어보세요.');
     } },
 
-  { id:3, title:'[과제 3] [과제 1]과 [과제 2]의 그림을 참고하여, 이등변삼각형(ABC)이 갖는 성질을 삼각형 DEF와 비교하며 3가지 이상 추측하여 적어봅시다.',
-    type:'text', noFigure:true, minLen:20 },
+  { id:3, title:'[과제 3] 위 그림은 [과제 1]의 각의 이등분선과 [과제 2]의 중선을 겹쳐서 보여줍니다. 이등변삼각형(ABC)이 갖는 성질을 삼각형 DEF와 비교하며 3가지 이상 추측하여 적어봅시다.',
+    type:'verify', noTools:true, minLen:20,
+    points: TASK3_POINTS, presetObjects: TASK3_PRESET,
+    hint:'이등변삼각형 ABC에서는 각의 이등분선(주황)과 중선(파란 점선)이 겹쳐 보이지만, 삼각형 DEF에서는 서로 다른 선으로 보여요. 이 차이를 포함해서 성질을 적어보세요.',
+    textPrompt:'이등변삼각형의 성질을 3가지 이상 적어주세요. (20자 이상)',
+    verify(){ return true; } },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
@@ -842,7 +858,7 @@ function buildTaskCard(task){
           </div><div class="feedback" id="fb-${task.id}"></div>`
           : isTextLike ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
             <textarea id="input-${task.id}" rows="3" placeholder="여기에 생각을 적어보세요 (${task.minLen||10}자 이상)"></textarea>
-            <button id="check-${task.id}">확인</button>
+            <button id="check-${task.id}">${task.type==='verify' ? '제출' : '확인'}</button>
           </div>
           <div class="text-min-note">✏️ ${task.minLen||10}자 이상 적어야 완료로 인정돼요.</div>
           <div class="feedback" id="fb-${task.id}"></div>
@@ -971,18 +987,20 @@ function initVerifyTask(task){
     const target = instArg || cv;
     if(!target) return {constructOk:false, textOk:false};
     const constructOk = task.verify ? !!task.verify(target) : !!isIsoscelesTriangle(target);
-    const textOk = (input.value||'').trim().length>=10;
+    const minLen = task.minLen||10;
+    const textOk = (input.value||'').trim().length>=minLen;
     return {constructOk, textOk};
   }
   // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
   // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
   function refreshFeedback(instArg){
     const {constructOk, textOk} = checkReady(instArg);
+    const minLen = task.minLen||10;
     if(!locked){
       const canSubmit = constructOk && textOk;
       fb.textContent = !constructOk
         ? (task.failMsg || '아직 이등변삼각형을 만들지 않았어요. 두 변의 길이가 같은 삼각형을 만들어보세요.')
-        : (!textOk ? (task.textPrompt || '어떻게 만들었는지 설명을 적어주세요. (10자 이상)') : '준비됐어요! "확인" 버튼을 눌러 제출해보세요.');
+        : (!textOk ? (task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`) : '준비됐어요! "제출" 버튼을 눌러 제출해보세요.');
       fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
     return constructOk && textOk;
@@ -1012,7 +1030,7 @@ function initVerifyTask(task){
     locked = false;
     input.disabled = false;
     input.classList.remove('locked-fixed');
-    btn.textContent = '확인';
+    btn.textContent = task.type==='verify' ? '제출' : '확인';
     btn.classList.remove('cancel');
     results[task.id] = {done:false, value:input.value};
     updateProgress();
@@ -1158,8 +1176,7 @@ function renderClassAnswersFor(task){
   const entries = Object.keys(RT.allStudents||{})
     .filter(k=>k!==RT.studentKey)
     .map(k=>({key:k, ...RT.allStudents[k]}))
-    .filter(s=> s.progress && s.progress[task.id] && s.progress[task.id].value && String(s.progress[task.id].value).trim().length>0)
-    .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    .filter(s=> s.progress && s.progress[task.id] && s.progress[task.id].value && String(s.progress[task.id].value).trim().length>0);
 
   if(entries.length===0){
     const empty=document.createElement('div'); empty.className='ca-empty';
@@ -1167,7 +1184,9 @@ function renderClassAnswersFor(task){
     list.appendChild(empty);
     return;
   }
-  entries.forEach(s=>{
+  // 전체가 아니라 무작위로 3명만 보여준다.
+  const shuffled = [...entries].sort(()=>Math.random()-0.5);
+  shuffled.slice(0,3).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
