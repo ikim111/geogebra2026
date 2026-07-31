@@ -191,36 +191,36 @@
    (원본 geogebra.org/m/uswdpbe2, 저자 김형준)
 
    선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
-   1) forms.google.com 에서 새 설문지 생성
-   2) 질문을 추가: "반"(단답형), "번호"(단답형), "이름"(단답형), "과제 성공 여부"(단답형),
-      그리고 4개 과제(TASKS)의 서술형 답변을 각각 담을 질문 4개(장문형) — 시트에서
-      과제별로 열이 따로 생겨야 바로 읽고 채점할 수 있어서, "결과"에 JSON을 통째로
-      넣지 않고 이렇게 나눴다.
-   3) 설문지 "응답" 탭에서 스프레드시트 아이콘을 눌러 시트를 연결해두면, 제출될 때마다
+   1) forms.google.com 에서 새 설문지 생성, 질문 6개를 만든다:
+      "반"(단답형), "번호"(단답형), "이름"(단답형), "과제"(단답형, 1~4가 들어감),
+      "성공여부"(단답형), "답변"(장문형)
+      → 학생이 페이지별 "제출" 버튼을 누를 때마다 이 6개 값이 한 세트로 전송되어
+      시트에 한 줄씩 쌓인다(과제당 1행 - "롱포맷"). 과제별로 열을 나눠 보고 싶다면
+      Apps Script(onFormSubmit 트리거)로 반+번호 기준 병합(upsert)해서 별도 "정리" 탭에
+      학생 1명당 1행으로 정리한다(설정법은 필요할 때 안내).
+   2) 설문지 "응답" 탭에서 스프레드시트 아이콘을 눌러 시트를 연결해두면, 제출될 때마다
       그 시트에 한 줄씩 자동으로 쌓인다.
-   4) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
+   3) 각 질문 우측 ⋮ 메뉴 → "미리 채워진 링크 받기"로 답을 채운 뒤
       생성된 링크에서 entry.숫자 부분을 확인 (예: entry.123456789)
-   5) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
-   6. 아래 CONFIG를 채우면 "제출하기" 클릭 시 자동으로 구글 설문지(연결된 시트)에 저장됩니다.
-      비워두면 백업 파일 저장만 동작합니다.
+   4) 설문지 링크의 끝부분 /viewform 을 /formResponse 로 바꿔서 아래 GOOGLE_FORM_URL에 입력
+   5) 아래 CONFIG를 채우면 각 페이지 "제출" 클릭 시 그 과제 1건이 즉시 구글 설문지(연결된
+      시트)로 전송됩니다. 비워두면 전송하지 않습니다(하단 "백업 파일로 저장"은 항상 동작).
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
 const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
 
+// 설문지는 "과제별 제출 1건 = 1행" 롱포맷으로 받는다(반/번호/이름/과제/성공여부/답변).
+// 시트에서 과제별 열로 보고 싶으면, 스프레드시트에 연결한 Apps Script(onFormSubmit 트리거)가
+// 반+번호로 학생을 찾아 그 학생의 "정리" 탭 행에서 해당 과제 열만 갱신(upsert)하도록 만든다.
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
-  ENTRY_ROOM: 'entry.2051553698',    // "반"
-  ENTRY_NUMBER: 'entry.553461765',   // "번호"
-  ENTRY_NAME: 'entry.1279750620',    // "이름"
-  ENTRY_STATUS: 'entry.863803595',   // "과제 성공 여부" (예: "4/4 완료")
-  // 과제별 서술형 답변을 각각 별도 열로 보낸다 - 시트에서 바로 읽을 수 있도록.
-  ENTRY_TASK: {
-    1: 'entry.1757796230', // [활동1] 이등변삼각형 외심·내심
-    2: 'entry.1389741500', // [활동2] 정삼각형 외심·내심
-    3: 'entry.846756124',  // [활동1] 외심 탐구 (∠A vs ∠BOC)
-    4: 'entry.1090948288'  // [활동2] 내심 탐구 (∠A vs ∠BIC)
-  }
+  ENTRY_ROOM: 'entry.2051553698',     // "반"
+  ENTRY_NUMBER: 'entry.553461765',    // "번호"
+  ENTRY_NAME: 'entry.1279750620',     // "이름"
+  ENTRY_TASK: 'entry.863803595',      // "과제" (1~4)
+  ENTRY_SUCCESS: 'entry.172713041',   // "성공여부"
+  ENTRY_ANSWER: 'entry.1090948288'    // "답변"
 };
 
 /* ============================================================
@@ -1106,22 +1106,29 @@ function initVerifyTask(task){
   // locked 상태에서는 캔버스를 계속 만지작거려도(도구 조작은 막지 않았으므로) 이미 제출된
   // 안내 문구를 건드리지 않는다 - 제출 취소를 눌러야만 다시 실시간 안내로 돌아온다.
   //
-  // 그림(작도/탐구)과 서술형 제출은 "독립 사건"으로 둔다 - 그림을 완벽하게 못 그려도
-  // 글자 수만 채우면 제출할 수 있다. 다만 그림 관련 안내 문구는 계속 보여줘서, 아직
-  // 안 끝냈다면 마저 완성해보라고 유도는 한다(강제는 아님).
+  // 그림(작도/탐구)과 서술형 제출은 "독립 사건"으로 둔다 - 제출 가능 여부(canSubmit)는
+  // 글자 수로만 판단하고, 그림을 완벽하게 못 그려도 제출할 수 있다.
+  // 다만 안내 문구가 "보여지는 순서"는 원래 학습 흐름대로 그림 단계(1→2)를 먼저 보여주고,
+  // 그림이 끝난 뒤에야 서술형 안내(3)로 넘어가도록 되돌렸다 — 문구 순서와 제출 가능
+  // 여부는 서로 다른 문제라, 순서는 예전처럼 "그림 → 글" 그대로 두고 제출만 독립시켰다.
   function refreshFeedback(instArg){
     const {constructOk, textOk, constructMsg} = checkReady(instArg);
     const canSubmit = textOk;
     if(!locked){
       const minLen = task.minLen||10;
-      if(!textOk){
+      // 문구 색은 "지금 보여주는 단계가 끝났는지"를 따른다(제출 가능 여부와는 별개).
+      // 그림 단계가 안 끝났으면 빨간색으로 그림 안내를, 그림은 끝났는데 글이 부족하면
+      // 빨간색으로 글 안내를, 둘 다 끝나면 초록색으로 제출 안내를 보여준다.
+      if(!constructOk){
+        fb.textContent = constructMsg || task.failMsg || '아직 조건을 만족하지 않았어요.';
+        fb.className = 'feedback no';
+      } else if(!textOk){
         fb.textContent = task.textPrompt || `어떻게 만들었는지 설명을 적어주세요. (${minLen}자 이상)`;
-      } else if(!constructOk){
-        fb.textContent = (constructMsg || task.failMsg || '') + ' (그림을 다 완성하지 않아도 지금 "제출"할 수 있어요.)';
+        fb.className = 'feedback no';
       } else {
         fb.textContent = '준비됐어요! "제출" 버튼을 눌러 제출해보세요.';
+        fb.className = 'feedback ok';
       }
-      fb.className = 'feedback ' + (canSubmit ? 'ok' : 'no');
     }
     return canSubmit;
   }
@@ -1132,6 +1139,7 @@ function initVerifyTask(task){
   function doSubmit(){
     const canSubmit = refreshFeedback();
     if(!canSubmit) return; // 아직 조건을 못 채웠으면 잠그지 않고, 안내 문구만 갱신한다
+    const {constructOk} = checkReady();
     locked = true;
     input.disabled = true;
     input.classList.add('locked-fixed');
@@ -1144,6 +1152,9 @@ function initVerifyTask(task){
     fb.className = 'feedback ok';
     updateProgress();
     renderClassAnswersFor(task);
+    // 이 과제 하나의 제출을 즉시 구글 설문지로 보낸다(반/번호/이름/과제/성공여부/답변).
+    // "결과 제출하기"까지 기다리지 않고 페이지별 제출마다 바로 기록되어야 누락이 없다.
+    submitTaskToGoogleForm(task.id, constructOk ? '성공' : '진행중(도형 미완성)', input.value);
   }
   function doCancel(){
     locked = false;
@@ -1762,21 +1773,25 @@ function downloadBackup(payload){
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
-function submitToGoogleForm(payload){
+// 과제 1건(반/번호/이름/과제/성공여부/답변)을 즉시 구글 설문지로 전송한다.
+// initVerifyTask의 doSubmit()에서, 학생이 그 페이지의 "제출"을 누를 때마다 바로 호출된다
+// - "결과 제출하기"를 따로 안 눌러도 과제별로 그때그때 시트에 기록되게 하기 위함.
+function submitTaskToGoogleForm(taskId, statusText, answerText){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
+  const room=document.getElementById('roomCode').value.trim();
+  const number=document.getElementById('studentNumber').value.trim();
+  const name=document.getElementById('studentName').value.trim();
   let iframe=document.getElementById('hiddenSubmitFrame');
   if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
   const form=document.createElement('form');
   form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
   const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
-  addField(CONFIG.ENTRY_ROOM, payload.room);
-  addField(CONFIG.ENTRY_NUMBER, payload.number);
-  addField(CONFIG.ENTRY_NAME, payload.name);
-  addField(CONFIG.ENTRY_STATUS, `${payload.completed}/${payload.total} 완료`);
-  // 과제별 답변을 각각 자기 열로 - 시트에서 JSON을 안 풀어봐도 바로 읽을 수 있게.
-  payload.results.forEach(r=>{
-    const entryName = CONFIG.ENTRY_TASK && CONFIG.ENTRY_TASK[r.id];
-    if(entryName) addField(entryName, r.value);
-  });
+  addField(CONFIG.ENTRY_ROOM, room);
+  addField(CONFIG.ENTRY_NUMBER, number);
+  addField(CONFIG.ENTRY_NAME, name);
+  addField(CONFIG.ENTRY_TASK, taskId);
+  addField(CONFIG.ENTRY_SUCCESS, statusText);
+  addField(CONFIG.ENTRY_ANSWER, answerText);
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
 document.getElementById('submitBtn').addEventListener('click', ()=>{
@@ -1784,13 +1799,9 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
   const statusEl=document.getElementById('submitStatus');
   if(!name){ alert('이름을 입력해주세요.'); return; }
   const payload=buildPayload();
-  if(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_NAME && CONFIG.ENTRY_TASK){
-    submitToGoogleForm(payload);
-    statusEl.textContent = `제출되었습니다! (완료 ${payload.completed}/${payload.total})`;
-  } else {
-    downloadBackup(payload);
-    statusEl.textContent = `⚠️ 구글 설문지가 아직 설정되지 않아, 결과를 파일로 저장했어요. (완료 ${payload.completed}/${payload.total}) 코드 상단 CONFIG를 채워주세요.`;
-  }
+  // 과제별 제출은 각 페이지의 "제출" 버튼을 누를 때 이미 구글 설문지로 전송됐다.
+  // 여기서는 전체 진행 상황을 확인시켜주고, 실시간 확인용 Firebase에 제출 완료를 표시한다.
+  statusEl.textContent = `확인했어요! (완료 ${payload.completed}/${payload.total}) 과제별 제출은 각 페이지의 "제출" 버튼을 누를 때마다 자동으로 기록돼요.`;
   if(RT.connected){
     RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
   }
