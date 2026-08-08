@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교사용 실시간 대시보드 — 11. 평행사변형의 성질</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
+  header{background:#1a237e;color:#fff;padding:16px;text-align:center;}
+  header h1{margin:0 0 4px;font-size:19px;}
+  header p{margin:0;font-size:12.5px;opacity:.85;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px;}
+  .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  #roomCode{flex:1;min-width:140px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:#fff;}
+  input[type=text]{padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+  #announceInput{flex:1;min-width:200px;}
+  button{padding:9px 14px;border:none;border-radius:6px;cursor:pointer;font-size:13.5px;white-space:nowrap;}
+  button.primary{background:var(--blue);color:#fff;}
+  button.pause{background:#fdecea;color:var(--red);border:1px solid #ef9a9a;}
+  button.pause.active{background:var(--red);color:#fff;}
+  button.send{background:var(--orange);color:#fff;}
+  button:disabled{background:#f0f0f0!important;color:#bbb!important;border-color:#e0e0e0!important;cursor:not-allowed;}
+  input.rowCheck, #checkAll{width:15px;height:15px;cursor:pointer;}
+  #connStatus{font-size:12.5px;color:#999;margin-top:8px;}
+  #connStatus.on{color:var(--green);font-weight:bold;}
+  .hand-alert{background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13.5px;color:#e65100;display:none;}
+  .hand-badge{color:var(--orange);margin-left:5px;}
+  .submit-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;background:#ffb300;}
+  .submit-check{color:var(--green);font-weight:bold;margin-left:5px;}
+  .summary{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px;font-size:13.5px;color:#444;}
+  .summary b{color:var(--blue);font-size:17px;}
+
+  table{border-collapse:collapse;width:100%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:13px;}
+  th,td{padding:9px 8px;text-align:center;border-bottom:1px solid #eee;}
+  th{background:#f0f2f5;font-size:11.5px;color:#555;}
+  td.name{text-align:left;font-weight:bold;cursor:pointer;}
+  td.name:hover{color:var(--blue);}
+  td.preview{max-width:220px;text-align:left;color:#666;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  tr.selected td{background:#e3f2fd;}
+  tr.idle td{opacity:.5;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+  .dot.on{background:var(--green);}
+  .dot.off{background:#bbb;}
+  .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
+
+  .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .grid-wrap{flex:2;min-width:360px;overflow-x:auto;}
+  .detail{flex:1;min-width:300px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;}
+  .detail h3{margin:0 0 10px;font-size:16px;}
+  .detail .answerBox{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:10px 12px;font-size:13.5px;white-space:pre-wrap;margin-bottom:12px;}
+  #previewSvg{width:100%;max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📊 교사용 실시간 대시보드 — 11. 평행사변형의 성질</h1>
+  <p>학생들이 발견한 평행사변형의 성질(서술형 답변)을 실시간으로 확인해요</p>
+</header>
+
+<div class="wrap">
+
+  <div id="teacherGateScreen" class="panel" style="max-width:420px;margin:60px auto;text-align:center;">
+    <a href="teacher.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
+    <h2 style="margin-top:0;font-size:18px;color:#1a237e;">반을 선택하고 시작하세요</h2>
+    <div class="row" style="justify-content:center;">
+      <select id="roomCode"><option value="">반 선택</option></select>
+      <button class="primary" id="connectBtn">시작하기 →</button>
+    </div>
+    <div id="connStatus" style="margin-top:12px;">반을 선택하고 "시작하기"를 눌러주세요.</div>
+  </div>
+
+  <div id="teacherAppScreen" style="display:none;">
+
+    <div class="panel">
+      <div class="row">
+        <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">현재 반: <b id="currentRoomLabel">-</b></span>
+        <a href="teacher.html" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
+        <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
+        <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
+        <button class="pause" id="anonymizeBtn">🎭 익명화</button>
+        <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
+        <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
+        <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input type="text" id="announceInput" placeholder="학생 화면에 띄울 공지 메시지">
+        <button class="send" id="announceBtn">📢 공지 보내기</button>
+        <button class="pause" id="announceClearBtn">🔽 공지 내리기</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+        <button class="pause" id="classStartBtn">▶ 수업 시작</button>
+        <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
+      </div>
+      <div class="summary" id="summary" style="display:none;">
+        <div>학생 수: <b id="sumCount">0</b></div>
+        <div>제출 완료: <b id="sumDone">0</b></div>
+      </div>
+      <div class="hand-alert" id="handAlert"></div>
+    </div>
+
+    <div class="layout">
+      <div class="grid-wrap">
+        <table id="grid">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="checkAll"></th>
+              <th style="text-align:left;">이름</th>
+              <th>번호</th>
+              <th>제출</th>
+              <th style="text-align:left;">답변 미리보기</th>
+              <th>최근 활동</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody"><tr><td class="empty" colspan="6">아직 접속한 학생이 없어요.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="detail" id="detail">
+        <h3>학생 선택</h3>
+        <div class="empty">표에서 이름을 클릭하면<br>그 학생의 답변과 현재 도형이<br>여기 자세히 나와요.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   student11.html과 짝이 되는 교사용 실시간 대시보드.
+   반드시 아래 두 가지를 student11.html과 동일하게 맞춰야 한다.
+   1) FIREBASE_CONFIG
+   2) ACTIVITY_SUFFIX
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__quad11'; // student11.html과 반드시 동일해야 함
+const UNIT_LABEL = '11. 평행사변형의 성질'; // 구글 설문지 "단원" 칸에 채워질 값
+// 학생 답변을 교사가 직접 구글 설문지로 제출할 때 쓰는 설정 — 다른 단원 파일들의 CONFIG와 동일해야 한다.
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
+
+/* ---------- 미리보기용 기하 유틸 ---------- */
+const NS='http://www.w3.org/2000/svg';
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+
+function drawPreview(quad){
+  const svg = document.getElementById('previewSvg');
+  if(!svg) return;
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  if(!quad || !quad.A || !quad.B || !quad.C || !quad.D) return;
+  const {A,B,C,D} = quad;
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.12');
+  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2');
+  svg.appendChild(poly);
+  const O = mid(A,C);
+  const oc=document.createElementNS(NS,'circle');
+  oc.setAttribute('cx',O.x); oc.setAttribute('cy',O.y); oc.setAttribute('r',3);
+  oc.setAttribute('fill','#8e24aa');
+  svg.appendChild(oc);
+  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+    c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+    svg.appendChild(c);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',p.x); t.setAttribute('y',p.y-10);
+    t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#212121');
+    t.setAttribute('text-anchor','middle');
+    t.textContent=name;
+    svg.appendChild(t);
+  });
+}
+
+let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
+let paused=false, anonymize=false, checkedKeys=new Set();
+let classEnded=false, currentRoomName='';
+
+function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
+
+const PSEUDONYMS = ['유클리드','가우스','히파티아','디오판토스','피타고라스','아르키메데스','탈레스','에라토스테네스','데카르트','오일러','뉴턴','라이프니츠','파스칼','칸토어','뇌터','튜링'];
+function displayName(key, name){
+  if(!anonymize) return name || '(이름없음)';
+  let h=0;
+  for(let i=0;i<key.length;i++) h=(h*31 + key.charCodeAt(i)) >>> 0;
+  return PSEUDONYMS[h % PSEUDONYMS.length];
+}
+
+function populateRoomSelect(){
+  const sel=document.getElementById('roomCode');
+  for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=i+'반'; sel.appendChild(o); }
+}
+populateRoomSelect();
+
+document.getElementById('connectBtn').addEventListener('click', ()=>{
+  const room = document.getElementById('roomCode').value.trim();
+  const statusEl = document.getElementById('connStatus');
+  if(!FIREBASE_CONFIG.apiKey){ statusEl.textContent='⚠️ FIREBASE_CONFIG가 설정되지 않았어요.'; return; }
+  if(!room){ statusEl.textContent='반을 선택해주세요.'; return; }
+  try{
+    if(!app){ app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); }
+    statusEl.textContent='🔄 연결 중...';
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = sanitize(room) + ACTIVITY_SUFFIX;
+      currentRoomKey = roomKey;
+      currentRoomName = room;
+      const roomRef = db.ref('rooms/'+roomKey);
+      studentsRef = roomRef.child('students');
+      controlRef = roomRef.child('control');
+      selectedKey = null; checkedKeys = new Set();
+      studentsRef.on('value', snap=>{
+        allStudents = snap.val() || {};
+        renderGrid();
+      });
+      controlRef.on('value', snap=>{
+        const c = snap.val() || {};
+        paused = (c.paused===undefined) ? true : !!c.paused;
+        updatePauseBtn();
+        classEnded = !!c.classEnded;
+        updateClassButtons();
+      });
+      document.getElementById('teacherGateScreen').style.display='none';
+      document.getElementById('teacherAppScreen').style.display='block';
+      document.getElementById('currentRoomLabel').textContent = room+'반';
+      document.getElementById('summary').style.display='flex';
+    }).catch(err=>{ statusEl.textContent='⚠️ 로그인 실패: '+err.message; });
+  }catch(err){ statusEl.textContent='⚠️ 연결 실패: '+err.message; }
+});
+
+function updatePauseBtn(){
+  const btn=document.getElementById('pauseBtn');
+  btn.classList.toggle('active', paused);
+  btn.textContent = paused ? '▶ 재개하기' : '⏸ 전체 일시정지';
+}
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ paused: !paused });
+});
+
+document.getElementById('anonymizeBtn').addEventListener('click', ()=>{
+  anonymize = !anonymize;
+  const btn=document.getElementById('anonymizeBtn');
+  btn.classList.toggle('active', anonymize);
+  btn.textContent = anonymize ? '🎭 익명화 해제' : '🎭 익명화';
+  renderGrid();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!confirm(`${currentRoomKey}반의 학생 접속 기록을 모두 지울까요? (이전 시간대 학생 목록을 정리할 때 사용하세요)`)) return;
+  studentsRef.set(null);
+  selectedKey = null; checkedKeys = new Set();
+});
+
+document.getElementById('announceBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const input=document.getElementById('announceInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  controlRef.update({ announcement: msg, announcementTs: Date.now() });
+  input.value='';
+});
+document.getElementById('announceClearBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ announcement: '', announcementTs: Date.now() });
+});
+
+function toggleCheck(key, checked){
+  if(checked) checkedKeys.add(key); else checkedKeys.delete(key);
+  updateDeleteBtn();
+  updateSurveyBtn();
+  const checkAll = document.getElementById('checkAll');
+  if(checkAll) checkAll.checked = Object.keys(allStudents).length>0 && Object.keys(allStudents).every(k=>checkedKeys.has(k));
+}
+function toggleCheckAll(checked){
+  checkedKeys = new Set(checked ? Object.keys(allStudents) : []);
+  renderGrid();
+}
+function updateDeleteBtn(){
+  const btn=document.getElementById('deleteSelectedBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `🗑 선택 삭제 (${checkedKeys.size})`;
+}
+function updateSurveyBtn(){
+  const btn=document.getElementById('surveySubmitBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `📨 설문 제출 (${checkedKeys.size})`;
+}
+function updateClassButtons(){
+  const endBtn=document.getElementById('classEndBtn');
+  const startBtn=document.getElementById('classStartBtn');
+  if(endBtn) endBtn.classList.toggle('active', classEnded);
+  if(startBtn) startBtn.classList.toggle('active', !classEnded);
+}
+
+/* ---------- 학생 답변을 구글 설문지로 전송 (교사가 직접) ---------- */
+function submitStudentAnswersToGoogleForm(s){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
+  if(!isDone(s)) return 0; // 완료(제출)된 답변만 전송
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  const form=document.createElement('form');
+  form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+  addField(CONFIG.ENTRY_ROOM, currentRoomName);
+  addField(CONFIG.ENTRY_NUMBER, s.number);
+  addField(CONFIG.ENTRY_NAME, s.name);
+  addField(CONFIG.ENTRY_TASK, 'p1');
+  addField(CONFIG.ENTRY_SUCCESS, '성공');
+  addField(CONFIG.ENTRY_ANSWER, answerValueOf(s));
+  document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+  return 1;
+}
+document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
+  if(checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 답변을 구글 설문지로 제출할까요?`)) return;
+  let total=0;
+  checkedKeys.forEach(k=>{ if(allStudents[k]) total += submitStudentAnswersToGoogleForm(allStudents[k]); });
+  alert(`${checkedKeys.size}명, 총 ${total}개 문항을 설문지로 전송했어요.`);
+});
+
+/* ---------- 수업 시작/종료 (일시정지와는 별개) ----------
+   [수업 종료]를 누르면 반 전체 학생의 "제출" 버튼이 강제로 눌리고,
+   [수업 시작]을 누르면 반대로 전체가 "제출 취소"된다. */
+document.getElementById('classEndBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: true, classEndedTs: Date.now() });
+});
+document.getElementById('classStartBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: false, classStartedTs: Date.now() });
+});
+document.getElementById('checkAll').addEventListener('change', e=> toggleCheckAll(e.target.checked));
+document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
+  if(!studentsRef || checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}`)) return;
+  const updates = {};
+  checkedKeys.forEach(k=>{ updates[k] = null; });
+  studentsRef.update(updates);
+  if(selectedKey && checkedKeys.has(selectedKey)) selectedKey = null;
+  checkedKeys = new Set();
+});
+
+document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
+  if(studentsRef) studentsRef.off();
+  if(controlRef) controlRef.off();
+  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false;
+  document.getElementById('teacherAppScreen').style.display='none';
+  document.getElementById('teacherGateScreen').style.display='block';
+  document.getElementById('connStatus').textContent='반을 선택하고 "시작하기"를 눌러주세요.';
+});
+
+function fmtTime(ts){
+  if(!ts) return '-';
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+function answerValueOf(s){
+  return (s.progress && s.progress.p1 && s.progress.p1.value) ? String(s.progress.p1.value) : '';
+}
+function isDone(s){
+  return !!(s.progress && s.progress.p1 && s.progress.p1.done);
+}
+
+function renderGrid(){
+  const body = document.getElementById('gridBody');
+  body.textContent='';
+  Array.from(checkedKeys).forEach(k=>{ if(!allStudents[k]) checkedKeys.delete(k); });
+  const keys = Object.keys(allStudents);
+  if(keys.length===0){
+    body.innerHTML = '<tr><td class="empty" colspan="6">아직 접속한 학생이 없어요.</td></tr>';
+    document.getElementById('sumCount').textContent='0';
+    document.getElementById('sumDone').textContent='0';
+    document.getElementById('handAlert').style.display='none';
+    const checkAllEmpty=document.getElementById('checkAll');
+    if(checkAllEmpty) checkAllEmpty.checked=false;
+    updateDeleteBtn();
+    updateSurveyBtn();
+    return;
+  }
+  const list = keys.map(k=>({ key:k, student: allStudents[k]||{} }));
+  list.sort((a,b)=>{
+    if(!!b.student.raisedHand !== !!a.student.raisedHand) return (b.student.raisedHand?1:0)-(a.student.raisedHand?1:0);
+    if(!!isDone(b.student) !== !!isDone(a.student)) return (isDone(b.student)?1:0)-(isDone(a.student)?1:0);
+    return (b.student.lastActive||0)-(a.student.lastActive||0);
+  });
+
+  let doneCount=0;
+  list.forEach(item=>{
+    const s = item.student;
+    if(isDone(s)) doneCount++;
+    const tr = document.createElement('tr');
+    tr.className = [(item.key===selectedKey?'selected':''), (s.online===false?'idle':'')].filter(Boolean).join(' ');
+
+    const tdCheck=document.createElement('td');
+    tdCheck.addEventListener('click', e=>e.stopPropagation());
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.className='rowCheck'; cb.checked=checkedKeys.has(item.key);
+    cb.addEventListener('click', ()=> toggleCheck(item.key, cb.checked));
+    tdCheck.appendChild(cb);
+    tr.appendChild(tdCheck);
+
+    const tdName = document.createElement('td');
+    tdName.className='name';
+    const dot = document.createElement('span');
+    dot.className='dot '+(s.online?'on':'off');
+    tdName.appendChild(dot);
+    const nameText=document.createElement('span');
+    nameText.textContent=displayName(item.key, s.name);
+    if(isDone(s)){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
+    tdName.appendChild(nameText);
+    if(s.raisedHand){
+      const hb=document.createElement('span'); hb.className='hand-badge'; hb.textContent='🖐';
+      tdName.appendChild(hb);
+    }
+    if(isDone(s)){
+      const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
+      tdName.appendChild(sc);
+    }else{
+      const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
+      tdName.appendChild(sd);
+    }
+    tdName.addEventListener('click', ()=>{ selectedKey = item.key; renderGrid(); renderDetail(item); });
+
+    const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
+    const tdDone = document.createElement('td'); tdDone.textContent = isDone(s) ? '완료' : '-';
+    const tdPreview = document.createElement('td'); tdPreview.className='preview'; tdPreview.textContent = answerValueOf(s) || '(아직 작성 전)';
+    const tdTime = document.createElement('td'); tdTime.textContent = fmtTime(s.lastActive);
+
+    tr.appendChild(tdName); tr.appendChild(tdNum); tr.appendChild(tdDone); tr.appendChild(tdPreview); tr.appendChild(tdTime);
+    body.appendChild(tr);
+  });
+
+  document.getElementById('sumCount').textContent = list.length;
+  document.getElementById('sumDone').textContent = doneCount;
+
+  const raised = list.filter(i=>i.student.raisedHand);
+  const handAlert = document.getElementById('handAlert');
+  if(raised.length){
+    handAlert.style.display='block';
+    handAlert.textContent = `🖐 질문 있는 학생: ${raised.map(i=>displayName(i.key,i.student.name)).join(', ')}`;
+  } else {
+    handAlert.style.display='none';
+  }
+
+  const checkAll = document.getElementById('checkAll');
+  if(checkAll) checkAll.checked = list.length>0 && list.every(i=>checkedKeys.has(i.key));
+  updateDeleteBtn();
+
+  if(selectedKey){
+    const sel = list.find(i=>i.key===selectedKey);
+    if(sel) renderDetail(sel);
+  }
+}
+
+function renderDetail(item){
+  const wrap = document.getElementById('detail');
+  wrap.textContent='';
+  const h3 = document.createElement('h3');
+  h3.textContent = displayName(item.key, item.student.name) + (item.student.number?(' · '+item.student.number+'번'):'');
+  wrap.appendChild(h3);
+
+  const svg = document.createElementNS(NS,'svg');
+  svg.setAttribute('id','previewSvg'); svg.setAttribute('viewBox','0 0 600 460');
+  wrap.appendChild(svg);
+  drawPreview(item.student.quad);
+
+  const answerTitle = document.createElement('div');
+  answerTitle.style.cssText='font-size:12px;font-weight:bold;color:#555;margin:12px 0 6px;';
+  answerTitle.textContent = '✏️ 답변';
+  wrap.appendChild(answerTitle);
+
+  const box = document.createElement('div');
+  box.className='answerBox';
+  box.textContent = answerValueOf(item.student) || '(아직 작성 전)';
+  wrap.appendChild(box);
+}
+</script>
+</body>
+</html>

@@ -140,6 +140,12 @@
       <button class="pause" id="anonymizeBtn">🎭 익명화</button>
       <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
       <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
+      <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+      <button class="pause" id="classStartBtn">▶ 수업 시작</button>
+      <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
     </div>
         <div class="row" style="margin-top:10px;">
       <input type="text" id="announceInput" placeholder="학생 화면에 띄울 공지 메시지">
@@ -259,6 +265,18 @@ const FIREBASE_CONFIG = {
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
 const ACTIVITY_SUFFIX = '__isoc'; // student1.html과 반드시 동일해야 함
+const UNIT_LABEL = '1. 이등변삼각형의 성질'; // 구글 설문지 "단원" 칸에 채워질 값 (student1.html의 UNIT_LABEL과 동일)
+// 학생별 "설문 제출" 버튼에서 쓰는 구글 설문지 설정 — student1.html의 CONFIG와 동일해야 한다.
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
 
 // 학생용 파일의 과제 구성과 맞춰주세요 (id, 짧은 제목)
 // 과제1(각의 이등분선), 과제2(중선)는 "작도", 과제3은 "성질 서술"입니다.
@@ -272,6 +290,8 @@ let app=null, db=null, studentsRef=null, controlRef=null;
 let students={};
 let selectedKey=null;
 let paused=false;
+let classEnded=false;
+let currentRoomName='';
 let checkedKeys=new Set();
 let anonymize=false;
 let paceStart=null, paceEnd=null;
@@ -363,6 +383,7 @@ function render(){
     if(checkAllEmpty) checkAllEmpty.checked=false;
 
     updateDeleteBtn();
+    updateSurveyBtn();
   } else {
     const list = keys.map(k=>({key:k, ...students[k]}));
     list.sort((a,b)=>{
@@ -396,7 +417,10 @@ function render(){
       const dot=document.createElement('span');
       dot.className='dot '+(idle?'off':'on');
       tdName.appendChild(dot);
-      tdName.appendChild(document.createTextNode(' '+displayName(s.key,s.name)+' '));
+      const nameText=document.createElement('span');
+      nameText.textContent = ' '+displayName(s.key,s.name)+' ';
+      if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
+      tdName.appendChild(nameText);
       if(s.raisedHand){
         const hb=document.createElement('span'); hb.className='hand-badge'; hb.textContent='🖐';
         tdName.appendChild(hb);
@@ -464,6 +488,7 @@ function render(){
     const checkAll = document.getElementById('checkAll');
     if(checkAll) checkAll.checked = list.length>0 && list.every(s=>checkedKeys.has(s.key));
     updateDeleteBtn();
+    updateSurveyBtn();
   }
   if(selectedKey && students[selectedKey]) renderDetail(students[selectedKey], selectedKey);
   else resetDetailPanel();
@@ -472,6 +497,7 @@ function render(){
 function toggleCheck(key, checked){
   if(checked) checkedKeys.add(key); else checkedKeys.delete(key);
   updateDeleteBtn();
+  updateSurveyBtn();
   const checkAll = document.getElementById('checkAll');
   if(checkAll) checkAll.checked = Object.keys(students).length>0 && Object.keys(students).every(k=>checkedKeys.has(k));
 }
@@ -487,6 +513,64 @@ function updateDeleteBtn(){
   btn.disabled = checkedKeys.size===0;
   btn.textContent = `🗑 선택 삭제 (${checkedKeys.size})`;
 }
+function updateSurveyBtn(){
+  const btn=document.getElementById('surveySubmitBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `📨 설문 제출 (${checkedKeys.size})`;
+}
+function updateClassButtons(){
+  const endBtn=document.getElementById('classEndBtn');
+  const startBtn=document.getElementById('classStartBtn');
+  if(endBtn) endBtn.classList.toggle('active', classEnded);
+  if(startBtn) startBtn.classList.toggle('active', !classEnded);
+}
+
+/* ---------- 학생 답변을 구글 설문지로 전송 (교사가 직접) ---------- */
+function submitStudentAnswersToGoogleForm(s){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  let count=0;
+  TASK_LABELS.forEach(t=>{
+    const p = s.progress && s.progress[t.id];
+    if(!p || !p.done) return; // 완료(제출)된 문항만 전송
+    const form=document.createElement('form');
+    form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+    const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+    addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+    addField(CONFIG.ENTRY_ROOM, currentRoomName);
+    addField(CONFIG.ENTRY_NUMBER, s.number);
+    addField(CONFIG.ENTRY_NAME, s.name);
+    addField(CONFIG.ENTRY_TASK, t.id);
+    addField(CONFIG.ENTRY_SUCCESS, '성공');
+    addField(CONFIG.ENTRY_ANSWER, p.value!=null?String(p.value):'');
+    document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+    count++;
+  });
+  return count;
+}
+document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
+  if(checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 답변을 구글 설문지로 제출할까요?`)) return;
+  let total=0;
+  checkedKeys.forEach(k=>{ if(students[k]) total += submitStudentAnswersToGoogleForm(students[k]); });
+  alert(`${checkedKeys.size}명, 총 ${total}개 문항을 설문지로 전송했어요.`);
+});
+
+/* ---------- 수업 시작/종료 (일시정지와는 별개) ----------
+   [수업 종료]를 누르면 반 전체 학생의 "결과 제출하기"(전체 제출) 버튼이 강제로 눌리고,
+   [수업 시작]을 누르면 반대로 전체가 "제출 취소"된다. 학생은 수업이 종료된 동안 직접
+   취소할 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
+document.getElementById('classEndBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: true, classEndedTs: Date.now() });
+});
+document.getElementById('classStartBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: false, classStartedTs: Date.now() });
+});
 
 const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 학생 이름을 클릭하면<br>상세 진행 상황이 여기 나와요.<br><br>과제 번호(열 머리글)를 클릭하면<br>② 교사용 뷰에서 바로 볼 수 있어요.</div>`;
 function resetDetailPanel(){
@@ -546,6 +630,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     ensureFirebaseApp();
     const roomKey = room.trim().replace(/[.#$\[\]\/\s]+/g,'_') + ACTIVITY_SUFFIX;
     currentRoomKey = roomKey;
+    currentRoomName = room;
     if(studentsRef) studentsRef.off();
     if(controlRef) controlRef.off();
     studentsRef = db.ref('rooms/'+roomKey+'/students');
@@ -567,6 +652,8 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       const c = snap.val() || {};
       paused = !!c.paused;
       updatePauseBtn();
+      classEnded = !!c.classEnded;
+      updateClassButtons();
 
       if(c.minTaskId!=null || c.maxTaskId!=null){
         const mn = c.minTaskId!=null ? c.minTaskId : 1;

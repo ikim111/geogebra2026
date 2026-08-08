@@ -74,6 +74,11 @@
     pointer-events:none !important;
   }
   body.app-paused .gcanvas{ user-select:none; }
+  body.final-locked .canvas-wrap, body.final-locked .toolbar, body.final-locked .input-row, body.final-locked #handBtn{
+    pointer-events:none !important; opacity:.6;
+  }
+  body.final-locked .gcanvas{ user-select:none; }
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
 
   #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
   .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
@@ -233,6 +238,7 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__isoc'; // teacher1.html과 반드시 동일해야 함
 
 const GRID = 40;
+const TOUCH_TOL = 30; // 모바일에서 점 주변을 터치해도 잡히도록 넉넉하게 잡은 히트 반경(SVG 좌표계 기준)
 let _uid = 0;
 const uid = () => 'o' + (_uid++);
 
@@ -426,7 +432,7 @@ class GeoCanvas{
   }
   resolvePoint(id){ return this.points.find(p=>p.id===id); }
   byLabel(label){ return this.points.find(p=>p.label===label); }
-  pickPoint(pt){ return this.findPointNear(pt,12) || this.addPoint(pt.x,pt.y); }
+  pickPoint(pt){ return this.findPointNear(pt,TOUCH_TOL) || this.addPoint(pt.x,pt.y); }
   findPointNear(pt,tol){
     let best=null,bd=tol;
     for(const p of this.points){ const d=dist(p,pt); if(d<bd){bd=d;best=p;} }
@@ -524,7 +530,7 @@ class GeoCanvas{
       e.preventDefault();
       const pt=this.getSvgCoords(e);
       if(this.tool==='move'){
-        const p=this.findPointNear(pt,12);
+        const p=this.findPointNear(pt,TOUCH_TOL);
         if(p && !p.locked) this.dragging=p;
         return;
       }
@@ -554,8 +560,8 @@ class GeoCanvas{
   handleToolClick(pt){
     switch(this.tool){
       case 'point': {
-        if(this.findPointNear(pt,10)) break;
-        const o=this.findObjectNear(pt,10);
+        if(this.findPointNear(pt,TOUCH_TOL)) break;
+        const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o){ const proj=this._projectOntoObject(o,pt); this.addPoint(proj.x,proj.y,{constraint:{objId:o.id}}); }
         else { this.addPoint(pt.x,pt.y); }
         break;
@@ -575,7 +581,7 @@ class GeoCanvas{
           const p=this.pickPoint(pt); this.pending.push(p.id);
           break;
         }
-        const segObj=this.findObjectNear(pt,12);
+        const segObj=this.findObjectNear(pt,TOUCH_TOL);
         if(segObj && segObj.type==='segment'){
           const cId=this.pending[0]; this.pending=[];
           this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
@@ -587,7 +593,7 @@ class GeoCanvas{
       }
       case 'perpBisector': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,12);
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
             break;
@@ -609,7 +615,7 @@ class GeoCanvas{
         break;
       }
       case 'intersect': {
-        const o=this.findObjectNear(pt,12);
+        const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o){
           this.pendingObjs.push(o);
           if(this.pendingObjs.length>=2){
@@ -644,7 +650,7 @@ class GeoCanvas{
       case 'perp': {
         // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
         if(this.pendingObjs.length===0){
-          const o=this.findObjectNear(pt,12);
+          const o=this.findObjectNear(pt,TOUCH_TOL);
           if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
           break;
         }
@@ -658,7 +664,7 @@ class GeoCanvas{
       }
       case 'lengthTool': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,12);
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
             break;
@@ -965,7 +971,7 @@ function initConstructTask(task){
     fb.className = 'feedback ' + (r.ok?'ok':'no');
     updateProgress();
     RT.pushObjectsDebounced(task.id, inst);
-    if(r.ok && !everSubmitted){ everSubmitted = true; submitTaskToGoogleForm(task.id, '성공', ''); }
+    if(r.ok && !everSubmitted){ everSubmitted = true; } // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
   }
   onChange(cv);
 }
@@ -988,7 +994,6 @@ function initTextTask(task){
     fb.className = 'feedback ' + (okFlag?'ok':'no');
     updateProgress();
     renderClassAnswersFor(task);
-    if(okFlag) submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   btn.addEventListener('click', checkAnswer);
   results[task.id]={done:false, value:''};
@@ -1059,7 +1064,6 @@ function initVerifyTask(task){
     fb.className = 'feedback ok';
     updateProgress();
     renderClassAnswersFor(task);
-    submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   function doCancel(){
     locked = false;
@@ -1103,7 +1107,6 @@ function initInputTask(task){
     fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
     fb.className = 'feedback ' + (okFlag?'ok':'no');
     updateProgress();
-    if(okFlag) submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   btn.addEventListener('click', checkAnswer);
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
@@ -1146,7 +1149,6 @@ function initHybridTask(task){
     fb.textContent = okFlag ? '정답이에요!' : '다시 한 번 확인해보세요.';
     fb.className = 'feedback ' + (okFlag?'ok':'no');
     updateProgress();
-    if(okFlag) submitTaskToGoogleForm(task.id, '성공', input.value);
   }
   btn.addEventListener('click', checkAnswer);
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
@@ -1234,6 +1236,7 @@ function renderClassAnswersFor(task){
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
   connected:false, studentKey:null, lastSeenAnnounceTs:0, viewingTaskId:null, heartbeatTimer:null, minTaskId:null, maxTaskId:null, paused:false, visitedTasks:new Set(), allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
 
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
@@ -1285,6 +1288,8 @@ const RT = {
         if(typeof restoreProgress==='function') restoreProgress(existing.progress);
         if(typeof goToResumePage==='function') goToResumePage();
       }
+      // 이전에 "결과 제출하기"까지 눌러 전체 잠금 상태였다면 새로고침 후에도 그대로 잠긴 채로 보여준다.
+      if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
       this.studentRef.update({
         name: name,
         number: number || null,
@@ -1321,6 +1326,18 @@ const RT = {
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
       if(typeof clampToPacing==='function') clampToPacing();
       if(typeof updateNavButtons==='function') updateNavButtons();
+
+      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
+      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다(값이 그대로 유지되는 매 스냅샷마다
+      // 반복 실행되지 않도록, 마지막으로 처리한 값과 실제로 달라졌을 때만 동작한다).
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
+      } else if(classEnded !== this._lastKnownClassEnded){
+        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
     });
 
     this.connected = true;
@@ -1675,15 +1692,36 @@ function submitTaskToGoogleForm(taskId, statusText, answerText){
   addField(CONFIG.ENTRY_ANSWER, answerText);
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
+/* ---------- 전체 제출/취소 잠금 ----------
+   "결과 제출하기"를 누르면 이 페이지 전체(모든 문항)가 더 이상 수정 불가 상태로 잠기고,
+   버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다. 선생님이 [수업 종료]를 누르면 반 전체
+   학생이 이 상태로 강제 전환되고, [수업 시작]을 누르면 다같이 취소(해제)된다 — 이때는
+   학생이 직접 "제출 취소"를 누를 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  const btn = document.getElementById('submitBtn');
+  const statusEl = document.getElementById('submitStatus');
+  btn.textContent = locked ? '제출 취소' : '결과 제출하기';
+  btn.classList.toggle('cancel', locked);
+  statusEl.textContent = locked
+    ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.'
+    : '';
+}
 document.getElementById('submitBtn').addEventListener('click', ()=>{
   const name=document.getElementById('studentName').value.trim();
-  const statusEl=document.getElementById('submitStatus');
   if(!name){ alert('이름을 입력해주세요.'); return; }
-  const payload=buildPayload();
-  // 과제별 제출은 각 과제 카드의 "제출"/"확인" 버튼을 누를 때 이미 구글 설문지로 전송됐다.
-  statusEl.textContent = `확인했어요! (완료 ${payload.completed}/${payload.total}) 과제별 제출은 각 과제의 "제출"/"확인" 버튼을 누를 때마다 자동으로 기록돼요.`;
-  if(RT.connected){
-    RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+  if(finalLocked){
+    if(RT.classEnded){
+      alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.');
+      return;
+    }
+    applyFinalLock(false);
+    if(RT.connected) RT.studentRef.update({ submitted:false, submittedAt:null });
+  } else {
+    applyFinalLock(true);
+    if(RT.connected) RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
   }
 });
 document.getElementById('backupBtn').addEventListener('click', ()=>{

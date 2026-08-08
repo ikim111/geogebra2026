@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13. 평행사변형의 성질 활용</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
+  header{background:#1a237e;color:#fff;padding:20px 16px;text-align:center;}
+  header h1{margin:0 0 4px;font-size:20px;}
+  header p{margin:0;font-size:13px;opacity:.85;}
+  .wrap{max-width:760px;margin:0 auto;padding:16px;}
+  .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+  .progress-row{display:flex;align-items:center;gap:10px;}
+  .progress-bar{flex:1;height:10px;background:#e0e0e0;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:12.5px;color:#555;white-space:nowrap;font-weight:bold;}
+
+  .section-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:10px 14px;margin:22px 0 12px;}
+  .section-title:first-of-type{margin-top:0;}
+  .section-desc{font-size:13px;color:#555;background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);line-height:1.6;}
+
+  .quote-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .quote-box{flex:1 1 220px;background:#e8f0fe;border:1px solid #c5d8fb;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;font-size:13px;color:#0d47a1;position:relative;}
+  .quote-box .who{font-weight:bold;font-size:12px;color:#1a237e;margin-bottom:4px;}
+  .quote-box.alt{background:#fdecea;border-color:#f3c2be;color:#8d1f13;}
+  .quote-box.alt .who{color:#c62828;}
+
+  .ref-figure{text-align:center;margin-bottom:10px;}
+  .ref-figure svg{max-width:100%;height:auto;background:#fafbfc;border:1px solid #eee;border-radius:8px;}
+  .ref-cap{font-size:11.5px;color:#888;margin-top:4px;}
+
+  .task{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 8px;gap:10px;}
+  .task-head h2{font-size:15px;margin:0;line-height:1.5;font-weight:bold;}
+  .task-head h2 .num{color:var(--blue);}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .task-body{padding:0 16px 14px;}
+
+  .ox-row{display:flex;gap:10px;margin-bottom:10px;}
+  .ox-row label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:bold;padding:8px 16px;border:1px solid #ccc;border-radius:8px;cursor:pointer;color:#555;}
+  .ox-row input{width:16px;height:16px;cursor:pointer;}
+  .ox-row label.checked{background:#e3f2fd;border-color:var(--blue);color:var(--blue);}
+  .ox-row input:disabled ~ span, .ox-row label.locked{opacity:.7;cursor:not-allowed;}
+
+  .input-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;}
+  .input-row textarea{flex:1;min-width:220px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;}
+  .input-row textarea:disabled{background:#f5f5f5;color:#555;resize:none;}
+  .input-row button{padding:9px 16px;border:none;background:var(--blue);color:#fff;border-radius:6px;cursor:pointer;font-size:13px;align-self:flex-start;font-weight:bold;}
+  .input-row button.cancel{background:#9e9e9e;}
+  .text-min-note{font-size:11.5px;color:#999;margin-top:6px;}
+  .feedback{font-size:13px;margin-top:8px;min-height:16px;}
+  .feedback.ok{color:var(--green);font-weight:bold;}
+  .feedback.no{color:#888;}
+
+  .class-answers{margin-top:14px;border-top:1px dashed #ddd;padding-top:10px;}
+  .ca-title{font-size:12.5px;font-weight:bold;color:#555;margin-bottom:6px;}
+  .ca-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+  .ca-name{font-size:11px;color:#888;font-weight:bold;}
+  .ca-text{font-size:13px;margin-top:2px;white-space:pre-wrap;}
+  .ca-empty{color:#999;font-size:12.5px;text-align:center;padding:10px 4px;}
+
+  .submit-panel{text-align:center;}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:10px;font-size:13px;color:#333;}
+
+  #syncStatus{font-size:11.5px;color:#999;margin-top:8px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .task, body.app-paused #handBtn{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .task, body.final-locked #handBtn{ pointer-events:none !important; opacity:.6; }
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+
+  .top-actions{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  #handBtn{padding:8px 14px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:bold;}
+  #handBtn.active{background:#e65100;color:#fff;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+</style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>13. 평행사변형의 성질 활용</h1>
+    <p class="gate-sub">평행사변형의 성질을 여러 상황에 적용해 생각을 나눠봐요 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <header>
+    <h1>13. 평행사변형의 성질 활용</h1>
+    <p>생각을 나누는 의사소통 — 아래 활동들을 차례로 해결해보세요</p>
+  </header>
+
+  <div class="wrap">
+
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+    <div class="top-actions"><button id="handBtn">🖐 질문있어요</button></div>
+
+    <div class="panel">
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 9</div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 1 : 넓이를 4등분하는 방법 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 평행사변형의 넓이 4등분하기</div>
+    <div class="section-desc">다음은 영은이와 재호가 평행사변형의 성질을 이용하여 넓이를 4등분하는 방법에 대하여 나누는 대화이다.</div>
+    <div class="quote-row">
+      <div class="quote-box">
+        <div class="who">영은</div>
+        평행사변형의 두 대각선을 그으면 돼.
+        <div class="ref-figure" style="margin-top:8px;">
+          <svg viewBox="0 0 260 180"><polygon points="90,30 230,30 190,150 50,150" fill="#fff3cd" stroke="#333" stroke-width="2"/><line x1="90" y1="30" x2="190" y2="150" stroke="#c62828" stroke-width="2"/><line x1="230" y1="30" x2="50" y2="150" stroke="#c62828" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="quote-box alt">
+        <div class="who">재호</div>
+        같은 간격으로 평행선을 3개 그으면 돼.
+        <div class="ref-figure" style="margin-top:8px;">
+          <svg viewBox="0 0 260 180"><polygon points="90,30 230,30 190,150 50,150" fill="#fff3cd" stroke="#333" stroke-width="2"/><line x1="60" y1="60" x2="200" y2="60" stroke="#c62828" stroke-width="2"/><line x1="70" y1="90" x2="210" y2="90" stroke="#c62828" stroke-width="2"/><line x1="80" y1="120" x2="220" y2="120" stroke="#c62828" stroke-width="2"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-1">
+      <div class="task-head">
+        <h2><span class="num">[활동1]</span> 두 사람의 방법으로 평행사변형의 넓이가 4등분되는 이유를 설명해 보자.</h2>
+        <span class="badge pending" id="badge-1">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="input-row">
+          <textarea id="input-1" rows="3" placeholder="여기에 생각을 적어보세요 (20자 이상)"></textarea>
+          <button id="check-1">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 20자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-1"></div>
+        <div class="class-answers" id="classAnswers-1" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-2">
+      <div class="task-head">
+        <h2><span class="num">[활동2]</span> 선분 2개 또는 3개를 그어 평행사변형의 넓이를 4등분하는 다른 방법을 찾아 말로 설명해 보자.</h2>
+        <span class="badge pending" id="badge-2">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="input-row">
+          <textarea id="input-2" rows="3" placeholder="어떤 선분을 어디에 그었는지, 왜 4등분이 되는지 적어보세요 (15자 이상)"></textarea>
+          <button id="check-2">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-2"></div>
+        <div class="class-answers" id="classAnswers-2" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 2 : 빨대로 평행사변형 만들기 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기</div>
+    <div class="section-desc">다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.</div>
+    <div class="quote-row">
+      <div class="quote-box">
+        <div class="who">수현</div>
+        나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.
+      </div>
+      <div class="quote-box alt">
+        <div class="who">정우</div>
+        나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.
+      </div>
+    </div>
+
+    <div class="task" id="task-3">
+      <div class="task-head">
+        <h2><span class="num">[활동1]</span> 수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?</h2>
+        <span class="badge pending" id="badge-3">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ox-row" id="ox-3">
+          <label><input type="radio" name="ox-3" value="O"><span>⭕ 항상 그렇다</span></label>
+          <label><input type="radio" name="ox-3" value="X"><span>❌ 항상 그렇지는 않다</span></label>
+        </div>
+        <div class="input-row">
+          <textarea id="input-3" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
+          <button id="check-3">제출</button>
+        </div>
+        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-3"></div>
+        <div class="class-answers" id="classAnswers-3" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-4">
+      <div class="task-head">
+        <h2><span class="num">[활동2]</span> 정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?</h2>
+        <span class="badge pending" id="badge-4">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ox-row" id="ox-4">
+          <label><input type="radio" name="ox-4" value="O"><span>⭕ 항상 그렇다</span></label>
+          <label><input type="radio" name="ox-4" value="X"><span>❌ 항상 그렇지는 않다</span></label>
+        </div>
+        <div class="input-row">
+          <textarea id="input-4" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
+          <button id="check-4">제출</button>
+        </div>
+        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-4"></div>
+        <div class="class-answers" id="classAnswers-4" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 3 : 한 쌍만 평행 + 길이 같음 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 조건을 하나만 바꾸면?</div>
+
+    <div class="task" id="task-5">
+      <div class="task-head">
+        <h2><span class="num">[활동]</span> 한 쌍의 대변이 평행하고 한 쌍의 대변의 길이가 같은 사각형은 평행사변형이 될까?</h2>
+        <span class="badge pending" id="badge-5">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ox-row" id="ox-5">
+          <label><input type="radio" name="ox-5" value="O"><span>⭕ 항상 평행사변형이다</span></label>
+          <label><input type="radio" name="ox-5" value="X"><span>❌ 항상 그런 것은 아니다</span></label>
+        </div>
+        <div class="input-row">
+          <textarea id="input-5" rows="3" placeholder="예를 들어 그 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-5">제출</button>
+        </div>
+        <div class="text-min-note">✏️ O/X를 고르고 예시와 이유를 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-5"></div>
+        <div class="class-answers" id="classAnswers-5" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 4 : 모눈종이 위 평행사변형 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기</div>
+    <div class="section-desc">다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.</div>
+
+    <div class="task" id="task-6">
+      <div class="task-head">
+        <h2><span class="num">[활동1]</span> 평행사변형의 세 꼭짓점이 주어진 경우</h2>
+        <span class="badge pending" id="badge-6">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ref-figure">
+          <svg viewBox="0 0 260 200">
+            <defs><pattern id="grid6" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M 26 0 L 0 0 0 26" fill="none" stroke="#ddd" stroke-width="1"/></pattern></defs>
+            <rect width="260" height="200" fill="url(#grid6)"/>
+            <circle cx="78" cy="52" r="4" fill="#c62828"/>
+            <circle cx="182" cy="78" r="4" fill="#c62828"/>
+            <circle cx="52" cy="130" r="4" fill="#c62828"/>
+          </svg>
+          <div class="ref-cap">빨간 점 3개가 평행사변형의 세 꼭짓점이에요. 네 번째 점을 어디에 찍어야 할까요? (경우가 여러 개일 수 있어요)</div>
+        </div>
+        <div class="input-row">
+          <textarea id="input-6" rows="3" placeholder="네 번째 점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-6">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-6"></div>
+        <div class="class-answers" id="classAnswers-6" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-6"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-7">
+      <div class="task-head">
+        <h2><span class="num">[활동2]</span> 평행사변형의 두 꼭짓점과 두 대각선의 교점 O가 주어진 경우</h2>
+        <span class="badge pending" id="badge-7">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ref-figure">
+          <svg viewBox="0 0 260 200">
+            <defs><pattern id="grid7" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M 26 0 L 0 0 0 26" fill="none" stroke="#ddd" stroke-width="1"/></pattern></defs>
+            <rect width="260" height="200" fill="url(#grid7)"/>
+            <circle cx="78" cy="52" r="4" fill="#c62828"/>
+            <circle cx="182" cy="104" r="4" fill="#c62828"/>
+            <circle cx="130" cy="78" r="4" fill="#1565c0"/>
+            <text x="138" y="74" font-size="13" fill="#1565c0" font-weight="bold">O</text>
+          </svg>
+          <div class="ref-cap">빨간 점 2개는 평행사변형의 두 꼭짓점, 파란 점 O는 두 대각선의 교점이에요. 나머지 두 꼭짓점은 어디일까요?</div>
+        </div>
+        <div class="input-row">
+          <textarea id="input-7" rows="3" placeholder="나머지 두 꼭짓점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-7">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-7"></div>
+        <div class="class-answers" id="classAnswers-7" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-7"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 5 : 대각선 교점을 지나는 직선 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 넓이를 이등분하는 직선</div>
+
+    <div class="task" id="task-8">
+      <div class="task-head">
+        <h2><span class="num">[활동]</span> 평행사변형 ABCD의 두 대각선의 교점 O를 지나는 직선은 □ABCD의 넓이를 이등분한다. 그 이유를 설명해 보자.</h2>
+        <span class="badge pending" id="badge-8">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ref-figure">
+          <svg viewBox="0 0 260 200">
+            <polygon points="90,30 230,30 190,150 50,150" fill="#fff" stroke="#333" stroke-width="2"/>
+            <line x1="90" y1="30" x2="190" y2="150" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <line x1="230" y1="30" x2="50" y2="150" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <line x1="65" y1="10" x2="205" y2="170" stroke="#c62828" stroke-width="2.5"/>
+            <circle cx="140" cy="90" r="3.5" fill="#1565c0"/>
+            <text x="146" y="86" font-size="13" font-weight="bold" fill="#1565c0">O</text>
+            <text x="76" y="24" font-size="13" font-weight="bold">A</text>
+            <text x="234" y="24" font-size="13" font-weight="bold">B</text>
+            <text x="194" y="168" font-size="13" font-weight="bold">C</text>
+            <text x="34" y="168" font-size="13" font-weight="bold">D</text>
+          </svg>
+          <div class="ref-cap">회색 점선은 대각선, 빨간 직선은 O를 지나지만 대각선은 아닌 임의의 직선이에요.</div>
+        </div>
+        <div class="input-row">
+          <textarea id="input-8" rows="4" placeholder="합동인 도형을 찾아 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-8">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-8"></div>
+        <div class="class-answers" id="classAnswers-8" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-8"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PDF 6 : 합동 증명 ===== -->
+    <div class="section-title">생각을 나누는 의사소통 — 두 삼각형의 합동 증명</div>
+
+    <div class="task" id="task-9">
+      <div class="task-head">
+        <h2><span class="num">[활동]</span> □ABCD와 □AECF가 모두 평행사변형일 때, △ABE와 △CDF가 서로 합동임을 증명해 보자.</h2>
+        <span class="badge pending" id="badge-9">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="ref-figure">
+          <svg viewBox="0 0 320 220">
+            <polygon points="100,50 370,50 310,180 40,180" fill="#fff" stroke="#333" stroke-width="2" transform="scale(0.82) translate(-10,0)"/>
+            <polygon points="100,50 121,180 310,180 289,50" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3" transform="scale(0.82) translate(-10,0)"/>
+            <g transform="scale(0.82) translate(-10,0)">
+              <polygon points="100,50 40,180 121,180" fill="#a5d6a7" opacity="0.7"/>
+              <polygon points="289,50 310,180 121,180" fill="#a5d6a7" opacity="0.7"/>
+              <text x="90" y="44" font-size="15" font-weight="bold">A</text>
+              <text x="293" y="44" font-size="15" font-weight="bold">F</text>
+              <text x="372" y="44" font-size="15" font-weight="bold">D</text>
+              <text x="20" y="196" font-size="15" font-weight="bold">B</text>
+              <text x="112" y="200" font-size="15" font-weight="bold">E</text>
+              <text x="312" y="196" font-size="15" font-weight="bold">C</text>
+            </g>
+          </svg>
+          <div class="ref-cap">□ABCD(큰 평행사변형)와 □AECF(안쪽 평행사변형)가 겹쳐 있는 그림이에요. (초록색: △ABE, △CDF)</div>
+        </div>
+        <div class="input-row">
+          <textarea id="input-9" rows="4" placeholder="합동 조건을 이용해 증명 과정을 적어보자 (20자 이상)"></textarea>
+          <button id="check-9">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 20자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-9"></div>
+        <div class="class-answers" id="classAnswers-9" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-9"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel submit-panel">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   13. 평행사변형의 성질 활용 (과제13 PDF 기반)
+   전부 서술형 텍스트 + 참고 그림(SVG)으로 구성된 9개 활동.
+   student1~6, student11~12과 동일한 제출/취소/친구 답변 보기 패턴을 사용한다.
+
+   선생님 설정 안내: teacher13.html과 FIREBASE_CONFIG / ACTIVITY_SUFFIX를 반드시 동일하게 맞춘다.
+   ============================================================ */
+const UNIT_LABEL = '13. 평행사변형의 성질 활용';
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__quad13'; // teacher13.html과 반드시 동일해야 함
+
+/* ---------- 과제 정의 ---------- */
+const TASKS = [
+  { id:1, minLen:20, kind:'text' },
+  { id:2, minLen:15, kind:'text' },
+  { id:3, minLen:10, kind:'ox' },
+  { id:4, minLen:10, kind:'ox' },
+  { id:5, minLen:15, kind:'ox' },
+  { id:6, minLen:15, kind:'text' },
+  { id:7, minLen:15, kind:'text' },
+  { id:8, minLen:15, kind:'text' },
+  { id:9, minLen:20, kind:'text' }
+];
+const results = {};
+
+function checkReady(task){
+  const val = (document.getElementById('input-'+task.id).value||'').trim();
+  const lenOk = val.length >= task.minLen;
+  if(task.kind==='ox'){
+    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
+    return lenOk && !!picked;
+  }
+  return lenOk;
+}
+function currentValue(task){
+  const val = document.getElementById('input-'+task.id).value;
+  if(task.kind==='ox'){
+    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
+    return (picked ? `[${picked.value}] ` : '') + val;
+  }
+  return val;
+}
+
+function initTask(task){
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+  const oxWrap = task.kind==='ox' ? document.getElementById(`ox-${task.id}`) : null;
+  let locked = false;
+
+  function refreshFeedback(){
+    if(locked) return true;
+    const okFlag = checkReady(task);
+    if(task.kind==='ox' && !document.querySelector(`input[name="ox-${task.id}"]:checked`)){
+      fb.textContent = '⭕ 또는 ❌ 중 하나를 먼저 골라주세요.';
+      fb.className = 'feedback no';
+    } else {
+      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러보세요.' : `조금 더 자세히 적어볼까요? (${task.minLen}자 이상)`;
+      fb.className = 'feedback ' + (okFlag?'ok':'no');
+    }
+    return okFlag;
+  }
+  function setOxLocked(disabled){
+    if(!oxWrap) return;
+    oxWrap.querySelectorAll('input').forEach(r=>{ r.disabled = disabled; });
+    oxWrap.querySelectorAll('label').forEach(l=>{ l.classList.toggle('locked', disabled); });
+  }
+  function doSubmit(){
+    const ok = refreshFeedback();
+    if(!ok) return;
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    setOxLocked(true);
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+    results[task.id] = {done:true, value: currentValue(task)};
+    badge.textContent='완료'; badge.className='badge done';
+    fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
+    fb.className = 'feedback ok';
+    renderClassAnswersFor(task);
+    updateProgress();
+    // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
+  }
+  function doCancel(){
+    locked = false;
+    input.disabled = false;
+    input.classList.remove('locked-fixed');
+    setOxLocked(false);
+    btn.textContent = '제출';
+    btn.classList.remove('cancel');
+    results[task.id] = {done:false, value: currentValue(task)};
+    badge.textContent='미완료'; badge.className='badge pending';
+    refreshFeedback();
+    renderClassAnswersFor(task);
+    updateProgress();
+  }
+  btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
+  if(oxWrap){
+    oxWrap.querySelectorAll('input').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        oxWrap.querySelectorAll('label').forEach(l=> l.classList.toggle('checked', l.querySelector('input').checked));
+        if(!locked) refreshFeedback();
+      });
+    });
+  }
+  results[task.id] = {done:false, value:''};
+  refreshFeedback();
+}
+TASKS.forEach(initTask);
+
+function renderClassAnswersFor(task){
+  const wrap=document.getElementById(`classAnswers-${task.id}`);
+  const list=document.getElementById(`classAnswersList-${task.id}`);
+  const myDone = !!(results[task.id] && results[task.id].done);
+  if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  list.textContent='';
+  const entries = Object.keys(RT.allStudents||{})
+    .filter(k=>k!==RT.studentKey)
+    .map(k=>({key:k, ...RT.allStudents[k]}))
+    .filter(s=> s.progress && s.progress['t'+task.id] && s.progress['t'+task.id].value && String(s.progress['t'+task.id].value).trim().length>0);
+  if(entries.length===0){
+    const empty=document.createElement('div'); empty.className='ca-empty';
+    empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
+    list.appendChild(empty);
+    return;
+  }
+  const shuffled=[...entries].sort(()=>Math.random()-0.5);
+  shuffled.slice(0,3).forEach(s=>{
+    const item=document.createElement('div'); item.className='ca-item';
+    const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress['t'+task.id].value);
+    item.appendChild(name); item.appendChild(text);
+    list.appendChild(item);
+  });
+}
+function renderAllClassAnswers(){ TASKS.forEach(t=>renderClassAnswersFor(t)); }
+
+function updateProgress(){
+  const total = TASKS.length;
+  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  document.getElementById('progressText').textContent = `완료 ${done} / ${total}`;
+  document.getElementById('progressFill').style.width = (done/total*100)+'%';
+  RT.pushProgress();
+}
+
+/* ---------- 게이트(반/번호/이름) ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  document.getElementById('gateScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  RT.connect(profile.name, profile.classNo, profile.number);
+}
+(function initGate(){
+  const profile = loadProfile();
+  if(profile){
+    document.getElementById('profileBox').style.display='block';
+    document.getElementById('profileClassView').textContent = profile.classNo+'반';
+    document.getElementById('profileNumberView').textContent = profile.number || '-';
+    document.getElementById('profileNameView').textContent = profile.name;
+    document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
+  } else {
+    document.getElementById('profileMissingBox').style.display='block';
+  }
+})();
+
+/* ---------- 제출 / 백업 ---------- */
+function buildPayload(){
+  const total = TASKS.length;
+  const completed = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  return {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed, total,
+    answers: TASKS.map(t=>({task:t.id, done:!!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:''})),
+    exportedAt: new Date().toISOString()
+  };
+}
+/* ---------- 전체 제출/취소 잠금 ----------
+   "결과 제출하기"를 누르면 이 페이지 전체(9개 활동 모두)가 더 이상 수정 불가 상태로 잠기고,
+   버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다. 선생님이 [수업 종료]를 누르면 반 전체
+   학생이 이 상태로 강제 전환되고, [수업 시작]을 누르면 다같이 취소(해제)된다 — 이때는
+   학생이 직접 "제출 취소"를 누를 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  const btn = document.getElementById('submitBtn');
+  const statusEl = document.getElementById('submitStatus');
+  btn.textContent = locked ? '제출 취소' : '결과 제출하기';
+  btn.classList.toggle('cancel', locked);
+  statusEl.textContent = locked
+    ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.'
+    : '';
+}
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){
+      alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.');
+      return;
+    }
+    applyFinalLock(false);
+    if(RT.connected) RT.studentRef.update({ submitted:false, submittedAt:null });
+  } else {
+    applyFinalLock(true);
+    if(RT.connected) RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+  }
+});
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  const payload = buildPayload();
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `평행사변형활용_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- 화면 잠금 / 공지 적용 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
+}
+
+/* ---------- Google 설문지 자동 저장 ---------- */
+function submitTaskToGoogleForm(taskId, statusText, answerText){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
+  if(!CURRENT_PROFILE) return;
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  const form=document.createElement('form');
+  form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+  addField(CONFIG.ENTRY_ROOM, CURRENT_PROFILE.classNo);
+  addField(CONFIG.ENTRY_NUMBER, CURRENT_PROFILE.number);
+  addField(CONFIG.ENTRY_NAME, CURRENT_PROFILE.name);
+  addField(CONFIG.ENTRY_TASK, taskId);
+  addField(CONFIG.ENTRY_SUCCESS, statusText);
+  addField(CONFIG.ENTRY_ANSWER, answerText);
+  document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+}
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{}, handActive:false,
+  classEnded:false, _lastKnownClassEnded:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    const key = uid + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.studentRef.update({
+      name, number: number||null,
+      lastActive: firebase.database.ServerValue.TIMESTAMP,
+      online:true, raisedHand:false
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
+      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
+      } else if(classEnded !== this._lastKnownClassEnded){
+        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    this.pushProgress();
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress['t'+t.id] = { done: !!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:'' }; });
+    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  toggleHand(){
+    if(!this.connected){ alert('아직 실시간 연결이 안 됐어요.'); return; }
+    this.handActive = !this.handActive;
+    const btn = document.getElementById('handBtn');
+    btn.classList.toggle('active', this.handActive);
+    btn.textContent = this.handActive ? '🖐 질문 취소' : '🖐 질문있어요';
+    this.studentRef.update({ raisedHand: this.handActive });
+  }
+};
+
+document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand());
+document.getElementById('announceClose').addEventListener('click', ()=>{
+  document.getElementById('announceBanner').style.display='none';
+});
+</script>
+</body>
+</html>

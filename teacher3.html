@@ -140,6 +140,12 @@
       <button class="pause" id="anonymizeBtn">🎭 익명화</button>
       <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
       <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
+      <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+      <button class="pause" id="classStartBtn">▶ 수업 시작</button>
+      <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
     </div>
         <div class="row" style="margin-top:10px;">
       <input type="text" id="announceInput" placeholder="학생 화면에 띄울 공지 메시지">
@@ -268,10 +274,24 @@ const TASK_LABELS = [
   {id:3, label:'수선의 발+원 작도+서술'}
 ];
 
+const UNIT_LABEL = '3. 각이등분선의 성질';
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
+
 let app=null, db=null, studentsRef=null, controlRef=null;
 let students={};
 let selectedKey=null;
 let paused=false;
+let classEnded=false;
+let currentRoomName='';
 let checkedKeys=new Set();
 let anonymize=false;
 let paceStart=null, paceEnd=null;
@@ -363,6 +383,7 @@ function render(){
     if(checkAllEmpty) checkAllEmpty.checked=false;
 
     updateDeleteBtn();
+    updateSurveyBtn();
   } else {
     const list = keys.map(k=>({key:k, ...students[k]}));
     list.sort((a,b)=>{
@@ -396,7 +417,10 @@ function render(){
       const dot=document.createElement('span');
       dot.className='dot '+(idle?'off':'on');
       tdName.appendChild(dot);
-      tdName.appendChild(document.createTextNode(' '+displayName(s.key,s.name)+' '));
+      const nameText=document.createElement('span');
+      nameText.textContent = ' '+displayName(s.key,s.name)+' ';
+      if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
+      tdName.appendChild(nameText);
       if(s.raisedHand){
         const hb=document.createElement('span'); hb.className='hand-badge'; hb.textContent='🖐';
         tdName.appendChild(hb);
@@ -464,6 +488,7 @@ function render(){
     const checkAll = document.getElementById('checkAll');
     if(checkAll) checkAll.checked = list.length>0 && list.every(s=>checkedKeys.has(s.key));
     updateDeleteBtn();
+    updateSurveyBtn();
   }
   if(selectedKey && students[selectedKey]) renderDetail(students[selectedKey], selectedKey);
   else resetDetailPanel();
@@ -472,6 +497,7 @@ function render(){
 function toggleCheck(key, checked){
   if(checked) checkedKeys.add(key); else checkedKeys.delete(key);
   updateDeleteBtn();
+  updateSurveyBtn();
   const checkAll = document.getElementById('checkAll');
   if(checkAll) checkAll.checked = Object.keys(students).length>0 && Object.keys(students).every(k=>checkedKeys.has(k));
 }
@@ -486,6 +512,44 @@ function updateDeleteBtn(){
   if(!btn) return;
   btn.disabled = checkedKeys.size===0;
   btn.textContent = `🗑 선택 삭제 (${checkedKeys.size})`;
+}
+
+function updateSurveyBtn(){
+  const btn=document.getElementById('surveySubmitBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `📨 설문 제출 (${checkedKeys.size})`;
+}
+
+function updateClassButtons(){
+  const endBtn=document.getElementById('classEndBtn');
+  const startBtn=document.getElementById('classStartBtn');
+  if(endBtn) endBtn.classList.toggle('active', classEnded);
+  if(startBtn) startBtn.classList.toggle('active', !classEnded);
+}
+
+function submitStudentAnswersToGoogleForm(s){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  let count=0;
+  TASK_LABELS.forEach(t=>{
+    const p = s.progress && s.progress[t.id];
+    if(!p || !p.done) return;
+    const form=document.createElement('form');
+    form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+    const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+    addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+    addField(CONFIG.ENTRY_ROOM, currentRoomName);
+    addField(CONFIG.ENTRY_NUMBER, s.number);
+    addField(CONFIG.ENTRY_NAME, s.name);
+    addField(CONFIG.ENTRY_TASK, t.id);
+    addField(CONFIG.ENTRY_SUCCESS, '성공');
+    addField(CONFIG.ENTRY_ANSWER, p.value!=null?String(p.value):'');
+    document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+    count++;
+  });
+  return count;
 }
 
 const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 학생 이름을 클릭하면<br>상세 진행 상황이 여기 나와요.<br><br>과제 번호(열 머리글)를 클릭하면<br>② 교사용 뷰에서 바로 볼 수 있어요.</div>`;
@@ -546,6 +610,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     ensureFirebaseApp();
     const roomKey = room.trim().replace(/[.#$\[\]\/\s]+/g,'_') + ACTIVITY_SUFFIX;
     currentRoomKey = roomKey;
+    currentRoomName = room;
     if(studentsRef) studentsRef.off();
     if(controlRef) controlRef.off();
     studentsRef = db.ref('rooms/'+roomKey+'/students');
@@ -567,6 +632,8 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       const c = snap.val() || {};
       paused = !!c.paused;
       updatePauseBtn();
+      classEnded = !!c.classEnded;
+      updateClassButtons();
 
       if(c.minTaskId!=null || c.maxTaskId!=null){
         const mn = c.minTaskId!=null ? c.minTaskId : 1;
@@ -1042,6 +1109,25 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   studentsRef.update(updates);
   if(selectedKey && checkedKeys.has(selectedKey)) selectedKey = null;
   checkedKeys = new Set();
+});
+
+document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
+  if(checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 답변을 구글 설문지로 제출할까요?`)) return;
+  let total=0;
+  checkedKeys.forEach(k=>{ if(students[k]) total += submitStudentAnswersToGoogleForm(students[k]); });
+  alert(`${checkedKeys.size}명, 총 ${total}개 문항을 설문지로 전송했어요.`);
+});
+
+document.getElementById('classEndBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: true, classEndedTs: Date.now() });
+});
+
+document.getElementById('classStartBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: false, classStartedTs: Date.now() });
 });
 
 document.getElementById('clearBtn').addEventListener('click', ()=>{
