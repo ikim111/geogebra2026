@@ -11,7 +11,8 @@
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
-  header{background:#1a237e;color:#fff;padding:20px 16px;text-align:center;}
+  header{background:#1a237e;color:#fff;padding:20px 16px;text-align:center;position:relative;}
+  header .homeBtn{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;text-decoration:none;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 10px;}
   header h1{margin:0 0 4px;font-size:20px;}
   header p{margin:0;font-size:13px;opacity:.85;}
   .wrap{max-width:760px;margin:0 auto;padding:16px;}
@@ -132,6 +133,7 @@
 
 <div id="appScreen">
   <header>
+    <a href="student.html" class="homeBtn" title="과제 목록으로">🏠</a>
     <h1>13. 평행사변형의 성질 활용</h1>
     <p>생각을 나누는 의사소통 — 아래 활동들을 차례로 해결해보세요</p>
   </header>

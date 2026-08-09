@@ -11,7 +11,8 @@
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
-  .pagehead{background:#1a237e;color:#fff;padding:14px 16px;text-align:center;}
+  .pagehead{background:#1a237e;color:#fff;padding:14px 16px;text-align:center;position:relative;}
+  .pagehead .homeBtn{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;text-decoration:none;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 10px;}
   .pagehead h1{margin:0;font-size:17px;}
   .wrap{max-width:980px;margin:0 auto;padding:16px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
@@ -107,6 +108,7 @@
 
 <div id="appScreen">
   <div class="pagehead">
+    <a href="student.html" class="homeBtn" title="과제 목록으로">🏠</a>
     <h1>11. 평행사변형의 성질</h1>
   </div>
 
@@ -295,7 +297,7 @@ function drawQuad(){
   [['A','B',A,B],['B','C',B,C],['C','D',C,D],['D','A',D,A]].forEach(([ln1,ln2,p1,p2])=>{
     const m=mid(p1,p2);
     const outward=labelOffset(m, center, 16);
-    mkText(svg, outward, dist(p1,p2).toFixed(0), '#1565c0', 12.5, true);
+    mkText(svg, outward, (dist(p1,p2)*0.1).toFixed(1), '#1565c0', 14.5, true);
   });
 
   // 각 라벨 (A,B,C,D 내각)
@@ -308,7 +310,7 @@ function drawQuad(){
     path.setAttribute('d',info.path); path.setAttribute('stroke','#e65100'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
     svg.appendChild(path);
     const deg=angleBetweenDeg(sub(prev,verts[k]), sub(next,verts[k]));
-    mkText(svg, info.mid, deg.toFixed(0)+'°', '#e65100', 12, true);
+    mkText(svg, info.mid, deg.toFixed(0)+'°', '#e65100', 14, true);
   });
 
   // O, OA/OB/OC/OD
@@ -317,11 +319,11 @@ function drawQuad(){
   ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
   ocirc.setAttribute('fill','#8e24aa');
   svg.appendChild(ocirc);
-  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 14, true);
+  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 16, true);
   [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
     const m=mid(O,p);
     const outward=labelOffset(m, center, 3);
-    mkText(svg, outward, 'O'+name+'='+dist(O,p).toFixed(0), '#8e24aa', 10.5, false);
+    mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12.5, false);
   });
 
   // 꼭짓점 (맨 위에 그려서 드래그하기 쉽게)
@@ -331,7 +333,7 @@ function drawQuad(){
     c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
     svg.appendChild(c);
     const lp=labelOffset(p, center, -22);
-    mkText(svg, lp, name, '#212121', 17, true);
+    mkText(svg, lp, name, '#212121', 19, true);
   });
 
   RT.pushStateDebounced();
