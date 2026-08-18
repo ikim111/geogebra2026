@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학생용 — 반/번호/이름 입력 및 과제 선택</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -91,7 +92,7 @@ const BASE_URL = '';
 // 단원이 늘어날 때는 STANDALONE_TASKS나 SECTIONS 안의 items 배열에 항목만 추가하면 된다
 // (렌더링 함수는 이 구조를 그대로 따라가므로 따로 손댈 필요 없음).
 const STANDALONE_TASKS = [
-  {n:0, title:'지오지브라 연습', file:'student0.html'}
+  {n:0, label:0, title:'지오지브라 연습', file:'student0.html'}
 ];
 /* ============================================================
    선생님이 teacher.html에서 반별로 단원을 열고 닫을 수 있게 한 기능과,
@@ -113,20 +114,22 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',11:'__quad11',12:'__quad12',13:'__quad13'};
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
+/* n = 실제 단원 번호(파일명·Firebase 잠금/완료 경로에 쓰이는 값, 절대 바꾸면 안 됨)
+   label = 목차에 보여지는 번호(챕터가 바뀌면 1부터 다시 시작) */
 const SECTIONS = [
   { chapter:'VI. 삼각형의 성질', groups:[
       { title:'1. 삼각형의 성질', items:[
-        {n:1, title:'이등변삼각형의 성질', file:'student1.html'},
-        {n:2, title:'수직이등분선의 성질', file:'student2.html'},
-        {n:3, title:'각이등분선의 성질', file:'student3.html'},
-        {n:4, title:'삼각형의 외심', file:'student4.html'},
-        {n:5, title:'삼각형의 내심', file:'student5.html'},
-        {n:6, title:'생각 넓히기', file:'student6.html'}
+        {n:1, label:1, title:'이등변삼각형의 성질', file:'student1.html'},
+        {n:2, label:2, title:'수직이등분선의 성질', file:'student2.html'},
+        {n:3, label:3, title:'각이등분선의 성질', file:'student3.html'},
+        {n:4, label:4, title:'삼각형의 외심', file:'student4.html'},
+        {n:5, label:5, title:'삼각형의 내심', file:'student5.html'},
+        {n:6, label:6, title:'생각 넓히기', file:'student6.html'}
       ]},
       { title:'2. 사각형의 성질', items:[
-        {n:11, title:'평행사변형의 성질', file:'student11.html'},
-        {n:12, title:'평행사변형이 되는 조건 찾기', file:'student12.html'},
-        {n:13, title:'평행사변형의 성질 활용', file:'student13.html'}
+        {n:11, label:1, title:'평행사변형의 성질', file:'student11.html'},
+        {n:12, label:2, title:'평행사변형이 되는 조건 찾기', file:'student12.html'},
+        {n:13, label:3, title:'평행사변형의 성질 활용', file:'student13.html'}
       ]}
   ]}
 ];
@@ -172,7 +175,7 @@ function buildTaskLink(t, profile){
   a.className='task-link';
   a.dataset.n = t.n;
   a.href = BASE_URL + t.file + '?' + params.toString();
-  const num=document.createElement('span'); num.className='num'; num.textContent=t.n;
+  const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
   const badge=document.createElement('span'); badge.className='badge'; badge.style.display='none';
   const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>교사용 실시간 대시보드 — 12. 평행사변형이 되는 조건 찾기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -403,20 +404,20 @@ function updateClassButtons(){
 function submitStudentAnswersToGoogleForm(s){
   if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
   if(!s.submitted) return 0; // 최종 제출된 학생만 전송
-  let iframe=document.getElementById('hiddenSubmitFrame');
-  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
-  const addField=(form,entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  const addField=(body,entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
   const sendRow=(taskId, answer)=>{
-    const form=document.createElement('form');
-    form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-    addField(form, CONFIG.ENTRY_UNIT, UNIT_LABEL);
-    addField(form, CONFIG.ENTRY_ROOM, currentRoomName);
-    addField(form, CONFIG.ENTRY_NUMBER, s.number);
-    addField(form, CONFIG.ENTRY_NAME, s.name);
-    addField(form, CONFIG.ENTRY_TASK, taskId);
-    addField(form, CONFIG.ENTRY_SUCCESS, '성공');
-    addField(form, CONFIG.ENTRY_ANSWER, answer);
-    document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+    const body=new URLSearchParams();
+    addField(body, CONFIG.ENTRY_UNIT, UNIT_LABEL);
+    addField(body, CONFIG.ENTRY_ROOM, currentRoomName);
+    addField(body, CONFIG.ENTRY_NUMBER, s.number);
+    addField(body, CONFIG.ENTRY_NAME, s.name);
+    addField(body, CONFIG.ENTRY_TASK, taskId);
+    addField(body, CONFIG.ENTRY_SUCCESS, '성공');
+    addField(body, CONFIG.ENTRY_ANSWER, answer);
+    // 예전에는 form을 만들어 숨겨진 iframe으로 여러 행을 연달아 제출했는데, 그러면 나중 제출이
+    // 앞의 제출을 가로채서 일부만(보통 마지막 것만) 실제로 전송되는 문제가 있었다.
+    // fetch는 각각 독립된 요청이라 여러 개를 동시에 보내도 서로 방해하지 않는다.
+    fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
   };
   let count=0;
   // 1페이지: 학생이 찾아낸 최소조건들

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>교사용 실시간 대시보드 — 삼각형의 내심</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -533,15 +534,12 @@ function updateClassButtons(){
 
 function submitStudentAnswersToGoogleForm(s){
   if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
-  let iframe=document.getElementById('hiddenSubmitFrame');
-  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
   let count=0;
   TASK_LABELS.forEach(t=>{
     const p = s.progress && s.progress[t.id];
     if(!p || !p.done) return;
-    const form=document.createElement('form');
-    form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-    const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+    const body=new URLSearchParams();
+    const addField=(entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
     addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
     addField(CONFIG.ENTRY_ROOM, currentRoomName);
     addField(CONFIG.ENTRY_NUMBER, s.number);
@@ -549,7 +547,10 @@ function submitStudentAnswersToGoogleForm(s){
     addField(CONFIG.ENTRY_TASK, t.id);
     addField(CONFIG.ENTRY_SUCCESS, '성공');
     addField(CONFIG.ENTRY_ANSWER, p.value!=null?String(p.value):'');
-    document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
+    // 예전에는 form을 만들어 숨겨진 iframe으로 여러 개를 연달아 제출했는데, 그러면 나중 제출이
+    // 앞의 제출을 가로채서 일부만(보통 마지막 것만) 실제로 전송되는 문제가 있었다.
+    // fetch는 각각 독립된 요청이라 여러 개를 동시에 보내도 서로 방해하지 않는다.
+    fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
     count++;
   });
   return count;
@@ -668,7 +669,10 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
   const sel = document.getElementById('roomCode');
   if([...sel.options].some(o=>o.value===classNo)){
     sel.value = classNo;
-    document.getElementById('connectBtn').click();
+    // setTimeout으로 한 틱 미뤄서, 이 스크립트 안의 뒤쪽에 있는 let 변수(teacherSelectedTask 등)들이
+    // 전부 초기화된 다음에 클릭이 실행되게 한다. 그냥 바로 클릭하면 connectBtn 핸들러 안에서
+    // 곧바로 부르는 renderTeacherView()가 아직 초기화 전인 변수에 접근해서 에러가 난다.
+    setTimeout(()=> document.getElementById('connectBtn').click(), 0);
   }
 })();
 
