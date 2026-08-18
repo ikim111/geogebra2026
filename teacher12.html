@@ -74,6 +74,33 @@
   .drec.minimal{background:#e8f5e9;border-color:#a5d6a7;}
   .drec b{display:block;font-size:13.5px;margin-bottom:2px;}
   .drec .dname{color:#666;font-size:11.5px;}
+
+  .tab-bar{display:flex;gap:4px;margin:18px 0 0;border-bottom:2px solid #e0e0e0;}
+  .tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .tab-btn:hover{color:var(--blue);}
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab-panel{display:none;padding-top:16px;}
+  .tab-panel.active{display:block;}
+
+  .student-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+  .student-card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
+  .student-card .sc-head{padding:8px 10px;font-size:12.5px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f0f0;}
+  .student-card .sc-canvas{background:#fafafa;padding:10px;}
+  .student-card .sc-empty{padding:20px 10px;text-align:center;color:#bbb;font-size:12px;}
+  .student-card .sc-value{padding:6px 10px;font-size:12px;color:#555;border-top:1px solid #f0f0f0;}
+
+  .teacher-split{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .teacher-col{flex:1 1 360px;min-width:300px;}
+  .teacher-col-title{font-size:12.5px;font-weight:bold;color:#666;margin:4px 2px 8px;}
+  .text-answer-list{display:flex;flex-direction:column;gap:10px;}
+  .text-answer-item{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:10px 14px;}
+  .text-answer-item .ta-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+  .text-answer-item .ta-name{font-weight:bold;font-size:13px;color:#222;}
+  .text-answer-item .ta-status{font-size:11px;padding:2px 9px;border-radius:10px;white-space:nowrap;}
+  .text-answer-item .ta-status.done{background:#e8f5e9;color:var(--green);}
+  .text-answer-item .ta-status.pending{background:#fff3e0;color:var(--orange);}
+  .text-answer-item .ta-text{font-size:13px;color:#333;white-space:pre-wrap;word-break:break-word;margin-bottom:4px;}
+  .text-answer-empty{color:#999;font-size:13.5px;text-align:center;padding:24px 10px;}
 </style>
 </head>
 <body>
@@ -131,27 +158,47 @@
       <div class="legend" id="legendList"></div>
     </div>
 
-    <div class="layout">
-      <div class="grid-wrap">
-        <table id="grid">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="checkAll"></th>
-              <th style="text-align:left;">이름</th>
-              <th>번호</th>
-              <th>최소조건 발견</th>
-              <th>발견 개수</th>
-              <th>2페이지</th>
-              <th>전체 기록</th>
-              <th>최근 활동</th>
-            </tr>
-          </thead>
-          <tbody id="gridBody"><tr><td class="empty" colspan="8">아직 접속한 학생이 없어요.</td></tr></tbody>
-        </table>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
+      <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
+    </div>
+
+    <div id="tab-summary" class="tab-panel active">
+      <div class="layout">
+        <div class="grid-wrap">
+          <table id="grid">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="checkAll"></th>
+                <th style="text-align:left;">이름</th>
+                <th>번호</th>
+                <th>최소조건 발견</th>
+                <th>발견 개수</th>
+                <th>2페이지</th>
+                <th>전체 기록</th>
+                <th>최근 활동</th>
+              </tr>
+            </thead>
+            <tbody id="gridBody"><tr><td class="empty" colspan="8">아직 접속한 학생이 없어요.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="detail" id="detail">
+          <h3>학생 선택</h3>
+          <div class="empty">표에서 이름을 클릭하면<br>그 학생이 찾은 기록이<br>여기 자세히 나와요.</div>
+        </div>
       </div>
-      <div class="detail" id="detail">
-        <h3>학생 선택</h3>
-        <div class="empty">표에서 이름을 클릭하면<br>그 학생이 찾은 기록이<br>여기 자세히 나와요.</div>
+    </div>
+
+    <div id="tab-teacher" class="tab-panel">
+      <div class="teacher-split">
+        <div class="teacher-col">
+          <div class="teacher-col-title">🧩 발견한 최소조건</div>
+          <div id="teacherCardsWrap" class="student-cards"></div>
+        </div>
+        <div class="teacher-col">
+          <div class="teacher-col-title">✏️ 말로 표현한 문장 (2페이지)</div>
+          <div id="teacherTextWrap" class="text-answer-list"></div>
+        </div>
       </div>
     </div>
 
@@ -271,6 +318,18 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     }).catch(err=>{ statusEl.textContent='⚠️ 로그인 실패: '+err.message; });
   }catch(err){ statusEl.textContent='⚠️ 연결 실패: '+err.message; }
 });
+
+/* teacher.html에서 반을 먼저 고른 뒤 이 단원으로 넘어온 경우, 자동으로 그 반에 연결한다. */
+(function autoConnectFromUrl(){
+  const params = new URLSearchParams(location.search);
+  const classNo = (params.get('classNo')||'').trim();
+  if(!classNo) return;
+  const sel = document.getElementById('roomCode');
+  if([...sel.options].some(o=>o.value===classNo)){
+    sel.value = classNo;
+    document.getElementById('connectBtn').click();
+  }
+})();
 
 function updatePauseBtn(){
   const btn=document.getElementById('pauseBtn');
@@ -552,7 +611,83 @@ function renderGrid(){
     const sel = list.find(i=>i.key===selectedKey);
     if(sel) renderDetail(sel);
   }
+  renderTeacherView();
 }
+
+/* ---------- ② 교사용 뷰: 학생 전체가 발견한 조건 / 작성한 문장을 한눈에 보기 ---------- */
+function renderTeacherView(){
+  const cardsWrap = document.getElementById('teacherCardsWrap');
+  const textWrap = document.getElementById('teacherTextWrap');
+  if(!cardsWrap || !textWrap) return;
+  cardsWrap.textContent=''; textWrap.textContent='';
+  const keys = Object.keys(allStudents);
+  if(keys.length===0){
+    cardsWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+    textWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+    return;
+  }
+  const list = keys.map(k=>{
+    const s = allStudents[k] || {};
+    const found = studentMinimalFound(s);
+    return { key:k, student:s, foundSet:found, score:found.size };
+  }).sort((a,b)=> (a.student.number||0)-(b.student.number||0));
+
+  list.forEach(item=>{
+    const s = item.student;
+    const card = document.createElement('div');
+    card.className='student-card';
+    const head=document.createElement('div'); head.className='sc-head';
+    head.innerHTML = `<span>${displayName(item.key,s.name)}</span><span>${item.score} / 6</span>`;
+    const iconWrap=document.createElement('div'); iconWrap.className='sc-canvas';
+    const icon6=document.createElement('div'); icon6.className='icon6';
+    CANONICAL_MINIMAL.forEach(m=>{
+      const key=recordKeyOf(m.ids);
+      const sp=document.createElement('span');
+      if(item.foundSet.has(key)) sp.classList.add('got');
+      sp.title = m.name;
+      icon6.appendChild(sp);
+    });
+    iconWrap.appendChild(icon6);
+    const valueEl=document.createElement('div'); valueEl.className='sc-value';
+    valueEl.textContent = `기록 ${(s.records||[]).length}개`;
+    card.appendChild(head); card.appendChild(iconWrap); card.appendChild(valueEl);
+    cardsWrap.appendChild(card);
+  });
+
+  list.forEach(item=>{
+    const s = item.student;
+    const p2 = s.progress && s.progress.p2;
+    const box=document.createElement('div'); box.className='text-answer-item';
+    const head=document.createElement('div'); head.className='ta-head';
+    const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name);
+    const done = !!(p2 && p2.done);
+    const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
+    head.appendChild(name); head.appendChild(status);
+    box.appendChild(head);
+    if(!p2 || !Array.isArray(p2.answers) || p2.answers.every(a=>!a)){
+      const text=document.createElement('div'); text.className='ta-text'; text.textContent='(아직 작성한 문장이 없어요)';
+      box.appendChild(text);
+    } else {
+      CANONICAL_MINIMAL.forEach((m,i)=>{
+        const text=document.createElement('div'); text.className='ta-text';
+        text.textContent = `${i+1}. ${p2.answers[i] || '(작성중)'}`;
+        box.appendChild(text);
+      });
+    }
+    textWrap.appendChild(box);
+  });
+}
+
+/* ---------- 탭 전환 ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='teacher') renderTeacherView();
+  });
+});
 
 function renderDetail(item){
   const wrap = document.getElementById('detail');

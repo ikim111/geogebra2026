@@ -3,21 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교사용 — 단원 선택</title>
+<title>교사용 — 반/단원 선택</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --gray:#616161; }
   *{box-sizing:border-box;}
-  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
-  header{background:#1a237e;color:#fff;padding:22px 16px;text-align:center;}
-  header h1{margin:0 0 4px;font-size:21px;}
-  header p{margin:0;font-size:13px;opacity:.85;}
-  .wrap{max-width:640px;margin:0 auto;padding:20px 16px;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#1a237e;margin:0;min-height:100vh;color:#222;}
+
+  #page1{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:19px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card select{width:100%;padding:11px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
+  .class-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .class-btn{padding:14px 0;border:1px solid #ccc;border-radius:8px;background:#fff;font-size:15px;font-weight:bold;color:#333;cursor:pointer;}
+  .class-btn:hover{background:#f0f4ff;border-color:#9fb8ee;}
+  .class-btn.selected{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #gateMsg{margin-top:12px;font-size:13px;color:#c62828;min-height:16px;}
+
+  #page2{display:none;min-height:100vh;padding:24px 16px;}
+  .wrap2{max-width:640px;margin:0 auto;}
+  .top-card{background:#fff;border-radius:14px;padding:20px 22px;margin-bottom:18px;box-shadow:0 4px 24px rgba(0,0,0,.2);}
+  .top-card h1{font-size:18px;margin:0 0 6px;color:#1a237e;}
+  .top-card .who{font-size:14px;color:#444;}
+  .top-card .who b{color:var(--blue);}
+  .top-card .editBtn{margin-top:12px;font-size:12.5px;background:#fff3e0;border:1px solid #ffcc80;color:#e65100;padding:7px 12px;border-radius:6px;cursor:pointer;}
+  .top-card .lockNote{margin-top:10px;font-size:12px;color:#888;line-height:1.5;}
+
   .unit-list{display:flex;flex-direction:column;gap:10px;}
-  .unit-link{display:flex;align-items:center;gap:14px;background:#fff;border-radius:12px;padding:16px 18px;text-decoration:none;color:#222;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .1s, box-shadow .1s;}
-  .unit-link:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.18);}
+  .unit-row{display:flex;align-items:stretch;gap:8px;}
+  .unit-link{flex:1;display:flex;align-items:center;gap:14px;background:#fff;border-radius:12px;padding:16px 18px;text-decoration:none;color:#222;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .1s;}
+  .unit-link:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.22);}
   .unit-link .num{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:15px;}
   .unit-link .title{font-size:15px;font-weight:bold;}
   .unit-link .arrow{margin-left:auto;color:#bbb;font-size:18px;}
+  .unit-row.locked .unit-link{background:#eceff1;color:#888;box-shadow:none;}
+  .unit-row.locked .unit-link .num{background:#b0bec5;}
+  .unit-row.locked .unit-link:hover{transform:none;box-shadow:none;}
+
+  .lock-toggle{flex:0 0 auto;align-self:center;border:none;border-radius:8px;padding:0 14px;height:38px;font-size:12.5px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  .lock-toggle.open{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
+  .lock-toggle.locked{background:#f4f6f8;color:#888;border:1px solid #ddd;}
+  .lock-toggle.always{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;cursor:default;}
+  .lock-toggle:disabled{opacity:.6;cursor:not-allowed;}
 
   .chapter-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:9px 14px;margin:6px 0 2px;}
   .group-title{font-size:13px;font-weight:bold;color:#1a237e;padding:4px 4px 0;margin-top:4px;}
@@ -26,19 +59,33 @@
 </head>
 <body>
 
-<header>
-  <h1>📊 교사용 대시보드 — 단원 선택</h1>
-  <p>확인할 단원을 선택하면 해당 단원의 실시간 대시보드로 이동합니다</p>
-</header>
+<div id="page1">
+  <div class="gate-card">
+    <h1>📊 교사용 대시보드</h1>
+    <p class="gate-sub">먼저 확인할 반을 선택하세요</p>
+    <label>반</label>
+    <div class="class-grid" id="classGrid"></div>
+    <input type="hidden" id="classNo">
+    <button id="nextBtn" class="gate-start">다음 →</button>
+    <div id="gateMsg"></div>
+  </div>
+</div>
 
-<div class="wrap">
-  <div class="unit-list" id="unitList"></div>
+<div id="page2">
+  <div class="wrap2">
+    <div class="top-card">
+      <h1>단원을 선택하세요</h1>
+      <div class="who"><b id="viewClass"></b>반</div>
+      <button class="editBtn" id="editBtn">✏️ 반 다시 선택하기</button>
+      <div class="lockNote">🔒 잠긴 단원은 이 반 학생들이 아직 들어갈 수 없어요. 오른쪽 버튼을 눌러 열고 잠글 수 있어요. (0단원 지오지브라 연습은 항상 열려 있어요)</div>
+    </div>
+    <div class="unit-list" id="unitList"></div>
+  </div>
 </div>
 
 <script>
 // 배포 도메인이 나중에 바뀌어도(Netlify → Vercel 등) 코드를 다시 고치지 않도록,
 // 도메인을 하드코딩하지 않고 "같은 사이트의 상대 경로"로만 링크한다.
-// teacher.html과 teacher0~6.html이 항상 같은 폴더(루트)에 함께 배포되어 있다면 이대로 잘 동작한다.
 const BASE_URL = '';
 // 단원이 늘어날 때는 STANDALONE_UNITS나 SECTIONS 안의 items 배열에 항목만 추가하면 된다.
 const STANDALONE_UNITS = [
@@ -62,34 +109,165 @@ const SECTIONS = [
   ]}
 ];
 
-function buildUnitLink(u){
+/* ============================================================
+   설정 안내 (단원 잠금/해제 기능을 쓰려면)
+   1) 학생용/교사용 파일들과 "완전히 동일한" FIREBASE_CONFIG를 아래에 붙여넣으세요.
+   2) 별도의 Firebase 콘솔 설정은 필요 없습니다 — 기존에 이미 게시한 보안 규칙
+      ("rooms/$room" 아래는 로그인한 사람만 읽고 쓸 수 있음)을 그대로 재사용합니다.
+      이 파일은 "rooms/{반}__access/units/{단원번호}" 라는 경로에 열림/잠김 여부를
+      저장하는데, 이 경로도 "rooms/$room" 규칙에 포함되기 때문에 별도 규칙 추가가
+      필요 없어요.
+   3) FIREBASE_CONFIG를 비워두면(apiKey 없음) 잠금 기능이 꺼지고, 예전처럼 모든
+      단원이 항상 열려있는 것으로 동작합니다.
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+
+// 반 선택 버튼 채우기 (1~12반, 4개씩 3줄)
+(function(){
+  const grid=document.getElementById('classGrid');
+  const hidden=document.getElementById('classNo');
+  for(let i=1;i<=12;i++){
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='class-btn';
+    b.textContent=i+'반';
+    b.dataset.value=String(i);
+    b.addEventListener('click', ()=>{
+      hidden.value = String(i);
+      grid.querySelectorAll('.class-btn').forEach(x=> x.classList.remove('selected'));
+      b.classList.add('selected');
+    });
+    grid.appendChild(b);
+  }
+})();
+
+function ensureFirebaseApp(){
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  return firebase.app();
+}
+function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_') || 'x'; }
+
+let currentRoom = null;
+let accessRef = null;
+let accessData = {}; // {unitNumber: true|false}
+
+function buildUnitRow(u){
+  const row=document.createElement('div');
+  row.className='unit-row';
+
   const a=document.createElement('a');
   a.className='unit-link';
-  a.href = BASE_URL + u.file;
+  a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom);
   const num=document.createElement('span'); num.className='num'; num.textContent=u.n;
   const title=document.createElement('span'); title.className='title'; title.textContent=u.title;
   const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
   a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
-  return a;
+  row.appendChild(a);
+
+  if(u.n===0){
+    // 0단원(지오지브라 연습)은 항상 열려있다 — 잠금 대상이 아니다.
+    const btn=document.createElement('button');
+    btn.className='lock-toggle always'; btn.textContent='🔓 항상 열림'; btn.disabled=true;
+    row.appendChild(btn);
+  } else {
+    const isOpen = accessData[u.n]===true;
+    row.classList.toggle('locked', !isOpen);
+    const btn=document.createElement('button');
+    btn.className='lock-toggle ' + (isOpen?'open':'locked');
+    btn.textContent = isOpen ? '🔓 열림' : '🔒 잠김';
+    btn.disabled = !FIREBASE_CONFIG.apiKey;
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      toggleUnit(u.n, row, btn);
+    });
+    row.appendChild(btn);
+  }
+  return row;
 }
 
-const list=document.getElementById('unitList');
-STANDALONE_UNITS.forEach(u=> list.appendChild(buildUnitLink(u)));
-SECTIONS.forEach(sec=>{
-  const chapterEl=document.createElement('div');
-  chapterEl.className='chapter-title'; chapterEl.textContent=sec.chapter;
-  list.appendChild(chapterEl);
-
-  sec.groups.forEach(g=>{
-    const groupTitleEl=document.createElement('div');
-    groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
-    list.appendChild(groupTitleEl);
-
-    const itemsWrap=document.createElement('div');
-    itemsWrap.className='group-items';
-    g.items.forEach(u=> itemsWrap.appendChild(buildUnitLink(u)));
-    list.appendChild(itemsWrap);
+function toggleUnit(n, row, btn){
+  if(!accessRef) return;
+  const next = !(accessData[n]===true);
+  btn.disabled = true;
+  accessRef.child('units/'+n).set(next).then(()=>{
+    accessData[n] = next;
+    row.classList.toggle('locked', !next);
+    btn.className = 'lock-toggle ' + (next?'open':'locked');
+    btn.textContent = next ? '🔓 열림' : '🔒 잠김';
+    btn.disabled = false;
+  }).catch(()=>{
+    btn.disabled = false;
+    alert('저장에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.');
   });
+}
+
+function renderUnitList(){
+  const list=document.getElementById('unitList');
+  list.innerHTML = '';
+  STANDALONE_UNITS.forEach(u=> list.appendChild(buildUnitRow(u)));
+  SECTIONS.forEach(sec=>{
+    const chapterEl=document.createElement('div');
+    chapterEl.className='chapter-title'; chapterEl.textContent=sec.chapter;
+    list.appendChild(chapterEl);
+
+    sec.groups.forEach(g=>{
+      const groupTitleEl=document.createElement('div');
+      groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
+      list.appendChild(groupTitleEl);
+
+      const itemsWrap=document.createElement('div');
+      itemsWrap.className='group-items';
+      g.items.forEach(u=> itemsWrap.appendChild(buildUnitRow(u)));
+      list.appendChild(itemsWrap);
+    });
+  });
+}
+
+function goToUnitPage(room){
+  currentRoom = room;
+  document.getElementById('viewClass').textContent = room;
+  document.getElementById('page1').style.display='none';
+  document.getElementById('page2').style.display='block';
+
+  if(!FIREBASE_CONFIG.apiKey){
+    accessData = {};
+    renderUnitList();
+    return;
+  }
+  try{
+    ensureFirebaseApp();
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = sanitize(room) + '__access';
+      accessRef = firebase.database().ref('rooms/'+roomKey);
+      accessRef.child('units').once('value').then(snap=>{
+        accessData = snap.val() || {};
+        renderUnitList();
+      }).catch(()=>{ accessData = {}; renderUnitList(); });
+    }).catch(()=>{ accessData = {}; renderUnitList(); });
+  }catch(e){ accessData = {}; renderUnitList(); }
+}
+
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  const room = document.getElementById('classNo').value;
+  const msgEl = document.getElementById('gateMsg');
+  if(!room){ msgEl.textContent = '반을 선택해주세요.'; return; }
+  msgEl.textContent = '';
+  goToUnitPage(room);
+});
+document.getElementById('editBtn').addEventListener('click', ()=>{
+  document.getElementById('page2').style.display='none';
+  document.getElementById('page1').style.display='flex';
+  document.getElementById('classNo').value = '';
+  document.querySelectorAll('.class-btn').forEach(b=> b.classList.remove('selected'));
+  if(accessRef){ accessRef=null; }
 });
 </script>
 </body>

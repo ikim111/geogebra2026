@@ -658,6 +658,18 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
   }
 });
 
+/* teacher.html에서 반을 먼저 고른 뒤 이 단원으로 넘어온 경우, 자동으로 그 반에 연결한다. */
+(function autoConnectFromUrl(){
+  const params = new URLSearchParams(location.search);
+  const classNo = (params.get('classNo')||'').trim();
+  if(!classNo) return;
+  const sel = document.getElementById('roomCode');
+  if([...sel.options].some(o=>o.value===classNo)){
+    sel.value = classNo;
+    document.getElementById('connectBtn').click();
+  }
+})();
+
 /* 반을 바꾸고 싶으면 페이지를 새로고침해서 처음부터(반 선택 화면부터) 다시 시작한다.
    구독 중이던 studentsRef/controlRef를 일일이 끊는 것보다 안전하고 단순하다. */
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{

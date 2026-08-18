@@ -11,11 +11,22 @@
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
-  header{background:#1a237e;color:#fff;padding:20px 16px;text-align:center;position:relative;}
-  header .homeBtn{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;text-decoration:none;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 10px;}
-  header h1{margin:0 0 4px;font-size:20px;}
-  header p{margin:0;font-size:13px;opacity:.85;}
-  .wrap{max-width:760px;margin:0 auto;padding:16px;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar .progress-row{flex:1;margin-top:0;}
+  #stickyBar .progress-bar{background:#3a3f44;}
+  #stickyBar .progress-text{color:#e8eaed;}
+  #stickyBar button.hand{flex:0 0 auto;padding:8px 12px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap;}
+  #stickyBar button.hand.active{background:#e65100;color:#fff;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 8px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
 
   .progress-row{display:flex;align-items:center;gap:10px;}
@@ -86,9 +97,6 @@
   body.final-locked .task, body.final-locked #handBtn{ pointer-events:none !important; opacity:.6; }
   .submit-panel button.main.cancel{ background:#9e9e9e; }
 
-  .top-actions{display:flex;justify-content:flex-end;margin-bottom:10px;}
-  #handBtn{padding:8px 14px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:bold;}
-  #handBtn.active{background:#e65100;color:#fff;}
 
   #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
   .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
@@ -118,6 +126,10 @@
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
     </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
     <div id="profileBox" style="display:none;">
       <label>반</label>
       <div class="gate-readonly" id="profileClassView"></div>
@@ -132,25 +144,26 @@
 </div>
 
 <div id="appScreen">
-  <header>
-    <a href="student.html" class="homeBtn" title="과제 목록으로">🏠</a>
-    <h1>13. 평행사변형의 성질 활용</h1>
-    <p>생각을 나누는 의사소통 — 아래 활동들을 차례로 해결해보세요</p>
-  </header>
-
-  <div class="wrap">
-
-    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
-    <div class="top-actions"><button id="handBtn">🖐 질문있어요</button></div>
-
-    <div class="panel">
+  <div id="stickyBar">
+    <div id="unitTitleBar">13. 평행사변형의 성질 활용</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-text" id="progressText">완료 0 / 9</div>
       </div>
+      <button id="handBtn" class="hand">🖐 질문있어요</button>
+      <button id="nextBtn">다음 ▶</button>
     </div>
+  </div>
+
+  <div class="wrap" id="pageWrap">
+
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
 
     <!-- ===== PDF 1 : 넓이를 4등분하는 방법 ===== -->
+    <div class="pgpage" data-task-id="1">
     <div class="section-title">생각을 나누는 의사소통 — 평행사변형의 넓이 4등분하기</div>
     <div class="section-desc">다음은 영은이와 재호가 평행사변형의 성질을 이용하여 넓이를 4등분하는 방법에 대하여 나누는 대화이다.</div>
     <div class="quote-row">
@@ -188,6 +201,10 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <div class="pgpage" data-task-id="2">
+    <div class="section-title">생각을 나누는 의사소통 — 평행사변형의 넓이 4등분하기 (계속)</div>
 
     <div class="task" id="task-2">
       <div class="task-head">
@@ -207,8 +224,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ===== PDF 2 : 빨대로 평행사변형 만들기 ===== -->
+    <div class="pgpage" data-task-id="3">
     <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기</div>
     <div class="section-desc">다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.</div>
     <div class="quote-row">
@@ -244,6 +263,10 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <div class="pgpage" data-task-id="4">
+    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)</div>
 
     <div class="task" id="task-4">
       <div class="task-head">
@@ -267,8 +290,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ===== PDF 3 : 한 쌍만 평행 + 길이 같음 ===== -->
+    <div class="pgpage" data-task-id="5">
     <div class="section-title">생각을 나누는 의사소통 — 조건을 하나만 바꾸면?</div>
 
     <div class="task" id="task-5">
@@ -293,8 +318,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ===== PDF 4 : 모눈종이 위 평행사변형 ===== -->
+    <div class="pgpage" data-task-id="6">
     <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기</div>
     <div class="section-desc">다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.</div>
 
@@ -326,6 +353,10 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <div class="pgpage" data-task-id="7">
+    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기 (계속)</div>
 
     <div class="task" id="task-7">
       <div class="task-head">
@@ -356,8 +387,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ===== PDF 5 : 대각선 교점을 지나는 직선 ===== -->
+    <div class="pgpage" data-task-id="8">
     <div class="section-title">생각을 나누는 의사소통 — 넓이를 이등분하는 직선</div>
 
     <div class="task" id="task-8">
@@ -393,8 +426,10 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ===== PDF 6 : 합동 증명 ===== -->
+    <div class="pgpage" data-task-id="9">
     <div class="section-title">생각을 나누는 의사소통 — 두 삼각형의 합동 증명</div>
 
     <div class="task" id="task-9">
@@ -432,6 +467,7 @@
         </div>
       </div>
     </div>
+    </div>
 
     <div class="panel submit-panel">
       <button class="main" id="submitBtn">결과 제출하기</button><br>
@@ -439,6 +475,12 @@
       <div id="submitStatus"></div>
     </div>
 
+  </div>
+
+  <div id="pagerNav">
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 10</span>
+    </div>
   </div>
 </div>
 
@@ -629,16 +671,40 @@ function startApp(profile){
 }
 (function initGate(){
   const profile = loadProfile();
-  if(profile){
+  if(!profile){
+    document.getElementById('profileMissingBox').style.display='block';
+    return;
+  }
+  checkUnitAccessAndShowGate(profile);
+})();
+
+/* 선생님이 이 단원을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작 화면을 보여준다.
+   Firebase가 설정되지 않았거나 확인 중 오류가 나면(네트워크 등) 기존처럼 그냥 열어준다
+   (잠금 기능은 어디까지나 선택 기능이라, 이것 때문에 과제 자체를 못 하게 막지는 않는다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
     document.getElementById('profileBox').style.display='block';
     document.getElementById('profileClassView').textContent = profile.classNo+'반';
     document.getElementById('profileNumberView').textContent = profile.number || '-';
     document.getElementById('profileNameView').textContent = profile.name;
+    document.getElementById('unitLockedBox').style.display='none';
     document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
-  } else {
-    document.getElementById('profileMissingBox').style.display='block';
-  }
-})();
+  };
+  const showLocked = ()=>{
+    document.getElementById('profileBox').style.display='none';
+    document.getElementById('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/13').once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
 
 /* ---------- 제출 / 백업 ---------- */
 function buildPayload(){
@@ -695,6 +761,7 @@ document.getElementById('backupBtn').addEventListener('click', ()=>{
 function applyPauseLock(paused){
   document.body.classList.toggle('app-paused', paused);
   document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
+  if(typeof updateNavButtons==='function') updateNavButtons();
 }
 
 /* ---------- Google 설문지 자동 저장 ---------- */
@@ -808,6 +875,34 @@ document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand(
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
+
+/* ---------- 페이지 넘기기 (활동 9개 + 마지막 제출 페이지, student1~6과 동일한 구조) ---------- */
+const pages = [...document.querySelectorAll('#pageWrap > .pgpage'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){
+  const p = pages[idx];
+  if(!p) return null;
+  const n = parseInt(p.dataset.taskId, 10);
+  return isNaN(n) ? null : n;
+}
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  const label=document.getElementById('pageLabel');
+  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function updateNavButtons(){
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  if(!prevBtn||!nextBtn) return;
+  prevBtn.disabled = currentPage===0 || RT.paused;
+  nextBtn.disabled = currentPage===pages.length-1 || RT.paused;
+}
+document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
 </script>
 </body>
 </html>

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학생용 — 반/번호/이름 입력 및 과제 선택</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -15,6 +18,10 @@
   .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
   .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
   .gate-card select, .gate-card input[type=text], .gate-card input[type=number]{width:100%;padding:11px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
+  .class-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .class-btn{padding:14px 0;border:1px solid #ccc;border-radius:8px;background:#fff;font-size:15px;font-weight:bold;color:#333;cursor:pointer;}
+  .class-btn:hover{background:#f0f4ff;border-color:#9fb8ee;}
+  .class-btn.selected{background:var(--blue);border-color:var(--blue);color:#fff;}
   .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
   .gate-start:hover{background:#1b5e20;}
   #gateMsg{margin-top:12px;font-size:13px;color:#c62828;min-height:16px;}
@@ -33,6 +40,13 @@
   .task-link .num{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:15px;}
   .task-link .title{font-size:15px;font-weight:bold;}
   .task-link .arrow{margin-left:auto;color:#bbb;font-size:18px;}
+  .task-link .badge{flex:0 0 auto;font-size:11px;font-weight:bold;padding:3px 9px;border-radius:10px;white-space:nowrap;}
+  .task-link .badge.done{background:#e8f5e9;color:#2e7d32;}
+  .task-link .badge.pending{background:#fff3e0;color:#e65100;}
+  .task-link.locked{background:#eceff1;color:#9aa0a6;box-shadow:none;cursor:default;}
+  .task-link.locked .num{background:#b0b6bb;}
+  .task-link.locked .title{color:#9aa0a6;}
+  .task-link.locked .arrow{color:#b0b6bb;}
 
   .chapter-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:9px 14px;margin:6px 0 2px;}
   .group-title{font-size:13px;font-weight:bold;color:#1a237e;padding:4px 4px 0;margin-top:4px;}
@@ -45,10 +59,9 @@
   <div class="gate-card">
     <h1>학생 정보 입력</h1>
     <p class="gate-sub">반 · 번호 · 이름을 입력하면 과제를 선택할 수 있어요</p>
-    <label for="classNo">반</label>
-    <select id="classNo">
-      <option value="">반 선택</option>
-    </select>
+    <label>반</label>
+    <div class="class-grid" id="classGrid"></div>
+    <input type="hidden" id="classNo">
     <label for="studentNumber">번호</label>
     <input type="number" id="studentNumber" placeholder="번호를 입력하세요" min="1" max="99">
     <label for="studentName">이름</label>
@@ -80,6 +93,26 @@ const BASE_URL = '';
 const STANDALONE_TASKS = [
   {n:0, title:'지오지브라 연습', file:'student0.html'}
 ];
+/* ============================================================
+   선생님이 teacher.html에서 반별로 단원을 열고 닫을 수 있게 한 기능과,
+   학생이 "결과 제출하기"를 눌러 완료했는지 보여주는 기능에 쓰인다.
+   각 studentN.html의 FIREBASE_CONFIG/ACTIVITY_SUFFIX와 반드시 동일해야 한다.
+   비워두면(또는 확인 중 오류가 나면) 예전처럼 모든 단원을 그냥 열어서 보여준다.
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+// n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
+// 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',11:'__quad11',12:'__quad12',13:'__quad13'};
+function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
+
 const SECTIONS = [
   { chapter:'VI. 삼각형의 성질', groups:[
       { title:'1. 삼각형의 성질', items:[
@@ -98,11 +131,28 @@ const SECTIONS = [
   ]}
 ];
 
-// 반 선택 옵션 채우기 (1~12반)
+// 반 선택 버튼 채우기 (1~12반, 4개씩 3줄)
 (function(){
-  const sel=document.getElementById('classNo');
-  for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=i+'반'; sel.appendChild(o); }
+  const grid=document.getElementById('classGrid');
+  const hidden=document.getElementById('classNo');
+  for(let i=1;i<=12;i++){
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='class-btn';
+    b.textContent=i+'반';
+    b.dataset.value=String(i);
+    b.addEventListener('click', ()=>{
+      hidden.value = String(i);
+      grid.querySelectorAll('.class-btn').forEach(x=> x.classList.remove('selected'));
+      b.classList.add('selected');
+    });
+    grid.appendChild(b);
+  }
 })();
+function selectClassButton(classNo){
+  document.getElementById('classNo').value = classNo || '';
+  document.querySelectorAll('.class-btn').forEach(b=> b.classList.toggle('selected', b.dataset.value===String(classNo)));
+}
 
 function loadProfile(){
   try{
@@ -120,12 +170,65 @@ function buildTaskLink(t, profile){
   const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
   const a=document.createElement('a');
   a.className='task-link';
+  a.dataset.n = t.n;
   a.href = BASE_URL + t.file + '?' + params.toString();
   const num=document.createElement('span'); num.className='num'; num.textContent=t.n;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
+  const badge=document.createElement('span'); badge.className='badge'; badge.style.display='none';
   const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
-  a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
+  a.appendChild(num); a.appendChild(title); a.appendChild(badge); a.appendChild(arrow);
   return a;
+}
+
+/* 선생님이 이 반에 각 단원을 열어줬는지, 그리고 학생이 "결과 제출하기"까지 눌러 완료했는지를
+   Firebase에서 확인해서 목록에 반영한다. 0단원은 언제나 열려 있다(잠금 대상 아님).
+   Firebase가 설정되지 않았거나 확인 중 오류가 나면 예전처럼 전부 열린 상태로 그대로 둔다
+   (잠금 기능은 어디까지나 선택 기능이라 이것 때문에 과제 목록 자체를 못 보게 막지 않는다). */
+function applyAccessAndCompletion(profile){
+  if(!FIREBASE_CONFIG.apiKey) return;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(cred=>{
+      const uid = cred.user.uid;
+      const accessKey = sanitize(profile.classNo) + '__access';
+      firebase.database().ref('rooms/'+accessKey+'/units').once('value').then(snap=>{
+        const access = snap.val() || {};
+        document.querySelectorAll('.task-link').forEach(el=>{
+          const n = parseInt(el.dataset.n, 10);
+          if(n === 0) return; // 0단원은 항상 열려 있음
+          const isOpen = access[n] === true;
+          if(!isOpen){
+            lockTaskLink(el);
+          } else if(ACTIVITY_SUFFIX[n]){
+            showCompletionBadge(el, n, uid, profile);
+          }
+        });
+      }).catch(()=>{});
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+function lockTaskLink(a){
+  a.classList.add('locked');
+  a.removeAttribute('href');
+  a.addEventListener('click', e=> e.preventDefault());
+  const arrow = a.querySelector('.arrow');
+  if(arrow) arrow.textContent = '🔒';
+}
+
+function showCompletionBadge(a, n, uid, profile){
+  const roomKey = sanitize(profile.classNo) + ACTIVITY_SUFFIX[n];
+  const studentKey = uid + '_' + sanitize(profile.name);
+  firebase.database().ref('rooms/'+roomKey+'/students/'+studentKey+'/submitted').once('value').then(snap=>{
+    const badge = a.querySelector('.badge');
+    if(!badge) return;
+    if(snap.val() === true){
+      badge.textContent = '✅ 완료'; badge.className = 'badge done';
+    } else {
+      badge.textContent = '⏳ 미완료'; badge.className = 'badge pending';
+    }
+    badge.style.display = '';
+  }).catch(()=>{});
 }
 
 function buildTaskLinks(profile){
@@ -159,6 +262,7 @@ function showPage2(profile){
   buildTaskLinks(profile);
   document.getElementById('page1').style.display='none';
   document.getElementById('page2').style.display='block';
+  applyAccessAndCompletion(profile);
 }
 
 document.getElementById('nextBtn').addEventListener('click', ()=>{
@@ -178,7 +282,7 @@ document.getElementById('nextBtn').addEventListener('click', ()=>{
 document.getElementById('editBtn').addEventListener('click', ()=>{
   const profile = loadProfile();
   if(profile){
-    document.getElementById('classNo').value = profile.classNo;
+    selectClassButton(profile.classNo);
     document.getElementById('studentNumber').value = profile.number || '';
     document.getElementById('studentName').value = profile.name;
   }

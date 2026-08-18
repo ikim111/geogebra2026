@@ -36,6 +36,8 @@
   .toolbar button.active{background:var(--blue);border-color:var(--blue);color:#fff;}
   .toolbar button.reset{margin-left:auto;background:#fff3e0;border-color:#ffcc80;color:#e65100;}
   .toolbar button.undo{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+  .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
+  .toolbar button.undo,.toolbar button.redo{font-size:15px;padding:5px 12px;}
   .canvas-wrap{padding:0 16px 14px;}
   svg.gcanvas{width:100%;max-width:600px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
   .hint{font-size:12px;color:#888;padding:0 16px 12px;}
@@ -87,7 +89,9 @@
   #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
   #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
   #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
-  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:10px 16px;display:flex;align-items:center;gap:12px;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
   #stickyBar .progress-row{flex:1;margin-top:0;}
   #stickyBar .progress-bar{background:#3a3f44;}
   #stickyBar .progress-text{color:#e8eaed;}
@@ -148,14 +152,17 @@
   <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
 
   <div id="stickyBar">
-    <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
-    <button id="prevBtn">◀ 이전</button>
-    <div class="progress-row">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-text" id="progressText">완료 0 / 10</div>
+    <div id="unitTitleBar">0. 지오지브라 연습</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 13</div>
+      </div>
+      <button id="handBtn" class="hand">🖐 질문있어요</button>
+      <button id="nextBtn">다음 ▶</button>
     </div>
-    <button id="handBtn" class="hand">🖐 질문있어요</button>
-    <button id="nextBtn">다음 ▶</button>
   </div>
 
   <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
@@ -361,6 +368,7 @@ class GeoCanvas{
     this.pending = [];
     this.pendingObjs = [];
     this.dragging = null;
+    this.redoStack = [];
     this.onChange = onChange || (()=>{});
     (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
     (cfg.presetObjects||[]).forEach(o => {
@@ -381,13 +389,14 @@ class GeoCanvas{
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
     const p = {id:uid(), label, x, y, locked: !!opts.locked, constraint: opts.constraint||null};
     this.points.push(p);
-    if(!opts.locked || opts.trackHistory) this.history.push({kind:'point', id:p.id});
+    if(!opts.locked || opts.trackHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
     this.objects.push(obj);
     this.history.push({kind:'object', id:obj.id});
+    this.redoStack=[];
     return obj;
   }
   resolvePoint(id){ return this.points.find(p=>p.id===id); }
@@ -459,18 +468,38 @@ class GeoCanvas{
   reset(){
     this.points = this.points.filter(p=>p.locked);
     this.objects = this.objects.filter(o=>o.locked);
-    this.history=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
+    this.history=[]; this.redoStack=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
     this.render();
   }
   undo(){
     const last = this.history.pop();
     if(!last) return;
+    let entry;
     if(last.kind==='point'){
+      const point = this.points.find(p=>p.id===last.id);
+      const relatedObjects = this.objects.filter(o=>this._refsPoint(o,last.id));
       this.points = this.points.filter(p=>p.id!==last.id);
       this.objects = this.objects.filter(o=>!this._refsPoint(o,last.id));
+      entry = {kind:'point', id:last.id, point, relatedObjects};
     } else {
+      const object = this.objects.find(o=>o.id===last.id);
       this.objects = this.objects.filter(o=>o.id!==last.id);
+      entry = {kind:'object', id:last.id, object};
     }
+    this.redoStack.push(entry);
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  redo(){
+    const last = this.redoStack.pop();
+    if(!last) return;
+    if(last.kind==='point'){
+      if(last.point) this.points.push(last.point);
+      if(last.relatedObjects && last.relatedObjects.length) this.objects.push(...last.relatedObjects);
+    } else if(last.object){
+      this.objects.push(last.object);
+    }
+    this.history.push({kind:last.kind, id:last.id});
     this.pending=[]; this.pendingObjs=[];
     this.render();
   }
@@ -864,6 +893,57 @@ const TASKS = [
       if(!onCircle) return fail('"점" 도구로 원 위에 점을 하나 찍어보세요.');
       return fail('"점" 도구로 직선 위에도 점을 하나 찍어보세요.'); } },
 
+  { id:11, title:'[과제 11] 선분 AB를 한 변으로 하는 정삼각형을 작도해봅시다.', type:'construct', tools:['circleCP','polygon'],
+    points:[{label:'A',x:150,y:300},{label:'B',x:400,y:300}],
+    presetObjects:[{type:'segment',p1:'A',p2:'B'}],
+    check(c){ const A=c.byLabel('A'),B=c.byLabel('B'); const target=dist(A,B);
+      const found=c.objects.some(o=>{
+        if(o.type!=='polygon'||o.ids.length!==3) return false;
+        const g=c.getObjGeom(o); const pts=g.pts;
+        if(!pts.every(p=>p)) return false;
+        if(!pts.some(p=>samePt(p,A)) || !pts.some(p=>samePt(p,B))) return false;
+        const d1=dist(pts[0],pts[1]), d2=dist(pts[1],pts[2]), d3=dist(pts[2],pts[0]);
+        return Math.abs(d1-target)<10 && Math.abs(d2-target)<10 && Math.abs(d3-target)<10;
+      });
+      return found?ok('정삼각형을 잘 만들었어요!'):fail('"원(중심,통과점)" 도구로 A, B를 각각 중심으로 하는 원 두 개를 그려 교점을 찾고, "다각형" 도구로 세 점을 연결해보세요.'); } },
+
+  { id:12, title:'[과제 12] 선분 AB를 한 변으로 하는 정사각형을 작도해봅시다.', type:'construct', tools:['perp','circleCR','polygon'],
+    points:[{label:'A',x:120,y:300},{label:'B',x:380,y:300}],
+    presetObjects:[{type:'segment',p1:'A',p2:'B'}],
+    check(c){ const A=c.byLabel('A'),B=c.byLabel('B'); const target=dist(A,B);
+      const found=c.objects.some(o=>{
+        if(o.type!=='polygon'||o.ids.length!==4) return false;
+        const g=c.getObjGeom(o); const pts=g.pts;
+        if(!pts.every(p=>p)) return false;
+        if(!pts.some(p=>samePt(p,A)) || !pts.some(p=>samePt(p,B))) return false;
+        const sidesOK = [dist(pts[0],pts[1]),dist(pts[1],pts[2]),dist(pts[2],pts[3]),dist(pts[3],pts[0])]
+          .every(d=>Math.abs(d-target)<10);
+        const diagTarget = target*Math.SQRT2;
+        const diagOK = Math.abs(dist(pts[0],pts[2])-diagTarget)<16 && Math.abs(dist(pts[1],pts[3])-diagTarget)<16;
+        return sidesOK && diagOK;
+      });
+      return found?ok('정사각형을 잘 만들었어요!'):fail('"수선" 도구로 A와 B에서 각각 직각을 세우고, "원(중심,반지름)" 도구로 선분 AB의 길이를 옮겨 나머지 두 꼭짓점을 찾은 뒤 "다각형" 도구로 정사각형을 완성하세요.'); } },
+
+  { id:13, title:'[과제 13] 원 위에 내접하는 정육각형을 작도해봅시다.', type:'construct', tools:['circleCP','polygon'],
+    custom(cv){
+      const O=cv.addPoint(300,220,{label:'O',locked:true});
+      const A=cv.addPoint(400,220,{label:'A',locked:true});
+      cv.objects.push({id:uid(),type:'circleCP',center:O.id,through:A.id,locked:true});
+      cv._hexCenter=O; cv._hexR=dist(O,A);
+    },
+    check(c){
+      if(!c._hexCenter) return fail('로딩 중...');
+      const O=c._hexCenter, R=c._hexR;
+      const found=c.objects.some(o=>{
+        if(o.type!=='polygon'||o.ids.length!==6) return false;
+        const g=c.getObjGeom(o); const pts=g.pts;
+        if(!pts.every(p=>p)) return false;
+        if(!pts.every(p=>Math.abs(dist(p,O)-R)<10)) return false;
+        for(let i=0;i<6;i++){ if(Math.abs(dist(pts[i],pts[(i+1)%6])-R)>12) return false; }
+        return true;
+      });
+      return found?ok('정육각형을 잘 완성했어요!'):fail('컴퍼스(원 도구)로 반지름 길이(OA)를 그대로 옮겨가며 원 둘레를 6등분한 뒤, "다각형" 도구로 여섯 점을 순서대로 연결해 정육각형을 완성하세요.'); } },
+
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
@@ -930,9 +1010,10 @@ function initConstructTask(task){
     b.addEventListener('click', ()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
   moveBtn.addEventListener('click', ()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
-  const undoBtn=mkBtn(`undo-${task.id}`,'되돌리기','undo'); undoBtn.addEventListener('click',()=>cv.undo());
+  const undoBtn=mkBtn(`undo-${task.id}`,'↩️','undo'); undoBtn.title='되돌리기'; undoBtn.setAttribute('aria-label','되돌리기'); undoBtn.addEventListener('click',()=>cv.undo());
+  const redoBtn=mkBtn(`redo-${task.id}`,'↪️','redo'); redoBtn.title='다시하기'; redoBtn.setAttribute('aria-label','다시하기'); redoBtn.addEventListener('click',()=>cv.redo());
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
+  toolsEl.appendChild(undoBtn); toolsEl.appendChild(redoBtn); toolsEl.appendChild(resetBtn);
 
   // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
   // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
@@ -1009,9 +1090,10 @@ function initHybridTask(task){
     b.addEventListener('click', ()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
   moveBtn.addEventListener('click', ()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
-  const undoBtn=mkBtn(`undo-${task.id}`,'되돌리기','undo'); undoBtn.addEventListener('click',()=>cv.undo());
+  const undoBtn=mkBtn(`undo-${task.id}`,'↩️','undo'); undoBtn.title='되돌리기'; undoBtn.setAttribute('aria-label','되돌리기'); undoBtn.addEventListener('click',()=>cv.undo());
+  const redoBtn=mkBtn(`redo-${task.id}`,'↪️','redo'); redoBtn.title='다시하기'; redoBtn.setAttribute('aria-label','다시하기'); redoBtn.addEventListener('click',()=>cv.redo());
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
+  toolsEl.appendChild(undoBtn); toolsEl.appendChild(redoBtn); toolsEl.appendChild(resetBtn);
 
   function onCanvasChange(inst){
     RT.pushObjectsDebounced(task.id, inst);
@@ -1249,21 +1331,7 @@ const RT = {
   }
 };
 
-TASKS.forEach(t=>{
-  try{
-    if(t.type==='input') initInputTask(t);
-    else if(t.type==='hybrid') initHybridTask(t);
-    else initConstructTask(t);
-  }catch(err){
-    const box=document.createElement('div');
-    box.style.cssText='background:#ffebee;color:#b71c1c;border:2px solid #e57373;padding:10px;margin:10px 16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
-    box.textContent = `[디버그] 과제 ${t.id} 처리 중 오류: ${err.message}\n${err.stack||''}`;
-    container.appendChild(box);
-    console.error('Task', t.id, err);
-  }
-});
-
-/* ---------- 자유시간 ---------- */
+/* ---------- 자유시간 (첫 페이지: 본격적인 과제 전에 자유롭게 도구를 연습해본다) ---------- */
 (function(){
   const el=document.createElement('div');
   el.className='task free';
@@ -1286,6 +1354,20 @@ TASKS.forEach(t=>{
   const resetBtn=mkBtn('초기화'); resetBtn.className='reset'; resetBtn.addEventListener('click',()=>cv.reset());
   toolsEl.appendChild(resetBtn);
 })();
+
+TASKS.forEach(t=>{
+  try{
+    if(t.type==='input') initInputTask(t);
+    else if(t.type==='hybrid') initHybridTask(t);
+    else initConstructTask(t);
+  }catch(err){
+    const box=document.createElement('div');
+    box.style.cssText='background:#ffebee;color:#b71c1c;border:2px solid #e57373;padding:10px;margin:10px 16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+    box.textContent = `[디버그] 과제 ${t.id} 처리 중 오류: ${err.message}\n${err.stack||''}`;
+    container.appendChild(box);
+    console.error('Task', t.id, err);
+  }
+});
 
 /* ---------- 실시간 UI 연결 ----------
    반(roomCode)/이름(studentName)/번호(studentNumber)는 더 이상 이 화면에서 직접 입력하지 않고,

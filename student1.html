@@ -35,6 +35,8 @@
   .toolbar button.active{background:var(--blue);border-color:var(--blue);color:#fff;}
   .toolbar button.reset{margin-left:auto;background:#fff3e0;border-color:#ffcc80;color:#e65100;}
   .toolbar button.undo{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+  .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
+  .toolbar button.undo,.toolbar button.redo{font-size:15px;padding:5px 12px;}
   .canvas-wrap{padding:0 16px 14px;}
   svg.gcanvas{width:100%;max-width:600px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
   .hint{font-size:12px;color:#888;padding:0 16px 12px;}
@@ -95,7 +97,9 @@
   #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
   #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
   #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
-  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:10px 16px;display:flex;align-items:center;gap:12px;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
   #stickyBar .progress-row{flex:1;margin-top:0;}
   #stickyBar .progress-bar{background:#3a3f44;}
   #stickyBar .progress-text{color:#e8eaed;}
@@ -133,6 +137,10 @@
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
     </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
     <div id="profileBox" style="display:none;">
       <label>반</label>
       <div class="gate-readonly" id="profileClassView"></div>
@@ -156,14 +164,17 @@
   <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
 
   <div id="stickyBar">
-    <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
-    <button id="prevBtn">◀ 이전</button>
-    <div class="progress-row">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-text" id="progressText">완료 0 / 3</div>
+    <div id="unitTitleBar">1. 이등변삼각형의 성질</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 3</div>
+      </div>
+      <button id="handBtn" class="hand">🖐 질문있어요</button>
+      <button id="nextBtn">다음 ▶</button>
     </div>
-    <button id="handBtn" class="hand">🖐 질문있어요</button>
-    <button id="nextBtn">다음 ▶</button>
   </div>
 
   <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
@@ -382,6 +393,7 @@ class GeoCanvas{
     this.pending = [];
     this.pendingObjs = [];
     this.dragging = null;
+    this.redoStack = [];
     this.onChange = onChange || (()=>{});
 
     (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
@@ -421,13 +433,14 @@ class GeoCanvas{
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
     const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
     this.points.push(p);
-    if((!opts.locked || opts.trackHistory) && !opts.skipHistory) this.history.push({kind:'point', id:p.id});
+    if((!opts.locked || opts.trackHistory) && !opts.skipHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
     this.objects.push(obj);
     this.history.push({kind:'object', id:obj.id});
+    this.redoStack=[];
     return obj;
   }
   resolvePoint(id){ return this.points.find(p=>p.id===id); }
@@ -499,18 +512,38 @@ class GeoCanvas{
   reset(){
     this.points = this.points.filter(p=>p.locked||p.keep);
     this.objects = this.objects.filter(o=>o.locked);
-    this.history=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
+    this.history=[]; this.redoStack=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
     this.render();
   }
   undo(){
     const last = this.history.pop();
     if(!last) return;
+    let entry;
     if(last.kind==='point'){
+      const point = this.points.find(p=>p.id===last.id);
+      const relatedObjects = this.objects.filter(o=>this._refsPoint(o,last.id));
       this.points = this.points.filter(p=>p.id!==last.id);
       this.objects = this.objects.filter(o=>!this._refsPoint(o,last.id));
+      entry = {kind:'point', id:last.id, point, relatedObjects};
     } else {
+      const object = this.objects.find(o=>o.id===last.id);
       this.objects = this.objects.filter(o=>o.id!==last.id);
+      entry = {kind:'object', id:last.id, object};
     }
+    this.redoStack.push(entry);
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  redo(){
+    const last = this.redoStack.pop();
+    if(!last) return;
+    if(last.kind==='point'){
+      if(last.point) this.points.push(last.point);
+      if(last.relatedObjects && last.relatedObjects.length) this.objects.push(...last.relatedObjects);
+    } else if(last.object){
+      this.objects.push(last.object);
+    }
+    this.history.push({kind:last.kind, id:last.id});
     this.pending=[]; this.pendingObjs=[];
     this.render();
   }
@@ -939,9 +972,10 @@ function buildToolbar(task, cv, toolsEl){
     b.addEventListener('click', ()=>{ cv.setTool(t); Object.values(buttons).forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   });
   moveBtn.addEventListener('click', ()=>{ cv.setTool('move'); Object.values(buttons).forEach(x=>x.classList.remove('active')); moveBtn.classList.add('active'); });
-  const undoBtn=mkBtn(`undo-${task.id}`,'되돌리기','undo'); undoBtn.addEventListener('click',()=>cv.undo());
+  const undoBtn=mkBtn(`undo-${task.id}`,'↩️','undo'); undoBtn.title='되돌리기'; undoBtn.setAttribute('aria-label','되돌리기'); undoBtn.addEventListener('click',()=>cv.undo());
+  const redoBtn=mkBtn(`redo-${task.id}`,'↪️','redo'); redoBtn.title='다시하기'; redoBtn.setAttribute('aria-label','다시하기'); redoBtn.addEventListener('click',()=>cv.redo());
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(undoBtn); toolsEl.appendChild(resetBtn);
+  toolsEl.appendChild(undoBtn); toolsEl.appendChild(redoBtn); toolsEl.appendChild(resetBtn);
   return buttons;
 }
 
@@ -1629,6 +1663,15 @@ if(PREVIEW_MODE){
     document.getElementById('profileMissingBox').style.display = 'block';
     document.getElementById('profileBox').style.display = 'none';
   } else {
+    checkUnitAccessAndShowGate(profile);
+  }
+}
+
+/* 선생님이 이 단원을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작 화면을 보여준다.
+   Firebase가 설정되지 않았거나 확인 중 오류가 나면(네트워크 등) 기존처럼 그냥 열어준다
+   (잠금 기능은 어디까지나 선택 기능이라, 이것 때문에 과제 자체를 못 하게 막지는 않는다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
     document.getElementById('roomCode').value = profile.classNo;
     document.getElementById('studentName').value = profile.name;
     document.getElementById('studentNumber').value = profile.number || '';
@@ -1636,6 +1679,7 @@ if(PREVIEW_MODE){
     document.getElementById('profileNumberView').textContent = (profile.number || '-') + '번';
     document.getElementById('profileNameView').textContent = profile.name;
     document.getElementById('profileMissingBox').style.display = 'none';
+    document.getElementById('unitLockedBox').style.display = 'none';
     document.getElementById('profileBox').style.display = 'block';
 
     /* 같은 기기에서 이미 이 반·이름으로 시작한 적이 있으면(새로고침 등) 시작 화면을
@@ -1646,7 +1690,22 @@ if(PREVIEW_MODE){
       document.getElementById('switchUserName').textContent = id.name;
       document.getElementById('switchUserWrap').style.display = 'block';
     }
-  }
+  };
+  const showLocked = ()=>{
+    document.getElementById('profileMissingBox').style.display = 'none';
+    document.getElementById('profileBox').style.display = 'none';
+    document.getElementById('unitLockedBox').style.display = 'block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/1').once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
 }
 
 document.addEventListener('contextmenu', e=>{
