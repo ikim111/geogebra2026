@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -112,6 +113,34 @@
 </style>
 </head>
 <body>
+
+<button id="qrFabBtn" type="button" title="QR코드 보기" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1a237e;color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">📱 QR코드</button>
+<div id="qrModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);">
+    <h3 style="margin:0 0 4px;font-size:16px;color:#1a237e;">학생 접속 QR코드</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:#888;word-break:break-all;">https://geogebra2026.vercel.app/student.html</p>
+    <div id="qrCodeBox" style="display:inline-block;"></div>
+    <button id="qrModalCloseBtn" type="button" style="margin-top:16px;padding:9px 20px;border:none;border-radius:8px;background:#616161;color:#fff;font-size:13px;cursor:pointer;">닫기</button>
+  </div>
+</div>
+<script>
+(function(){
+  var qrBtn = document.getElementById('qrFabBtn');
+  var overlay = document.getElementById('qrModalOverlay');
+  var closeBtn = document.getElementById('qrModalCloseBtn');
+  var box = document.getElementById('qrCodeBox');
+  var rendered = false;
+  qrBtn.addEventListener('click', function(){
+    if(!rendered){
+      new QRCode(box, { text:'https://geogebra2026.vercel.app/student.html', width:200, height:200, colorDark:'#000000', colorLight:'#ffffff' });
+      rendered = true;
+    }
+    overlay.style.display = 'flex';
+  });
+  closeBtn.addEventListener('click', function(){ overlay.style.display='none'; });
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
+})();
+</script>
 
 <header>
   <h1>📊 교사용 실시간 대시보드 — 6. 생각넓히기</h1>

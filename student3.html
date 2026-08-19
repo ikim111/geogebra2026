@@ -903,26 +903,32 @@ class GeoCanvas{
    과제1: 이등분선 위의 점 P를 움직이며 관찰 (수선의 발 C,D와 거리 PC,PD를 자동으로 표시)
    과제2: 이등분선 위로 제한된 점 P를 움직이며, 자취로 "이등분선 전체"가 등거리임을 확인
    과제3: 이등분선·수선의 발·원을 직접 작도 */
-const ANG_POINTS = [ {label:'O',x:120,y:320}, {label:'A',x:480,y:140}, {label:'B',x:480,y:320} ];
-const ANG_PRESET = [ {type:'ray',p1:'O',p2:'A'}, {type:'ray',p1:'O',p2:'B'} ];
+const ANG1_POINTS = [ {label:'O',x:120,y:320}, {label:'A',x:388,y:95}, {label:'B',x:470,y:320} ];
+const ANG1_PRESET = [ {type:'ray',p1:'O',p2:'A'}, {type:'ray',p1:'O',p2:'B'} ];
+const ANG2_POINTS = [ {label:'O',x:120,y:320}, {label:'A',x:345,y:52}, {label:'B',x:470,y:320} ];
+const ANG2_PRESET = [ {type:'ray',p1:'O',p2:'A'}, {type:'ray',p1:'O',p2:'B'} ];
 
 const TASKS = [
-  { id:1, title:'[과제 1] 점 P는 각 AOB(꼭짓점 O)의 이등분선 위의 한 점입니다. 점 P를 움직이며 두 반직선까지의 거리(선분 PC, PD)를 관찰하고, 발견한 특징을 적어봅시다.',
+  { id:1, title:'[과제 1] 점 P는 각 AOB(꼭짓점 O, 40°)의 이등분선 위의 한 점입니다. 점 P를 움직이며 두 반직선까지의 거리(선분 PC, PD)를 관찰하고, 발견한 특징을 적어봅시다.',
     type:'verify', noTools:true, minLen:15,
-    hint:'점 P를(파란 점) 이등분선을 따라 위아래로 드래그해보세요. 점 P에서 두 반직선 OA, OB에 내린 수선의 발이 각각 C, D이고, 선분 PC, PD의 길이가 어떻게 되는지 살펴보세요.',
-    points: ANG_POINTS,
-    presetObjects: [ ...ANG_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
-    movablePoints: [ {label:'P', x:266, y:286, constraintRef:'bis'} ],
+    hint:'점 P를(파란 점) 이등분선을 따라 위아래로 드래그해보세요. 점 P에서 두 반직선 OA, OB에 내린 수선의 발이 각각 C, D이고, 선분 PC, PD의 길이가 어떻게 되는지, 그리고 화면에 표시된 각 AOP, BOP, PCO, PDO의 크기와 선분 OP의 길이가 어떻게 되는지 살펴보세요.',
+    points: ANG1_POINTS,
+    presetObjects: [ ...ANG1_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
+    movablePoints: [ {label:'P', x:327, y:245, constraintRef:'bis'} ],
     computedPoints: [ {label:'C', kind:'footPerp', of:['P','O','A']}, {label:'D', kind:'footPerp', of:['P','O','B']} ],
-    postObjects: [ {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'} ],
-    verify(c){ const P=c.byLabel('P'); return (P && dist(P,{x:266,y:286})>15) ? ok('점 P를 잘 움직여봤어요!') : fail('점 P를(파란 점) 이등분선을 따라 움직여보세요.'); } },
+    postObjects: [
+      {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'}, {type:'lengthLabel', p1:'O', p2:'P'},
+      {type:'angleLabel', a:'A', b:'O', c:'P'}, {type:'angleLabel', a:'B', b:'O', c:'P'},
+      {type:'angleLabel', a:'P', b:'C', c:'O'}, {type:'angleLabel', a:'P', b:'D', c:'O'}
+    ],
+    verify(c){ const P=c.byLabel('P'); return (P && dist(P,{x:327,y:245})>15) ? ok('점 P를 잘 움직여봤어요!') : fail('점 P를(파란 점) 이등분선을 따라 움직여보세요.'); } },
 
-  { id:2, title:'[과제 2] 점 P는 각 AOB의 이등분선 위에서만 움직일 수 있습니다. 점 P를 이등분선을 따라 이리저리 움직이며, 두 반직선까지의 거리(선분 PC, PD)가 항상 같은지 자취로 확인해봅시다. 발견한 특징을 적어봅시다.',
+  { id:2, title:'[과제 2] 점 P는 각 AOB(50°)의 이등분선 위에서만 움직일 수 있습니다. 점 P를 이등분선을 따라 이리저리 움직이며, 두 반직선까지의 거리(선분 PC, PD)가 항상 같은지 자취로 확인해봅시다. 두 반직선 OA,OB와 같은 거리에 떨어져 있는 점들은 어떤 특징이 있는지 적어봅시다.',
     type:'verify', noTools:true, hasTraceReset:true, minLen:15,
     hint:'점 P(파란 점)를 이등분선을 따라 이리저리 드래그해보세요. P에서 두 반직선에 내린 수선의 발 C, D까지의 거리인 선분 PC, PD의 길이가 어떻게 되는지, 그리고 점 P가 남기는 자취(옅은 점)가 어떤 모양을 이루는지 관찰해보세요.',
-    points: ANG_POINTS,
-    presetObjects: [ ...ANG_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
-    movablePoints: [ {label:'P', x:350, y:300, trace:true, constraintRef:'bis'} ],
+    points: ANG2_POINTS,
+    presetObjects: [ ...ANG2_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
+    movablePoints: [ {label:'P', x:319, y:227, trace:true, constraintRef:'bis'} ],
     computedPoints: [ {label:'C', kind:'footPerp', of:['P','O','A']}, {label:'D', kind:'footPerp', of:['P','O','B']} ],
     postObjects: [ {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'} ],
     verify(c){
@@ -936,7 +942,7 @@ const TASKS = [
     type:'verify', minLen:15,
     tools:['angleBisector','point','perp','circleCP'],
     hint:'②에서는 "수선" 도구로 반직선을 먼저 클릭하고 이등분선 위의 점을 클릭하면 수선을 그을 수 있어요. 그 수선과 반직선이 만나는 점을 "교점" 도구로 찍으면 수선의 발이 됩니다. 수선의 발을 정확히 찍었는지는 "각도 재기" 도구로 확인해보세요 — 이등분선 위의 점·수선의 발·꼭짓점 O가 이루는 각이 90°에 가까워야 해요.',
-    points: ANG_POINTS, presetObjects: ANG_PRESET,
+    points: ANG1_POINTS, presetObjects: ANG1_PRESET,
     verify(c){
       const O=c.byLabel('O'),A=c.byLabel('A'),B=c.byLabel('B');
       const bisOk=c.objects.some(o=>{ if(o.type!=='angleBisector') return false; const g=c.getObjGeom(o); return g.b && samePt(g.b,O)&&((samePt(g.a,A)&&samePt(g.c,B))||(samePt(g.a,B)&&samePt(g.c,A))); });

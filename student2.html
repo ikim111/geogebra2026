@@ -171,7 +171,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 3</div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
       </div>
       <button id="handBtn" class="hand">🖐 질문있어요</button>
       <button id="nextBtn">다음 ▶</button>
@@ -416,7 +416,7 @@ class GeoCanvas{
       if(o.refName) refMap[o.refName]=obj.id;
     });
     (cfg.movablePoints||[]).forEach(p=>{
-      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
+      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true, trace: !!p.trace});
       if(p.constraintRef && refMap[p.constraintRef]) pt.constraint = {objId: refMap[p.constraintRef]};
     });
     (cfg.postObjects||[]).forEach(o => {
@@ -432,10 +432,16 @@ class GeoCanvas{
     const used = new Set(this.points.map(p=>p.label));
     const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null,
+      trace: !!opts.trace, traceHistory: opts.trace ? [] : null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
+  }
+  // 자취(trace) 초기화: "자취 초기화" 버튼에서 호출한다.
+  clearTrace(){
+    this.points.forEach(p=>{ if(p.trace) p.traceHistory=[]; });
+    this.render();
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
@@ -581,6 +587,13 @@ class GeoCanvas{
       }
       this.dragging.x = Math.max(0,Math.min(this.width,nx));
       this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      // 자취(trace) 기록: 너무 촘촘하게 쌓이지 않도록 마지막 기록점에서 일정 거리 이상
+      // 떨어졌을 때만 새 자취점을 추가한다.
+      if(this.dragging.trace){
+        const hist=this.dragging.traceHistory;
+        const last=hist[hist.length-1];
+        if(!last || dist(last,this.dragging)>6){ hist.push({x:this.dragging.x, y:this.dragging.y}); }
+      }
       this.render();
     };
     const up = ()=>{ this.dragging=null; };
@@ -762,6 +775,7 @@ class GeoCanvas{
     };
 
     this.objects.forEach(o=>{
+      if(o.hidden) return; // hidden:true 도형은 제약조건 계산에는 쓰이지만 화면에는 그리지 않는다.
       const g=this.getObjGeom(o);
       if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
       if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
@@ -822,6 +836,17 @@ class GeoCanvas{
       this.svg.appendChild(c);
     });
 
+    // 자취(trace): 드래그하며 지나온 자리를 옅은 점으로 남겨서 궤적을 보여준다.
+    this.points.forEach(p=>{
+      if(!p.trace || !p.traceHistory || !p.traceHistory.length) return;
+      p.traceHistory.forEach(tp=>{
+        const c=document.createElementNS(NS,'circle');
+        c.setAttribute('cx',tp.x); c.setAttribute('cy',tp.y); c.setAttribute('r',2.5);
+        c.setAttribute('fill','#90caf9'); c.setAttribute('opacity','0.7');
+        this.svg.appendChild(c);
+      });
+    });
+
     this.points.forEach(p=>{
       const c=document.createElementNS(NS,'circle');
       c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
@@ -840,10 +865,13 @@ class GeoCanvas{
 }
 
 /* ---------- 과제 정의 ----------
-   총 3과제: 과제1(관찰+서술 합본) → 과제2(직사각형, 작도+설명) → 과제3(원, 작도+설명).
-   과제2(직사각형)의 핵심 힌트("수직이등분선")는 hiddenHint로 넣어 바로 보이지 않고
-   "힌트 보기"를 눌러야 나오게 했다. 과제3(원)은 힌트 없이 바로 시작한다.
-   서술형 칸은 정답이 정해져 있지 않으므로, 일정 글자 수(10자) 이상을 쓰면 진행 완료로 인정한다. */
+   총 4과제: 과제1(수직이등분선 위 점 D 관찰+서술) → 과제2(점 P를 수직이등분선 위로만 제한,
+   자취로 등거리 확인+서술, 수직이등분선 자체는 화면에 표기하지 않음) → 과제3(직사각형, 작도+설명)
+   → 과제4(원, 작도+설명).
+   과제3(직사각형)의 핵심 힌트("수직이등분선")는 hiddenHint로 넣어 바로 보이지 않고
+   "힌트 보기"를 눌러야 나오게 했다. 과제4(원)은 힌트 없이 바로 시작한다.
+   서술형 칸은 정답이 정해져 있지 않으므로, 일정 글자 수(과제별 minLen, 기본 10자) 이상을
+   쓰면 진행 완료로 인정한다. */
 const TASKS = [
   { id:1, title:'[과제 1] 선분 AB의 수직이등분선 위의 점 D를 움직이며 DA, DB의 길이와 삼각형 ABD를 관찰하고, 어떤 특징이 있는지 적어봅시다.',
     type:'verify', noTools:true,
@@ -866,7 +894,21 @@ const TASKS = [
     textPrompt:'관찰한 특징을 적어주세요. (선분 사이의 관계, 삼각형의 모양 등, 10자 이상)',
     doneMsg:'관찰과 기록을 잘 마쳤어요!' },
 
-  { id:2, title:'[과제 2] 주어진 직사각형에서 이등변삼각형을 만들고, 어떻게 만들었는지 설명해봅시다.',
+  { id:2, title:'[과제 2] 점 P는 선분 AB의 수직이등분선 위에서만 움직일 수 있습니다. 점 P를 이리저리 움직이며 자취를 살펴보고, 두 점 A, B로부터 같은 거리에 떨어져있는 점은 어떤 특징이 있는지 이야기해봅시다.',
+    type:'verify', noTools:true, hasTraceReset:true, minLen:15,
+    hint:'점 P(파란 점)를 위아래로 드래그해보세요. 점 P가 남기는 자취(옅은 점)가 어떤 모양을 이루는지 관찰해보세요.',
+    points:[{label:'A',x:150,y:300},{label:'B',x:450,y:300}],
+    presetObjects:[
+      {type:'segment', p1:'A', p2:'B'},
+      {type:'perpBisector', p1:'A', p2:'B', refName:'bis', hidden:true}
+    ],
+    movablePoints:[{label:'P', x:300, y:150, trace:true, constraintRef:'bis'}],
+    verify(c){ const P=c.byLabel('P'); return !!(P && Math.abs(P.y-150)>15); },
+    failMsg:'점 P를(파란 점) 위아래로 움직여보세요.',
+    textPrompt:'두 점 A,B로부터 같은 거리에 떨어져있는 점은 어떤 특징이 있는지 이야기해봅시다. (15자 이상)',
+    doneMsg:'관찰과 기록을 잘 마쳤어요!' },
+
+  { id:3, title:'[과제 3] 주어진 직사각형에서 이등변삼각형을 만들고, 어떻게 만들었는지 설명해봅시다.',
     type:'verify',
     hint:'직사각형의 변과 꼭짓점을 이용해서 이등변삼각형(두 변의 길이가 같은 삼각형)을 만들어보세요.',
     hiddenHint:'💡 한 변의 "수직이등분선"을 그리고, 그 위에 점을 하나 찍어 그 변의 두 끝점과 연결해보세요.',
@@ -879,7 +921,7 @@ const TASKS = [
       {type:'segment', p1:'S', p2:'P'}
     ] },
 
-  { id:3, title:'[과제 3] 주어진 원에서 이등변삼각형을 만들고, 어떻게 만들었는지 설명해봅시다.',
+  { id:4, title:'[과제 4] 주어진 원에서 이등변삼각형을 만들고, 어떻게 만들었는지 설명해봅시다.',
     type:'verify',
     points:[{label:'O',x:300,y:200},{label:'K',x:390,y:200}],
     presetObjects:[{type:'circleCR', center:'O', r1:'O', r2:'K'}] },
@@ -947,7 +989,19 @@ function buildTaskCard(task){
 }
 
 function buildToolbar(task, cv, toolsEl){
-  if(task.noTools){ toolsEl.style.display='none'; return {move:null}; }
+  if(task.noTools){
+    // noTools여도 "자취 초기화" 버튼은 필요할 수 있다(점을 드래그하며 궤적을 관찰하는 과제).
+    if(task.hasTraceReset){
+      toolsEl.style.display='flex';
+      const traceBtn=document.createElement('button');
+      traceBtn.textContent='자취 초기화'; traceBtn.className='reset';
+      traceBtn.addEventListener('click', ()=>cv.clearTrace());
+      toolsEl.appendChild(traceBtn);
+    } else {
+      toolsEl.style.display='none';
+    }
+    return {move:null};
+  }
   const mkBtn=(id,label,cls)=>{ const b=document.createElement('button'); b.textContent=label; if(cls) b.className=cls; b.id=id; return b; };
   const moveBtn=mkBtn(`tool-move-${task.id}`,'이동'); moveBtn.classList.add('active');
   toolsEl.appendChild(moveBtn);
