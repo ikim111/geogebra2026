@@ -301,6 +301,18 @@ document.getElementById('editBtn').addEventListener('click', ()=>{
   document.querySelectorAll('.class-btn').forEach(b=> b.classList.remove('selected'));
   if(accessRef){ accessRef=null; }
 });
+
+/* teacherN.html에서 "단원 목록"으로 돌아온 경우(?classNo=가 붙어있음), 반을 다시 고를
+   필요 없이 그 반의 단원 목록으로 바로 이동한다. */
+(function autoSelectClassFromUrl(){
+  const params = new URLSearchParams(location.search);
+  const classNo = (params.get('classNo')||'').trim();
+  if(!classNo) return;
+  document.getElementById('classNo').value = classNo;
+  const btn = document.querySelector('.class-btn[data-value="'+classNo+'"]');
+  if(btn) btn.classList.add('selected');
+  goToUnitPage(classNo);
+})();
 </script>
 </body>
 </html>

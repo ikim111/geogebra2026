@@ -388,10 +388,25 @@ class GeoCanvas{
     const used = new Set(this.points.map(p=>p.label));
     const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, constraint: opts.constraint||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, constraint: opts.constraint||null, computed: opts.computed||null};
     this.points.push(p);
     if(!opts.locked || opts.trackHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
+  }
+  // computed: {kind:'intersection', o1, o2} 형태의 점은 매 render()마다 두 도형(o1,o2)의 교점을
+  // 다시 계산해서 위치를 갱신한다. 두 점이 만나는 경우(원-원, 원-직선)에는 직전 위치에 더 가까운
+  // 쪽을 골라서, 도형을 움직여도 엉뚱한 교점으로 순간이동하지 않게 한다.
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed || p.computed.kind!=='intersection') return;
+      const o1=this.objects.find(o=>o.id===p.computed.o1), o2=this.objects.find(o=>o.id===p.computed.o2);
+      if(!o1||!o2) return;
+      const pts=this.computeIntersections(o1,o2);
+      if(!pts.length) return; // 교점이 사라지면 마지막 위치를 그대로 유지
+      let best=pts[0], bd=dist(pts[0],p);
+      pts.forEach(cand=>{ const d=dist(cand,p); if(d<bd){bd=d;best=cand;} });
+      p.x=best.x; p.y=best.y;
+    });
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
@@ -615,7 +630,9 @@ class GeoCanvas{
               const pts=this.computeIntersections(o1,o2);
               pts.forEach(ip=>{
                 if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
-                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true});
+                  // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
+                  // 이 교점이 매 render()마다 새 위치로 따라온다.
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
                 }
               });
             }
@@ -639,17 +656,17 @@ class GeoCanvas{
         break;
       }
       case 'perp': {
-        // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
-        if(this.pendingObjs.length===0){
-          const o=this.findObjectNear(pt,TOUCH_TOL);
-          if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
+        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt);
+          this.pending.push(p.id);
           break;
         }
-        // 2단계: 그 직선에 수직인 선이 지나갈 점을 클릭(기존 점 또는 새 점).
-        const refObj=this.pendingObjs[0]; this.pendingObjs=[];
-        const p=this.pickPoint(pt);
-        if(p.id!==refObj.p1 && p.id!==refObj.p2){
-          this.addObject({type:'perp', p:p.id, refP1:refObj.p1, refP2:refObj.p2});
+        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        const pId=this.pending[0]; this.pending=[];
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o && (o.type==='line'||o.type==='segment'||o.type==='ray') && pId!==o.p1 && pId!==o.p2){
+          this.addObject({type:'perp', p:pId, refP1:o.p1, refP2:o.p2});
         }
         break;
       }
@@ -694,6 +711,7 @@ class GeoCanvas{
     this.render();
   }
   render(){
+    this._recomputeComputedPoints();
     const NS='http://www.w3.org/2000/svg';
     while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     // grid

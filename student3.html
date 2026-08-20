@@ -459,6 +459,19 @@ class GeoCanvas{
   _recomputeComputedPoints(){
     this.points.forEach(p=>{
       if(!p.computed) return;
+      // 'intersection'은 점 라벨이 아니라 도형 id(o1,o2) 두 개를 참조하므로 따로 처리한다.
+      // 교점이 두 개일 수 있는 경우(원-원, 원-직선) 직전 위치에 더 가까운 쪽을 골라
+      // 도형을 움직여도 엉뚱한 교점으로 순간이동하지 않게 한다.
+      if(p.computed.kind==='intersection'){
+        const o1=this.objects.find(o=>o.id===p.computed.o1), o2=this.objects.find(o=>o.id===p.computed.o2);
+        if(!o1||!o2) return;
+        const pts=this.computeIntersections(o1,o2);
+        if(!pts.length) return; // 교점이 사라지면 마지막 위치를 그대로 유지
+        let best=pts[0], bd=dist(pts[0],p);
+        pts.forEach(cand=>{ const d=dist(cand,p); if(d<bd){bd=d;best=cand;} });
+        p.x=best.x; p.y=best.y;
+        return;
+      }
       const v = this._computePointValue(p.computed);
       p.x = v.x; p.y = v.y;
     });
@@ -695,7 +708,9 @@ class GeoCanvas{
               const pts=this.computeIntersections(o1,o2);
               pts.forEach(ip=>{
                 if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
-                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true});
+                  // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
+                  // 이 교점이 매 render()마다 새 위치로 따라온다.
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
                 }
               });
             }
@@ -719,17 +734,17 @@ class GeoCanvas{
         break;
       }
       case 'perp': {
-        // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
-        if(this.pendingObjs.length===0){
-          const o=this.findObjectNear(pt,TOUCH_TOL);
-          if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
+        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+        if(this.pending.length===0){
+          const p2=this.pickPoint(pt);
+          this.pending.push(p2.id);
           break;
         }
-        // 2단계: 그 직선에 수직인 선이 지나갈 점을 클릭(기존 점 또는 새 점).
-        const refObj=this.pendingObjs[0]; this.pendingObjs=[];
-        const p2=this.pickPoint(pt);
-        if(p2.id!==refObj.p1 && p2.id!==refObj.p2){
-          this.addObject({type:'perp', p:p2.id, refP1:refObj.p1, refP2:refObj.p2});
+        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        const pId=this.pending[0]; this.pending=[];
+        const refObj=this.findObjectNear(pt,TOUCH_TOL);
+        if(refObj && (refObj.type==='line'||refObj.type==='segment'||refObj.type==='ray') && pId!==refObj.p1 && pId!==refObj.p2){
+          this.addObject({type:'perp', p:pId, refP1:refObj.p1, refP2:refObj.p2});
         }
         break;
       }
@@ -800,6 +815,7 @@ class GeoCanvas{
     };
 
     this.objects.forEach(o=>{
+      if(o.hidden) return; // hidden:true 도형은 제약조건 계산에는 쓰이지만 화면에는 그리지 않는다.
       const g=this.getObjGeom(o);
       if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
       if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
@@ -909,7 +925,7 @@ const ANG2_POINTS = [ {label:'O',x:120,y:320}, {label:'A',x:345,y:52}, {label:'B
 const ANG2_PRESET = [ {type:'ray',p1:'O',p2:'A'}, {type:'ray',p1:'O',p2:'B'} ];
 
 const TASKS = [
-  { id:1, title:'[과제 1] 점 P는 각 AOB(꼭짓점 O, 40°)의 이등분선 위의 한 점입니다. 점 P를 움직이며 두 반직선까지의 거리(선분 PC, PD)를 관찰하고, 발견한 특징을 적어봅시다.',
+  { id:1, title:'[과제 1] 점 P는 각 AOB의 이등분선 위의 한 점입니다. 점 P를 움직이며 두 반직선까지의 거리(선분 PC, PD)를 관찰하고, 발견한 특징을 적어봅시다.',
     type:'verify', noTools:true, minLen:15,
     hint:'점 P를(파란 점) 이등분선을 따라 위아래로 드래그해보세요. 점 P에서 두 반직선 OA, OB에 내린 수선의 발이 각각 C, D이고, 선분 PC, PD의 길이가 어떻게 되는지, 그리고 화면에 표시된 각 AOP, BOP, PCO, PDO의 크기와 선분 OP의 길이가 어떻게 되는지 살펴보세요.',
     points: ANG1_POINTS,
@@ -923,11 +939,11 @@ const TASKS = [
     ],
     verify(c){ const P=c.byLabel('P'); return (P && dist(P,{x:327,y:245})>15) ? ok('점 P를 잘 움직여봤어요!') : fail('점 P를(파란 점) 이등분선을 따라 움직여보세요.'); } },
 
-  { id:2, title:'[과제 2] 점 P는 각 AOB(50°)의 이등분선 위에서만 움직일 수 있습니다. 점 P를 이등분선을 따라 이리저리 움직이며, 두 반직선까지의 거리(선분 PC, PD)가 항상 같은지 자취로 확인해봅시다. 두 반직선 OA,OB와 같은 거리에 떨어져 있는 점들은 어떤 특징이 있는지 적어봅시다.',
+  { id:2, title:'[과제 2] 점 P는 두 반직선 OA, OB와 같은 거리에 떨어져 있는 점입니다. 점 P를 움직이며 두 반직선 OA,OB와 같은 거리에 떨어져 있는 점들은 어떤 특징이 있는지 적어봅시다.',
     type:'verify', noTools:true, hasTraceReset:true, minLen:15,
     hint:'점 P(파란 점)를 이등분선을 따라 이리저리 드래그해보세요. P에서 두 반직선에 내린 수선의 발 C, D까지의 거리인 선분 PC, PD의 길이가 어떻게 되는지, 그리고 점 P가 남기는 자취(옅은 점)가 어떤 모양을 이루는지 관찰해보세요.',
     points: ANG2_POINTS,
-    presetObjects: [ ...ANG2_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis'} ],
+    presetObjects: [ ...ANG2_PRESET, {type:'angleBisector', a:'A', b:'O', c:'B', refName:'bis', hidden:true} ],
     movablePoints: [ {label:'P', x:319, y:227, trace:true, constraintRef:'bis'} ],
     computedPoints: [ {label:'C', kind:'footPerp', of:['P','O','A']}, {label:'D', kind:'footPerp', of:['P','O','B']} ],
     postObjects: [ {type:'lengthLabel', p1:'P', p2:'C'}, {type:'lengthLabel', p1:'P', p2:'D'} ],
@@ -1067,7 +1083,7 @@ function initConstructTask(task){
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
   const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
   canvasByTaskId[task.id] = cv;
 
@@ -1133,7 +1149,7 @@ function initVerifyTask(task){
   // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "확인"으로 돌아온다.
   let locked = false;
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
   cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
   canvasByTaskId[task.id] = cv;
   buildToolbar(task, cv, toolsEl);

@@ -40,6 +40,10 @@
   .toolbar button.undo,.toolbar button.redo{font-size:15px;padding:5px 12px;}
   .canvas-wrap{padding:0 16px 14px;}
   svg.gcanvas{width:100%;max-width:600px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
+  .ref-figures{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 4px;justify-content:center;}
+  .ref-figure{flex:1 1 260px;max-width:280px;min-width:200px;}
+  .ref-figure .canvas-wrap{padding:0;}
+  .ref-figure-label{font-size:12px;font-weight:bold;color:#555;text-align:center;margin-bottom:4px;}
   .hint{font-size:12px;color:#888;padding:0 16px 12px;}
   .input-row{display:flex;gap:8px;padding:0 16px 14px;align-items:center;flex-wrap:wrap;}
   .input-row input[type=number]{width:120px;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
@@ -419,6 +423,11 @@ class GeoCanvas{
       const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
       if(p.constraintRef && refMap[p.constraintRef]) pt.constraint = {objId: refMap[p.constraintRef]};
     });
+    // movablePoints "다음"에 계산해야, 아래에서 I 같은 movablePoint를 참조하는 계산이 가능하다.
+    (cfg.computedPoints||[]).forEach(cp=>{
+      const v = this._computePointValue(cp);
+      this.addPoint(v.x, v.y, {label:cp.label, locked:true, computed:cp});
+    });
     (cfg.postObjects||[]).forEach(o => {
       const resolved = resolveObj(o);
       const obj = Object.assign({id:uid(), locked:true}, resolved);
@@ -430,12 +439,44 @@ class GeoCanvas{
   }
   addPoint(x,y,opts={}){
     const used = new Set(this.points.map(p=>p.label));
-    const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
+    // 'I'를 맨 앞에 둬서, "교점" 도구로 만드는 내심 점이 기본적으로 I로 이름 붙게 한다.
+    const pool = 'IPQRSTUVWXYZLMNKJHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
+  }
+  // computedPoints 계산: 'footPerp'는 점 I에서 A-B 직선(변)에 내린 수선의 발.
+  _computePointValue(cp){
+    const pts = cp.of.map(l=>this.byLabel(l));
+    if(pts.some(p=>!p)) return {x:cp.fallbackX||300, y:cp.fallbackY||200};
+    if(cp.kind==='footPerp'){
+      const [P,O,X] = pts;
+      return projectOntoLine(P,O,X);
+    }
+    return {x:pts[0].x, y:pts[0].y};
+  }
+  // computed: {kind:'intersection', o1, o2} 형태의 점은 매 render()마다 두 도형(o1,o2)의 교점을
+  // 다시 계산해서 위치를 갱신한다. 두 점이 만나는 경우(원-원, 원-직선)에는 직전 위치에 더 가까운
+  // 쪽을 골라서, 도형을 움직여도 엉뚱한 교점으로 순간이동하지 않게 한다. 그 외(footPerp 등)는
+  // _computePointValue로 매번 다시 계산한다.
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed) return;
+      if(p.computed.kind==='intersection'){
+        const o1=this.objects.find(o=>o.id===p.computed.o1), o2=this.objects.find(o=>o.id===p.computed.o2);
+        if(!o1||!o2) return;
+        const pts=this.computeIntersections(o1,o2);
+        if(!pts.length) return; // 교점이 사라지면 마지막 위치를 그대로 유지
+        let best=pts[0], bd=dist(pts[0],p);
+        pts.forEach(cand=>{ const d=dist(cand,p); if(d<bd){bd=d;best=cand;} });
+        p.x=best.x; p.y=best.y;
+        return;
+      }
+      const v = this._computePointValue(p.computed);
+      p.x = v.x; p.y = v.y;
+    });
   }
   addObject(o){
     const obj = Object.assign({id:uid(), locked:false}, o);
@@ -658,7 +699,9 @@ class GeoCanvas{
               const pts=this.computeIntersections(o1,o2);
               pts.forEach(ip=>{
                 if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
-                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true});
+                  // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
+                  // 이 교점이 매 render()마다 새 위치로 따라온다.
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
                 }
               });
             }
@@ -682,17 +725,17 @@ class GeoCanvas{
         break;
       }
       case 'perp': {
-        // 1단계: 기준이 되는 직선류(직선/선분/반직선)를 먼저 클릭한다.
-        if(this.pendingObjs.length===0){
-          const o=this.findObjectNear(pt,TOUCH_TOL);
-          if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')) this.pendingObjs.push(o);
+        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+        if(this.pending.length===0){
+          const p2=this.pickPoint(pt);
+          this.pending.push(p2.id);
           break;
         }
-        // 2단계: 그 직선에 수직인 선이 지나갈 점을 클릭(기존 점 또는 새 점).
-        const refObj=this.pendingObjs[0]; this.pendingObjs=[];
-        const p2=this.pickPoint(pt);
-        if(p2.id!==refObj.p1 && p2.id!==refObj.p2){
-          this.addObject({type:'perp', p:p2.id, refP1:refObj.p1, refP2:refObj.p2});
+        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        const pId=this.pending[0]; this.pending=[];
+        const refObj=this.findObjectNear(pt,TOUCH_TOL);
+        if(refObj && (refObj.type==='line'||refObj.type==='segment'||refObj.type==='ray') && pId!==refObj.p1 && pId!==refObj.p2){
+          this.addObject({type:'perp', p:pId, refP1:refObj.p1, refP2:refObj.p2});
         }
         break;
       }
@@ -737,6 +780,7 @@ class GeoCanvas{
     this.render();
   }
   render(){
+    this._recomputeComputedPoints();
     const NS='http://www.w3.org/2000/svg';
     while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     const g0=document.createElementNS(NS,'g');
@@ -798,7 +842,7 @@ class GeoCanvas{
         const t=document.createElementNS(NS,'text');
         t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill','#c62828');
         t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
-        t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(2);
+        t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(1);
         this.svg.appendChild(t);
       }
       else if(o.type==='angleLabel'){
@@ -848,12 +892,20 @@ class GeoCanvas{
    완료로 인정한다. */
 const TRI_ACUTE  = [ {label:'A',x:300,y:100}, {label:'B',x:140,y:320}, {label:'C',x:460,y:320} ];
 const TRI_RIGHT  = [ {label:'A',x:150,y:100}, {label:'B',x:150,y:320}, {label:'C',x:450,y:320} ];
-const TRI_OBTUSE = [ {label:'A',x:320,y:200}, {label:'B',x:170,y:330}, {label:'C',x:480,y:330} ];
+const TRI_OBTUSE = [ {label:'A',x:285,y:156}, {label:'B',x:175,y:236}, {label:'C',x:425,y:244} ];
 const triPreset = (pts)=>[
   {type:'segment',p1:pts[0].label,p2:pts[1].label},
   {type:'segment',p1:pts[1].label,p2:pts[2].label},
   {type:'segment',p1:pts[2].label,p2:pts[0].label}
 ];
+
+// 세 꼭짓점 좌표만으로 내심(I) 좌표를 직접 계산한다 (변의 길이로 가중평균한 무게중심 공식).
+// 과제1에서 "정답 위치로 이동" 버튼을 눌렀을 때 점 I를 정확히 이 위치로 옮기는 데 쓰인다.
+function incenterOf(A,B,C){
+  const a=dist(B,C), b=dist(C,A), c=dist(A,B); // a,b,c는 각각 A,B,C의 대변 길이
+  const s=a+b+c;
+  return {x:(a*A.x+b*B.x+c*C.x)/s, y:(a*A.y+b*B.y+c*C.y)/s};
+}
 
 function checkIncenterConstruct(c){
   const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
@@ -884,17 +936,39 @@ function checkIncenterConstruct(c){
 }
 
 const TASKS = [
-  { id:1, title:'[과제 1] 점 P를 움직여서 삼각형 ABC의 세 변 AB, BC, CA로부터 모두 같은 거리에 있는 위치를 찾아봅시다.',
+  { id:1, title:'[과제 1] 점 I를 움직여서 삼각형 ABC의 세 변 AB, BC, CA로부터 모두 같은 거리에 있는 위치를 찾아봅시다. (점 I에서 변 AB, BC, CA에 내린 수선의 발을 각각 D, E, F라고 합니다.)',
     noTools:true,
-    hint:'점 P를(파란 점) 자유롭게 드래그해보세요. "길이 재기" 도구로 P에서 각 변까지의 거리를 재보며 세 거리가 같아지는 위치를 찾아보세요.',
+    hint:'점 I를(파란 점) 자유롭게 드래그해보세요. 화면에 표시된 선분 ID, IE, IF의 길이가 어떻게 되는지 살펴보며 세 거리가 같아지는 위치를 찾아보세요.',
     points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
-    movablePoints: [ {label:'P', x:300, y:220} ],
+    movablePoints: [ {label:'I', x:300, y:220} ],
+    computedPoints: [
+      {label:'D', kind:'footPerp', of:['I','A','B']},
+      {label:'E', kind:'footPerp', of:['I','B','C']},
+      {label:'F', kind:'footPerp', of:['I','C','A']}
+    ],
+    postObjects: [
+      {type:'lengthLabel', p1:'I', p2:'D'}, {type:'lengthLabel', p1:'I', p2:'E'}, {type:'lengthLabel', p1:'I', p2:'F'}
+    ],
+    snapTarget(c){
+      const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
+      return incenterOf(A,B,Cc);
+    },
     check(c){
-      const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C'), P=c.byLabel('P');
-      if(!P) return fail('점 P를 찾을 수 없어요.');
-      const d1=distToLine(P,A,B), d2=distToLine(P,B,Cc), d3=distToLine(P,Cc,A);
-      const okEq = Math.abs(d1-d2)<10 && Math.abs(d2-d3)<10 && d1>15;
-      return okEq ? ok('세 변으로부터 같은 거리에 있는 점을 잘 찾았어요!') : fail('점 P를 움직여서 세 변 AB, BC, CA까지의 거리가 모두 같아지도록 맞춰보세요.');
+      const I=c.byLabel('I'), D=c.byLabel('D'), E=c.byLabel('E'), F=c.byLabel('F');
+      if(!I||!D||!E||!F) return fail('점 I를 찾을 수 없어요.');
+      // 화면에는 소수점 첫째자리까지만 보여주므로(예: 3.3), 판정 기준도 같은 자리에서
+      // 반올림한 값끼리 비교한다 - 화면상 다른 숫자인데 "찾았다"고 나오는 걸 방지.
+      const u1=dist(I,D)/GRID, u2=dist(I,E)/GRID, u3=dist(I,F)/GRID;
+      const r1=+u1.toFixed(1), r2=+u2.toFixed(1), r3=+u3.toFixed(1);
+      const okEq = r1===r2 && r2===r3 && r1>0.3;
+      if(okEq) return ok('세 변으로부터 같은 거리에 있는 점을 잘 찾았어요!');
+      // 완전히 같지는 않아도 세 거리 차이가 0.3 이하로 꽤 가까워졌으면, 버튼을 눌러
+      // 정확한 위치로 스냅 이동할 수 있게 안내한다 (과제1은 난이도를 낮추기 위한 보조 장치).
+      const maxDiff = Math.max(Math.abs(u1-u2), Math.abs(u2-u3), Math.abs(u1-u3));
+      if(maxDiff<=0.3 && Math.min(u1,u2,u3)>0.3){
+        return {ok:false, near:true, msg:'꽤 가까워졌어요! 아래 "정답 위치로 이동" 버튼을 눌러 정확한 위치를 확인해볼 수 있어요.'};
+      }
+      return fail('점 I를 움직여서 ID, IE, IF의 길이가 모두 같아지도록 맞춰보세요.');
     } },
 
   { id:2, title:'[과제 2] 다음 순서대로 작도해봅시다. ① ∠A의 이등분선을 그린다. ② ∠B의 이등분선을 그린다. ③ 두 이등분선의 교점을 표시한다. ④ 그 교점에서 변 BC에 내린 수선의 발을 표시한다. ⑤ 교점을 중심으로 하고 수선의 발을 지나는 원을 그린다.',
@@ -904,7 +978,8 @@ const TASKS = [
     check: checkIncenterConstruct },
 
   { id:3, title:'[과제 3] [과제 2]에서 그린 원은 삼각형의 세 변과 모두 접한다고 할 수 있을까요? 그 이유는 무엇일까요?',
-    type:'text', noFigure:true, minLen:20 },
+    type:'text', minLen:20,
+    liveSource: 2 },
 
   { id:4, title:'[과제 4] [과제 2]와 같은 방법으로 이 직각삼각형의 내심과 내접원을 그려봅시다.',
     tools:['angleBisector','point','circleCP'],
@@ -919,7 +994,12 @@ const TASKS = [
     check: checkIncenterConstruct },
 
   { id:6, title:'[과제 6] 모든 삼각형은 내심과 내접원이 있을까요? [과제 2], [과제 4], [과제 5]의 결과를 바탕으로 그 이유를 설명해봅시다.',
-    type:'text', noFigure:true, minLen:20 },
+    type:'text', minLen:20,
+    refFigures: [
+      {label:'과제 2 (예각삼각형)', sourceTaskId:2},
+      {label:'과제 4 (직각삼각형)', sourceTaskId:4},
+      {label:'과제 5 (둔각삼각형)', sourceTaskId:5}
+    ] },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
@@ -928,6 +1008,22 @@ const FREE_TOOLS = ALL_TOOLS;
 const container = document.getElementById('taskContainer');
 const results = {};
 const canvasByTaskId = {};
+
+// 과제3·6처럼 "학생이 실제로 그린 다른 과제의 그림을 그대로 보여주기"용 미러링 장치.
+// 원본 과제(sourceTaskId)의 GeoCanvas가 바뀔 때마다 등록된 미러 캔버스들도 같은 상태로
+// 다시 그려서, 정답 그림이 아니라 학생이 실제 그린(혹은 아직 안 그린) 그대로를 반영한다.
+const mirrorRegistry = {}; // sourceTaskId -> [mirrorGeoCanvas, ...]
+function registerMirror(sourceTaskId, mirrorCv){
+  (mirrorRegistry[sourceTaskId] = mirrorRegistry[sourceTaskId] || []).push(mirrorCv);
+}
+function refreshMirror(mirrorCv, sourceCv){
+  mirrorCv.points = sourceCv.points.map(p=>({...p, locked:true}));
+  mirrorCv.objects = sourceCv.objects.map(o=>({...o}));
+  mirrorCv.render();
+}
+function notifyMirrors(sourceTaskId, sourceCv){
+  (mirrorRegistry[sourceTaskId]||[]).forEach(m=>refreshMirror(m, sourceCv));
+}
 
 function buildTaskCard(task){
   const el=document.createElement('div');
@@ -943,7 +1039,12 @@ function buildTaskCard(task){
       <span class="badge pending" id="badge-${task.id}">미완료</span>
     </div>
     <div class="task-body ${task.noFigure ? 'no-figure' : ''}">
-      ${task.noFigure ? '' : `<div class="task-right">
+      ${task.refFigures ? `<div class="ref-figures">
+        ${task.refFigures.map((rf,i)=>`<div class="ref-figure">
+          <div class="ref-figure-label">${rf.label||''}</div>
+          <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}-${i}" viewBox="0 0 600 400"></svg></div>
+        </div>`).join('')}
+      </div>` : task.noFigure ? '' : `<div class="task-right">
         <div class="toolbar" id="tools-${task.id}"></div>
         <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
       </div>`}
@@ -1009,25 +1110,47 @@ function initConstructTask(task){
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
   const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
   canvasByTaskId[task.id] = cv;
 
   buildToolbar(task, cv, toolsEl);
 
+  // snapTarget이 있는 과제(예: 과제1)는 정답에 꽤 가까워졌을 때(near) "정답 위치로 이동"
+  // 버튼을 보여준다. 버튼을 누르면 첫 번째 movablePoint를 정확한 좌표로 스냅시킨다 —
+  // 난이도를 낮추기 위한 보조 장치로, 값을 직접 맞추기 어려운 학생을 돕는다.
+  let snapBtn=null;
+  if(task.snapTarget){
+    snapBtn=document.createElement('button');
+    snapBtn.type='button';
+    snapBtn.textContent='📍 정답 위치로 이동';
+    snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;display:none;';
+    fb.insertAdjacentElement('afterend', snapBtn);
+    snapBtn.addEventListener('click', ()=>{
+      const target = task.snapTarget(cv);
+      const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
+      const pt = label && cv.byLabel(label);
+      if(!target || !pt) return;
+      pt.x=target.x; pt.y=target.y;
+      cv.render();
+    });
+  }
+
   // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
   // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
   let everSubmitted = false;
   function onChange(inst){
-    if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); return; }
+    if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); notifyMirrors(task.id, inst); return; }
     const r = task.check(inst);
     results[task.id]={done:r.ok};
     badge.textContent = r.ok?'완료':'미완료';
     badge.className = 'badge ' + (r.ok?'done':'pending');
     fb.textContent = r.msg;
     fb.className = 'feedback ' + (r.ok?'ok':'no');
+    if(snapBtn) snapBtn.style.display = (!r.ok && r.near) ? '' : 'none';
     updateProgress();
     RT.pushObjectsDebounced(task.id, inst);
+    notifyMirrors(task.id, inst);
     if(r.ok && !everSubmitted){ everSubmitted = true; } // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
   }
   onChange(cv);
@@ -1035,6 +1158,43 @@ function initConstructTask(task){
 
 function initTextTask(task){
   buildTaskCard(task);
+  // 서술형 과제라도 참고 그림이 있으면 보여준다. liveSource/refFigures[].sourceTaskId가 있으면
+  // "정답 그림"이 아니라 그 과제(sourceTaskId)의 캔버스를 실시간으로 그대로 미러링한다 —
+  // 학생이 실제로 그린 것만 보이고, 아직 안 그렸으면 안 그린 상태 그대로 보인다.
+  // (구버전 호환: points·presetObjects가 직접 주어지면 정적 그림으로 그린다.)
+  if(task.refFigures){
+    task.refFigures.forEach((rf,i)=>{
+      const svg=document.getElementById(`svg-${task.id}-${i}`);
+      if(!svg) return;
+      if(rf.sourceTaskId!=null){
+        const mirrorCv = new GeoCanvas(svg, {}, ()=>{});
+        registerMirror(rf.sourceTaskId, mirrorCv);
+        const src = canvasByTaskId[rf.sourceTaskId];
+        if(src) refreshMirror(mirrorCv, src);
+      } else {
+        new GeoCanvas(svg, {points: rf.points||[], presetObjects: rf.presetObjects||[]}, ()=>{});
+      }
+    });
+  } else if(task.liveSource!=null){
+    const svg=document.getElementById(`svg-${task.id}`);
+    const toolsEl=document.getElementById(`tools-${task.id}`);
+    if(toolsEl) toolsEl.style.display='none';
+    if(svg){
+      const mirrorCv = new GeoCanvas(svg, {}, ()=>{});
+      canvasByTaskId[task.id]=mirrorCv;
+      registerMirror(task.liveSource, mirrorCv);
+      const src = canvasByTaskId[task.liveSource];
+      if(src) refreshMirror(mirrorCv, src);
+    }
+  } else if(task.points){
+    const svg=document.getElementById(`svg-${task.id}`);
+    const toolsEl=document.getElementById(`tools-${task.id}`);
+    if(toolsEl) toolsEl.style.display='none';
+    if(svg){
+      const cv=new GeoCanvas(svg, {points: task.points||[], presetObjects: task.presetObjects||[]}, ()=>{});
+      canvasByTaskId[task.id]=cv;
+    }
+  }
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
   const input=document.getElementById(`input-${task.id}`);
@@ -1108,7 +1268,7 @@ function initVerifyTask(task){
   // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "확인"으로 돌아온다.
   let locked = false;
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
   cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
   canvasByTaskId[task.id] = cv;
   buildToolbar(task, cv, toolsEl);

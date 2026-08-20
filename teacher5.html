@@ -150,7 +150,7 @@
 <div class="wrap">
 
   <div id="teacherGateScreen" class="panel" style="max-width:420px;margin:60px auto;text-align:center;">
-    <a href="teacher.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
+    <a href="teacher.html" class="unitListLink" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
     <h2 style="margin-top:0;font-size:18px;color:#1a237e;">반을 선택하고 시작하세요</h2>
     <div class="row" style="justify-content:center;">
       <select id="roomCode"><option value="">반 선택</option></select>
@@ -164,7 +164,7 @@
   <div class="panel">
     <div class="row">
       <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">현재 반: <b id="currentRoomLabel">-</b></span>
-      <a href="teacher.html" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
+      <a href="teacher.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
       <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
       <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
       <button class="pause" id="anonymizeBtn">🎭 익명화</button>
@@ -682,6 +682,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     buildHead();
 
     document.getElementById('currentRoomLabel').textContent = room+'반';
+    document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'teacher.html?classNo=' + encodeURIComponent(room));
     document.getElementById('teacherGateScreen').style.display='none';
     document.getElementById('teacherAppScreen').style.display='block';
   }catch(err){

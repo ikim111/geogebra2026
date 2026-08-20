@@ -150,7 +150,7 @@
 <div class="wrap">
 
   <div id="teacherGateScreen" class="panel" style="max-width:420px;margin:60px auto;text-align:center;">
-    <a href="teacher.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
+    <a href="teacher.html" class="unitListLink" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
     <h2 style="margin-top:0;font-size:18px;color:#1a237e;">반을 선택하고 시작하세요</h2>
     <div class="row" style="justify-content:center;">
       <select id="roomCode"><option value="">반 선택</option></select>
@@ -164,7 +164,7 @@
   <div class="panel">
     <div class="row">
       <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">현재 반: <b id="currentRoomLabel">-</b></span>
-      <a href="teacher.html" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
+      <a href="teacher.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
       <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
       <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
       <button class="pause" id="anonymizeBtn">🎭 익명화</button>
@@ -297,12 +297,16 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__extend'; // student6.html과 반드시 동일해야 함
 
 // 학생용 파일의 과제 구성과 맞춰주세요 (id, 짧은 제목)
-// 네 과제 모두 "작도(또는 관찰)+서술"이 한 페이지로 묶인 형태입니다(verify 유형).
+// 1·2·4·5는 작도만 하는 과제, 3·6·7·8은 "작도(또는 관찰)+서술"이 한 페이지로 묶인 형태입니다(verify 유형).
 const TASK_LABELS = [
-  {id:1, label:'이등변삼각형 외심+내심'},
-  {id:2, label:'정삼각형 외심+내심'},
-  {id:3, label:'외심 탐구(∠A vs ∠BOC)'},
-  {id:4, label:'내심 탐구(∠A vs ∠BIC)'}
+  {id:1, label:'이등변삼각형 외심 작도'},
+  {id:2, label:'이등변삼각형 내심 작도'},
+  {id:3, label:'이등변삼각형 외심·내심 특징'},
+  {id:4, label:'정삼각형 외심 작도'},
+  {id:5, label:'정삼각형 내심 작도'},
+  {id:6, label:'정삼각형 외심·내심 특징'},
+  {id:7, label:'외심 탐구(∠A vs ∠BOC)'},
+  {id:8, label:'내심 탐구(∠A vs ∠BIC)'}
 ];
 
 const UNIT_LABEL = '6. 생각넓히기';
@@ -680,6 +684,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     buildHead();
 
     document.getElementById('currentRoomLabel').textContent = room+'반';
+    document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'teacher.html?classNo=' + encodeURIComponent(room));
     document.getElementById('teacherGateScreen').style.display='none';
     document.getElementById('teacherAppScreen').style.display='block';
   }catch(err){
@@ -860,6 +865,7 @@ function drawOverlayLine(svg,x1,y1,x2,y2,color,opacity){
 const BACKDROP_COLOR = '#9aa0a6'; // 문제가 준 배경(직사각형/원 등)은 항상 이 회색으로, 학생 색과 구분되게 그린다
 
 function drawOverlayObject(svg, o, ptById, color, opacity){
+  if(o.hidden) return; // 학생 화면엔 안 보이는 보조 도형(점 드래그 범위 제한용)은 여기서도 그리지 않는다
   const NS='http://www.w3.org/2000/svg';
   const ext=1000;
   // 잠긴(locked) 도형 = 문제에서 미리 준 배경. 학생이 무슨 색을 배정받았든 상관없이
