@@ -456,7 +456,7 @@ class GeoCanvas{
     // 작도하는 게 아니라 "이미 주어진" 점이라 늘 locked:true로 만든다.
     (cfg.computedPoints||[]).forEach(cp=>{
       const v = this._computePointValue(cp);
-      this.addPoint(v.x, v.y, {label:cp.label, locked:true, computed:cp});
+      this.addPoint(v.x, v.y, {label:cp.label, locked:true, computed:cp, labelOffset:cp.labelOffset});
     });
     (cfg.postObjects||[]).forEach(o => {
       const resolved = resolveObj(o);
@@ -471,7 +471,7 @@ class GeoCanvas{
     const used = new Set(this.points.map(p=>p.label));
     const pool = this.labelPool;
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null, labelOffset: opts.labelOffset||null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
@@ -491,6 +491,14 @@ class GeoCanvas{
     const [A,B,C] = pts;
     if(cp.kind==='circumcenter') return circumcenterOf(A,B,C);
     if(cp.kind==='incenter') return incenterOf(A,B,C);
+    // rotateAround: 점 하나(of:[X])를 cp.center를 중심으로 cp.angleDeg만큼 회전시킨 좌표.
+    // 정삼각형 탐구 페이지(6페이지)에서 "점 A를 움직여도 항상 정삼각형이 되도록" B,C를
+    // A의 위치로부터 매번 다시 계산하는 데 쓴다(±120° 회전하면 정삼각형의 나머지 두 꼭짓점이 나온다).
+    if(cp.kind==='rotateAround'){
+      const rad=(cp.angleDeg||0)*Math.PI/180, cx=cp.center.x, cy=cp.center.y;
+      const dx=A.x-cx, dy=A.y-cy;
+      return { x: cx + dx*Math.cos(rad) - dy*Math.sin(rad), y: cy + dx*Math.sin(rad) + dy*Math.cos(rad) };
+    }
     return {x:A.x, y:A.y};
   }
   _recomputeComputedPoints(){
@@ -901,7 +909,13 @@ class GeoCanvas{
       c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
       this.svg.appendChild(c);
       const t=document.createElementNS(NS,'text');
-      t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8);
+      // labelOffset: 보통은 점 오른쪽 위(+9,-8)에 라벨을 붙이지만, 외심 O와 내심 I처럼 두 점이
+      // 같은 자리에 겹칠 수 있는 경우(정삼각형) 글자끼리도 겹쳐 안 보이게, 점마다 다른 위치/정렬을
+      // 줄 수 있게 했다(예: O는 왼쪽 위, I는 오른쪽 위).
+      const off = p.labelOffset || {dx:9, dy:-8, anchor:'start'};
+      t.setAttribute('x', p.x + (off.dx!=null?off.dx:9));
+      t.setAttribute('y', p.y + (off.dy!=null?off.dy:-8));
+      if(off.anchor) t.setAttribute('text-anchor', off.anchor);
       t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
       t.textContent=p.label;
       this.svg.appendChild(t);
@@ -1016,105 +1030,106 @@ function checkIncenterOnlyLabeled(c){
   if(I.label!=='I') return fail('교점을 내심 I로 표시해야 해요.');
   return ok('내심 I를 잘 찾았어요!');
 }
-// 3페이지/6페이지: 점 A는 이제 1・2페이지(또는 4・5페이지)에서 직접 움직인다. 그중 한 곳에서라도
-// 초기 위치에서 25px 이상 움직였으면 "탐구했다"고 인정한다(3페이지 자체엔 더 이상 별도의
-// 캔버스/점이 없다 — mirrorOverlap이 그 소스 캔버스들의 내용을 그대로 보여줄 뿐이다).
-function checkExploreMovedAny(sourceIds, initA){
-  const moved = sourceIds.some(sid=>{
-    const src = canvasByTaskId[sid];
-    const A = src && src.byLabel('A');
-    return A && dist(A, initA) > 25;
-  });
+// 3페이지/6페이지: 점 A를(검은 점) 이 페이지에서 직접 움직인다. 초기 위치에서 25px 이상
+// 움직였으면 "탐구했다"고 인정한다.
+function checkExploreMovedA(c, initA, failMsg){
+  const A=c.byLabel('A');
+  const moved = A && dist(A,initA)>25;
   return moved
     ? ok('점 A를 움직이며 잘 관찰했어요! 이제 알게 된 특징을 적어보세요.')
-    : fail('위 화면(과제1・2페이지)에서 점 A를(검은 점) 위아래로 자유롭게 드래그해서 여러 삼각형을 만들어보고, 외심과 내심의 위치가 어떻게 달라지는지 관찰해보세요.');
+    : fail(failMsg || '점 A를(검은 점) 자유롭게 드래그해서 여러 삼각형을 만들어보고, 외심과 내심의 위치가 어떻게 달라지는지 관찰해보세요.');
 }
-/* ---------- 소스 캔버스 구독: 1페이지/2페이지(또는 4・5페이지)의 작도 캔버스가 바뀔 때마다
-   그 변화에 관심 있는 다른 곳(3・6페이지의 오버랩 미러 캔버스, 그리고 그 페이지의 안내 문구)에
-   알려준다. ---------- */
-const sourceSubscribers = {}; // sourceTaskId -> [fn, ...]
-function subscribeToSource(sourceIds, fn){
-  sourceIds.forEach(sid=> (sourceSubscribers[sid] = sourceSubscribers[sid]||[]).push(fn));
-}
-function notifySourceChanged(sourceTaskId){
-  (sourceSubscribers[sourceTaskId]||[]).forEach(fn=>fn());
-}
-// 오버랩 미러: 두 작도 캔버스(예: 1페이지 외심 작도 + 2페이지 내심 작도)의 내용을 실시간으로
-// 합쳐서 보여주는 보기 전용 캔버스. 학생이 실제로 그린 선/점을 값을 다시 계산하지 않고
-// 그대로 복사해서 보여준다(단, hidden 보조선은 render()가 알아서 그리지 않는다).
-function refreshOverlapCanvas(overlapCv, sourceIds){
-  const points=[], objects=[];
-  sourceIds.forEach(sid=>{
-    const src = canvasByTaskId[sid];
-    if(!src) return;
-    src.points.forEach(p=> points.push(Object.assign({}, p, {locked:true})));
-    src.objects.forEach(o=> objects.push(Object.assign({}, o)));
+// 1페이지/2페이지(또는 4・5페이지)는 실제로는 독립된 캔버스지만, "같은 점 A를 보고 있다"고
+// 느껴지도록 3페이지(또는 6페이지)에서 점을 움직일 때마다 그 좌표를 그대로 복사해 넣고
+// 다시 그린다. 점 객체 자체를 공유하진 않지만, 좌표가 항상 일치하게 만든다.
+function syncPointsToSources(cv, labels, targetIds){
+  const vals = labels.map(l=> cv.byLabel(l));
+  targetIds.forEach(tid=>{
+    const tcv = canvasByTaskId[tid];
+    if(!tcv) return;
+    let changed=false;
+    labels.forEach((l,i)=>{
+      const tp=tcv.byLabel(l), sp=vals[i];
+      if(tp && sp && (tp.x!==sp.x || tp.y!==sp.y)){ tp.x=sp.x; tp.y=sp.y; changed=true; }
+    });
+    if(changed) tcv.render();
   });
-  overlapCv.points = points;
-  overlapCv.objects = objects;
-  overlapCv.render();
 }
-
-// 페이지1・2(이등변)와 4・5(정삼각형) 공통: B,C는 고정하고, A는 "BC의 수직이등분선" 위로만
-// 움직일 수 있게 한다(이등변/정삼각형 모양이 항상 유지된다). 그 수직이등분선 자체는
-// hidden:true로 화면엔 안 그린다 — 학생이 직접 그려야 하는 진짜 작도(수직이등분선 도구)의
-// 정답을 미리 보여주면 안 되기 때문에, A의 이동 범위를 계산하는 용도로만 뒤에서 쓴다.
-function isoPageConfig(BC, aInit, labelPool, tools, hint, checkFn){
-  return {
-    tools, labelPool, hint,
-    points: [BC[0], BC[1]],
-    presetObjects: [
-      {type:'segment', p1:BC[0].label, p2:BC[1].label},
-      {type:'perpBisector', p1:BC[0].label, p2:BC[1].label, refName:'bisBC', hidden:true}
-    ],
-    movablePoints: [ {label:'A', x:aInit.x, y:aInit.y, constraintRef:'bisBC'} ],
-    postObjects: [
-      {type:'segment', p1:'A', p2:BC[0].label}, {type:'segment', p1:'A', p2:BC[1].label}
-    ],
-    check: checkFn
-  };
+// 1페이지/2페이지, 4페이지/5페이지 공통: 세 꼭짓점이 모두 고정된(잠긴) 삼각형에서 외심/내심을
+// 작도만 하는 과제.
+function fixedTriConfig(pts, tools, labelPool, hint, checkFn){
+  return { tools, labelPool, hint, points: pts, presetObjects: triPreset(pts), check: checkFn };
 }
 const ISO_BC = [ISO_POINTS[1], ISO_POINTS[2]];
 const ISO_A_INIT = {x:ISO_POINTS[0].x, y:ISO_POINTS[0].y};
-const EQ_BC = [EQ_POINTS[1], EQ_POINTS[2]];
 const EQ_A_INIT = {x:EQ_POINTS[0].x, y:EQ_POINTS[0].y};
+// 정삼각형 그룹(4~6페이지)의 중심 — 6페이지에서 점 A를 움직여도 항상 정삼각형이 되도록,
+// B・C를 이 중심 기준 ±120° 회전으로 계산한다.
+const EQ_CENTER = { x:(EQ_POINTS[0].x+EQ_POINTS[1].x+EQ_POINTS[2].x)/3, y:(EQ_POINTS[0].y+EQ_POINTS[1].y+EQ_POINTS[2].y)/3 };
 
 const TASKS = [
-  { id:1, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동1] 이등변삼각형 ABC(AB=AC)의 외심을 그려봅시다. (외심은 점 O로 표시합니다. 점 A를 위아래로 움직이면 다른 이등변삼각형도 살펴볼 수 있어요.)',
-    ...isoPageConfig(ISO_BC, ISO_A_INIT, 'OPQRSTUVWXYZLMNKJIHGFED', ['perpBisector','intersect'],
-      '"수직이등분선" 도구로 두 변의 수직이등분선을 긋고, "교점" 도구로 그 교점을 찍어보세요. 그 점이 바로 외심 O입니다. 점 A를(검은 점) 위아래로 움직여봐도 좋아요.',
+  { id:1, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동1] 이등변삼각형 ABC(AB=AC)의 외심을 그려봅시다.',
+    ...fixedTriConfig(ISO_POINTS, ['perpBisector','intersect'], 'OPQRSTUVWXYZLMNKJIHGFED',
+      '"수직이등분선" 도구로 두 변의 수직이등분선을 긋고, "교점" 도구로 그 교점을 찍어보세요. 그 점이 바로 외심 O입니다.',
       checkCircumOnlyLabeled) },
 
-  { id:2, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동2] 이등변삼각형 ABC(AB=AC)의 내심을 그려봅시다. (내심은 점 I로 표시합니다. 점 A를 위아래로 움직이면 다른 이등변삼각형도 살펴볼 수 있어요.)',
-    ...isoPageConfig(ISO_BC, ISO_A_INIT, 'IPQRSTUVWXYZLMNKJHGFED', ['angleBisector','intersect'],
-      '"각의 이등분선" 도구로 두 각의 이등분선을 긋고, "교점" 도구로 그 교점을 찍어보세요. 그 점이 바로 내심 I입니다. 점 A를(검은 점) 위아래로 움직여봐도 좋아요.',
+  { id:2, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동2] 이등변삼각형 ABC(AB=AC)의 내심을 그려봅시다.',
+    ...fixedTriConfig(ISO_POINTS, ['angleBisector','intersect'], 'IPQRSTUVWXYZLMNKJHGFED',
+      '"각의 이등분선" 도구로 두 각의 이등분선을 긋고, "교점" 도구로 그 교점을 찍어보세요. 그 점이 바로 내심 I입니다.',
       checkIncenterOnlyLabeled) },
 
-  { id:3, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동3] 이등변삼각형의 외심과 내심의 특징을 이야기해봅시다.',
-    type:'verify', noTools:true, overlapOnly:true, minLen:15,
-    mirrorOverlap:[1,2],
-    overlapLabel:'과제1(외심)과 과제2(내심)를 겹쳐서 보여줘요 — 지금까지 그린 내용과 점 A의 위치가 실시간으로 반영돼요.',
-    hint:'1・2페이지로 돌아가 점 A를(검은 점) 위아래로 드래그해서 다른 이등변삼각형을 만들어보고, 외심 O와 내심 I의 위치가 어떻게 달라지는지 관찰해보세요.',
+  { id:3, title:'[1] 이등변삼각형의 외심과 내심 위치 알아보기<br>[활동3] 점 A를 움직여봅시다. 이등변삼각형의 외심과 내심의 특징을 이야기해봅시다.',
+    type:'verify', noTools:true, minLen:15,
+    hint:'점 A를(검은 점) 위아래로 자유롭게 드래그해서 여러 이등변삼각형을 만들어보고, 외심 O와 내심 I의 위치가 어떻게 달라지는지 관찰해보세요. (1・2페이지의 그림도 함께 바뀌어요.)',
     textPrompt:'이등변삼각형의 외심과 내심은 어떤 특징이 있나요? (15자 이상)',
-    verify(){ return checkExploreMovedAny([1,2], ISO_A_INIT); } },
+    points: ISO_BC,
+    presetObjects: [
+      {type:'segment', p1:'B', p2:'C'},
+      {type:'perpBisector', p1:'B', p2:'C', refName:'bisBC', hidden:true}
+    ],
+    movablePoints: [ {label:'A', x:ISO_A_INIT.x, y:ISO_A_INIT.y, constraintRef:'bisBC'} ],
+    computedPoints: [
+      {label:'O', kind:'circumcenter', of:['A','B','C']},
+      {label:'I', kind:'incenter', of:['A','B','C']}
+    ],
+    postObjects: [
+      {type:'segment', p1:'A', p2:'B'}, {type:'segment', p1:'A', p2:'C'},
+      // 1・2페이지에서 학생이 직접 그리는 것과 같은 종류의 수직이등분선・각의 이등분선을
+      // 여기서도 보여준다(값은 항상 다시 계산되므로 점 A를 움직이면 같이 따라온다).
+      {type:'perpBisector', p1:'A', p2:'B'}, {type:'perpBisector', p1:'A', p2:'C'},
+      {type:'angleBisector', a:'A', b:'B', c:'C'}, {type:'angleBisector', a:'A', b:'C', c:'B'}
+    ],
+    syncToSources:[1,2], syncLabels:['A'],
+    verify(c){ return checkExploreMovedA(c, ISO_A_INIT); } },
 
-  { id:4, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동1] 정삼각형 ABC의 외심을 그려봅시다. (외심은 점 O로 표시합니다. 점 A를 움직이면 다른 삼각형도 살펴볼 수 있어요.)',
-    ...isoPageConfig(EQ_BC, EQ_A_INIT, 'OPQRSTUVWXYZLMNKJIHGFED', ['perpBisector','intersect'],
-      '이등변삼각형과 같은 방법으로 외심을 찾아보세요. 점 A를(검은 점) 위아래로 움직여봐도 좋아요.',
+  { id:4, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동1] 정삼각형 ABC의 외심을 그려봅시다.',
+    ...fixedTriConfig(EQ_POINTS, ['perpBisector','intersect'], 'OPQRSTUVWXYZLMNKJIHGFED',
+      '이등변삼각형과 같은 방법으로 외심을 찾아보세요.',
       checkCircumOnlyLabeled) },
 
-  { id:5, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동2] 정삼각형 ABC의 내심을 그려봅시다. (내심은 점 I로 표시합니다. 점 A를 움직이면 다른 삼각형도 살펴볼 수 있어요.)',
-    ...isoPageConfig(EQ_BC, EQ_A_INIT, 'IPQRSTUVWXYZLMNKJHGFED', ['angleBisector','intersect'],
-      '이등변삼각형과 같은 방법으로 내심을 찾아보세요. 점 A를(검은 점) 위아래로 움직여봐도 좋아요.',
+  { id:5, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동2] 정삼각형 ABC의 내심을 그려봅시다.',
+    ...fixedTriConfig(EQ_POINTS, ['angleBisector','intersect'], 'IPQRSTUVWXYZLMNKJHGFED',
+      '이등변삼각형과 같은 방법으로 내심을 찾아보세요.',
       checkIncenterOnlyLabeled) },
 
-  { id:6, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동3] 정삼각형의 외심과 내심의 특징을 이야기해봅시다.',
-    type:'verify', noTools:true, overlapOnly:true, minLen:15,
-    mirrorOverlap:[4,5],
-    overlapLabel:'과제4(외심)와 과제5(내심)를 겹쳐서 보여줘요 — 지금까지 그린 내용과 점 A의 위치가 실시간으로 반영돼요.',
-    hint:'4・5페이지로 돌아가 점 A를(검은 점) 위아래로 드래그해보세요. 처음엔 정삼각형이라 외심 O와 내심 I가 겹쳐 보이지만, 삼각형 모양이 바뀌면 두 점이 어떻게 달라지는지 관찰해보세요.',
+  { id:6, title:'[2] 정삼각형의 외심과 내심 위치 알아보기<br>[활동3] 점 A를 움직여봅시다. 정삼각형의 외심과 내심의 특징을 이야기해봅시다.',
+    type:'verify', noTools:true, minLen:15,
+    hint:'점 A를(검은 점) 자유롭게 드래그해보세요. 삼각형이 항상 정삼각형 모양을 유지한 채로(B, C도 함께 움직여요) 커지고 작아지며, 외심 O와 내심 I가 항상 겹쳐 보이는 것을 관찰해보세요. (4・5페이지의 그림도 함께 바뀌어요.)',
     textPrompt:'정삼각형의 외심과 내심은 어떤 특징이 있나요? (15자 이상)',
-    verify(){ return checkExploreMovedAny([4,5], EQ_A_INIT); } },
+    movablePoints: [ {label:'A', x:EQ_A_INIT.x, y:EQ_A_INIT.y} ],
+    computedPoints: [
+      {label:'B', kind:'rotateAround', of:['A'], center:EQ_CENTER, angleDeg:-120},
+      {label:'C', kind:'rotateAround', of:['A'], center:EQ_CENTER, angleDeg:120},
+      // 정삼각형에서는 O와 I가 같은 자리에 겹치므로, 글자만이라도 겹치지 않게 O는 왼쪽 위,
+      // I는 오른쪽 위로 라벨 위치를 다르게 둔다.
+      {label:'O', kind:'circumcenter', of:['A','B','C'], labelOffset:{dx:-9, dy:-8, anchor:'end'}},
+      {label:'I', kind:'incenter', of:['A','B','C'], labelOffset:{dx:9, dy:-8, anchor:'start'}}
+    ],
+    postObjects: [
+      {type:'segment', p1:'A', p2:'B'}, {type:'segment', p1:'B', p2:'C'}, {type:'segment', p1:'C', p2:'A'}
+    ],
+    syncToSources:[4,5], syncLabels:['A','B','C'],
+    verify(c){ return checkExploreMovedA(c, EQ_A_INIT, '점 A를(검은 점) 자유롭게 드래그해보세요. 삼각형이 정삼각형을 유지한 채로 모양이 바뀌는 걸 관찰해보세요.'); } },
 
   { id:7, title:'[3] 외심과 내심의 성질을 이용하여 삼각형의 각 사이의 관계 찾기<br>[활동1] 점 A, B, C를 자유롭게 움직여봅시다. 이미 표시된 외심 O와 두 각(∠A, ∠BOC)이 어떻게 변하는지 관찰하고, 알게 된 사실을 적어봅시다.',
     type:'verify', noTools:true, minLen:15,
@@ -1163,10 +1178,8 @@ function buildTaskCard(task){
     </div>
     <div class="task-body ${task.noFigure ? 'no-figure' : ''}">
       ${task.noFigure ? '' : `<div class="task-right">
-        ${task.mirrorOverlap ? `<div class="hint" style="margin-bottom:6px;">${task.overlapLabel||'이전 과제의 결과를 겹쳐서 보여줘요.'}</div>
-        <div class="canvas-wrap" style="margin-bottom:${task.overlapOnly ? '0' : '16px'};"><svg class="gcanvas" id="svg-overlap-${task.id}" viewBox="0 0 600 400"></svg></div>` : ''}
-        ${task.overlapOnly ? '' : `<div class="toolbar" id="tools-${task.id}"></div>
-        <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>`}
+        <div class="toolbar" id="tools-${task.id}"></div>
+        <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
         ${isTextLike ? `<div class="feedback" id="fb-${task.id}"></div>` : ''}
       </div>`}
       <div class="task-left">
@@ -1238,7 +1251,6 @@ function initConstructTask(task){
   buildToolbar(task, cv, toolsEl);
 
   function onChange(inst){
-    notifySourceChanged(task.id);
     if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); return; }
     const r = task.check(inst);
     results[task.id]={done:r.ok};
@@ -1277,11 +1289,8 @@ function initTextTask(task){
 
 function initVerifyTask(task){
   buildTaskCard(task);
-  // overlapOnly(3・6페이지): 이 페이지 자체엔 학생이 조작할 캔버스가 없다(A는 1・2 또는
-  // 4・5페이지에서 움직인다). svg-${id}/tools-${id} 엘리먼트 자체를 buildTaskCard가 만들지
-  // 않으므로, 여기서도 그에 맞춰 자체 GeoCanvas/toolbar 생성을 건너뛴다.
-  const svg = task.overlapOnly ? null : document.getElementById(`svg-${task.id}`);
-  const toolsEl = task.overlapOnly ? null : document.getElementById(`tools-${task.id}`);
+  const svg=document.getElementById(`svg-${task.id}`);
+  const toolsEl=document.getElementById(`tools-${task.id}`);
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
   const input=document.getElementById(`input-${task.id}`);
@@ -1297,38 +1306,17 @@ function initVerifyTask(task){
   // "취소"를 누르면 다시 풀려서(locked=false) 글을 고칠 수 있고, 버튼이 "제출"로 돌아온다.
   let locked = false;
 
-  if(!task.overlapOnly){
-    const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], computedPoints: task.computedPoints||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[], labelPool: task.labelPool};
-    cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
-    canvasByTaskId[task.id] = cv;
-    buildToolbar(task, cv, toolsEl);
-  }
-
-  // mirrorOverlap: [소스과제id, ...] — 예를 들어 3페이지는 1페이지(외심 작도)와 2페이지(내심
-  // 작도)의 결과를 실시간으로 겹쳐서 보여주는 작은 캔버스를 갖는다. overlapOnly 페이지에서는
-  // 이 오버랩 캔버스가 그 페이지의 유일한 그림이다. 소스 캔버스(1・2 또는 4・5페이지)가 바뀔
-  // 때마다 이 오버랩 캔버스를 다시 그리고, 안내 문구(refreshFeedback)도 함께 갱신한다 —
-  // 점 A가 다른 페이지에 있어도 "실시간으로" 반영되게 하려는 목적이다.
-  if(task.mirrorOverlap){
-    const overlapSvg = document.getElementById(`svg-overlap-${task.id}`);
-    if(overlapSvg){
-      const overlapCv = new GeoCanvas(overlapSvg, {points:[], presetObjects:[]}, ()=>{});
-      subscribeToSource(task.mirrorOverlap, ()=>{
-        refreshOverlapCanvas(overlapCv, task.mirrorOverlap);
-        RT.pushObjectsDebounced(task.id, overlapCv);
-        refreshFeedback();
-      });
-      refreshOverlapCanvas(overlapCv, task.mirrorOverlap);
-    }
-  }
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], computedPoints: task.computedPoints||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[], labelPool: task.labelPool};
+  cv = new GeoCanvas(svg, cfg, (inst)=>onCanvasChange(inst));
+  canvasByTaskId[task.id] = cv;
+  buildToolbar(task, cv, toolsEl);
 
   function checkReady(instArg){
     const target = instArg || cv;
+    if(!target) return {constructOk:false, textOk:false, constructMsg:null};
     // task.verify는 boolean을 반환해도 되고(예전 방식), {ok,msg}를 반환해도 된다.
     // {ok,msg}를 쓰면 "아직 못한 단계"에 따라 안내 문구가 그때그때 바뀐다
     // (예: 외심을 찾기 전엔 "수직이등분선..." → 외심을 찾은 뒤엔 "각의 이등분선..."로 전환).
-    // overlapOnly 페이지는 target(자체 캔버스)이 없어도 task.verify가 다른 페이지의 캔버스를
-    // 직접 들여다보고 판정하므로, target이 없다고 무조건 실패 처리하지 않는다.
     let constructOk=false, constructMsg=null;
     if(task.verify){
       const r = task.verify(target);
@@ -1371,6 +1359,10 @@ function initVerifyTask(task){
     return canSubmit;
   }
   function onCanvasChange(inst){
+    // syncToSources: 이 페이지(예: 3페이지)의 점(들)이 바뀔 때마다, 그 좌표를 다른 페이지의
+    // 같은 라벨 점에도 그대로 옮겨 적는다(예: 3페이지의 A → 1・2페이지의 A). "같은 점을
+    // 여러 페이지에서 보고 있다"는 느낌을 준다.
+    if(task.syncToSources) syncPointsToSources(inst, task.syncLabels||['A'], task.syncToSources);
     RT.pushObjectsDebounced(task.id, inst);
     refreshFeedback(inst);
   }

@@ -1110,15 +1110,13 @@ function initConstructTask(task){
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
 
-  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
-  const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
-  canvasByTaskId[task.id] = cv;
-
-  buildToolbar(task, cv, toolsEl);
-
   // snapTarget이 있는 과제(예: 과제1)는 정답에 꽤 가까워졌을 때(near) "정답 위치로 이동"
   // 버튼을 보여준다. 버튼을 누르면 첫 번째 movablePoint를 정확한 좌표로 스냅시킨다 —
   // 난이도를 낮추기 위한 보조 장치로, 값을 직접 맞추기 어려운 학생을 돕는다.
+  // 주의: 아래 "const cv = new GeoCanvas(...)"는 생성자 안에서 render()를 즉시 한 번 호출하고,
+  // 그 render()가 onChange -> snapBtn을 곧바로 참조한다. snapBtn 선언(let)이 GeoCanvas 생성보다
+  // "뒤에" 있으면 그 순간 아직 초기화 전(TDZ)이라 "Cannot access 'snapBtn' before initialization"
+  // 에러가 난다. 그래서 snapBtn을 GeoCanvas를 만들기 "전에" 먼저 선언/생성해 둔다.
   let snapBtn=null;
   if(task.snapTarget){
     snapBtn=document.createElement('button');
@@ -1126,6 +1124,20 @@ function initConstructTask(task){
     snapBtn.textContent='📍 정답 위치로 이동';
     snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;display:none;';
     fb.insertAdjacentElement('afterend', snapBtn);
+  }
+  // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
+  // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
+  // (snapBtn과 같은 이유로, 이 변수도 GeoCanvas 생성 "전에" 선언해야 첫 render()가 곧바로
+  // 부르는 onChange 안에서 TDZ 에러가 나지 않는다.)
+  let everSubmitted = false;
+
+  const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
+  const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
+  canvasByTaskId[task.id] = cv;
+
+  buildToolbar(task, cv, toolsEl);
+
+  if(snapBtn){
     snapBtn.addEventListener('click', ()=>{
       const target = task.snapTarget(cv);
       const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
@@ -1136,9 +1148,6 @@ function initConstructTask(task){
     });
   }
 
-  // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
-  // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
-  let everSubmitted = false;
   function onChange(inst){
     if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); notifyMirrors(task.id, inst); return; }
     const r = task.check(inst);

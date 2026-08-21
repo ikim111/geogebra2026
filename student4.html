@@ -1080,22 +1080,45 @@ function initConstructTask(task){
   const badge=document.getElementById(`badge-${task.id}`);
   const fb=document.getElementById(`fb-${task.id}`);
 
+  // snapTarget이 있는 과제(예: 과제1)는 정답에 꽤 가까워졌을 때(near) "정답 위치로 이동"
+  // 버튼을, 정답을 맞췄을 때(ok)는 점을 그 자리에 고정하고 "되돌리기" 버튼을 보여준다 —
+  // 난이도를 낮추기 위한 보조 장치로, 값을 직접 맞추기 어려운 학생을 돕는다.
+  // 주의: 아래 "const cv = new GeoCanvas(...)"는 생성자 안에서 render()를 즉시 한 번 호출하고,
+  // 그 render()가 onChange -> snapBtn/lockResetBtn을 곧바로 참조한다. 이 변수들의 선언(let)이
+  // GeoCanvas 생성보다 "뒤에" 있으면 그 순간 아직 초기화 전(TDZ)이라
+  // "Cannot access '...' before initialization" 에러가 난다. 그래서 GeoCanvas를 만들기 "전에"
+  // 먼저 선언/생성해 둔다.
+  // 또한 버튼이 나타났다 사라졌다 할 때(display:none <-> '') 그 밑으로 페이지 전체 높이가
+  // 바뀌면서 스크롤바가 생겼다 없어졌다 하고, 그때마다 캔버스 너비(%)가 미세하게 바뀌어서
+  // 드래그 중인 점이 흔들려 보이는 문제가 있었다. display 대신 visibility로 토글해서 버튼이
+  // 안 보일 때도 자리(높이)는 항상 차지하도록 만들어 레이아웃이 흔들리지 않게 한다.
+  let snapBtn=null, lockResetBtn=null;
+  if(task.snapTarget){
+    snapBtn=document.createElement('button');
+    snapBtn.type='button';
+    snapBtn.textContent='📍 정답 위치로 이동';
+    snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;visibility:hidden;';
+    fb.insertAdjacentElement('afterend', snapBtn);
+
+    lockResetBtn=document.createElement('button');
+    lockResetBtn.type='button';
+    lockResetBtn.textContent='↩️ 되돌리기 (다시 움직여보기)';
+    lockResetBtn.style.cssText='margin:0 16px 12px;background:#f3e5f5;border:1px solid #ce93d8;color:#6a1b9a;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;visibility:hidden;';
+    snapBtn.insertAdjacentElement('afterend', lockResetBtn);
+  }
+  // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
+  // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
+  // (snapBtn과 같은 이유로, 이 변수도 GeoCanvas 생성 "전에" 선언해야 첫 render()가 곧바로
+  // 부르는 onChange 안에서 TDZ 에러가 나지 않는다.)
+  let everSubmitted = false;
+
   const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], postObjects: task.postObjects||[]};
   const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
   canvasByTaskId[task.id] = cv;
 
   buildToolbar(task, cv, toolsEl);
 
-  // snapTarget이 있는 과제(예: 과제1)는 정답에 꽤 가까워졌을 때(near) "정답 위치로 이동"
-  // 버튼을 보여준다. 버튼을 누르면 첫 번째 movablePoint를 정확한 좌표로 스냅시킨다 —
-  // 난이도를 낮추기 위한 보조 장치로, 값을 직접 맞추기 어려운 학생을 돕는다.
-  let snapBtn=null;
-  if(task.snapTarget){
-    snapBtn=document.createElement('button');
-    snapBtn.type='button';
-    snapBtn.textContent='📍 정답 위치로 이동';
-    snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;display:none;';
-    fb.insertAdjacentElement('afterend', snapBtn);
+  if(snapBtn){
     snapBtn.addEventListener('click', ()=>{
       const target = task.snapTarget(cv);
       const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
@@ -1105,10 +1128,17 @@ function initConstructTask(task){
       cv.render();
     });
   }
+  if(lockResetBtn){
+    // 정답을 맞춰서 점이 고정된 뒤, 다시 자유롭게 움직여보고 싶을 때 누르는 버튼.
+    lockResetBtn.addEventListener('click', ()=>{
+      const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
+      const pt = label && cv.byLabel(label);
+      if(pt) pt.locked = false;
+      lockResetBtn.style.visibility = 'hidden';
+      cv.render();
+    });
+  }
 
-  // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
-  // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
-  let everSubmitted = false;
   function onChange(inst){
     if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); notifyMirrors(task.id, inst); return; }
     const r = task.check(inst);
@@ -1117,7 +1147,20 @@ function initConstructTask(task){
     badge.className = 'badge ' + (r.ok?'done':'pending');
     fb.textContent = r.msg;
     fb.className = 'feedback ' + (r.ok?'ok':'no');
-    if(snapBtn) snapBtn.style.display = (!r.ok && r.near) ? '' : 'none';
+    if(snapBtn) snapBtn.style.visibility = (!r.ok && r.near) ? 'visible' : 'hidden';
+    if(task.snapTarget){
+      const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
+      const pt = label && inst.byLabel(label);
+      if(pt && r.ok && !pt.locked){
+        // 정답을 맞춘 순간 점을 고정(잠금)해서 실수로 더 못 움직이게 하고, "되돌리기" 버튼을 보여준다.
+        pt.locked = true;
+        if(lockResetBtn) lockResetBtn.style.visibility = 'visible';
+        // locked 상태는 점 색을 바꿔서(파란색->검정) 보여주는데, 지금은 render() 도중(onChange 안)이라
+        // 여기서 바로 다시 render()를 부르면 render->onChange->render로 재귀호출이 되어버린다.
+        // 그래서 현재 렌더링이 끝난 다음 틱에 한 번 더 그리도록 미룬다.
+        setTimeout(()=>inst.render(), 0);
+      }
+    }
     updateProgress();
     RT.pushObjectsDebounced(task.id, inst);
     notifyMirrors(task.id, inst);

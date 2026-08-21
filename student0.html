@@ -1482,8 +1482,14 @@ document.getElementById('prevBtn').addEventListener('click', ()=> showPage(curre
 document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
 showPage(0);
 
-/* 같은 이름으로 재접속했을 때, 이전에 완료한 과제 다음 화면(또는 다 끝냈으면 제출 화면)으로 이동 */
+/* 같은 이름으로 재접속했을 때, 이전에 완료한 과제 다음 화면(또는 다 끝냈으면 제출 화면)으로 이동.
+   주의: 1페이지(지오지브라 자유 연습)는 과제 번호(taskId)가 없어서 "완료" 개념이 없다. 그래서
+   아래 for문은 이 페이지를 건너뛰도록 되어 있는데, 완료한 과제가 하나도 없는 학생까지 곧바로
+   2페이지로 건너뛰어버리는 문제가 있었다. 완료한 과제가 하나도 없으면 항상 1페이지부터 보여주고,
+   하나라도 완료했다면(=이미 자유 연습 페이지를 거쳐갔을 것으로 보고) 기존처럼 이어서 진행한다. */
 function goToResumePage(){
+  const hasAnyDone = Object.keys(results).some(id=> results[id] && results[id].done);
+  if(!hasAnyDone){ showPage(0); return; }
   for(let i=0;i<pages.length;i++){
     const n = pageTaskNum(i);
     if(n!=null && (!results[n] || !results[n].done)){ showPage(i); return; }
