@@ -105,7 +105,8 @@
   .submit-check{color:var(--green);font-weight:bold;margin-left:4px;}
   .detail{flex:1;min-width:280px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;}
   .detail h3{margin:0 0 10px;font-size:16px;}
-  .detail .drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+  .detail .drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;cursor:pointer;border-radius:4px;}
+  .detail .drow:hover{background:#f5f7fa;}
   .detail .drow .st{font-weight:bold;}
   .detail .drow .st.ok{color:var(--green);}
   .detail .drow .st.no{color:#999;}
@@ -141,6 +142,19 @@
   overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
 })();
 </script>
+
+<!-- 요약뷰에서 학생 상세 패널의 과제 행을 클릭하면, 그 학생이 그 과제에서 그린 그림/작성한 답을
+     보여주는 모달. drawGridBackground/drawLiveObjectsInto는 ② 교사용 뷰와 같은 렌더링 함수를
+     그대로 재사용한다(뒤쪽 script에서 정의됨 - function 선언이라 호이스팅되어 순서 문제 없음). -->
+<div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+    <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
+    <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
+    <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
+    <div id="tdmCanvasWrap" style="border-radius:8px;margin-bottom:12px;overflow:hidden;"></div>
+    <div id="tdmTextWrap"></div>
+  </div>
+</div>
 
 <header>
   <h1>📊 교사용 실시간 대시보드 — 1. 이등변삼각형의 성질</h1>
@@ -350,6 +364,15 @@ function displayName(key, name){
   return PSEUDONYMS[h % PSEUDONYMS.length];
 }
 
+/* 학생 목록을 이름 가나다순이 아니라 출석번호 순으로 정렬한다. 번호가 없거나 숫자가 아니면
+   맨 뒤로 보내고, 번호가 같으면(또는 둘 다 없으면) 이름순으로 정렬한다. */
+function byNumber(a, b){
+  const na = parseInt(a.number, 10), nb = parseInt(b.number, 10);
+  const va = isNaN(na) ? Infinity : na, vb = isNaN(nb) ? Infinity : nb;
+  if(va !== vb) return va - vb;
+  return (a.name||'').localeCompare(b.name||'');
+}
+
 function buildHead(){
   const tr=document.getElementById('gridHead');
   tr.textContent='';
@@ -418,7 +441,7 @@ function render(){
     const list = keys.map(k=>({key:k, ...students[k]}));
     list.sort((a,b)=>{
       if(!!b.raisedHand !== !!a.raisedHand) return (b.raisedHand?1:0)-(a.raisedHand?1:0);
-      return (a.name||'').localeCompare(b.name||'');
+      return byNumber(a,b);
     });
     let totalPct=0, totalDoneStudents=0;
     list.forEach(s=>{
@@ -629,12 +652,65 @@ function renderDetail(s, key){
     const label = done ? ('✅ 완료'+(p.value?(' '+p.value):'')) : (isError ? `📝 입력함 (${p.value})` : (visited ? '🟠 진행중' : '⬜ 안 함'));
 
     const row=document.createElement('div'); row.className='drow';
+    row.title='클릭하면 이 학생이 이 과제를 어떻게 했는지 볼 수 있어요';
+    row.addEventListener('click', ()=> openTaskDetail(s, key, t));
     const left=document.createElement('span'); left.textContent = `과제 ${t.id}. ${t.label}`;
     const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = label;
     row.appendChild(left); row.appendChild(right);
     el.appendChild(row);
   });
 }
+
+/* 요약뷰 상세 패널에서 과제 행을 클릭했을 때, 그 학생이 그 과제에서 그린 그림(objectSnapshots)과
+   작성한 서술형 답변(progress[t.id].value)을 모달로 보여준다. ② 교사용 뷰와 같은 데이터/렌더링
+   함수(drawGridBackground, drawLiveObjectsInto)를 그대로 재사용한다. */
+function openTaskDetail(s, key, t){
+  const p = s.progress && s.progress[t.id];
+  const lo = s.objectSnapshots && s.objectSnapshots[t.id];
+  const done = p && p.done;
+  const visited = p && p.visited;
+  const statusLabel = done ? '✅ 완료' : (visited ? '🟠 진행중' : '⬜ 안 함');
+  const hasText = p && p.value!=null && String(p.value).trim()!=='';
+
+  document.getElementById('tdmTitle').textContent = `과제 ${t.id}. ${t.label}`;
+  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name)} · ${statusLabel}`;
+
+  const canvasWrap = document.getElementById('tdmCanvasWrap');
+  canvasWrap.textContent='';
+  if(lo){
+    const NS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 600 400');
+    svg.style.cssText='width:100%;display:block;background:#fff;border:1px solid #ddd;border-radius:8px;';
+    canvasWrap.appendChild(svg);
+    if(typeof drawGridBackground==='function') drawGridBackground(svg, 600, 400);
+    drawLiveObjectsInto(svg, lo, '#1565c0', 1);
+  }
+
+  const textWrap = document.getElementById('tdmTextWrap');
+  textWrap.textContent='';
+  if(hasText){
+    const box=document.createElement('div');
+    box.style.cssText='background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:10px 12px;font-size:13.5px;white-space:pre-wrap;';
+    box.textContent = p.value;
+    textWrap.appendChild(box);
+  }
+
+  if(!lo && !hasText){
+    const empty=document.createElement('div');
+    empty.style.cssText='color:#999;font-size:13px;padding:30px;text-align:center;';
+    empty.textContent = visited ? '아직 답을 완성하지 않았어요.' : '아직 이 과제를 시작하지 않았어요.';
+    canvasWrap.appendChild(empty);
+  }
+
+  document.getElementById('taskDetailOverlay').style.display='flex';
+}
+document.getElementById('taskDetailCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('taskDetailOverlay').style.display='none';
+});
+document.getElementById('taskDetailOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='taskDetailOverlay') document.getElementById('taskDetailOverlay').style.display='none';
+});
 
 function selectStudent(key){
   selectedKey = key;
@@ -725,8 +801,12 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
 
 /* 반을 바꾸고 싶으면 페이지를 새로고침해서 처음부터(반 선택 화면부터) 다시 시작한다.
    구독 중이던 studentsRef/controlRef를 일일이 끊는 것보다 안전하고 단순하다. */
+/* 주의: URL에 ?classNo=가 붙어있으면(teacher.html에서 반을 고르고 넘어온 경우) 그냥
+   location.reload()만 하면 autoConnectFromUrl이 같은 반으로 곧바로 다시 자동 접속해버려서
+   버튼이 아무 반응이 없는 것처럼 보였다. classNo를 뺀 URL로 이동해서 반 선택 화면이
+   실제로 보이게 한다. */
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
-  location.reload();
+  location.href = location.pathname;
 });
 
 function updatePauseBtn(){
@@ -999,7 +1079,7 @@ function renderTeacherView(){
     });
   }else{
     cardsWrap.textContent='';
-    const sorted = keys.map(k=>({key:k,...students[k]})).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    const sorted = keys.map(k=>({key:k,...students[k]})).sort(byNumber);
     sorted.forEach((s,idx)=>{
       const lo = s.objectSnapshots && s.objectSnapshots[teacherSelectedTask];
       const p = s.progress && s.progress[teacherSelectedTask];
@@ -1066,7 +1146,7 @@ function renderTeacherTextAnswers(){
       const p = s.progress && s.progress[teacherSelectedTask];
       return p && p.value!=null && String(p.value).trim()!=='';
     })
-    .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    .sort(byNumber);
 
   if(withText.length===0){
     const empty=document.createElement('div'); empty.className='text-answer-empty';

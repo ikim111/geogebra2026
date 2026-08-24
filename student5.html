@@ -732,9 +732,12 @@ class GeoCanvas{
           break;
         }
         // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        // 주의: 그 점이 클릭한 직선/선분의 끝점(꼭짓점)이어도 수선을 그릴 수 있어야 한다
+        // (예: 선분 AB에서 점 A를 지나는 수선). 예전에는 pId!==refObj.p1 && pId!==refObj.p2
+        // 조건 때문에 이 경우가 막혀 있었다.
         const pId=this.pending[0]; this.pending=[];
         const refObj=this.findObjectNear(pt,TOUCH_TOL);
-        if(refObj && (refObj.type==='line'||refObj.type==='segment'||refObj.type==='ray') && pId!==refObj.p1 && pId!==refObj.p2){
+        if(refObj && (refObj.type==='line'||refObj.type==='segment'||refObj.type==='ray')){
           this.addObject({type:'perp', p:pId, refP1:refObj.p1, refP2:refObj.p2});
         }
         break;
@@ -935,6 +938,20 @@ function checkIncenterConstruct(c){
   return ok('내심과 내접원을 잘 작도했어요!');
 }
 
+// [과제1]에서 찾은 점 I를 그대로 중심으로 써서 내접원만 그려보는 활동(과제2)의 채점 함수.
+// (각의 이등분선/교점 작도 없이, 이미 주어진 I와 수선의 발 D/E/F 중 하나를 지나는 원만 그리면 된다.)
+function checkIncircleOnly(c){
+  const I=c.byLabel('I'), D=c.byLabel('D'), E=c.byLabel('E'), F=c.byLabel('F');
+  const hasCircle=c.objects.some(o=>{
+    if(o.type!=='circleCP') return false;
+    const g=c.getObjGeom(o); if(!g.center||!g.through) return false;
+    return samePt(g.center,I) && (dist(g.through,D)<14||dist(g.through,E)<14||dist(g.through,F)<14);
+  });
+  if(!hasCircle) return fail('점 I를 중심으로 하고, 변에 접하는 점(D, E, F 중 하나)을 지나는 원을 그려보세요. ("원(중심,통과점)" 도구)');
+  return ok('내접원을 잘 그렸어요!');
+}
+const TRI_ACUTE_I = incenterOf(TRI_ACUTE[0], TRI_ACUTE[1], TRI_ACUTE[2]);
+
 const TASKS = [
   { id:1, title:'[과제 1] 점 I를 움직여서 삼각형 ABC의 세 변 AB, BC, CA로부터 모두 같은 거리에 있는 위치를 찾아봅시다. (점 I에서 변 AB, BC, CA에 내린 수선의 발을 각각 D, E, F라고 합니다.)',
     noTools:true,
@@ -971,34 +988,49 @@ const TASKS = [
       return fail('점 I를 움직여서 ID, IE, IF의 길이가 모두 같아지도록 맞춰보세요.');
     } },
 
-  { id:2, title:'[과제 2] 다음 순서대로 작도해봅시다. ① ∠A의 이등분선을 그린다. ② ∠B의 이등분선을 그린다. ③ 두 이등분선의 교점을 표시한다. ④ 그 교점에서 변 BC에 내린 수선의 발을 표시한다. ⑤ 교점을 중심으로 하고 수선의 발을 지나는 원을 그린다.',
+  { id:2, title:'[과제 2] 중심이 I이고 삼각형의 세 변에 접하는 원을 그려봅시다.',
+    tools:['circleCP'],
+    hint:'[과제 1]에서 찾은 점 I와 수선의 발 D, E, F가 그대로 표시되어 있어요. "원(중심,통과점)" 도구로 점 I를 클릭한 뒤 D, E, F 중 한 점을 클릭해서 원을 그려보세요.',
+    points: [...TRI_ACUTE, {label:'I', x:TRI_ACUTE_I.x, y:TRI_ACUTE_I.y}],
+    presetObjects: triPreset(TRI_ACUTE),
+    computedPoints: [
+      {label:'D', kind:'footPerp', of:['I','A','B']},
+      {label:'E', kind:'footPerp', of:['I','B','C']},
+      {label:'F', kind:'footPerp', of:['I','C','A']}
+    ],
+    postObjects: [
+      {type:'lengthLabel', p1:'I', p2:'D'}, {type:'lengthLabel', p1:'I', p2:'E'}, {type:'lengthLabel', p1:'I', p2:'F'}
+    ],
+    check: checkIncircleOnly },
+
+  { id:3, title:'[과제 3] 다음 순서대로 작도해봅시다. ① ∠A의 이등분선을 그린다. ② ∠B의 이등분선을 그린다. ③ 두 이등분선의 교점을 표시한다. ④ 그 교점에서 변 BC에 내린 수선의 발을 표시한다. ⑤ 교점을 중심으로 하고 수선의 발을 지나는 원을 그린다.',
     tools:['angleBisector','point','circleCP'],
     hint:'"각의 이등분선" 도구로 B→A→C 순서, C→B→A 순서로 각각 클릭해 ∠A, ∠B의 이등분선을 그리세요. "교점" 도구로 두 이등분선의 교점을 찍고, "점" 도구로 그 교점에서 변 BC에 내린 수선의 발을 찍은 뒤, 교점을 중심으로 수선의 발을 지나는 원을 그려보세요.',
     points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
     check: checkIncenterConstruct },
 
-  { id:3, title:'[과제 3] [과제 2]에서 그린 원은 삼각형의 세 변과 모두 접한다고 할 수 있을까요? 그 이유는 무엇일까요?',
+  { id:4, title:'[과제 4] [과제 3]에서 그린 원은 삼각형의 세 변과 모두 접한다고 할 수 있을까요? 그 이유는 무엇일까요?',
     type:'text', minLen:20,
-    liveSource: 2 },
+    liveSource: 3 },
 
-  { id:4, title:'[과제 4] [과제 2]와 같은 방법으로 이 직각삼각형의 내심과 내접원을 그려봅시다.',
+  { id:5, title:'[과제 5] [과제 3]과 같은 방법으로 이 직각삼각형의 내심과 내접원을 그려봅시다.',
     tools:['angleBisector','point','circleCP'],
     hint:'∠A, ∠B의 이등분선을 그리고 교점을 찾은 뒤, 그 교점에서 변 BC에 내린 수선의 발을 찍고 교점을 중심으로 수선의 발을 지나는 원을 그려보세요.',
     points: TRI_RIGHT, presetObjects: triPreset(TRI_RIGHT),
     check: checkIncenterConstruct },
 
-  { id:5, title:'[과제 5] [과제 2]와 같은 방법으로 이 둔각삼각형의 내심과 내접원을 그려봅시다.',
+  { id:6, title:'[과제 6] [과제 3]과 같은 방법으로 이 둔각삼각형의 내심과 내접원을 그려봅시다.',
     tools:['angleBisector','point','circleCP'],
     hint:'∠A, ∠B의 이등분선을 그리고 교점을 찾은 뒤, 그 교점에서 변 BC에 내린 수선의 발을 찍고 교점을 중심으로 수선의 발을 지나는 원을 그려보세요. 이 내심은 삼각형의 안쪽에 있나요, 바깥쪽에 있나요? (외심과 비교해보세요)',
     points: TRI_OBTUSE, presetObjects: triPreset(TRI_OBTUSE),
     check: checkIncenterConstruct },
 
-  { id:6, title:'[과제 6] 모든 삼각형은 내심과 내접원이 있을까요? [과제 2], [과제 4], [과제 5]의 결과를 바탕으로 그 이유를 설명해봅시다.',
+  { id:7, title:'[과제 7] 모든 삼각형은 내심과 내접원이 있을까요? [과제 3], [과제 5], [과제 6]의 결과를 바탕으로 그 이유를 설명해봅시다.',
     type:'text', minLen:20,
     refFigures: [
-      {label:'과제 2 (예각삼각형)', sourceTaskId:2},
-      {label:'과제 4 (직각삼각형)', sourceTaskId:4},
-      {label:'과제 5 (둔각삼각형)', sourceTaskId:5}
+      {label:'과제 3 (예각삼각형)', sourceTaskId:3},
+      {label:'과제 5 (직각삼각형)', sourceTaskId:5},
+      {label:'과제 6 (둔각삼각형)', sourceTaskId:6}
     ] },
 ];
 
@@ -1111,19 +1143,30 @@ function initConstructTask(task){
   const fb=document.getElementById(`fb-${task.id}`);
 
   // snapTarget이 있는 과제(예: 과제1)는 정답에 꽤 가까워졌을 때(near) "정답 위치로 이동"
-  // 버튼을 보여준다. 버튼을 누르면 첫 번째 movablePoint를 정확한 좌표로 스냅시킨다 —
+  // 버튼을, 정답을 맞췄을 때(ok)는 점을 그 자리에 고정하고 "되돌리기" 버튼을 보여준다 —
   // 난이도를 낮추기 위한 보조 장치로, 값을 직접 맞추기 어려운 학생을 돕는다.
   // 주의: 아래 "const cv = new GeoCanvas(...)"는 생성자 안에서 render()를 즉시 한 번 호출하고,
-  // 그 render()가 onChange -> snapBtn을 곧바로 참조한다. snapBtn 선언(let)이 GeoCanvas 생성보다
-  // "뒤에" 있으면 그 순간 아직 초기화 전(TDZ)이라 "Cannot access 'snapBtn' before initialization"
-  // 에러가 난다. 그래서 snapBtn을 GeoCanvas를 만들기 "전에" 먼저 선언/생성해 둔다.
-  let snapBtn=null;
+  // 그 render()가 onChange -> snapBtn/lockResetBtn을 곧바로 참조한다. 이 변수들의 선언(let)이
+  // GeoCanvas 생성보다 "뒤에" 있으면 그 순간 아직 초기화 전(TDZ)이라
+  // "Cannot access '...' before initialization" 에러가 난다. 그래서 GeoCanvas를 만들기 "전에"
+  // 먼저 선언/생성해 둔다.
+  // 또한 버튼이 나타났다 사라졌다 할 때(display:none <-> '') 그 밑으로 페이지 전체 높이가
+  // 바뀌면서 스크롤바가 생겼다 없어졌다 하고, 그때마다 캔버스 너비(%)가 미세하게 바뀌어서
+  // 드래그 중인 점이 흔들려 보이는 문제가 있었다. display 대신 visibility로 토글해서 버튼이
+  // 안 보일 때도 자리(높이)는 항상 차지하도록 만들어 레이아웃이 흔들리지 않게 한다.
+  let snapBtn=null, lockResetBtn=null;
   if(task.snapTarget){
     snapBtn=document.createElement('button');
     snapBtn.type='button';
     snapBtn.textContent='📍 정답 위치로 이동';
-    snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;display:none;';
+    snapBtn.style.cssText='margin:0 16px 12px;background:#fff3e0;border:1px solid #ffb74d;color:#e65100;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;visibility:hidden;';
     fb.insertAdjacentElement('afterend', snapBtn);
+
+    lockResetBtn=document.createElement('button');
+    lockResetBtn.type='button';
+    lockResetBtn.textContent='↩️ 되돌리기 (다시 움직여보기)';
+    lockResetBtn.style.cssText='margin:0 16px 12px;background:#f3e5f5;border:1px solid #ce93d8;color:#6a1b9a;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;visibility:hidden;';
+    snapBtn.insertAdjacentElement('afterend', lockResetBtn);
   }
   // 작도 과제는 도형이 바뀔 때마다 계속 자동으로 다시 채점되므로(onChange), 매번 폼을
   // 전송하면 중복 응답이 쌓인다. "미완료 -> 완료"로 처음 바뀌는 순간에만 1건 전송한다.
@@ -1147,6 +1190,16 @@ function initConstructTask(task){
       cv.render();
     });
   }
+  if(lockResetBtn){
+    // 정답을 맞춰서 점이 고정된 뒤, 다시 자유롭게 움직여보고 싶을 때 누르는 버튼.
+    lockResetBtn.addEventListener('click', ()=>{
+      const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
+      const pt = label && cv.byLabel(label);
+      if(pt) pt.locked = false;
+      lockResetBtn.style.visibility = 'hidden';
+      cv.render();
+    });
+  }
 
   function onChange(inst){
     if(!task.check){ results[task.id]={done:null}; RT.pushObjectsDebounced(task.id, inst); notifyMirrors(task.id, inst); return; }
@@ -1156,7 +1209,20 @@ function initConstructTask(task){
     badge.className = 'badge ' + (r.ok?'done':'pending');
     fb.textContent = r.msg;
     fb.className = 'feedback ' + (r.ok?'ok':'no');
-    if(snapBtn) snapBtn.style.display = (!r.ok && r.near) ? '' : 'none';
+    if(snapBtn) snapBtn.style.visibility = (!r.ok && r.near) ? 'visible' : 'hidden';
+    if(task.snapTarget){
+      const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
+      const pt = label && inst.byLabel(label);
+      if(pt && r.ok && !pt.locked){
+        // 정답을 맞춘 순간 점을 고정(잠금)해서 실수로 더 못 움직이게 하고, "되돌리기" 버튼을 보여준다.
+        pt.locked = true;
+        if(lockResetBtn) lockResetBtn.style.visibility = 'visible';
+        // locked 상태는 점 색을 바꿔서(파란색->검정) 보여주는데, 지금은 render() 도중(onChange 안)이라
+        // 여기서 바로 다시 render()를 부르면 render->onChange->render로 재귀호출이 되어버린다.
+        // 그래서 현재 렌더링이 끝난 다음 틱에 한 번 더 그리도록 미룬다.
+        setTimeout(()=>inst.render(), 0);
+      }
+    }
     updateProgress();
     RT.pushObjectsDebounced(task.id, inst);
     notifyMirrors(task.id, inst);
@@ -1608,9 +1674,13 @@ const RT = {
       if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
     }, 15000);
 
-    const total = TASKS.length;
-    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-    this.pushProgress(done, total);
+    // 주의: 여기서 곧바로 pushProgress를 부르면, 아직 기존 진행 상황(existing.progress)을
+    // 복원(restoreProgress)하기 "전"이라 results가 비어 있는 상태로 completed:0을 그대로
+    // Firebase에 써버린다. 특히 이미 다 풀고 제출까지 마친 학생이 홈으로 나갔다가 다시
+    // 접속했을 때, 교사 화면 진행률이 0%로 보이는 버그의 원인이었다. 진행 상황을 복원했다면
+    // restoreProgress()가 끝에서 updateProgress()를 불러 정확한 값을 다시 push하므로,
+    // 여기서는 미리 push하지 않는다(완전히 새 학생이라 복원할 게 없어도 0%로 보이는 게
+    // 자연스럽고, 첫 과제를 풀기 시작하면 곧바로 갱신된다).
   },
   pushProgress(done, total){
     if(!this.connected) return;
