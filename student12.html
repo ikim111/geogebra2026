@@ -18,8 +18,6 @@
   #stickyBar .progress-row{flex:1;margin-top:0;}
   #stickyBar .progress-bar{background:#3a3f44;}
   #stickyBar .progress-text{color:#e8eaed;}
-  #stickyBar button.hand{flex:0 0 auto;padding:8px 12px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap;}
-  #stickyBar button.hand.active{background:#e65100;color:#fff;}
   #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
   #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
   #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
@@ -181,7 +179,6 @@
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-text" id="progressText">완료 0 / 2</div>
       </div>
-      <button id="handBtn" class="hand">🖐 질문있어요</button>
       <button id="nextBtn">다음 ▶</button>
     </div>
   </div>
@@ -982,7 +979,7 @@ function applyPauseLock(paused){
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null, connected:false, heartbeatTimer:null,
-  paused:false, lastSeenAnnounceTs:0, handActive:false, studentKey:null, allStudents:{},
+  paused:false, lastSeenAnnounceTs:0, studentKey:null, allStudents:{},
   classEnded:false, _lastKnownClassEnded:null,
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
@@ -1002,7 +999,13 @@ const RT = {
   },
   _afterAuth(uid, name, room, number, statusEl){
     const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    const key = uid + '_' + this.sanitize(name);
+    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
+    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
+    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+    // 이어서 접속되게 한다.
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
     this.studentKey = key;
     this.roomRef = this.db.ref('rooms/'+roomKey);
     this.studentRef = this.roomRef.child('students/'+key);
@@ -1011,8 +1014,7 @@ const RT = {
     this.studentRef.update({
       name, number: number||null,
       lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true,
-      raisedHand:false
+      online:true
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
@@ -1066,7 +1068,17 @@ const RT = {
   pushRecordsDebounced(){
     if(!this.connected) return;
     clearTimeout(this._t);
-    this._t = setTimeout(()=>this.pushRecords(false), 300);
+    this._t = setTimeout(()=>{ this._t=null; this.pushRecords(false); }, 300);
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 300ms 디바운스가 끝나지
+     않아 저장 안 된 마지막 기록(records)이 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     visibilitychange 리스너에서 호출). */
+  flushPending(){
+    if(this._t){
+      clearTimeout(this._t);
+      this._t=null;
+      this.pushRecords(false);
+    }
   },
   pushProgress2(){
     if(!this.connected) return;
@@ -1074,18 +1086,19 @@ const RT = {
       progress: { p2: { done: !!(results2.p2&&results2.p2.done), answers: results2.p2?results2.p2.answers:[] } },
       lastActive: firebase.database.ServerValue.TIMESTAMP
     });
-  },
-  toggleHand(){
-    if(!this.connected){ alert('아직 실시간 연결이 안 됐어요.'); return; }
-    this.handActive = !this.handActive;
-    const btn = document.getElementById('handBtn');
-    btn.classList.toggle('active', this.handActive);
-    btn.textContent = this.handActive ? '🖐 질문 취소' : '🖐 질문있어요';
-    this.studentRef.update({ raisedHand: this.handActive });
   }
 };
 
-document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand());
+/* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
+   저장되지 않은 마지막 변경사항(디바운스 대기 중인 것)을 즉시 저장한다.
+   pagehide는 페이지 이동/탭 닫기 등 대부분의 "떠나는" 상황에서 안정적으로 발생하고,
+   visibilitychange(hidden)는 모바일에서 다른 앱으로 전환하거나 화면을 끌 때도 잡아준다. */
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });

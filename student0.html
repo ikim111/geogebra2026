@@ -63,11 +63,11 @@
   #lockOverlay p{font-size:14px;opacity:.85;}
   /* 일시정지 중에는 캔버스/도구/이동 버튼을 완전히 조작 불가 상태로 잠금 */
   body.app-paused .canvas-wrap, body.app-paused .toolbar, body.app-paused .input-row,
-  body.app-paused #pagerNav button, body.app-paused #handBtn{
+  body.app-paused #pagerNav button{
     pointer-events:none !important;
   }
   body.app-paused .gcanvas{ user-select:none; }
-  body.final-locked .canvas-wrap, body.final-locked .toolbar, body.final-locked .input-row, body.final-locked #handBtn{
+  body.final-locked .canvas-wrap, body.final-locked .toolbar, body.final-locked .input-row{
     pointer-events:none !important; opacity:.6;
   }
   body.final-locked .gcanvas{ user-select:none; }
@@ -96,8 +96,6 @@
   #stickyBar .progress-row{flex:1;margin-top:0;}
   #stickyBar .progress-bar{background:#3a3f44;}
   #stickyBar .progress-text{color:#e8eaed;}
-  #stickyBar button.hand{flex:0 0 auto;padding:8px 12px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap;}
-  #stickyBar button.hand.active{background:#e65100;color:#fff;}
   #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
   #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
   #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
@@ -161,7 +159,6 @@
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-text" id="progressText">완료 0 / 13</div>
       </div>
-      <button id="handBtn" class="hand">🖐 질문있어요</button>
       <button id="nextBtn">다음 ▶</button>
     </div>
   </div>
@@ -1211,14 +1208,18 @@ const RT = {
     }
   },
   /* 익명 로그인이 끝난 뒤 실제 방/학생 데이터에 연결하는 내부 함수.
-     studentKey가 uid이기 때문에, 같은 이름으로 "다른 기기"에서 접속하면 새 uid가 발급되어
-     별개의 학생 기록으로 취급됩니다(기기를 바꾸면 이어하기가 안 됨). 같은 기기/브라우저에서는
-     익명 로그인 세션이 유지되므로 새로고침해도 같은 uid로 자동 로그인되어 이어집니다. */
+     예전에는 studentKey를 uid로만 만들었는데, uid는 Firebase 익명 로그인 세션이 유지되는
+     동안만 같은 값이라서 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이 지워지면
+     새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+     입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+     키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+     이어서 접속되게 한다. */
   _afterAuth(uid, name, room, number, statusEl){
     const roomKey = this.sanitize(room);
-    this.studentKey = uid;
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
     this.roomRef = this.db.ref('rooms/'+roomKey);
-    this.studentRef = this.roomRef.child('students/'+uid);
+    this.studentRef = this.roomRef.child('students/'+key);
     this.controlRef = this.roomRef.child('control');
 
     this.studentRef.once('value').then(snap=>{
@@ -1241,8 +1242,7 @@ const RT = {
         number: number || null,
         joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
         lastActive: firebase.database.ServerValue.TIMESTAMP,
-        online: true,
-        raisedHand: false
+        online: true
       });
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
@@ -1311,29 +1311,50 @@ const RT = {
   pushProgressDebounced(done, total){
     if(!this.connected) return;
     clearTimeout(this._progressTimer);
-    this._progressTimer = setTimeout(()=> this.pushProgress(done, total), 150);
+    this._progressTimer = setTimeout(()=>{ this._progressTimer=null; this.pushProgress(done, total); }, 150);
   },
   /* 학생이 캔버스에서 그린 점/도형 스냅샷을 150ms 디바운스로 전송 (교사 오버레이/카드 뷰용)
      과제별로 타이머와 저장 위치(objectSnapshots/{taskId})를 따로 둬서, 다른 과제로 넘어가도
      이전 과제에서 그렸던 도형이 지워지지 않고 교사 화면에 계속 남아있게 한다 */
   _objTimers: {},
+  _writeObjSnapshot(taskId, cv){
+    const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
+    const snap = {
+      taskId,
+      points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label})),
+      objects: cv.objects.filter(o=>!o.locked).map(o=>{
+        const out={id:o.id, type:o.type};
+        keys.forEach(k=>{ if(o[k]!=null) out[k]=o[k]; });
+        return out;
+      }),
+      ts: firebase.database.ServerValue.TIMESTAMP
+    };
+    this.studentRef.child('objectSnapshots/'+taskId).set(snap);
+  },
   pushObjectsDebounced(taskId, cv){
     if(!this.connected || !cv) return;
     clearTimeout(this._objTimers[taskId]);
-    this._objTimers[taskId] = setTimeout(()=>{
-      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
-      const snap = {
-        taskId,
-        points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label})),
-        objects: cv.objects.filter(o=>!o.locked).map(o=>{
-          const out={id:o.id, type:o.type};
-          keys.forEach(k=>{ if(o[k]!=null) out[k]=o[k]; });
-          return out;
-        }),
-        ts: firebase.database.ServerValue.TIMESTAMP
-      };
-      this.studentRef.child('objectSnapshots/'+taskId).set(snap);
-    }, 150);
+    this._objTimers[taskId] = setTimeout(()=>{ this._objTimers[taskId]=null; this._writeObjSnapshot(taskId, cv); }, 150);
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 150ms 디바운스가 끝나지
+     않아 저장 안 된 마지막 변경사항이 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     visibilitychange 리스너에서 호출). */
+  flushPending(){
+    if(this._progressTimer){
+      clearTimeout(this._progressTimer);
+      this._progressTimer=null;
+      const total = TASKS.length;
+      const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+      this.pushProgress(done, total);
+    }
+    Object.keys(this._objTimers).forEach(taskId=>{
+      if(this._objTimers[taskId]){
+        clearTimeout(this._objTimers[taskId]);
+        this._objTimers[taskId]=null;
+        const cv = canvasByTaskId[taskId];
+        if(cv) this._writeObjSnapshot(taskId, cv);
+      }
+    });
   },
   setViewingTask(taskId){
     if(taskId!=null) this.visitedTasks.add(taskId);
@@ -1347,15 +1368,18 @@ const RT = {
       this.pushProgress(done, total);
       if(taskId!=null && canvasByTaskId[taskId]) this.pushObjectsDebounced(taskId, canvasByTaskId[taskId]);
     }
-  },
-  toggleHand(){
-    if(!this.connected){ alert('반을 선택하고 시작해야 이 기능을 쓸 수 있어요.'); return; }
-    const btn=document.getElementById('handBtn');
-    const active = btn.classList.toggle('active');
-    btn.textContent = active ? '🖐 질문 취소' : '🖐 질문있어요';
-    this.studentRef.update({ raisedHand: active });
   }
 };
+
+/* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
+   저장되지 않은 마지막 변경사항(150ms 디바운스 대기 중인 것)을 즉시 저장한다.
+   pagehide는 페이지 이동/탭 닫기 등 대부분의 "떠나는" 상황에서 안정적으로 발생하고,
+   visibilitychange(hidden)는 모바일에서 다른 앱으로 전환하거나 화면을 끌 때도 잡아준다. */
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
 
 /* ---------- 자유시간 (첫 페이지: 본격적인 과제 전에 자유롭게 도구를 연습해본다) ---------- */
 (function(){
@@ -1405,7 +1429,6 @@ document.querySelectorAll('.task').forEach(el=>{
   if(idMatch){ el.dataset.taskId = idMatch[1]; }
 });
 
-document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand());
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
@@ -1438,7 +1461,7 @@ function showPage(idx){
    (SVG 캔버스 자체는 disabled 속성이 없는 요소라 CSS pointer-events:none으로 계속 막는다 — body.app-paused 규칙) */
 function applyPauseLock(paused){
   document.body.classList.toggle('app-paused', paused);
-  document.querySelectorAll('.toolbar button, .input-row input, .input-row button, #handBtn').forEach(el=>{
+  document.querySelectorAll('.toolbar button, .input-row input, .input-row button').forEach(el=>{
     el.disabled = paused;
   });
   if(typeof updateNavButtons==='function') updateNavButtons(); // 이전/다음 버튼은 여기서 RT.paused를 반영해 disabled 처리됨

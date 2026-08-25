@@ -31,8 +31,6 @@
   input.rowCheck, #checkAll{width:15px;height:15px;cursor:pointer;}
   #connStatus{font-size:12.5px;color:#999;margin-top:8px;}
   #connStatus.on{color:var(--green);font-weight:bold;}
-  .hand-alert{background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13.5px;color:#e65100;display:none;}
-  .hand-badge{color:var(--orange);margin-left:5px;}
   .submit-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;background:#ffb300;}
   .submit-check{color:var(--green);font-weight:bold;margin-left:5px;}
   .summary{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px;font-size:13.5px;color:#444;}
@@ -161,7 +159,6 @@
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>제출 완료: <b id="sumDone">0</b></div>
       </div>
-      <div class="hand-alert" id="handAlert"></div>
     </div>
 
     <div class="tab-bar">
@@ -490,7 +487,6 @@ function renderGrid(){
     body.innerHTML = '<tr><td class="empty" colspan="6">아직 접속한 학생이 없어요.</td></tr>';
     document.getElementById('sumCount').textContent='0';
     document.getElementById('sumDone').textContent='0';
-    document.getElementById('handAlert').style.display='none';
     const checkAllEmpty=document.getElementById('checkAll');
     if(checkAllEmpty) checkAllEmpty.checked=false;
     updateDeleteBtn();
@@ -499,7 +495,6 @@ function renderGrid(){
   }
   const list = keys.map(k=>({ key:k, student: allStudents[k]||{} }));
   list.sort((a,b)=>{
-    if(!!b.student.raisedHand !== !!a.student.raisedHand) return (b.student.raisedHand?1:0)-(a.student.raisedHand?1:0);
     if(!!isDone(b.student) !== !!isDone(a.student)) return (isDone(b.student)?1:0)-(isDone(a.student)?1:0);
     return (b.student.lastActive||0)-(a.student.lastActive||0);
   });
@@ -528,10 +523,6 @@ function renderGrid(){
     nameText.textContent=displayName(item.key, s.name);
     if(isDone(s)){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
-    if(s.raisedHand){
-      const hb=document.createElement('span'); hb.className='hand-badge'; hb.textContent='🖐';
-      tdName.appendChild(hb);
-    }
     if(isDone(s)){
       const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
       tdName.appendChild(sc);
@@ -552,15 +543,6 @@ function renderGrid(){
 
   document.getElementById('sumCount').textContent = list.length;
   document.getElementById('sumDone').textContent = doneCount;
-
-  const raised = list.filter(i=>i.student.raisedHand);
-  const handAlert = document.getElementById('handAlert');
-  if(raised.length){
-    handAlert.style.display='block';
-    handAlert.textContent = `🖐 질문 있는 학생: ${raised.map(i=>displayName(i.key,i.student.name)).join(', ')}`;
-  } else {
-    handAlert.style.display='none';
-  }
 
   const checkAll = document.getElementById('checkAll');
   if(checkAll) checkAll.checked = list.length>0 && list.every(i=>checkedKeys.has(i.key));

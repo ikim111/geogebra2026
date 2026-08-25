@@ -77,11 +77,11 @@
   #lockOverlay h2{font-size:22px;margin-bottom:8px;}
   #lockOverlay p{font-size:14px;opacity:.85;}
   body.app-paused .canvas-wrap, body.app-paused .toolbar, body.app-paused .input-row,
-  body.app-paused #pagerNav button, body.app-paused #handBtn{
+  body.app-paused #pagerNav button{
     pointer-events:none !important;
   }
   body.app-paused .gcanvas{ user-select:none; }
-  body.final-locked .canvas-wrap, body.final-locked .toolbar, body.final-locked .input-row, body.final-locked #handBtn{
+  body.final-locked .canvas-wrap, body.final-locked .toolbar, body.final-locked .input-row{
     pointer-events:none !important; opacity:.6;
   }
   body.final-locked .gcanvas{ user-select:none; }
@@ -108,8 +108,6 @@
   #stickyBar .progress-row{flex:1;margin-top:0;}
   #stickyBar .progress-bar{background:#3a3f44;}
   #stickyBar .progress-text{color:#e8eaed;}
-  #stickyBar button.hand{flex:0 0 auto;padding:8px 12px;border:1px solid #ffcc80;background:#fff3e0;color:#e65100;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap;}
-  #stickyBar button.hand.active{background:#e65100;color:#fff;}
   #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
   #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
   #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
@@ -177,7 +175,6 @@
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-text" id="progressText">완료 0 / 3</div>
       </div>
-      <button id="handBtn" class="hand">🖐 질문있어요</button>
       <button id="nextBtn">다음 ▶</button>
     </div>
   </div>
@@ -1593,12 +1590,13 @@ const RT = {
   },
   _afterAuth(uid, name, room, number, statusEl){
     const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    // Firebase 익명 로그인은 "브라우저(기기)당 하나"로 유지된다. 그래서 같은 브라우저에서 탭을
-    // 여러 개 열어 이름을 다르게 입력해도(예: 테스트로 두 학생을 흉내낼 때) uid만으로 학생을
-    // 구분하면 전부 같은 uid라 서로 덮어써서 한 명만 보이게 된다. 그걸 막기 위해 학생 키를
-    // "uid + 이름"으로 만든다 — 같은 브라우저/같은 이름이면 기존 기록에 이어서 진행되고(새로고침
-    // 대응), 이름이 다르면 새 기록으로 따로 보인다.
-    const key = uid + '_' + this.sanitize(name);
+    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
+    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
+    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+    // 이어서 접속되게 한다.
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
     this.studentKey = key;
     this.roomRef = this.db.ref('rooms/'+roomKey);
     this.studentRef = this.roomRef.child('students/'+key);
@@ -1620,8 +1618,7 @@ const RT = {
         number: number || null,
         joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
         lastActive: firebase.database.ServerValue.TIMESTAMP,
-        online: true,
-        raisedHand: false
+        online: true
       });
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
@@ -1698,31 +1695,52 @@ const RT = {
   pushProgressDebounced(done, total){
     if(!this.connected) return;
     clearTimeout(this._progressTimer);
-    this._progressTimer = setTimeout(()=> this.pushProgress(done, total), 150);
+    this._progressTimer = setTimeout(()=>{ this._progressTimer=null; this.pushProgress(done, total); }, 150);
   },
   _objTimers: {},
+  _writeObjSnapshot(taskId, cv){
+    const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
+    // 잠긴(locked) 도형도 함께 보낸다 - 이 활동은 직사각형/원처럼 "주어진 도형"이 학생이 그린
+    // 도형을 이해하는 데 중요한 배경이라서, 잠긴 도형만 빼고 보내면 교사 화면에 그 배경이
+    // 통째로 안 보이게 된다(과제1의 선분 AB·수직이등분선·삼각형 ABD도 마찬가지).
+    // locked 여부도 같이 보낸다 - 교사 화면에서 "문제가 준 배경(직사각형/원 등)"과
+    // "학생이 직접 그린 것"을 다른 색으로 구분해서 그리기 위해 필요하다.
+    const snap = {
+      taskId,
+      points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label, locked:!!p.locked})),
+      objects: cv.objects.map(o=>{
+        const out={id:o.id, type:o.type, locked:!!o.locked};
+        keys.forEach(k=>{ if(o[k]!=null) out[k]=o[k]; });
+        return out;
+      }),
+      ts: firebase.database.ServerValue.TIMESTAMP
+    };
+    this.studentRef.child('objectSnapshots/'+taskId).set(snap);
+  },
   pushObjectsDebounced(taskId, cv){
     if(!this.connected || !cv) return;
     clearTimeout(this._objTimers[taskId]);
-    this._objTimers[taskId] = setTimeout(()=>{
-      const keys=['p1','p2','center','through','r1','r2','a','b','c','ids','p','refP1','refP2'];
-      // 잠긴(locked) 도형도 함께 보낸다 - 이 활동은 직사각형/원처럼 "주어진 도형"이 학생이 그린
-      // 도형을 이해하는 데 중요한 배경이라서, 잠긴 도형만 빼고 보내면 교사 화면에 그 배경이
-      // 통째로 안 보이게 된다(과제1의 선분 AB·수직이등분선·삼각형 ABD도 마찬가지).
-      // locked 여부도 같이 보낸다 - 교사 화면에서 "문제가 준 배경(직사각형/원 등)"과
-      // "학생이 직접 그린 것"을 다른 색으로 구분해서 그리기 위해 필요하다.
-      const snap = {
-        taskId,
-        points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label, locked:!!p.locked})),
-        objects: cv.objects.map(o=>{
-          const out={id:o.id, type:o.type, locked:!!o.locked};
-          keys.forEach(k=>{ if(o[k]!=null) out[k]=o[k]; });
-          return out;
-        }),
-        ts: firebase.database.ServerValue.TIMESTAMP
-      };
-      this.studentRef.child('objectSnapshots/'+taskId).set(snap);
-    }, 150);
+    this._objTimers[taskId] = setTimeout(()=>{ this._objTimers[taskId]=null; this._writeObjSnapshot(taskId, cv); }, 150);
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 150ms 디바운스가 끝나지
+     않아 저장 안 된 마지막 변경사항이 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     visibilitychange 리스너에서 호출). */
+  flushPending(){
+    if(this._progressTimer){
+      clearTimeout(this._progressTimer);
+      this._progressTimer=null;
+      const total = TASKS.length;
+      const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+      this.pushProgress(done, total);
+    }
+    Object.keys(this._objTimers).forEach(taskId=>{
+      if(this._objTimers[taskId]){
+        clearTimeout(this._objTimers[taskId]);
+        this._objTimers[taskId]=null;
+        const cv = canvasByTaskId[taskId];
+        if(cv) this._writeObjSnapshot(taskId, cv);
+      }
+    });
   },
   setViewingTask(taskId){
     if(taskId!=null) this.visitedTasks.add(taskId);
@@ -1735,15 +1753,18 @@ const RT = {
       this.pushProgress(done, total);
       if(taskId!=null && canvasByTaskId[taskId]) this.pushObjectsDebounced(taskId, canvasByTaskId[taskId]);
     }
-  },
-  toggleHand(){
-    if(!this.connected){ alert('반을 선택하고 시작해야 이 기능을 쓸 수 있어요.'); return; }
-    const btn=document.getElementById('handBtn');
-    const active = btn.classList.toggle('active');
-    btn.textContent = active ? '🖐 질문 취소' : '🖐 질문있어요';
-    this.studentRef.update({ raisedHand: active });
   }
 };
+
+/* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
+   저장되지 않은 마지막 변경사항(150ms 디바운스 대기 중인 것)을 즉시 저장한다.
+   pagehide는 페이지 이동/탭 닫기 등 대부분의 "떠나는" 상황에서 안정적으로 발생하고,
+   visibilitychange(hidden)는 모바일에서 다른 앱으로 전환하거나 화면을 끌 때도 잡아준다. */
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
 
 TASKS.forEach(t=>{
   try{
@@ -1771,7 +1792,6 @@ document.querySelectorAll('.task').forEach(el=>{
   if(idMatch){ el.dataset.taskId = idMatch[1]; }
 });
 
-document.getElementById('handBtn').addEventListener('click', ()=> RT.toggleHand());
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
@@ -1802,7 +1822,7 @@ function applyPauseLock(paused){
   document.body.classList.toggle('app-paused', paused);
   // "확인"으로 제출을 마쳐 잠긴 서술형 칸(locked-fixed 클래스)은, 선생님이 일시정지를 풀어도
   // 다시 활성화되면 안 되므로 paused 여부와 상관없이 계속 비활성 상태를 유지한다.
-  document.querySelectorAll('.toolbar button, .input-row input, .input-row textarea, .input-row button, #handBtn').forEach(el=>{
+  document.querySelectorAll('.toolbar button, .input-row input, .input-row textarea, .input-row button').forEach(el=>{
     el.disabled = paused || el.classList.contains('locked-fixed');
   });
   if(typeof updateNavButtons==='function') updateNavButtons();
