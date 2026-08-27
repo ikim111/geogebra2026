@@ -50,6 +50,11 @@
   .input-row textarea{flex:1;min-width:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;}
   .input-row textarea:disabled{background:#f5f5f5;color:#555;resize:none;}
   .input-row button.cancel{background:#fdecea;color:var(--red);border:1px solid #ef9a9a;}
+  .blanks-wrap{display:flex;flex-direction:column;gap:6px;width:100%;}
+  .blank-line{font-size:14.5px;line-height:2.1;color:#333;}
+  .input-row input.blank-input{width:110px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:14px;text-align:center;margin:0 4px;}
+  .input-row input.blank-input.blank-ok{border-color:var(--green);background:#eafaf0;}
+  .input-row input.blank-input.blank-no{border-color:var(--red);background:#fdecea;}
   .text-min-note{font-size:11.5px;color:#999;padding:0 16px 8px;}
   .input-row button{padding:8px 14px;border:none;background:var(--blue);color:#fff;border-radius:6px;cursor:pointer;font-size:13px;align-self:flex-start;}
   .feedback{font-size:13px;padding:0 16px 14px;font-weight:bold;}
@@ -863,6 +868,31 @@ class GeoCanvas{
   }
 }
 
+/* 저장된 도형 스냅샷(objectSnapshots/{taskId})을 캔버스에 다시 그려 넣는다.
+   좌표(x,y)와 점-도형 연결 관계만 복원하고, 제약조건/계산점 메타데이터나 되돌리기 기록까지는
+   복원하지 않는다 — 그 정도만으로도 "다시 접속했더니 그려둔 도형이 사라졌다"는 문제는 해결된다.
+   (제출완료로 잠긴 과제는 캔버스가 pointer-events:none이라 어차피 읽기전용으로만 보인다.
+   미러 캔버스(다른 과제 화면을 그대로 따라 그리는 것)는 애초에 objectSnapshots를 저장하지
+   않으므로 이 복원 대상에 포함되지 않는다.) */
+function restoreObjectSnapshot(cv, snapshot){
+  if(!cv || !snapshot) return;
+  const remap = {};
+  (snapshot.points||[]).forEach(sp=>{
+    let target = cv.points.find(p=>p.label===sp.label);
+    if(target){ target.x=sp.x; target.y=sp.y; }
+    else { target = cv.addPoint(sp.x, sp.y, {label:sp.label}); }
+    remap[sp.id] = target.id;
+  });
+  const keys=['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'];
+  (snapshot.objects||[]).forEach(so=>{
+    const obj = {type:so.type};
+    keys.forEach(k=>{ if(so[k]!=null) obj[k] = (remap[so[k]]!==undefined) ? remap[so[k]] : so[k]; });
+    if(so.ids) obj.ids = so.ids.map(id=> remap[id]!==undefined ? remap[id] : id);
+    cv.addObject(obj);
+  });
+  cv.render();
+}
+
 /* ---------- 과제 정의 ----------
    총 6과제. 삼각형의 세 꼭짓점에서 같은 거리에 있는 점(외심)을 자유롭게 점을 움직여
    찾아보고 → 실제로 두 변의 수직이등분선을 작도해 정확한 외심·외접원을 그려보고 →
@@ -955,7 +985,12 @@ const TASKS = [
       return fail('점 O를 움직여서 A, B, C까지의 거리가 모두 같아지도록 맞춰보세요.');
     } },
 
-  { id:2, title:'[과제 2] 중심이 O이고 삼각형의 세 꼭짓점을 지나는 원을 그려봅시다.',
+  { id:2, title:'[과제 2] 거리가 같은 점 O가 중심이고 점 A를 지나는 원을 그리면, 점 B와 점 C도 이 원 위에 있을까요?',
+    type:'text', minLen:10,
+    points: [...TRI_ACUTE, {label:'O', x:TRI_ACUTE_O.x, y:TRI_ACUTE_O.y}],
+    presetObjects: triPreset(TRI_ACUTE) },
+
+  { id:3, title:'[과제 3] 중심이 O이고 삼각형의 세 꼭짓점을 지나는 원을 그려봅시다.',
     tools:['circleCP'],
     hint:'[과제 1]에서 찾은 점 O가 그대로 표시되어 있어요. "원(중심,통과점)" 도구로 점 O를 클릭한 뒤 삼각형의 한 꼭짓점을 클릭해서 원을 그려보세요.',
     points: [...TRI_ACUTE, {label:'O', x:TRI_ACUTE_O.x, y:TRI_ACUTE_O.y}],
@@ -965,34 +1000,56 @@ const TASKS = [
     ],
     check: checkCircumCircleOnly },
 
-  { id:3, title:'[과제 3] 다음 순서대로 작도해봅시다.<br>① 변 AB의 수직이등분선을 그린다.<br>② 변 BC의 수직이등분선을 그린다.<br>③ 두 수직이등분선의 교점을 표시한다.<br>④ 교점을 중심으로 하고 삼각형의 한 꼭짓점을 지나는 원을 그린다.',
+  { id:4, title:'[용어 정리] 외심과 외접원',
+    type:'blanks', noTools:true,
+    points: [...TRI_ACUTE, {label:'O', x:TRI_ACUTE_O.x, y:TRI_ACUTE_O.y}],
+    presetObjects: [...triPreset(TRI_ACUTE), {type:'circleCP', center:'O', through:'A'}],
+    blanksItems: [
+      {pre:'원 O는 삼각형 ABC에 ', blank:'외접', post:'한다고 한다.', answers:['외접','외접한다']},
+      {pre:'원 O를 삼각형 ABC의 ', blank:'외접원', post:'이라고 한다.', answers:['외접원']},
+      {pre:'또 삼각형의 외접원의 중심을 그 삼각형의 ', blank:'외심', post:'이라고 한다.', answers:['외심']}
+    ] },
+
+  { id:5, title:'[과제 5] 빈칸에 들어갈 말을 채워봅시다.',
+    type:'blanks', noFigure:true,
+    blanksItems: [
+      {pre:'두 꼭짓점까지 거리가 같은 점은 ', blank:'수직이등분선', post:'위에 있다.', answers:['수직이등분선','선분의 수직이등분선']}
+    ] },
+
+  { id:6, title:'[과제 6] [과제 5]를 이용하여 삼각형의 외심을 어떻게 그릴 수 있을지 생각해보고, 직접 그려봅시다.',
+    tools:['perpBisector','intersect','circleCP'],
+    hint:'두 변의 수직이등분선을 그리면 그 교점이 세 꼭짓점에서 모두 같은 거리에 있는 점(외심)이 돼요. 그 교점을 중심으로 하고 삼각형의 한 꼭짓점을 지나는 원(외접원)을 그려보세요.',
+    points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
+    check: checkCircumConstruct },
+
+  { id:7, title:'[과제 7] 다음 순서대로 작도해봅시다.<br>① 변 AB의 수직이등분선을 그린다.<br>② 변 BC의 수직이등분선을 그린다.<br>③ 두 수직이등분선의 교점을 표시한다.<br>④ 교점을 중심으로 하고 삼각형의 한 꼭짓점을 지나는 원을 그린다.',
     tools:['perpBisector','intersect','circleCP'],
     hint:'"수직이등분선" 도구로 변 AB, 변 BC를 각각 클릭한 뒤 "교점" 도구로 두 수직이등분선의 교점을 표시하세요. 마지막으로 "원(중심,통과점)" 도구로 그 교점을 중심으로 하는 원을 그려보세요.',
     points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
     check: checkCircumConstruct },
 
-  { id:4, title:'[과제 4] [과제 3]에서 찾은 교점이 삼각형의 세 꼭짓점에서 같은 거리에 있는 점이라고 할 수 있을까요? 그 이유는 무엇일까요?',
+  { id:8, title:'[과제 8] [과제 7]에서 찾은 교점이 삼각형의 세 꼭짓점에서 같은 거리에 있는 점이라고 할 수 있을까요? 그 이유는 무엇일까요?',
     type:'text', minLen:20,
-    liveSource: 3 },
+    liveSource: 7 },
 
-  { id:5, title:'[과제 5] [과제 3]과 같은 방법으로 이 직각삼각형의 외심과 외접원을 그려봅시다.',
+  { id:9, title:'[과제 9] [과제 7]과 같은 방법으로 이 직각삼각형의 외심과 외접원을 그려봅시다.',
     tools:['perpBisector','intersect','circleCP'],
     hint:'변 AB, 변 BC의 수직이등분선을 그리고 교점을 찾은 뒤, 그 교점을 중심으로 꼭짓점을 지나는 원을 그려보세요. 이 외심은 어느 변 위에 있나요?',
     points: TRI_RIGHT, presetObjects: triPreset(TRI_RIGHT),
     check: checkCircumConstruct },
 
-  { id:6, title:'[과제 6] [과제 3]과 같은 방법으로 이 둔각삼각형의 외심과 외접원을 그려봅시다.',
+  { id:10, title:'[과제 10] [과제 7]과 같은 방법으로 이 둔각삼각형의 외심과 외접원을 그려봅시다.',
     tools:['perpBisector','intersect','circleCP'],
     hint:'변 AB, 변 BC의 수직이등분선을 그리고 교점을 찾은 뒤, 그 교점을 중심으로 꼭짓점을 지나는 원을 그려보세요. 이 외심은 삼각형의 안쪽에 있나요, 바깥쪽에 있나요?',
     points: TRI_OBTUSE, presetObjects: triPreset(TRI_OBTUSE),
     check: checkCircumConstruct },
 
-  { id:7, title:'[과제 7] 모든 삼각형은 외심과 외접원이 있을까요? [과제 4], [과제 5], [과제 6]의 결과를 바탕으로 그 이유를 설명해봅시다.',
+  { id:11, title:'[과제 11] 모든 삼각형은 외심과 외접원이 있을까요? [과제 8], [과제 9], [과제 10]의 결과를 바탕으로 그 이유를 설명해봅시다.',
     type:'text', minLen:20,
     refFigures: [
-      {label:'과제 3 (예각삼각형)', sourceTaskId:3},
-      {label:'과제 5 (직각삼각형)', sourceTaskId:5},
-      {label:'과제 6 (둔각삼각형)', sourceTaskId:6}
+      {label:'과제 7 (예각삼각형)', sourceTaskId:7},
+      {label:'과제 9 (직각삼각형)', sourceTaskId:9},
+      {label:'과제 10 (둔각삼각형)', sourceTaskId:10}
     ] },
 ];
 
@@ -1043,7 +1100,13 @@ function buildTaskCard(task){
         <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
       </div>`}
       <div class="task-left">
-        ${(task.type==='input'||task.type==='hybrid') ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
+        ${task.type==='blanks' ? `${hintHtml}${hiddenHintHtml}<div class="input-row" style="flex-direction:column;align-items:stretch;">
+            <div class="blanks-wrap">
+              ${task.blanksItems.map((bi,i)=>`<div class="blank-line">${bi.pre||''}<input type="text" class="blank-input" id="blank-${task.id}-${i}" placeholder="정답 입력">${bi.post||''}</div>`).join('')}
+            </div>
+            <button id="check-${task.id}" style="align-self:flex-start;">확인</button>
+          </div><div class="feedback" id="fb-${task.id}"></div>`
+          : (task.type==='input'||task.type==='hybrid') ? `${hintHtml}${hiddenHintHtml}<div class="input-row">
             <input type="number" step="0.01" id="input-${task.id}" placeholder="숫자 입력">
             <span>${task.unit||''}</span>
             <button id="check-${task.id}">확인</button>
@@ -1400,6 +1463,50 @@ function initInputTask(task){
   results[task.id]={done:false, value:''};
 }
 
+// 빈칸 채우기(용어 정리) 과제: task.blanksItems(각각 {pre, blank, post, answers}) 개수만큼
+// 텍스트 입력칸을 만들고, "확인"을 누르면 한 번에 전부 채점한다(숫자 입력 과제와 같은 방식으로
+// 잠금 없이 여러 번 다시 시도할 수 있다). 정답 비교는 공백을 무시하고 정확히 일치해야 한다.
+function initBlanksTask(task){
+  buildTaskCard(task);
+  if(!task.noFigure){
+    const svg=document.getElementById(`svg-${task.id}`);
+    const toolsEl=document.getElementById(`tools-${task.id}`);
+    if(toolsEl) toolsEl.style.display='none';
+    if(svg){
+      const cv=new GeoCanvas(svg, {points: task.points||[], presetObjects: task.presetObjects||[]}, ()=>{});
+      canvasByTaskId[task.id]=cv;
+    }
+  }
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+  const inputs = task.blanksItems.map((_,i)=>document.getElementById(`blank-${task.id}-${i}`));
+
+  const norm=(s)=> (s||'').trim().replace(/\s+/g,'');
+  function checkAnswer(){
+    let allOk = true;
+    task.blanksItems.forEach((bi,i)=>{
+      const el = inputs[i];
+      if(!el) return;
+      const val = norm(el.value);
+      const okFlag = val!=='' && (bi.answers||[bi.blank]).some(a=>norm(a)===val);
+      el.classList.toggle('blank-ok', okFlag);
+      el.classList.toggle('blank-no', !okFlag && val!=='');
+      if(!okFlag) allOk = false;
+    });
+    const value = inputs.map(el=>el?el.value:'').join(', ');
+    results[task.id] = {done:allOk, value};
+    badge.textContent = allOk?'완료':'미완료';
+    badge.className='badge ' + (allOk?'done':'pending');
+    fb.textContent = allOk ? '정답이에요!' : '다시 한 번 확인해보세요.';
+    fb.className = 'feedback ' + (allOk?'ok':'no');
+    updateProgress();
+  }
+  btn.addEventListener('click', checkAnswer);
+  inputs.forEach(el=>{ if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); }); });
+  results[task.id]={done:false, value:''};
+}
+
 function initHybridTask(task){
   buildTaskCard(task);
   const svg=document.getElementById(`svg-${task.id}`);
@@ -1473,6 +1580,14 @@ function restoreProgress(progress){
       const btn=document.getElementById(`check-${t.id}`);
       if(btn){ btn.disabled = true; btn.classList.add('locked-fixed'); btn.textContent='제출됨'; }
     }
+    // 빈칸 채우기 과제는 저장된 value("답1, 답2, 답3")를 다시 쪼개서 각 칸에 채워 넣는다.
+    if(t.type==='blanks' && Array.isArray(t.blanksItems) && p.value!=null){
+      const parts = String(p.value).split(', ');
+      t.blanksItems.forEach((bi,i)=>{
+        const el=document.getElementById(`blank-${t.id}-${i}`);
+        if(el && parts[i]!=null) el.value = parts[i];
+      });
+    }
   });
   updateProgress();
 }
@@ -1486,6 +1601,10 @@ function renderAllClassAnswers(){
     if(t.type==='text' || t.type==='verify') renderClassAnswersFor(t);
   });
 }
+// 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
+// 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
+// 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+const classAnswersPicked = {};
 function renderClassAnswersFor(task){
   const wrap=document.getElementById(`classAnswers-${task.id}`);
   const list=document.getElementById(`classAnswersList-${task.id}`);
@@ -1506,11 +1625,19 @@ function renderClassAnswersFor(task){
     const empty=document.createElement('div'); empty.className='ca-empty';
     empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
     list.appendChild(empty);
+    classAnswersPicked[task.id] = [];
     return;
   }
-  // 전체가 아니라 무작위로 3명만 보여준다.
-  const shuffled = [...entries].sort(()=>Math.random()-0.5);
-  shuffled.slice(0,3).forEach(s=>{
+  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
+  const pool = new Map(entries.map(s=>[s.key, s]));
+  let picked = (classAnswersPicked[task.id]||[]).filter(k=>pool.has(k));
+  const need = 5 - picked.length;
+  if(need>0){
+    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
+    picked = picked.concat(fresh);
+  }
+  classAnswersPicked[task.id] = picked;
+  picked.map(k=>pool.get(k)).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
@@ -1575,6 +1702,15 @@ const RT = {
         });
         if(typeof restoreProgress==='function') restoreProgress(existing.progress);
         if(typeof goToResumePage==='function') goToResumePage();
+      }
+      // 저장된 도형 스냅샷을 각 과제 캔버스에 다시 그려 넣는다(좌표·점-도형 연결까지 복원,
+      // 제약조건·되돌리기 기록은 복원하지 않음). TASKS.forEach가 이미 동기적으로 모든
+      // canvasByTaskId를 채워둔 뒤 실행되는 콜백이라(이 .then()은 항상 나중에 실행됨) 바로 적용할 수 있다.
+      if(existing && existing.objectSnapshots && typeof canvasByTaskId!=='undefined'){
+        Object.keys(existing.objectSnapshots).forEach(tid=>{
+          const cv = canvasByTaskId[tid];
+          if(cv) restoreObjectSnapshot(cv, existing.objectSnapshots[tid]);
+        });
       }
       // 이전에 "결과 제출하기"까지 눌러 전체 잠금 상태였다면 새로고침 후에도 그대로 잠긴 채로 보여준다.
       if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
@@ -1735,6 +1871,7 @@ TASKS.forEach(t=>{
   try{
     if(t.type==='input') initInputTask(t);
     else if(t.type==='hybrid') initHybridTask(t);
+    else if(t.type==='blanks') initBlanksTask(t);
     else if(t.type==='text') initTextTask(t);
     else if(t.type==='verify') initVerifyTask(t);
     else initConstructTask(t);

@@ -882,6 +882,29 @@ class GeoCanvas{
   }
 }
 
+/* 저장된 도형 스냅샷(objectSnapshots/{taskId})을 캔버스에 다시 그려 넣는다.
+   좌표(x,y)와 점-도형 연결 관계만 복원하고, 제약조건/계산점 메타데이터나 되돌리기 기록까지는
+   복원하지 않는다 — 그 정도만으로도 "다시 접속했더니 그려둔 도형이 사라졌다"는 문제는 해결된다.
+   (제출완료로 잠긴 과제는 캔버스가 pointer-events:none이라 어차피 읽기전용으로만 보인다.) */
+function restoreObjectSnapshot(cv, snapshot){
+  if(!cv || !snapshot) return;
+  const remap = {};
+  (snapshot.points||[]).forEach(sp=>{
+    let target = cv.points.find(p=>p.label===sp.label);
+    if(target){ target.x=sp.x; target.y=sp.y; }
+    else { target = cv.addPoint(sp.x, sp.y, {label:sp.label}); }
+    remap[sp.id] = target.id;
+  });
+  const keys=['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'];
+  (snapshot.objects||[]).forEach(so=>{
+    const obj = {type:so.type};
+    keys.forEach(k=>{ if(so[k]!=null) obj[k] = (remap[so[k]]!==undefined) ? remap[so[k]] : so[k]; });
+    if(so.ids) obj.ids = so.ids.map(id=> remap[id]!==undefined ? remap[id] : id);
+    cv.addObject(obj);
+  });
+  cv.render();
+}
+
 /* ---------- 과제 정의 ----------
    총 4과제: 과제1(수직이등분선 위 점 D 관찰+서술) → 과제2(점 P를 수직이등분선 위로만 제한,
    자취로 등거리 확인+서술, 수직이등분선 자체는 화면에 표기하지 않음) → 과제3(직사각형, 작도+설명)
@@ -1290,6 +1313,10 @@ function renderAllClassAnswers(){
     if(t.type==='text' || t.type==='verify') renderClassAnswersFor(t);
   });
 }
+// 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
+// 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
+// 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+const classAnswersPicked = {};
 function renderClassAnswersFor(task){
   const wrap=document.getElementById(`classAnswers-${task.id}`);
   const list=document.getElementById(`classAnswersList-${task.id}`);
@@ -1310,11 +1337,19 @@ function renderClassAnswersFor(task){
     const empty=document.createElement('div'); empty.className='ca-empty';
     empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
     list.appendChild(empty);
+    classAnswersPicked[task.id] = [];
     return;
   }
-  // 전체가 아니라 무작위로 3명만 보여준다.
-  const shuffled = [...entries].sort(()=>Math.random()-0.5);
-  shuffled.slice(0,3).forEach(s=>{
+  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
+  const pool = new Map(entries.map(s=>[s.key, s]));
+  let picked = (classAnswersPicked[task.id]||[]).filter(k=>pool.has(k));
+  const need = 5 - picked.length;
+  if(need>0){
+    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
+    picked = picked.concat(fresh);
+  }
+  classAnswersPicked[task.id] = picked;
+  picked.map(k=>pool.get(k)).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[task.id].value);
@@ -1379,6 +1414,15 @@ const RT = {
         });
         if(typeof restoreProgress==='function') restoreProgress(existing.progress);
         if(typeof goToResumePage==='function') goToResumePage();
+      }
+      // 저장된 도형 스냅샷을 각 과제 캔버스에 다시 그려 넣는다(좌표·점-도형 연결까지 복원,
+      // 제약조건·되돌리기 기록은 복원하지 않음). TASKS.forEach가 이미 동기적으로 모든
+      // canvasByTaskId를 채워둔 뒤 실행되는 콜백이라(이 .then()은 항상 나중에 실행됨) 바로 적용할 수 있다.
+      if(existing && existing.objectSnapshots && typeof canvasByTaskId!=='undefined'){
+        Object.keys(existing.objectSnapshots).forEach(tid=>{
+          const cv = canvasByTaskId[tid];
+          if(cv) restoreObjectSnapshot(cv, existing.objectSnapshots[tid]);
+        });
       }
       // 이전에 "결과 제출하기"까지 눌러 전체 잠금 상태였다면 새로고침 후에도 그대로 잠긴 채로 보여준다.
       if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }

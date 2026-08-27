@@ -614,6 +614,10 @@ function initTask(task){
 }
 TASKS.forEach(initTask);
 
+// 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
+// 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
+// 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+const classAnswersPicked = {};
 function renderClassAnswersFor(task){
   const wrap=document.getElementById(`classAnswers-${task.id}`);
   const list=document.getElementById(`classAnswersList-${task.id}`);
@@ -629,10 +633,19 @@ function renderClassAnswersFor(task){
     const empty=document.createElement('div'); empty.className='ca-empty';
     empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
     list.appendChild(empty);
+    classAnswersPicked[task.id] = [];
     return;
   }
-  const shuffled=[...entries].sort(()=>Math.random()-0.5);
-  shuffled.slice(0,3).forEach(s=>{
+  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
+  const pool = new Map(entries.map(s=>[s.key, s]));
+  let picked = (classAnswersPicked[task.id]||[]).filter(k=>pool.has(k));
+  const need = 5 - picked.length;
+  if(need>0){
+    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
+    picked = picked.concat(fresh);
+  }
+  classAnswersPicked[task.id] = picked;
+  picked.map(k=>pool.get(k)).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
     const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress['t'+task.id].value);

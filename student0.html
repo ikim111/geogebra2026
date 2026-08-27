@@ -817,6 +817,29 @@ class GeoCanvas{
   }
 }
 
+/* 저장된 도형 스냅샷(objectSnapshots/{taskId})을 캔버스에 다시 그려 넣는다.
+   좌표(x,y)와 점-도형 연결 관계만 복원하고, 제약조건/계산점 메타데이터나 되돌리기 기록까지는
+   복원하지 않는다 — 그 정도만으로도 "다시 접속했더니 그려둔 도형이 사라졌다"는 문제는 해결된다.
+   (제출완료로 잠긴 과제는 캔버스가 pointer-events:none이라 어차피 읽기전용으로만 보인다.) */
+function restoreObjectSnapshot(cv, snapshot){
+  if(!cv || !snapshot) return;
+  const remap = {};
+  (snapshot.points||[]).forEach(sp=>{
+    let target = cv.points.find(p=>p.label===sp.label);
+    if(target){ target.x=sp.x; target.y=sp.y; }
+    else { target = cv.addPoint(sp.x, sp.y, {label:sp.label}); }
+    remap[sp.id] = target.id;
+  });
+  const keys=['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'];
+  (snapshot.objects||[]).forEach(so=>{
+    const obj = {type:so.type};
+    keys.forEach(k=>{ if(so[k]!=null) obj[k] = (remap[so[k]]!==undefined) ? remap[so[k]] : so[k]; });
+    if(so.ids) obj.ids = so.ids.map(id=> remap[id]!==undefined ? remap[id] : id);
+    cv.addObject(obj);
+  });
+  cv.render();
+}
+
 /* ---------- 과제 정의 ---------- */
 const TASKS = [
   { id:1, title:'[과제 1] 직선 AB를 그려봅시다.', type:'construct', tools:['line'],
@@ -1228,12 +1251,17 @@ const RT = {
         Object.keys(existing.progress).forEach(id=>{
           if(existing.progress[id] && existing.progress[id].visited) this.visitedTasks.add(parseInt(id,10));
         });
-        // 참고: 여기서 복원하는 건 완료 여부/입력값뿐입니다. 학생이 캔버스에 그렸던 점·도형(작도 과정)은
-        // 복원되지 않아요 — 과제 화면을 다시 열면 GeoCanvas가 항상 그 과제의 초기 상태로 새로 만들어지기
-        // 때문입니다. (교사용 화면에는 objectSnapshots가 남아있지만, 학생 화면이 그걸 다시 읽어와
-        // 캔버스에 그려주지는 않습니다.)
         if(typeof restoreProgress==='function') restoreProgress(existing.progress);
         if(typeof goToResumePage==='function') goToResumePage();
+      }
+      // 저장된 도형 스냅샷을 각 과제 캔버스에 다시 그려 넣는다(좌표·점-도형 연결까지 복원,
+      // 제약조건·되돌리기 기록은 복원하지 않음). TASKS.forEach가 이미 동기적으로 모든
+      // canvasByTaskId를 채워둔 뒤 실행되는 콜백이라(이 .then()은 항상 나중에 실행됨) 바로 적용할 수 있다.
+      if(existing && existing.objectSnapshots && typeof canvasByTaskId!=='undefined'){
+        Object.keys(existing.objectSnapshots).forEach(tid=>{
+          const cv = canvasByTaskId[tid];
+          if(cv) restoreObjectSnapshot(cv, existing.objectSnapshots[tid]);
+        });
       }
       // 이전에 "결과 제출하기"까지 눌러 전체 잠금 상태였다면 새로고침 후에도 그대로 잠긴 채로 보여준다.
       if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
