@@ -118,15 +118,17 @@ function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice
    label = 목차에 보여지는 번호(챕터가 바뀌면 1부터 다시 시작) */
 const SECTIONS = [
   { chapter:'VI. 삼각형의 성질', groups:[
-      { title:'1. 삼각형의 성질', items:[
+      { title:'', items:[
         {n:1, label:1, title:'이등변삼각형의 성질', file:'student1.html'},
         {n:2, label:2, title:'수직이등분선의 성질', file:'student2.html'},
         {n:3, label:3, title:'각이등분선의 성질', file:'student3.html'},
         {n:4, label:4, title:'삼각형의 외심', file:'student4.html'},
         {n:5, label:5, title:'삼각형의 내심', file:'student5.html'},
         {n:6, label:6, title:'생각 넓히기', file:'student6.html'}
-      ]},
-      { title:'2. 사각형의 성질', items:[
+      ]}
+  ]},
+  { chapter:'VI. 사각형의 성질', groups:[
+      { title:'', items:[
         {n:11, label:1, title:'평행사변형의 성질', file:'student11.html'},
         {n:12, label:2, title:'평행사변형이 되는 조건 찾기', file:'student12.html'},
         {n:13, label:3, title:'평행사변형의 성질 활용', file:'student13.html'}
@@ -169,17 +171,26 @@ function saveProfile(p){
   try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({...p, ts:Date.now()})); }catch(e){}
 }
 
-function buildTaskLink(t, profile){
+function buildTaskLink(t, profile, opts){
   const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
   const a=document.createElement('a');
   a.className='task-link';
   a.dataset.n = t.n;
-  a.href = BASE_URL + t.file + '?' + params.toString();
+  // 실제 목적지는 항상 데이터셋에 저장해두고, 잠금 여부가 확인된 뒤에만 href로 옮긴다.
+  a.dataset.href = BASE_URL + t.file + '?' + params.toString();
   const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
   const badge=document.createElement('span'); badge.className='badge'; badge.style.display='none';
   const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
   a.appendChild(num); a.appendChild(title); a.appendChild(badge); a.appendChild(arrow);
+  if(opts && opts.alwaysOpen){
+    a.href = a.dataset.href;
+  } else {
+    // 선생님이 열어줬는지 아직 Firebase에서 확인 전인 상태 - 확인되기 전까지는 잠긴 것과
+    // 똑같이 보여준다("로딩 중 잠깐 열려 보이는" 틈을 없애기 위함). 확인 결과 열려있는
+    // 단원만 나중에 unlockTaskLink()로 풀어준다.
+    setPendingLock(a);
+  }
   return a;
 }
 
@@ -187,8 +198,13 @@ function buildTaskLink(t, profile){
    Firebase에서 확인해서 목록에 반영한다. 0단원은 언제나 열려 있다(잠금 대상 아님).
    Firebase가 설정되지 않았거나 확인 중 오류가 나면 예전처럼 전부 열린 상태로 그대로 둔다
    (잠금 기능은 어디까지나 선택 기능이라 이것 때문에 과제 목록 자체를 못 보게 막지 않는다). */
+/* 목록을 만들 때는 아직 선생님이 이 반에 뭘 열어줬는지 모르므로, 0단원을 뺀 모든 링크를
+   일단 setPendingLock()으로 잠긴 것처럼 만들어둔다(위 buildTaskLink 참고). Firebase 확인이
+   끝나면 실제로 열린 단원만 unlockTaskLink()로 풀어주고, 나머지는 lockTaskLink()로 "진짜
+   잠김"을 확정한다. Firebase가 설정 안 됐거나 확인 중 오류가 나면(잠금 기능은 선택 기능이므로)
+   예전처럼 전부 열어서 보여준다 - unlockAllPending()이 그 역할이다. */
 function applyAccessAndCompletion(profile){
-  if(!FIREBASE_CONFIG.apiKey) return;
+  if(!FIREBASE_CONFIG.apiKey){ unlockAllPending(); return; }
   try{
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     firebase.auth().signInAnonymously().then(cred=>{
@@ -198,30 +214,49 @@ function applyAccessAndCompletion(profile){
         const access = snap.val() || {};
         document.querySelectorAll('.task-link').forEach(el=>{
           const n = parseInt(el.dataset.n, 10);
-          if(n === 0) return; // 0단원은 항상 열려 있음
+          if(n === 0) return; // 0단원은 항상 열려 있음(이미 열린 상태로 만들어져 있음)
           const isOpen = access[n] === true;
-          if(!isOpen){
+          if(isOpen){
+            unlockTaskLink(el);
+            if(ACTIVITY_SUFFIX[n]) showCompletionBadge(el, n, uid, profile);
+          } else {
             lockTaskLink(el);
-          } else if(ACTIVITY_SUFFIX[n]){
-            showCompletionBadge(el, n, uid, profile);
           }
         });
-      }).catch(()=>{});
-    }).catch(()=>{});
-  }catch(e){}
+      }).catch(()=>{ unlockAllPending(); });
+    }).catch(()=>{ unlockAllPending(); });
+  }catch(e){ unlockAllPending(); }
 }
 
-function lockTaskLink(a){
+// 아직 확인 전인 "잠정 잠금" 상태 - href가 아예 없어서 클릭해도 어차피 아무 데도 못 가지만,
+// 클릭 방지 리스너는 아직 걸지 않는다(나중에 열림으로 확인되면 그대로 풀어줘야 하므로).
+function setPendingLock(a){
   a.classList.add('locked');
   a.removeAttribute('href');
-  a.addEventListener('click', e=> e.preventDefault());
   const arrow = a.querySelector('.arrow');
   if(arrow) arrow.textContent = '🔒';
+}
+// 선생님이 실제로 잠가둔 것으로 최종 확인된 상태 - 클릭 방지까지 확실히 걸어둔다.
+function lockTaskLink(a){
+  setPendingLock(a);
+  a.addEventListener('click', e=> e.preventDefault());
+}
+// 열려있는 것으로 확인된 상태 - 원래 목적지로 다시 이어준다.
+function unlockTaskLink(a){
+  a.classList.remove('locked');
+  if(a.dataset.href) a.href = a.dataset.href;
+  const arrow = a.querySelector('.arrow');
+  if(arrow) arrow.textContent = '›';
+}
+function unlockAllPending(){
+  document.querySelectorAll('.task-link.locked').forEach(el=> unlockTaskLink(el));
 }
 
 function showCompletionBadge(a, n, uid, profile){
   const roomKey = sanitize(profile.classNo) + ACTIVITY_SUFFIX[n];
-  const studentKey = uid + '_' + sanitize(profile.name);
+  // studentN.html은 학생을 uid가 아니라 "번호_이름"으로 저장한다(#83). 여기서도 같은 키로
+  // 읽어야 실제 제출 데이터를 찾을 수 있다 - 예전에는 uid로 읽어서 항상 못 찾고 있었다.
+  const studentKey = sanitize(profile.number) + '_' + sanitize(profile.name);
   firebase.database().ref('rooms/'+roomKey+'/students/'+studentKey+'/submitted').once('value').then(snap=>{
     const badge = a.querySelector('.badge');
     if(!badge) return;
@@ -238,7 +273,7 @@ function buildTaskLinks(profile){
   const list=document.getElementById('taskList');
   list.textContent='';
 
-  STANDALONE_TASKS.forEach(t=> list.appendChild(buildTaskLink(t, profile)));
+  STANDALONE_TASKS.forEach(t=> list.appendChild(buildTaskLink(t, profile, {alwaysOpen:true})));
 
   SECTIONS.forEach(sec=>{
     const chapterEl=document.createElement('div');
@@ -246,9 +281,11 @@ function buildTaskLinks(profile){
     list.appendChild(chapterEl);
 
     sec.groups.forEach(g=>{
-      const groupTitleEl=document.createElement('div');
-      groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
-      list.appendChild(groupTitleEl);
+      if(g.title){
+        const groupTitleEl=document.createElement('div');
+        groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
+        list.appendChild(groupTitleEl);
+      }
 
       const itemsWrap=document.createElement('div');
       itemsWrap.className='group-items';

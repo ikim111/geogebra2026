@@ -422,7 +422,7 @@ class GeoCanvas{
       if(o.refName) refMap[o.refName]=obj.id;
     });
     (cfg.movablePoints||[]).forEach(p=>{
-      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true});
+      const pt = this.addPoint(p.x,p.y,{label:p.label, locked:false, keep:true, skipHistory:true, trace: !!p.trace});
       if(p.constraintRef && refMap[p.constraintRef]) pt.constraint = {objId: refMap[p.constraintRef]};
     });
     (cfg.postObjects||[]).forEach(o => {
@@ -440,10 +440,16 @@ class GeoCanvas{
     // (원래 풀에는 A,B,C,O가 빠져 있었는데, 이 파일은 O가 preset 점으로 안 쓰이므로 안전하다).
     const pool = 'OPQRSTUVWXYZLMNKJIHGFED'.split('');
     const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
-    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null};
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, keep: !!opts.keep, constraint: opts.constraint||null, computed: opts.computed||null,
+      trace: !!opts.trace, traceHistory: opts.trace ? [] : null};
     this.points.push(p);
     if((!opts.locked || opts.trackHistory) && !opts.skipHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
     return p;
+  }
+  // 자취(trace) 초기화: 필요하면 "자취 초기화" 버튼 등에서 호출한다.
+  clearTrace(){
+    this.points.forEach(p=>{ if(p.trace) p.traceHistory=[]; });
+    this.render();
   }
   // computed: {kind:'intersection', o1, o2} 형태의 점은 매 render()마다 두 도형(o1,o2)의 교점을
   // 다시 계산해서 위치를 갱신한다. 두 점이 만나는 경우(원-원, 원-직선)에는 직전 위치에 더 가까운
@@ -604,6 +610,13 @@ class GeoCanvas{
       }
       this.dragging.x = Math.max(0,Math.min(this.width,nx));
       this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      // 자취(trace) 기록: 너무 촘촘하게 쌓이지 않도록 마지막 기록점에서 일정 거리 이상
+      // 떨어졌을 때만 새 자취점을 추가한다.
+      if(this.dragging.trace){
+        const hist=this.dragging.traceHistory;
+        const last=hist[hist.length-1];
+        if(!last || dist(last,this.dragging)>6){ hist.push({x:this.dragging.x, y:this.dragging.y}); }
+      }
       this.render();
     };
     const up = ()=>{ this.dragging=null; };
@@ -791,6 +804,7 @@ class GeoCanvas{
     };
 
     this.objects.forEach(o=>{
+      if(o.hidden) return; // hidden:true 도형은 제약조건 계산에는 쓰이지만 화면에는 그리지 않는다.
       const g=this.getObjGeom(o);
       if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
       if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
@@ -849,6 +863,17 @@ class GeoCanvas{
       c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10);
       c.setAttribute('fill','none'); c.setAttribute('stroke','#fbc02d'); c.setAttribute('stroke-width','3');
       this.svg.appendChild(c);
+    });
+
+    // 자취(trace): 드래그하며 지나온 자리를 옅은 점으로 남겨서 궤적을 보여준다.
+    this.points.forEach(p=>{
+      if(!p.trace || !p.traceHistory || !p.traceHistory.length) return;
+      p.traceHistory.forEach(tp=>{
+        const c=document.createElementNS(NS,'circle');
+        c.setAttribute('cx',tp.x); c.setAttribute('cy',tp.y); c.setAttribute('r',2.5);
+        c.setAttribute('fill','#90caf9'); c.setAttribute('opacity','0.7');
+        this.svg.appendChild(c);
+      });
     });
 
     this.points.forEach(p=>{
@@ -988,7 +1013,9 @@ const TASKS = [
   { id:2, title:'[과제 2] 거리가 같은 점 O가 중심이고 점 A를 지나는 원을 그리면, 점 B와 점 C도 이 원 위에 있을까요?',
     type:'text', minLen:10,
     points: [...TRI_ACUTE, {label:'O', x:TRI_ACUTE_O.x, y:TRI_ACUTE_O.y}],
-    presetObjects: triPreset(TRI_ACUTE) },
+    presetObjects: [...triPreset(TRI_ACUTE),
+      {type:'lengthLabel', p1:'O', p2:'A'}, {type:'lengthLabel', p1:'O', p2:'B'}, {type:'lengthLabel', p1:'O', p2:'C'}
+    ] },
 
   { id:3, title:'[과제 3] 중심이 O이고 삼각형의 세 꼭짓점을 지나는 원을 그려봅시다.',
     tools:['circleCP'],
@@ -1011,7 +1038,17 @@ const TASKS = [
     ] },
 
   { id:5, title:'[과제 5] 빈칸에 들어갈 말을 채워봅시다.',
-    type:'blanks', noFigure:true,
+    type:'blanks', noTools:true,
+    hint:'점 P는 두 점 A, B로부터 같은 거리에 떨어져 있는 점입니다. 점 P를 움직여보며 정답을 생각해봅시다.',
+    points: [ {label:'A',x:150,y:300}, {label:'B',x:450,y:300} ],
+    presetObjects: [
+      {type:'segment', p1:'A', p2:'B'},
+      {type:'perpBisector', p1:'A', p2:'B', refName:'bis', hidden:true}
+    ],
+    movablePoints: [ {label:'P', x:300, y:150, constraintRef:'bis', trace:true} ],
+    postObjects: [
+      {type:'lengthLabel', p1:'P', p2:'A'}, {type:'lengthLabel', p1:'P', p2:'B'}
+    ],
     blanksItems: [
       {pre:'두 꼭짓점까지 거리가 같은 점은 ', blank:'수직이등분선', post:'위에 있다.', answers:['수직이등분선','선분의 수직이등분선']}
     ] },
@@ -1473,7 +1510,10 @@ function initBlanksTask(task){
     const toolsEl=document.getElementById(`tools-${task.id}`);
     if(toolsEl) toolsEl.style.display='none';
     if(svg){
-      const cv=new GeoCanvas(svg, {points: task.points||[], presetObjects: task.presetObjects||[]}, ()=>{});
+      // movablePoints/postObjects/computedPoints도 지원한다 - 일부 빈칸 과제는 기억을 되살리는
+      // 힌트용으로 점을 직접 드래그해볼 수 있는 보조 그림을 함께 보여준다(정답 채점과는 무관).
+      const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
+      const cv=new GeoCanvas(svg, cfg, ()=>{});
       canvasByTaskId[task.id]=cv;
     }
   }

@@ -354,8 +354,8 @@ if(FIREBASE_CONFIG.apiKey){
 }
 
 const PSEUDONYMS = ['유클리드','가우스','히파티아','디오판토스','피타고라스','아르키메데스','탈레스','에라토스테네스','데카르트','오일러','뉴턴','라이프니츠','파스칼','칸토어','뇌터','튜링'];
-function displayName(key, name){
-  if(!anonymize) return name || '(이름없음)';
+function displayName(key, name, number){
+  if(!anonymize) return (number ? number+'번 ' : '') + (name || '(이름없음)');
   let h=0;
   for(let i=0;i<key.length;i++) h=(h*31 + key.charCodeAt(i)) >>> 0;
   return PSEUDONYMS[h % PSEUDONYMS.length];
@@ -466,7 +466,7 @@ function render(){
       dot.className='dot '+(idle?'off':'on');
       tdName.appendChild(dot);
       const nameText=document.createElement('span');
-      nameText.textContent = ' '+displayName(s.key,s.name)+' ';
+      nameText.textContent = ' '+displayName(s.key,s.name,s.number)+' ';
       if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
       tdName.appendChild(nameText);
       if(s.submitted){
@@ -597,7 +597,7 @@ function renderDetail(s, key){
   el.textContent='';
 
   const h3=document.createElement('h3');
-  h3.textContent = displayName(key,s.name);
+  h3.textContent = displayName(key,s.name,s.number);
   el.appendChild(h3);
 
   const meta=document.createElement('div');
@@ -635,7 +635,7 @@ function openTaskDetail(s, key, t){
   const hasText = p && p.value!=null && String(p.value).trim()!=='';
 
   document.getElementById('tdmTitle').textContent = `과제 ${t.id}. ${t.label}`;
-  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name)} · ${statusLabel}`;
+  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${statusLabel}`;
 
   const canvasWrap = document.getElementById('tdmCanvasWrap');
   canvasWrap.textContent='';
@@ -1071,7 +1071,7 @@ function renderTeacherView(){
       card.className='student-card';
 
       const head=document.createElement('div'); head.className='sc-head';
-      const nameSpan=document.createElement('span'); nameSpan.textContent = displayName(s.key,s.name);
+      const nameSpan=document.createElement('span'); nameSpan.textContent = displayName(s.key,s.name,s.number);
       const badgeSpan=document.createElement('span');
       if(isLive){
         const liveEl=document.createElement('span');
@@ -1142,7 +1142,7 @@ function renderTeacherTextAnswers(){
     const item=document.createElement('div'); item.className='text-answer-item';
 
     const head=document.createElement('div'); head.className='ta-head';
-    const name=document.createElement('span'); name.className='ta-name'; name.textContent = displayName(s.key, s.name);
+    const name=document.createElement('span'); name.className='ta-name'; name.textContent = displayName(s.key, s.name, s.number);
     const status=document.createElement('span');
     status.className = 'ta-status ' + (p.done?'done':'pending');
     status.textContent = p.done ? '✅ 제출 완료' : '✏️ 작성중(미제출)';

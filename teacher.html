@@ -125,15 +125,17 @@ const STANDALONE_UNITS = [
    label = 목차에 보여지는 번호(챕터가 바뀌면 1부터 다시 시작) */
 const SECTIONS = [
   { chapter:'VI. 삼각형의 성질', groups:[
-      { title:'1. 삼각형의 성질', items:[
+      { title:'', items:[
         {n:1, label:1, title:'이등변삼각형의 성질', file:'teacher1.html'},
         {n:2, label:2, title:'수직이등분선의 성질', file:'teacher2.html'},
         {n:3, label:3, title:'각이등분선의 성질', file:'teacher3.html'},
         {n:4, label:4, title:'삼각형의 외심', file:'teacher4.html'},
         {n:5, label:5, title:'삼각형의 내심', file:'teacher5.html'},
         {n:6, label:6, title:'생각 넓히기', file:'teacher6.html'}
-      ]},
-      { title:'2. 사각형의 성질', items:[
+      ]}
+  ]},
+  { chapter:'VI. 사각형의 성질', groups:[
+      { title:'', items:[
         {n:11, label:1, title:'평행사변형의 성질', file:'teacher11.html'},
         {n:12, label:2, title:'평행사변형이 되는 조건 찾기', file:'teacher12.html'},
         {n:13, label:3, title:'평행사변형의 성질 활용', file:'teacher13.html'}
@@ -251,9 +253,11 @@ function renderUnitList(){
     list.appendChild(chapterEl);
 
     sec.groups.forEach(g=>{
-      const groupTitleEl=document.createElement('div');
-      groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
-      list.appendChild(groupTitleEl);
+      if(g.title){
+        const groupTitleEl=document.createElement('div');
+        groupTitleEl.className='group-title'; groupTitleEl.textContent=g.title;
+        list.appendChild(groupTitleEl);
+      }
 
       const itemsWrap=document.createElement('div');
       itemsWrap.className='group-items';

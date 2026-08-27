@@ -298,8 +298,8 @@ let classEnded=false, currentRoomName='';
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
 const PSEUDONYMS = ['유클리드','가우스','히파티아','디오판토스','피타고라스','아르키메데스','탈레스','에라토스테네스','데카르트','오일러','뉴턴','라이프니츠','파스칼','칸토어','뇌터','튜링'];
-function displayName(key, name){
-  if(!anonymize) return name || '(이름없음)';
+function displayName(key, name, number){
+  if(!anonymize) return (number ? number+'번 ' : '') + (name || '(이름없음)');
   let h=0;
   for(let i=0;i<key.length;i++) h=(h*31 + key.charCodeAt(i)) >>> 0;
   return PSEUDONYMS[h % PSEUDONYMS.length];
@@ -571,7 +571,7 @@ function renderGrid(){
     dot.className='dot '+(s.online?'on':'off');
     tdName.appendChild(dot);
     const nameText=document.createElement('span');
-    nameText.textContent=displayName(item.key, s.name);
+    nameText.textContent=displayName(item.key, s.name, s.number);
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
     if(s.submitted){
@@ -650,7 +650,7 @@ function renderTeacherView(){
     const card = document.createElement('div');
     card.className='student-card';
     const head=document.createElement('div'); head.className='sc-head';
-    head.innerHTML = `<span>${displayName(item.key,s.name)}</span><span>${item.score} / 6</span>`;
+    head.innerHTML = `<span>${displayName(item.key,s.name,s.number)}</span><span>${item.score} / 6</span>`;
     const iconWrap=document.createElement('div'); iconWrap.className='sc-canvas';
     const icon6=document.createElement('div'); icon6.className='icon6';
     CANONICAL_MINIMAL.forEach(m=>{
@@ -672,7 +672,7 @@ function renderTeacherView(){
     const p2 = s.progress && s.progress.p2;
     const box=document.createElement('div'); box.className='text-answer-item';
     const head=document.createElement('div'); head.className='ta-head';
-    const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name);
+    const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
     const done = !!(p2 && p2.done);
     const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
     head.appendChild(name); head.appendChild(status);
@@ -706,7 +706,7 @@ function renderDetail(item){
   const wrap = document.getElementById('detail');
   wrap.textContent='';
   const h3 = document.createElement('h3');
-  h3.textContent = displayName(item.key, item.student.name) + (item.student.number?(' · '+item.student.number+'번'):'');
+  h3.textContent = displayName(item.key, item.student.name, item.student.number);
   wrap.appendChild(h3);
   const recs = item.student.records || [];
   if(recs.length===0){
