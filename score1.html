@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배움노트 총점 조회</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#233350;
+    --ink-soft:#5b6a8a;
+    --paper:#eef3f7;
+    --paper-line:#cfdae6;
+    --card:#ffffff;
+    --blue:#3a5a8c;
+    --blue-bg:#e7edf6;
+    --red-thread:#c0524a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 31px, var(--paper-line) 32px),
+      var(--paper);
+    font-family:'Noto Sans KR', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:40px 16px 80px;
+  }
+  .sheet{ width:100%; max-width:480px; }
+  .masthead{ position:relative; padding:0 0 22px 44px; margin-bottom:22px; }
+  .masthead::before{
+    content:""; position:absolute; left:14px; top:-8px; bottom:8px;
+    width:2px; background:var(--red-thread); opacity:.55;
+  }
+  .eyebrow{ font-size:12px; letter-spacing:.14em; color:var(--ink-soft); font-weight:700; }
+  h1{
+    font-family:'Noto Serif KR', serif; font-weight:700; font-size:26px;
+    margin:4px 0 6px; line-height:1.3;
+  }
+  .sub{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; }
+
+  .card{
+    background:var(--card); border-radius:14px; padding:26px 22px;
+    box-shadow:0 1px 2px rgba(35,51,80,.06), 0 10px 30px -14px rgba(35,51,80,.22);
+    border:1px solid #e2e8f1;
+  }
+
+  form{display:flex; flex-direction:column; gap:16px;}
+  label{
+    font-size:12.5px; font-weight:700; color:var(--ink-soft);
+    letter-spacing:.02em; display:block; margin-bottom:6px;
+  }
+  select, input{
+    width:100%; font-family:'Noto Sans KR', sans-serif; font-size:16px;
+    padding:11px 12px; border-radius:9px; border:1.5px solid #d7dfea;
+    background:#fbfcfe; color:var(--ink); outline:none;
+    transition:border-color .15s, background .15s;
+  }
+  select:focus, input:focus{ border-color:var(--blue); background:#fff; }
+  .row2{display:grid; grid-template-columns:1fr 1.4fr; gap:12px;}
+
+  button{
+    margin-top:4px; padding:13px 16px; border:none; border-radius:9px;
+    background:var(--ink); color:#fff; font-size:15.5px; font-weight:700;
+    cursor:pointer; transition:transform .08s ease, background .15s;
+  }
+  button:hover{background:#334469;}
+  button:active{transform:scale(.98);}
+
+  .msg{
+    margin-top:16px; font-size:13.5px; color:#b8574f; display:none; line-height:1.6;
+  }
+  .msg.show{display:block;}
+
+  .result{
+    display:none; margin-top:22px; padding-top:20px;
+    border-top:1.5px dashed #d7dfea; text-align:center; animation:rise .35s ease;
+  }
+  .result.show{display:block;}
+  @keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .result-name{ font-family:'Noto Serif KR', serif; font-size:15px; color:var(--ink-soft); }
+  .result-name b{color:var(--ink); font-weight:700;}
+
+  .score-badge{
+    margin:18px auto 6px;
+    display:inline-flex; align-items:baseline; gap:6px;
+    padding:14px 26px; border-radius:14px;
+    background:var(--blue-bg); color:var(--blue);
+  }
+  .score-badge .num{ font-family:'Noto Serif KR', serif; font-weight:700; font-size:38px; }
+  .score-badge .unit{ font-size:15px; font-weight:700; }
+
+  .note{
+    margin-top:14px; font-size:12px; color:var(--ink-soft); line-height:1.6;
+  }
+
+  .criteria-toggle{
+    margin-top:18px; font-size:12.5px; color:var(--blue); font-weight:700;
+    cursor:pointer; user-select:none; display:inline-block;
+  }
+  .criteria-box{
+    display:none; margin-top:12px; text-align:left; font-size:12px;
+    color:var(--ink-soft); background:#fbfcfe; border:1px solid #e2e8f1;
+    border-radius:9px; padding:12px 14px; line-height:1.9;
+  }
+  .criteria-box.show{display:block;}
+  .criteria-box table{width:100%; border-collapse:collapse;}
+  .criteria-box td{padding:2px 4px; border-bottom:1px dashed #e6ebf2;}
+  .criteria-box td:first-child{font-weight:700; color:var(--ink); width:38px;}
+
+  .foot{
+    margin-top:22px; text-align:center; font-size:11.5px;
+    color:var(--ink-soft); opacity:.75; line-height:1.6;
+  }
+
+  .info-card{
+    background:var(--card); border-radius:14px; padding:20px 22px;
+    box-shadow:0 1px 2px rgba(35,51,80,.06), 0 10px 30px -14px rgba(35,51,80,.22);
+    border:1px solid #e2e8f1; margin-bottom:18px;
+  }
+  .info-toggle{
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+  }
+  .info-toggle-title{
+    font-family:'Noto Serif KR', serif; font-weight:700; font-size:16px; color:var(--ink);
+  }
+  .info-toggle-arrow{ font-size:13px; color:var(--blue); font-weight:700; }
+  .info-body{ display:none; margin-top:16px; }
+  .info-body.show{ display:block; }
+
+  .info-label{
+    font-size:11.5px; font-weight:700; color:var(--blue);
+    letter-spacing:.03em; margin:14px 0 6px;
+  }
+  .info-label:first-child{ margin-top:0; }
+
+  .rubric-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .rubric-table td{
+    padding:6px 4px; border-bottom:1px dashed #e6ebf2; vertical-align:top;
+  }
+  .rubric-table td:first-child{
+    font-weight:700; color:var(--ink); width:38px; white-space:nowrap;
+  }
+  .rubric-table td:last-child{ color:var(--ink-soft); line-height:1.5; }
+  .rubric-table tr:last-child td{ border-bottom:none; }
+
+  .info-text{ font-size:12.5px; color:var(--ink-soft); line-height:1.85; }
+  .info-notice{
+    margin-top:14px; padding:12px 13px; border-radius:9px;
+    background:var(--blue-bg); color:var(--blue); font-size:12.5px; line-height:1.7;
+    font-weight:500;
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <div class="eyebrow">2학기 수행평가</div>
+    <h1>배움노트 총점 조회</h1>
+    <div class="sub">반 · 번호 · 이름을 모두 정확히 입력하면<br>본인의 총점만 확인할 수 있어요.<br>(이번 평가는 A/B/C 등급 없이 총점만 안내합니다)</div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-toggle" id="infoToggle">
+      <span class="info-toggle-title">채점기준 안내</span>
+      <span class="info-toggle-arrow" id="infoArrow">펼치기 ▾</span>
+    </div>
+    <div class="info-body" id="infoBody">
+      <div class="info-label">채점 요소 | 배움노트 수행정도</div>
+      <table class="rubric-table">
+        <tr><td>10점</td><td>배움노트를 90% 이상 작성한 경우</td></tr>
+        <tr><td>9점</td><td>배움노트를 80% 이상 ~ 90% 미만 작성한 경우</td></tr>
+        <tr><td>8점</td><td>배움노트를 70% 이상 ~ 80% 미만 작성한 경우</td></tr>
+        <tr><td>7점</td><td>배움노트를 60% 이상 ~ 70% 미만 작성한 경우</td></tr>
+        <tr><td>6점</td><td>배움노트를 50% 이상 ~ 60% 미만 작성한 경우</td></tr>
+        <tr><td>5점</td><td>배움노트를 40% 이상 ~ 50% 미만 작성한 경우</td></tr>
+        <tr><td>4점</td><td>배움노트를 30% 이상 ~ 40% 미만 작성한 경우</td></tr>
+        <tr><td>3점</td><td>배움노트를 20% 이상 ~ 30% 미만 작성한 경우</td></tr>
+        <tr><td>2점</td><td>배움노트를 10% 이상 ~ 20% 미만 작성한 경우</td></tr>
+        <tr><td>1점</td><td>배움노트를 10% 미만 작성한 경우</td></tr>
+        <tr><td>0점</td><td>미제출, 미응시</td></tr>
+      </table>
+
+      <div class="info-label">기본 점수</div>
+      <div class="info-text">없음</div>
+
+      <div class="info-label">유의 사항</div>
+      <div class="info-text">
+        · 체험학습, 질병결석 등의 사유로 평가에 불참할 경우, 출석 후 별도의 평가를 실시함.<br>
+        · 장기 결석의 경우 별도의 평가를 실시할 수 있으나, 별도 평가에도 미응시할 경우 해당 영역을 0점 처리함.
+      </div>
+
+      <div class="info-label">총점 산출 방법</div>
+      <div class="info-text">
+        · 배움노트 검사는 학기 중 총 3회 실시합니다.<br>
+        · 위 채점기준은 검사 1회당 적용되는 기준이며, 최종 총점은 3회 검사 결과를 합산한 점수의 달성률(%)에 따라 산정됩니다.
+      </div>
+
+      <div class="info-notice">
+        이번 배움노트 수행평가는 A/B/C 등급을 별도로 표시하지 않고, 위 채점기준에 따라 산정된 총점만 안내합니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="lookupForm">
+      <div class="row2">
+        <div>
+          <label for="classSel">반</label>
+          <select id="classSel" required>
+            <option value="" disabled selected>선택</option>
+            <option value="5">5반</option>
+            <option value="6">6반</option>
+            <option value="7">7반</option>
+            <option value="8">8반</option>
+          </select>
+        </div>
+        <div>
+          <label for="numInput">번호</label>
+          <input id="numInput" type="number" inputmode="numeric" min="1" max="30" placeholder="예: 12" required>
+        </div>
+      </div>
+      <div>
+        <label for="nameInput">이름</label>
+        <input id="nameInput" type="text" placeholder="이름을 입력하세요" required>
+      </div>
+      <button type="submit">내 총점 확인하기</button>
+    </form>
+
+    <div class="msg" id="errMsg"></div>
+
+    <div class="result" id="resultBox">
+      <div class="result-name"><b id="rName"></b>님 (<span id="rClass"></span> <span id="rNum"></span>번)</div>
+      <div class="score-badge" id="scoreBadge">
+        <span class="num" id="rScore"></span><span class="unit">점</span>
+      </div>
+      <div class="note" id="rNote"></div>
+
+      <div class="criteria-toggle" id="criteriaToggle">채점기준 자세히 보기 ▾</div>
+      <div class="criteria-box" id="criteriaBox">
+        <table>
+          <tr><td>10점</td><td>배움노트 90% 이상 작성</td></tr>
+          <tr><td>9점</td><td>80% 이상 ~ 90% 미만 작성</td></tr>
+          <tr><td>8점</td><td>70% 이상 ~ 80% 미만 작성</td></tr>
+          <tr><td>7점</td><td>60% 이상 ~ 70% 미만 작성</td></tr>
+          <tr><td>6점</td><td>50% 이상 ~ 60% 미만 작성</td></tr>
+          <tr><td>5점</td><td>40% 이상 ~ 50% 미만 작성</td></tr>
+          <tr><td>4점</td><td>30% 이상 ~ 40% 미만 작성</td></tr>
+          <tr><td>3점</td><td>20% 이상 ~ 30% 미만 작성</td></tr>
+          <tr><td>2점</td><td>10% 이상 ~ 20% 미만 작성</td></tr>
+          <tr><td>1점</td><td>10% 미만 작성</td></tr>
+          <tr><td>0점</td><td>미제출, 미응시</td></tr>
+        </table>
+        <div style="margin-top:8px;">
+          · 체험학습·질병결석 등으로 불참 시 출석 후 별도 평가 실시<br>
+          · 장기결석 시 별도 평가 실시 가능하나, 별도 평가도 미응시하면 0점 처리<br>
+          · 기본점수 없음
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">본인 확인 정보가 일치할 때만 결과가 표시됩니다.<br>다른 학생의 결과는 조회할 수 없습니다.</div>
+</div>
+
+<script>
+const DATA = [
+["5",1,"김나경",18],["5",2,"김석우",20],["5",3,"김연우",16],["5",4,"김은우",19],
+["5",5,"김이은",18],["5",6,"김하연",15],["5",7,"남슬",20],["5",8,"노혁진",17],
+["5",9,"문준빈",17],["5",10,"박세연",20],["5",11,"서연희",17],["5",12,"송예린",19],
+["5",13,"양재원",19],["5",14,"양현수",18],["5",15,"오승한",8],["5",16,"윤지호",20],
+["5",17,"이근우",20],["5",18,"이세영",18],["5",19,"이시원",18],["5",20,"이시훈",13],
+["5",21,"이한영",15],["5",23,"정수빈",19],["5",24,"조아현",16],["5",25,"정승미",20],
+["5",26,"최동익",18],["5",27,"최유준",17],["5",28,"최지호",12],["5",29,"최한결",19],
+["5",30,"박시현",0],
+
+["6",1,"곽민건",19],["6",2,"김가현",20],["6",3,"김민찬",14],["6",4,"김서연",16],
+["6",5,"김우진",11],["6",6,"김주은",17],["6",7,"김주하",13],["6",8,"김하윤",19],
+["6",9,"나시완",18],["6",10,"박다연",18],["6",11,"박주혁",7],["6",12,"박다은",20],
+["6",13,"성두리",16],["6",14,"소재희",20],["6",15,"신승우",15],["6",16,"신준섭",16],
+["6",17,"이상윤",12],["6",18,"이승현",15],["6",19,"장시우",15],["6",20,"장주완",15],
+["6",21,"전은유",20],["6",23,"정은서",17],["6",24,"조서빈",19],["6",25,"조수정",15],
+["6",26,"최서현",18],["6",27,"한승우",19],["6",28,"현서윤",17],["6",29,"현수빈",16],
+
+["7",1,"김건우",19],["7",2,"김동윤",20],["7",3,"김민채",18],["7",4,"김서연",17],
+["7",5,"김연서",18],["7",6,"류민",20],["7",7,"문선우",19],["7",8,"박은영",19],
+["7",9,"신하율",17],["7",10,"신현아",20],["7",11,"오다민",18],["7",12,"오혜석",null],
+["7",13,"유종우",0],["7",14,"윤수정",19],["7",15,"이건우",16],["7",16,"이민하",14],
+["7",17,"이서하",16],["7",18,"이서현",null],["7",19,"이소윤",20],["7",20,"이유나",15],
+["7",21,"이정하",13],["7",22,"장현우",20],["7",23,"정우진",11],["7",24,"조민근",19],
+["7",25,"조찬범",16],["7",26,"진서준",17],["7",27,"진채은",20],["7",28,"최우빈",17],
+["7",29,"한다예",20],
+
+["8",1,"김규린",17],["8",2,"김다윤",17],["8",3,"김민영",19],["8",4,"김민채",16],
+["8",5,"김소민",16],["8",7,"김수현",17],["8",8,"김지율",13],["8",9,"김태현",18],
+["8",10,"김환희",18],["8",11,"남규리",11],["8",12,"문도은",20],["8",13,"박용진",15],
+["8",14,"박채민",19],["8",15,"변지호",15],["8",16,"성우리",20],["8",17,"윤지율",18],
+["8",18,"이경준",16],["8",19,"이근영",18],["8",20,"이민혁",17],["8",21,"정아연",20],
+["8",22,"정희준",17],["8",23,"주진성",18],["8",24,"지온유",19],["8",25,"최민준",16],
+["8",26,"한라희",17],["8",27,"한윤우",12],["8",28,"허주희",20],["8",29,"홍서연",18]
+].map(r => ({cls:r[0], num:r[1], name:r[2], score:r[3]}));
+
+const infoToggle = document.getElementById('infoToggle');
+const infoBody = document.getElementById('infoBody');
+const infoArrow = document.getElementById('infoArrow');
+infoToggle.addEventListener('click', function(){
+  infoBody.classList.toggle('show');
+  infoArrow.textContent = infoBody.classList.contains('show') ? '접기 ▴' : '펼치기 ▾';
+});
+
+const form = document.getElementById('lookupForm');
+const errMsg = document.getElementById('errMsg');
+const resultBox = document.getElementById('resultBox');
+const criteriaToggle = document.getElementById('criteriaToggle');
+const criteriaBox = document.getElementById('criteriaBox');
+
+criteriaToggle.addEventListener('click', function(){
+  criteriaBox.classList.toggle('show');
+  criteriaToggle.textContent = criteriaBox.classList.contains('show')
+    ? '채점기준 접기 ▴' : '채점기준 자세히 보기 ▾';
+});
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  errMsg.classList.remove('show');
+  resultBox.classList.remove('show');
+  criteriaBox.classList.remove('show');
+  criteriaToggle.textContent = '채점기준 자세히 보기 ▾';
+
+  const cls = document.getElementById('classSel').value;
+  const num = parseInt(document.getElementById('numInput').value, 10);
+  const name = document.getElementById('nameInput').value.trim();
+
+  if(!cls || !num || !name){
+    errMsg.textContent = '반, 번호, 이름을 모두 입력해 주세요.';
+    errMsg.classList.add('show');
+    return;
+  }
+
+  const hit = DATA.find(r => r.cls === cls && r.num === num && r.name === name);
+
+  if(!hit){
+    errMsg.textContent = '일치하는 학생 정보를 찾을 수 없어요. 반 · 번호 · 이름을 다시 확인해 주세요.';
+    errMsg.classList.add('show');
+    return;
+  }
+
+  document.getElementById('rName').textContent = hit.name;
+  document.getElementById('rClass').textContent = hit.cls + '반';
+  document.getElementById('rNum').textContent = hit.num;
+
+  const rScore = document.getElementById('rScore');
+  const rNote = document.getElementById('rNote');
+
+  if(hit.score === null || hit.score === undefined){
+    rScore.textContent = '기록 없음';
+    rNote.textContent = '세부 점수가 아직 입력되지 않았습니다. 담당 선생님께 문의해 주세요.';
+  } else {
+    rScore.textContent = hit.score;
+    rNote.textContent = '배움노트 수행정도 채점기준에 따라 산정된 총점입니다. (A/B/C 등급 미표시)';
+  }
+
+  resultBox.classList.add('show');
+});
+</script>
+</body>
+</html>
