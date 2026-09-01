@@ -231,8 +231,8 @@ const CONFIG = {
    단, 같은 프로젝트를 여러 활동이 같이 쓰면 "반" 데이터가 서로 덮어써질 수 있어서,
    아래 ACTIVITY_SUFFIX로 방(room) 경로를 활동별로 구분해요
    (rooms/1반 이 아니라 rooms/1반__perp 처럼 저장됨 — 기존에 게시한 Realtime Database
-   규칙을 그대로 써도 되고, teacher_2.html과 반드시 짝을 맞춰야 해요).
-   이 파일과 "teacher_2.html" 두 곳에 FIREBASE_CONFIG를 똑같이 붙여넣으세요.
+   규칙을 그대로 써도 되고, teacher2.html과 반드시 짝을 맞춰야 해요).
+   이 파일과 "teacher2.html" 두 곳에 FIREBASE_CONFIG를 똑같이 붙여넣으세요.
    비워두면 실시간 확인 기능 없이 기존처럼 동작합니다 (다른 기능엔 영향 없음).
    ============================================================ */
 const FIREBASE_CONFIG = {
@@ -244,7 +244,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__perp'; // teacher_2.html과 반드시 동일해야 함
+const ACTIVITY_SUFFIX = '__perp'; // teacher2.html과 반드시 동일해야 함
 
 const GRID = 40;
 const TOUCH_TOL = 30; // 모바일에서 점 주변을 터치해도 잡히도록 넉넉하게 잡은 히트 반경(SVG 좌표계 기준)

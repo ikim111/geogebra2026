@@ -288,9 +288,9 @@
    설정 안내
    이 파일은 "0. 지오지브라 연습"의 teacher.html과 같은 엔진을 쓰는 자매 파일입니다.
    새 활동: "2. 수직이등분선의 성질" (원본 geogebra.org/m/fycsyh6y, 저자 김형준)
-   반드시 아래 두 가지를 student_2.html과 동일하게 맞춰주세요.
-   1) FIREBASE_CONFIG — student_2.html에 채운 값과 완전히 동일해야 합니다.
-   2) ACTIVITY_SUFFIX — student_2.html과 다르면 학생 데이터가 전혀 보이지 않습니다.
+   반드시 아래 두 가지를 student2.html과 동일하게 맞춰주세요.
+   1) FIREBASE_CONFIG — student2.html에 채운 값과 완전히 동일해야 합니다.
+   2) ACTIVITY_SUFFIX — student2.html과 다르면 학생 데이터가 전혀 보이지 않습니다.
 
    같은 Firebase 프로젝트를 "0. 지오지브라 연습"과 같이 쓰고 있다면, 이미 게시한 보안 규칙과
    익명 로그인 설정을 그대로 재사용할 수 있어요 (ACTIVITY_SUFFIX로 방 경로만 구분되므로
@@ -305,7 +305,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__perp'; // student_2.html과 반드시 동일해야 함
+const ACTIVITY_SUFFIX = '__perp'; // student2.html과 반드시 동일해야 함
 
 // 학생용 파일의 과제 구성과 맞춰주세요 (id, 짧은 제목)
 // 과제1·2는 "관찰(작도)+서술"이 한 페이지로 합쳐져 있고, 과제3·4는 "작도+설명"입니다.
@@ -954,7 +954,7 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
     el.setAttribute('stroke',color); el.setAttribute('stroke-width','2'); el.setAttribute('opacity',String(opacity));
     svg.appendChild(el);
   }else if(o.type==='lengthLabel'){
-    // 학생 화면(student_2.html)의 lengthLabel과 같은 방식: 점 사이를 점선으로 잇고,
+    // 학생 화면(student2.html)의 lengthLabel과 같은 방식: 점 사이를 점선으로 잇고,
     // 중점 위쪽에 실제 길이(모눈 1칸=1 기준, GRID=40px)를 숫자로 표시한다.
     const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
     const GRID=40;
@@ -969,7 +969,7 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
   }
 }
 
-/* 학생용 화면(student_2.html)의 캔버스에 있던 흰 배경 + 모눈(격자)을 교사용 미리보기에도 그대로
+/* 학생용 화면(student2.html)의 캔버스에 있던 흰 배경 + 모눈(격자)을 교사용 미리보기에도 그대로
    그려서, 학생이 실제로 보고 있는 화면과 비슷하게 보이도록 한다. (스냅샷 데이터에는 격자가
    포함되어 있지 않으므로 여기서 직접 그린다) */
 function drawGridBackground(svg, width, height){
@@ -1180,7 +1180,7 @@ let previewTaskId=1;
 function ensurePreviewLoaded(){
   const frame=document.getElementById('previewFrame');
   if(!previewLoaded){
-    frame.src = 'student_2.html?preview=1&task='+previewTaskId;
+    frame.src = 'student2.html?preview=1&task='+previewTaskId;
     previewLoaded=true;
   }
   document.getElementById('previewLabel').textContent = previewTaskId+' / '+TASK_LABELS.length;
