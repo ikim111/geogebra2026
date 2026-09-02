@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14. 여러 가지 사각형의 성질</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+  .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+  .task{background:#fff;border-radius:10px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid #eee;overflow:hidden;}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;gap:12px;}
+  .task-head h2{font-size:16.5px;margin:0;line-height:1.55;font-weight:bold;color:#222;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+
+  .two-col{display:flex;gap:16px;align-items:flex-start;padding:0 18px 18px;}
+  .col-canvas{flex:1 1 380px;min-width:300px;}
+  .col-text{flex:1 1 320px;min-width:280px;}
+  @media (max-width:760px){
+    .two-col{flex-direction:column;}
+    .two-col > div{width:100%;}
+  }
+
+  .quadSvg{width:100%;max-width:480px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;touch-action:none;}
+  .canvas-hint{font-size:12px;color:#888;text-align:center;margin-top:8px;}
+  .canvas-actions{text-align:center;margin-top:10px;}
+  .canvas-actions button{padding:8px 14px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;font-size:12.5px;color:#444;}
+
+  .input-row textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 12px;font-size:14.5px;font-family:inherit;resize:vertical;}
+  .input-row textarea.locked-fixed{background:#f4f6f8;color:#555;}
+  .text-min-note{font-size:11.5px;color:#999;margin:6px 0;}
+  .checkBtn{margin-top:8px;padding:10px 18px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:14.5px;font-weight:bold;cursor:pointer;}
+  .checkBtn.cancel{background:#9e9e9e;}
+  .feedback{font-size:13px;margin-top:8px;min-height:16px;}
+  .feedback.ok{color:var(--green);font-weight:bold;}
+  .feedback.no{color:#888;}
+
+  .class-answers{margin-top:14px;border-top:1px dashed #ddd;padding-top:10px;}
+  .ca-title{font-size:12.5px;font-weight:bold;color:#555;margin-bottom:6px;}
+  .ca-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+  .ca-name{font-size:11px;color:#888;font-weight:bold;}
+  .ca-text{font-size:13px;margin-top:2px;white-space:pre-wrap;}
+  .ca-empty{color:#999;font-size:12.5px;text-align:center;padding:10px 4px;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .two-col, body.app-paused .canvas-actions{ pointer-events:none !important; opacity:.5; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+</style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>14. 여러 가지 사각형의 성질</h1>
+    <p class="gate-sub">직사각형, 마름모, 정사각형, 등변사다리꼴을 살펴보고 대각선의 특징을 찾아봅시다 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="stickyBar">
+    <div id="unitTitleBar">14. 여러 가지 사각형의 성질</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div class="task" id="task-p1">
+      <div class="task-head">
+        <h2>[과제 1] 점 A, B, C, D를 움직여보며 직사각형의 대각선의 특징을 적어봅시다.</h2>
+        <span class="badge pending" id="badge-p1">미완료</span>
+      </div>
+      <div class="two-col">
+        <div class="col-canvas">
+          <svg class="quadSvg" id="svg-p1" viewBox="0 0 600 460"></svg>
+          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
+          <div class="canvas-actions">
+            <button id="reshuffle-p1">🔄 새로고침 (다른 모양으로)</button>
+          </div>
+        </div>
+        <div class="col-text">
+          <div class="input-row">
+            <textarea id="input-p1" rows="6" placeholder="예) 두 대각선의 길이가 서로 같다. (15자 이상)"></textarea>
+            <button class="checkBtn" id="check-p1">제출</button>
+          </div>
+          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-p1"></div>
+          <div class="class-answers" id="classAnswers-p1" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-p1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-p2" style="display:none;">
+      <div class="task-head">
+        <h2>[과제 2] 점 A, B, C, D를 움직여보며 마름모의 대각선의 특징을 적어봅시다.</h2>
+        <span class="badge pending" id="badge-p2">미완료</span>
+      </div>
+      <div class="two-col">
+        <div class="col-canvas">
+          <svg class="quadSvg" id="svg-p2" viewBox="0 0 600 460"></svg>
+          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
+          <div class="canvas-actions">
+            <button id="reshuffle-p2">🔄 새로고침 (다른 모양으로)</button>
+          </div>
+        </div>
+        <div class="col-text">
+          <div class="input-row">
+            <textarea id="input-p2" rows="6" placeholder="예) 두 대각선이 서로 수직으로 만난다. (15자 이상)"></textarea>
+            <button class="checkBtn" id="check-p2">제출</button>
+          </div>
+          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-p2"></div>
+          <div class="class-answers" id="classAnswers-p2" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-p2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-p3" style="display:none;">
+      <div class="task-head">
+        <h2>[과제 3] 점 A, B, C, D를 움직여보며 정사각형의 대각선의 특징을 적어봅시다.</h2>
+        <span class="badge pending" id="badge-p3">미완료</span>
+      </div>
+      <div class="two-col">
+        <div class="col-canvas">
+          <svg class="quadSvg" id="svg-p3" viewBox="0 0 600 460"></svg>
+          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
+          <div class="canvas-actions">
+            <button id="reshuffle-p3">🔄 새로고침 (다른 모양으로)</button>
+          </div>
+        </div>
+        <div class="col-text">
+          <div class="input-row">
+            <textarea id="input-p3" rows="6" placeholder="예) 두 대각선의 길이가 같고 수직으로 만난다. (15자 이상)"></textarea>
+            <button class="checkBtn" id="check-p3">제출</button>
+          </div>
+          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-p3"></div>
+          <div class="class-answers" id="classAnswers-p3" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-p3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="task" id="task-p4" style="display:none;">
+      <div class="task-head">
+        <h2>[과제 4] 점 A, B, C, D를 움직여보며 등변사다리꼴의 특징을 적어봅시다.</h2>
+        <span class="badge pending" id="badge-p4">미완료</span>
+      </div>
+      <div class="two-col">
+        <div class="col-canvas">
+          <svg class="quadSvg" id="svg-p4" viewBox="0 0 600 460"></svg>
+          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
+          <div class="canvas-actions">
+            <button id="reshuffle-p4">🔄 새로고침 (다른 모양으로)</button>
+          </div>
+        </div>
+        <div class="col-text">
+          <div class="input-row">
+            <textarea id="input-p4" rows="6" placeholder="예) 두 대각선의 길이가 서로 같다. (15자 이상)"></textarea>
+            <button class="checkBtn" id="check-p4">제출</button>
+          </div>
+          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-p4"></div>
+          <div class="class-answers" id="classAnswers-p4" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-p4"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 4</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   14. 여러 가지 사각형의 성질
+   직사각형/마름모/정사각형은 "두 대각선이 서로를 이등분한다"는 평행사변형 성질을 공유하므로,
+   대각선의 교점 O를 화면 좌표계에서 고정한 채 각 도형 특유의 조건(직사각형=두 대각선 길이가
+   같음, 마름모=두 대각선이 수직, 정사각형=둘 다)만 追加로 걸어서 꼭짓점을 드래그해도 항상
+   그 도형이 유지되게 만든다. 등변사다리꼴은 평행사변형이 아니라서(대각선이 서로를 이등분하지
+   않음) 완전히 다른 방식 — 대칭축을 기준으로 아랫변 A,B / 윗변 D,C가 각각 좌우 대칭을 이루도록
+   좌표를 관리한다. "새로고침" 버튼을 누르면 해당 도형만 완전히 새로운 임의의 모양으로 바뀐다.
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__quad14'; // teacher14.html과 반드시 동일해야 함
+const UNIT_LABEL = '14. 여러 가지 사각형의 성질';
+const MIN_LEN = 15; // 과제 1~4 공통: 서술형 최소 글자수
+
+/* ---------- 벡터/기하 유틸 (student11.html과 동일한 함수들) ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+const vlen=a=>Math.hypot(a.x,a.y);
+const norm=a=>{const m=vlen(a)||1e-9;return {x:a.x/m,y:a.y/m};};
+const dot=(a,b)=>a.x*b.x+a.y*b.y;
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const clampR=(v,r)=>Math.max(r[0],Math.min(r[1],v));
+function angleBetweenDeg(v1,v2){
+  const m=vlen(v1)*vlen(v2)||1e-9;
+  let c=dot(v1,v2)/m; c=Math.max(-1,Math.min(1,c));
+  return Math.acos(c)*180/Math.PI;
+}
+function lineIntersect(p1,p2,p3,p4){
+  const d1=sub(p2,p1), d2=sub(p4,p3);
+  const denom = d1.x*d2.y - d1.y*d2.x;
+  if(Math.abs(denom)<1e-9) return mid(p1,p3);
+  const t = ((p3.x-p1.x)*d2.y - (p3.y-p1.y)*d2.x)/denom;
+  return { x:p1.x+d1.x*t, y:p1.y+d1.y*t };
+}
+const TOUCH_TOL = 30;
+
+/* ---------- 4개 도형(직사각형/마름모/정사각형/등변사다리꼴) 공통 상태·드래그 엔진 ---------- */
+const SHAPE_RANGE = { rectW:[45,170], rectH:[45,170], rhombP:[45,170], rhombQ:[45,170], squareR:[45,150], trapAB:[40,190], trapY:[-190,190] };
+const MIN_GAP_TRAP = 70;
+const CENTER = {x:300, y:220};
+
+function computeLocalQuad(kind, p){
+  if(kind==='rect') return { A:{x:-p.w,y:-p.h}, B:{x:p.w,y:-p.h}, C:{x:p.w,y:p.h}, D:{x:-p.w,y:p.h} };
+  if(kind==='rhombus') return { A:{x:0,y:-p.pv}, B:{x:p.qv,y:0}, C:{x:0,y:p.pv}, D:{x:-p.qv,y:0} };
+  if(kind==='square') return { A:{x:-p.r,y:-p.r}, B:{x:p.r,y:-p.r}, C:{x:p.r,y:p.r}, D:{x:-p.r,y:p.r} };
+  return { A:{x:-p.a,y:p.y1}, B:{x:p.a,y:p.y1}, C:{x:p.b,y:p.y2}, D:{x:-p.b,y:p.y2} }; // trap
+}
+function toWorldPt(state, local){
+  const c=Math.cos(state.phi), s=Math.sin(state.phi);
+  return { x: state.T.x + local.x*c - local.y*s, y: state.T.y + local.x*s + local.y*c };
+}
+function toLocalPt(state, world){
+  const dx=world.x-state.T.x, dy=world.y-state.T.y;
+  const c=Math.cos(state.phi), s=Math.sin(state.phi);
+  return { x: dx*c+dy*s, y: -dx*s+dy*c };
+}
+function recomputeQuad(kind, state){
+  const L = computeLocalQuad(kind, state.params);
+  state.quad = { A:toWorldPt(state,L.A), B:toWorldPt(state,L.B), C:toWorldPt(state,L.C), D:toWorldPt(state,L.D) };
+}
+function regenerateShape(kind, state){
+  const rnd=(lo,hi)=>lo+Math.random()*(hi-lo);
+  state.phi = rnd(0, Math.PI*2);
+  state.T = {x:CENTER.x, y:CENTER.y};
+  if(kind==='rect'){
+    state.params = { w: rnd(60,150), h: rnd(60,150) };
+  } else if(kind==='rhombus'){
+    const base=rnd(55,95), ratio=rnd(1.3,2.0);
+    state.params = Math.random()<0.5 ? {pv:base, qv:base*ratio} : {pv:base*ratio, qv:base};
+  } else if(kind==='square'){
+    state.params = { r: rnd(70,140) };
+  } else {
+    let a=rnd(90,150), b=a*rnd(0.35,0.75);
+    if(Math.random()<0.5){ const t=a; a=b; b=t; }
+    const h=rnd(70,110);
+    state.params = { a, b, y1:h, y2:-h };
+  }
+  recomputeQuad(kind, state);
+}
+function dragUpdateShape(kind, state, label, worldPt){
+  const local = toLocalPt(state, worldPt);
+  const p = state.params;
+  if(kind==='rect'){
+    p.w = clampR(Math.abs(local.x), SHAPE_RANGE.rectW);
+    p.h = clampR(Math.abs(local.y), SHAPE_RANGE.rectH);
+  } else if(kind==='rhombus'){
+    if(label==='A'||label==='C') p.pv = clampR(Math.abs(local.y), SHAPE_RANGE.rhombP);
+    else p.qv = clampR(Math.abs(local.x), SHAPE_RANGE.rhombQ);
+  } else if(kind==='square'){
+    p.r = clampR((Math.abs(local.x)+Math.abs(local.y))/2, SHAPE_RANGE.squareR);
+  } else {
+    if(label==='A'||label==='B'){
+      p.a = clampR(Math.abs(local.x), SHAPE_RANGE.trapAB);
+      p.y1 = clampR(Math.max(local.y, p.y2+MIN_GAP_TRAP), SHAPE_RANGE.trapY);
+    } else {
+      p.b = clampR(Math.abs(local.x), SHAPE_RANGE.trapAB);
+      p.y2 = clampR(Math.min(local.y, p.y1-MIN_GAP_TRAP), SHAPE_RANGE.trapY);
+    }
+  }
+  recomputeQuad(kind, state);
+}
+function findVertexNear(quad, pt, tol){
+  let best=null, bd=tol;
+  ['A','B','C','D'].forEach(k=>{
+    const d=dist(quad[k], pt);
+    if(d<bd){ bd=d; best=k; }
+  });
+  return best;
+}
+function getSvgCoords(svg, e){
+  const pt = svg.createSVGPoint();
+  const t = e.touches && e.touches[0] ? e.touches[0] : e;
+  pt.x=t.clientX; pt.y=t.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  const loc = pt.matrixTransform(ctm);
+  return {x:loc.x, y:loc.y};
+}
+
+/* ---------- 그리기 유틸 ---------- */
+function labelOffset(p, center, d){
+  const dir = norm(sub(p, center));
+  return { x:p.x + dir.x*d, y:p.y + dir.y*d };
+}
+function mkLine(svg,p1,p2,color,dash,w){
+  const l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',p1.x); l.setAttribute('y1',p1.y); l.setAttribute('x2',p2.x); l.setAttribute('y2',p2.y);
+  l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||1.6);
+  if(dash) l.setAttribute('stroke-dasharray',dash);
+  svg.appendChild(l);
+}
+function mkText(svg,p,text,color,size,bold){
+  const t=document.createElementNS(NS,'text');
+  t.setAttribute('x',p.x); t.setAttribute('y',p.y);
+  t.setAttribute('font-size',size||12); if(bold) t.setAttribute('font-weight','bold');
+  t.setAttribute('fill',color); t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
+  t.textContent=text;
+  svg.appendChild(t);
+}
+function arcPath(b,a,c,r){
+  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+  let diff=a2-a1;
+  while(diff<=-Math.PI) diff+=2*Math.PI;
+  while(diff>Math.PI) diff-=2*Math.PI;
+  const end=a1+diff;
+  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
+  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
+  const sweep = diff>0?1:0;
+  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, mid:{x:b.x+(r+15)*Math.cos(a1+diff/2), y:b.y+(r+15)*Math.sin(a1+diff/2)}};
+}
+function drawAngleArc(svg, vertex, ref1, ref2, r, color){
+  const info=arcPath(vertex, ref1, ref2, r);
+  const path=document.createElementNS(NS,'path');
+  path.setAttribute('d',info.path); path.setAttribute('stroke',color); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+  svg.appendChild(path);
+  const deg=angleBetweenDeg(sub(ref1,vertex), sub(ref2,vertex));
+  mkText(svg, info.mid, deg.toFixed(0)+'°', color, 12, true);
+}
+function drawVertices(svg, quad, center){
+  ['A','B','C','D'].forEach(name=>{
+    const p=quad[name];
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',7);
+    c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+    svg.appendChild(c);
+    const lp=labelOffset(p, center, -22);
+    mkText(svg, lp, name, '#212121', 19, true);
+  });
+}
+
+/* 직사각형/마름모/정사각형 공통 렌더 — 대각선 교점 O에서 갈라지는 12개 각(삼각형 ABO/AOD/OCD/OBC)과
+   OA,OB,OC,OD 길이를 표시한다. */
+function drawParallelogramFamily(svg, quad){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const {A,B,C,D} = quad;
+  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
+  const center={x:cx,y:cy};
+  const O = mid(A,C);
+
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.10');
+  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2.5');
+  svg.appendChild(poly);
+
+  mkLine(svg,A,C,'#9e9e9e','4,3');
+  mkLine(svg,B,D,'#9e9e9e','4,3');
+
+  // 삼각형 ABO / AOD / OCD / OBC의 세 각씩, 총 12개
+  drawAngleArc(svg, A, O, B, 20, '#e65100'); // OAB
+  drawAngleArc(svg, B, A, O, 20, '#e65100'); // ABO
+  drawAngleArc(svg, O, A, B, 14, '#e65100'); // AOB
+  drawAngleArc(svg, A, O, D, 30, '#e65100'); // OAD
+  drawAngleArc(svg, D, O, A, 20, '#e65100'); // ODA
+  drawAngleArc(svg, O, A, D, 22, '#e65100'); // AOD
+  drawAngleArc(svg, C, O, D, 20, '#e65100'); // OCD
+  drawAngleArc(svg, D, O, C, 30, '#e65100'); // ODC
+  drawAngleArc(svg, O, C, D, 18, '#e65100'); // COD
+  drawAngleArc(svg, B, O, C, 20, '#e65100'); // OBC
+  drawAngleArc(svg, C, O, B, 30, '#e65100'); // OCB
+  drawAngleArc(svg, O, B, C, 26, '#e65100'); // BOC
+
+  // O, OA/OB/OC/OD
+  const ocirc=document.createElementNS(NS,'circle');
+  ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
+  ocirc.setAttribute('fill','#8e24aa');
+  svg.appendChild(ocirc);
+  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 16, true);
+  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
+    const m=mid(O,p);
+    const outward=labelOffset(m, center, 3);
+    mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12.5, false);
+  });
+
+  drawVertices(svg, quad, center);
+}
+
+/* 등변사다리꼴 렌더 — 두 대각선의 실제 교점 O(등분점이 아님), OA~OD 길이, 네 꼭짓점의 전체 각
+   (DAB,ABC,BCD,CDA), 네 변의 길이(AB,BC,CD,DA)를 표시한다. */
+function drawTrapezoid(svg, quad){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const {A,B,C,D} = quad;
+  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
+  const center={x:cx,y:cy};
+  const O = lineIntersect(A,C,B,D);
+
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.10');
+  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2.5');
+  svg.appendChild(poly);
+
+  mkLine(svg,A,C,'#9e9e9e','4,3');
+  mkLine(svg,B,D,'#9e9e9e','4,3');
+
+  // 변 길이 라벨 (AB,BC,CD,DA)
+  [['A','B',A,B],['B','C',B,C],['C','D',C,D],['D','A',D,A]].forEach(([ln1,ln2,p1,p2])=>{
+    const m=mid(p1,p2);
+    const outward=labelOffset(m, center, 16);
+    mkText(svg, outward, (dist(p1,p2)*0.1).toFixed(1), '#1565c0', 14, true);
+  });
+
+  // 네 꼭짓점의 전체 내각 (DAB, ABC, BCD, CDA)
+  drawAngleArc(svg, A, D, B, 26, '#e65100');
+  drawAngleArc(svg, B, A, C, 26, '#e65100');
+  drawAngleArc(svg, C, B, D, 26, '#e65100');
+  drawAngleArc(svg, D, C, A, 26, '#e65100');
+
+  // O, OA/OB/OC/OD
+  const ocirc=document.createElementNS(NS,'circle');
+  ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
+  ocirc.setAttribute('fill','#8e24aa');
+  svg.appendChild(ocirc);
+  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 16, true);
+  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
+    const m=mid(O,p);
+    const outward=labelOffset(m, center, 3);
+    mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12, false);
+  });
+
+  drawVertices(svg, quad, center);
+}
+
+/* ---------- 과제별 상태 ---------- */
+const SHAPES = {
+  p1: {kind:'rect', state:{}},
+  p2: {kind:'rhombus', state:{}},
+  p3: {kind:'square', state:{}},
+  p4: {kind:'trap', state:{}}
+};
+let dragging = null; // {page, label} 또는 null
+
+function renderPage(page){
+  const svg = document.getElementById('svg-'+page);
+  const {kind, state} = SHAPES[page];
+  if(kind==='trap') drawTrapezoid(svg, state.quad); else drawParallelogramFamily(svg, state.quad);
+  RT.pushStateDebounced();
+}
+function regeneratePage(page){
+  const {kind, state} = SHAPES[page];
+  regenerateShape(kind, state);
+  renderPage(page);
+}
+['p1','p2','p3','p4'].forEach(page=>{
+  regeneratePage(page);
+  const svg = document.getElementById('svg-'+page);
+  const down = e=>{
+    e.preventDefault();
+    if(document.body.classList.contains('app-paused')) return;
+    const pt = getSvgCoords(svg, e);
+    const {state} = SHAPES[page];
+    const v = findVertexNear(state.quad, pt, TOUCH_TOL);
+    if(v) dragging = {page, label:v};
+  };
+  const move = e=>{
+    if(!dragging || dragging.page!==page) return;
+    e.preventDefault();
+    const pt = getSvgCoords(svg, e);
+    const {kind, state} = SHAPES[page];
+    dragUpdateShape(kind, state, dragging.label, pt);
+    renderPage(page);
+  };
+  const up = ()=>{ dragging=null; };
+  svg.addEventListener('mousedown', down);
+  svg.addEventListener('touchstart', down, {passive:false});
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('mouseup', up);
+  window.addEventListener('touchend', up);
+  document.getElementById('reshuffle-'+page).addEventListener('click', ()=> regeneratePage(page));
+});
+
+/* ---------- 과제 1~4 서술형: 제출/취소 잠금 + 친구 답변 보기 (기존 단원들과 동일한 패턴) ---------- */
+const results = { p1:{done:false,value:''}, p2:{done:false,value:''}, p3:{done:false,value:''}, p4:{done:false,value:''} };
+const classAnswersPicked = { p1:[], p2:[], p3:[], p4:[] };
+window.__task14 = {};
+['p1','p2','p3','p4'].forEach(page=>{
+  const badge=document.getElementById('badge-'+page);
+  const fb=document.getElementById('fb-'+page);
+  const input=document.getElementById('input-'+page);
+  const btn=document.getElementById('check-'+page);
+  let locked = false;
+
+  function checkReady(){ return (input.value||'').trim().length>=MIN_LEN; }
+  function refreshFeedback(){
+    if(!locked){
+      const okFlag = checkReady();
+      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러 제출해보세요.' : `조금 더 자세히 적어볼까요? (${MIN_LEN}자 이상)`;
+      fb.className = 'feedback ' + (okFlag?'ok':'no');
+    }
+    return checkReady();
+  }
+  function lockUI(){
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+    results[page] = {done:true, value:input.value};
+    badge.textContent = '완료';
+    badge.className = 'badge done';
+    updateProgress();
+  }
+  function doSubmit(){
+    const canSubmit = refreshFeedback();
+    if(!canSubmit) return;
+    lockUI();
+    fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
+    fb.className = 'feedback ok';
+    renderClassAnswers(page);
+    RT.pushProgress();
+  }
+  function forceSubmit(){
+    lockUI();
+    fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
+    fb.className = 'feedback ok';
+    renderClassAnswers(page);
+    RT.pushProgress();
+  }
+  function doCancel(){
+    locked = false;
+    input.disabled = false;
+    input.classList.remove('locked-fixed');
+    btn.textContent = '제출';
+    btn.classList.remove('cancel');
+    results[page] = {done:false, value:input.value};
+    badge.textContent = '미완료';
+    badge.className = 'badge pending';
+    refreshFeedback();
+    renderClassAnswers(page);
+    RT.pushProgress();
+    updateProgress();
+  }
+  btn.addEventListener('click', ()=>{
+    if(locked){
+      if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+      doCancel();
+    } else {
+      doSubmit();
+    }
+  });
+  input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
+  refreshFeedback();
+
+  window.__task14[page] = {doSubmit, doCancel, forceSubmit, isLocked:()=>locked};
+});
+
+/* ---------- 진행률 표시 ---------- */
+function updateProgress(){
+  const total = 4;
+  const done = ['p1','p2','p3','p4'].filter(p=>results[p].done).length;
+  const textEl = document.getElementById('progressText');
+  const fillEl = document.getElementById('progressFill');
+  if(textEl) textEl.textContent = `완료 ${done} / ${total}`;
+  if(fillEl) fillEl.style.width = (done/total*100)+'%';
+}
+updateProgress();
+
+function renderClassAnswers(page){
+  const wrap=document.getElementById('classAnswers-'+page);
+  const list=document.getElementById('classAnswersList-'+page);
+  const myDone = !!(results[page] && results[page].done);
+  if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  list.textContent='';
+  const entries = Object.keys(RT.allStudents||{})
+    .filter(k=>k!==RT.studentKey)
+    .map(k=>({key:k, ...RT.allStudents[k]}))
+    .filter(s=> s.progress && s.progress[page] && s.progress[page].value && String(s.progress[page].value).trim().length>0);
+  if(entries.length===0){
+    const empty=document.createElement('div'); empty.className='ca-empty';
+    empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
+    list.appendChild(empty);
+    classAnswersPicked[page] = [];
+    return;
+  }
+  const pool = new Map(entries.map(s=>[s.key, s]));
+  let picked = classAnswersPicked[page].filter(k=>pool.has(k));
+  const need = 5 - picked.length;
+  if(need>0){
+    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
+    picked = picked.concat(fresh);
+  }
+  classAnswersPicked[page] = picked;
+  picked.map(k=>pool.get(k)).forEach(s=>{
+    const item=document.createElement('div'); item.className='ca-item';
+    const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[page].value);
+    item.appendChild(name); item.appendChild(text);
+    list.appendChild(item);
+  });
+}
+
+/* ---------- 게이트(반/번호/이름) ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+
+function startApp(profile){
+  document.getElementById('gateScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  RT.connect(profile.name, profile.classNo, profile.number);
+}
+
+(function initGate(){
+  const profile = loadProfile();
+  if(!profile){
+    document.getElementById('profileMissingBox').style.display='block';
+    return;
+  }
+  checkUnitAccessAndShowGate(profile);
+})();
+
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    document.getElementById('profileBox').style.display='block';
+    document.getElementById('profileClassView').textContent = profile.classNo+'반';
+    document.getElementById('profileNumberView').textContent = profile.number || '-';
+    document.getElementById('profileNameView').textContent = profile.name;
+    document.getElementById('unitLockedBox').style.display='none';
+    document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
+  };
+  const showLocked = ()=>{
+    document.getElementById('profileBox').style.display='none';
+    document.getElementById('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/14').once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+
+/* ---------- 화면 잠금 / 공지 적용 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
+  if(typeof updateNavButtons==='function') updateNavButtons();
+}
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.studentRef.update({
+      name, number: number||null,
+      lastActive: firebase.database.ServerValue.TIMESTAMP,
+      online:true
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2','p3','p4'].forEach(renderClassAnswers); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      const classEnded = !!c.classEnded;
+      const tasks = window.__task14;
+      const applyAll = fn => ['p1','p2','p3','p4'].forEach(p=> tasks[p] && fn(tasks[p]));
+      if(this._lastKnownClassEnded===null){
+        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    this.pushProgress();
+    this.pushState();
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    const allDone = ['p1','p2','p3','p4'].every(p=>results[p].done);
+    this.studentRef.update({
+      progress: { p1:results.p1, p2:results.p2, p3:results.p3, p4:results.p4 },
+      completed: allDone, total: 4,
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
+  },
+  pushState(){
+    if(!this.connected) return;
+    const shapes = {};
+    ['p1','p2','p3','p4'].forEach(p=>{ if(SHAPES[p].state.quad) shapes[p]=SHAPES[p].state.quad; });
+    this.studentRef.update({ shapes, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushStateDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
+  },
+  flushPending(){
+    if(this._t){
+      clearTimeout(this._t);
+      this._t=null;
+      this.pushState();
+    }
+  }
+};
+
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+
+document.getElementById('announceClose').addEventListener('click', ()=>{
+  document.getElementById('announceBanner').style.display='none';
+});
+
+/* ---------- 페이지 넘기기 (4개 과제) ---------- */
+const pages = ['p1','p2','p3','p4'].map(p=>document.getElementById('task-'+p));
+let currentPage = 0;
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  const label=document.getElementById('pageLabel');
+  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function updateNavButtons(){
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  if(!prevBtn||!nextBtn) return;
+  prevBtn.disabled = currentPage===0 || RT.paused;
+  nextBtn.disabled = currentPage===pages.length-1 || RT.paused;
+}
+document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+</script>
+</body>
+</html>

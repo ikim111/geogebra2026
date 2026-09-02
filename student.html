@@ -111,7 +111,7 @@ const FIREBASE_CONFIG = {
 };
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
-const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',11:'__quad11',12:'__quad12',13:'__quad13'};
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',11:'__quad11',12:'__quad12',13:'__quad13',14:'__quad14'};
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
 /* n = 실제 단원 번호(파일명·Firebase 잠금/완료 경로에 쓰이는 값, 절대 바꾸면 안 됨)
@@ -131,7 +131,8 @@ const SECTIONS = [
       { title:'', items:[
         {n:11, label:1, title:'평행사변형의 성질', file:'student11.html'},
         {n:12, label:2, title:'평행사변형이 되는 조건 찾기', file:'student12.html'},
-        {n:13, label:3, title:'평행사변형의 성질 활용', file:'student13.html'}
+        {n:13, label:3, title:'평행사변형의 성질 활용', file:'student13.html'},
+        {n:14, label:4, title:'여러 가지 사각형의 성질', file:'student14.html'}
       ]}
   ]}
 ];
