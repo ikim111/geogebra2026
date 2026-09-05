@@ -185,7 +185,11 @@ if (typeof firebase === 'undefined') {
       <div class="row">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">채점 화면:</span>
         <button class="pause" id="revealAnswersBtn">🔍 정답보기</button>
+        <button class="pause" id="aiGradeAllBtn">🤖 전체 AI 채점 (미채점만)</button>
         <span style="font-size:12px;color:#888;">끄면 학생별로 완료/미완료만 보이고, 켜면 정답 여부·이유·작도까지 보여요.</span>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <span id="aiGradeAllStatus" style="font-size:12px;color:#888;"></span>
       </div>
     </div>
 
@@ -310,9 +314,9 @@ function byLabelSnap(lo, label){ return lo && (lo.points||[]).find(p=>p.label===
    외심이면 두 변 이상의 수직이등분선을, 내심이면 두 꼭짓점 이상의 각의 이등분선을 실제로
    그렸는지(=작도 근거)를 함께 확인한다. 학생 화면에는 이 결과를 보여주지 않는다. */
 function gradePointTask(lo, task){
-  if(!lo || !lo.points || !lo.points.length) return {status:'none'};
+  if(!lo || !lo.points || !lo.points.length) return {status:'none', score:0, maxScore:2};
   const A=byLabelSnap(lo,'A'), B=byLabelSnap(lo,'B'), C=byLabelSnap(lo,'C');
-  if(!A||!B||!C) return {status:'none'};
+  if(!A||!B||!C) return {status:'none', score:0, maxScore:2};
   let bisCount=0;
   if(task.centerType==='외심'){
     [[A,B],[B,C],[C,A]].forEach(([X,Y])=>{
@@ -328,11 +332,15 @@ function gradePointTask(lo, task){
   const tc = task.scenario.trueCenter;
   const nearPt=(lo.points||[]).find(p=> !['A','B','C'].includes(p.label) && dist(p,tc) < 22);
   const constructOk = bisCount>=2;
+  const hasPointOk = !!nearPt;
+  // ①이등분선 2개 이상(1점) + ②중심 위치 정확(1점) = 총 2점. student7.html 채점요소와 동일한 배점.
+  const score = (constructOk?1:0) + (hasPointOk?1:0);
+  const maxScore = 2;
   let status;
-  if(constructOk && nearPt) status='correct';
-  else if(nearPt || bisCount>0) status='partial';
+  if(constructOk && hasPointOk) status='correct';
+  else if(hasPointOk || bisCount>0) status='partial';
   else status='none';
-  return {status, bisCount, hasPoint:!!nearPt};
+  return {status, bisCount, hasPoint:hasPointOk, constructOk, score, maxScore};
 }
 // ①선택(1점) + ②이유(1점, AI 채점) + ③방법(1점, AI 채점) = 총 3점.
 // aiEntry는 rooms/{room}/students/{key}/aiGrading/{taskId}에 저장된 AI 채점 결과
@@ -511,11 +519,9 @@ function render(){
             grade = gradeJustify(s.progress && s.progress[tid], task, aiEntry);
           }
           cell.classList.add(grade.status);
-          cell.textContent = task.kind==='pointplot'
-            ? {correct:'정답', partial:'부분', wrong:'오답', none:'-'}[grade.status]
-            : (grade.status==='none' ? '-' : `${grade.score}점`);
+          cell.textContent = grade.status==='none' ? '-' : `${grade.score}점`;
           cell.title = task.kind==='pointplot'
-            ? `과제 ${tid} (${task.centerType}·${task.scenario.title}) 클릭해서 자세히 보기`
+            ? `과제 ${tid} (${task.centerType}·${task.scenario.title}) — ${grade.score}/${grade.maxScore}점 · 클릭해서 자세히 보기`
             : `과제 ${tid} (${task.centerType}·${task.scenario.title}) — ${grade.score}/${grade.maxScore}점${grade.aiGraded?'':' (AI 채점 전, ①선택만 반영)'} · 클릭해서 자세히 보기`;
         }
         cell.addEventListener('click', ()=> selectStudent(s.key));
@@ -616,13 +622,14 @@ function buildTaskBox(s, t, headerText, key){
     const lo = s.objectSnapshots && s.objectSnapshots[t.id];
     const grade = gradePointTask(lo, t);
     const stat=document.createElement('span'); stat.className='stat '+grade.status;
-    stat.textContent = {correct:'✅ 정답', partial:'🟠 부분(위치 또는 작도 중 하나만 충족)', wrong:'❌ 오답', none:'⬜ 미작성'}[grade.status];
+    stat.textContent = grade.status==='none' ? '⬜ 미작성' : `점수: ${grade.score} / ${grade.maxScore}점`;
     box.appendChild(stat);
     if(lo){
       const bisName = t.centerType==='외심' ? '수직이등분선' : '각의 이등분선';
-      const checklist=document.createElement('div'); checklist.className='dtext';
-      checklist.textContent = `① ${bisName} 작도: ${grade.bisCount}/3개 (2개 이상 필요) · ② ${t.centerType} 위치: ${grade.hasPoint ? '정답 근처 ✅' : '근처 아님 ❌'}`;
-      box.appendChild(checklist);
+      box.appendChild(buildCriteriaBox([
+        {label:`①${bisName} 2개 이상 작도 (${grade.bisCount}/3개)`, points:1, done:grade.constructOk},
+        {label:`②${t.centerType} 위치 정확`, points:1, done:grade.hasPoint}
+      ]));
       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 600 400');
       box.appendChild(svg);
       drawSnapshotSvg(svg, lo, t.scenario.trueCenter, t.centerType);
@@ -733,10 +740,9 @@ function submitStudentAnswersToGoogleForm(s){
       const lo = s.objectSnapshots && s.objectSnapshots[t.id];
       const grade = gradePointTask(lo, t);
       if(grade.status==='none') return;
-      success = {correct:'정답', partial:'부분', wrong:'오답'}[grade.status] || grade.status;
-      const bisOk = grade.bisCount>=2;
+      success = `${grade.score}/${grade.maxScore}점`;
       const bisName = t.centerType==='외심' ? '수직이등분선' : '각의 이등분선';
-      answer = `[${t.centerType}] ${t.scenario.title} | ①${bisName} 작도: ${grade.bisCount}/3개 (2개 이상 ${bisOk?'O':'X'}) | ②${t.centerType} 위치: ${grade.hasPoint?'정답 근처 O':'근처 아님 X'}`;
+      answer = `[${t.centerType}] ${t.scenario.title} | ①${bisName} 작도: ${grade.bisCount}/3개 (2개 이상 ${grade.constructOk?'O':'X'}) | ②${t.centerType} 위치: ${grade.hasPoint?'정답 근처 O':'근처 아님 X'}`;
     } else {
       const p = s.progress && s.progress[t.id];
       const aiEntry = s.aiGrading && s.aiGrading[t.id];
@@ -871,6 +877,59 @@ document.getElementById('revealAnswersBtn').addEventListener('click', ()=>{
   document.getElementById('revealAnswersBtn').textContent = answersRevealed ? '🙈 정답 숨기기' : '🔍 정답보기';
   render();
 });
+
+/* 반 전체에서 아직 AI 채점(이유·방법)을 하지 않은 서술형 답안(과제2·4)만 모아서 순서대로
+   하나씩 AI 채점 API를 호출하고 결과를 Firebase에 저장한다. 이미 채점된 답안은 건너뛴다. */
+function collectUngradedJustifyItems(){
+  const items = [];
+  Object.keys(students).forEach(key=>{
+    const s = students[key];
+    const tasks = buildTasks(s.assignment);
+    tasks.forEach(t=>{
+      if(t.kind!=='justify') return;
+      const p = s.progress && s.progress[t.id];
+      if(!p || !p.done) return;
+      if(s.aiGrading && s.aiGrading[t.id]) return; // 이미 채점됨
+      const v = p.value || {};
+      items.push({ key, taskId:t.id, centerType:t.centerType, reason:v.reason||'', method:v.method||'' });
+    });
+  });
+  return items;
+}
+async function gradeAllJustifyTasks(){
+  const btn=document.getElementById('aiGradeAllBtn');
+  const statusEl=document.getElementById('aiGradeAllStatus');
+  if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const items = collectUngradedJustifyItems();
+  if(items.length===0){ statusEl.textContent='✅ 아직 채점하지 않은 답안이 없어요 (모두 채점됨 또는 제출된 답안 없음).'; return; }
+  if(!confirm(`아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(학생 수에 따라 시간이 걸릴 수 있어요)`)) return;
+  btn.disabled=true;
+  let done=0, failed=0;
+  for(let i=0;i<items.length;i++){
+    const item=items[i];
+    statusEl.textContent = `채점 중... (${i+1}/${items.length})`;
+    try{
+      const r = await fetch('/api/grade-justify', {
+        method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ centerType:item.centerType, reason:item.reason, method:item.method })
+      });
+      const data = await r.json();
+      if(!r.ok) throw new Error(data.error||'AI 채점 실패');
+      await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
+        reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
+        methodCorrect: !!data.methodCorrect, methodFeedback: data.methodFeedback||'',
+        ts: firebase.database.ServerValue.TIMESTAMP
+      });
+      done++;
+    }catch(err){
+      failed++;
+      console.error('AI 전체 채점 중 오류:', item, err);
+    }
+  }
+  btn.disabled=false;
+  statusEl.textContent = `완료: ${done}개 채점됨` + (failed? `, ${failed}개 실패(콘솔 참고)` : '');
+}
+document.getElementById('aiGradeAllBtn').addEventListener('click', gradeAllJustifyTasks);
 document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   if(!studentsRef || checkedKeys.size===0) return;
   const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
