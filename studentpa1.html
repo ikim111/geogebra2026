@@ -84,6 +84,7 @@
   .room-grid button.selected{background:#1a237e;border-color:#1a237e;color:#fff;}
   .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
   .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
 
   #appScreen{display:none;}
   #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
@@ -132,17 +133,16 @@ if (typeof firebase === 'undefined') {
 
 <div id="gateScreen">
   <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
     <h1>삼각형의 외심과 내심 찾기</h1>
     <p class="gate-sub">수행평가 · 김형준 선생님<br>문제 상황을 읽고 알맞은 점을 찾아 표시한 뒤, 그 이유와 방법을 서술합니다.</p>
-    <div id="profileManualBox" style="display:none;">
-      <label>반</label>
-      <div id="manualClassGrid" class="room-grid"></div>
-      <input type="hidden" id="manualClass">
-      <label>번호</label>
-      <input type="text" id="manualNumber" class="gate-input" placeholder="예: 12">
-      <label>이름</label>
-      <input type="text" id="manualName" class="gate-input" placeholder="예: 홍길동">
-      <button id="manualStartBtn" class="gate-start">시작하기 →</button>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 활동이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
     </div>
     <div id="profileBox" style="display:none;">
       <label>반</label>
@@ -152,7 +152,6 @@ if (typeof firebase === 'undefined') {
       <label>이름</label>
       <div class="gate-readonly" id="profileNameView"></div>
       <button id="startBtn" class="gate-start">시작하기 →</button>
-      <a href="#" id="profileEditBtn" style="display:block;text-align:center;margin-top:10px;font-size:12.5px;color:#888;">반/번호/이름이 틀렸나요? <b>정보 수정</b></a>
     </div>
     <input type="hidden" id="roomCode">
     <input type="hidden" id="studentName">
@@ -170,6 +169,7 @@ if (typeof firebase === 'undefined') {
   <div id="stickyBar">
     <div id="unitTitleBar">수행평가: 삼각형의 외심과 내심</div>
     <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row" style="display:none;">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -205,11 +205,13 @@ if (typeof firebase === 'undefined') {
 <script>
 /* ============================================================
    수행평가: 삼각형의 외심과 내심 (studentpa1.html / teacherpa1.html 짝)
-   - 이 파일은 student.html의 정식 "단원 목록"(SECTIONS)에는 올라가지 않습니다. 대신 선생님이
-     teacherpa1.html에서 "시작"하면 student.html 목차 맨 위에 30분간(또는 선생님이 종료할
-     때까지) 임시로 노출되는 별도 항목으로 뜹니다 — 자세한 내용은 student.html의 PA_TASKS 참고.
-   - 반/번호/이름은 이 화면에서 직접 입력받습니다(1반~12반 버튼 + 번호/이름). 다른 단원의
-     student.html과는 저장 위치(localStorage 키)가 분리되어 있어 서로 연동되지 않습니다.
+   - student.html의 정식 "단원 목록"(SECTIONS)에 8번으로 올라가 있는 단원입니다. student1~14.html과
+     완전히 같은 방식으로 student.html에 연동됩니다: 반/번호/이름은 이 화면에서 직접 입력받지
+     않고, student.html에서 과제 링크를 클릭할 때 붙여준 URL 쿼리(classNo/number/name)를
+     최우선으로 쓰고, 없으면 공용 프로필(localStorage의 'ggb_profile_v1', student1~14.html과
+     동일 키)을 사용합니다. 반/번호/이름이 틀렸을 때는 이 화면이 아니라 student.html로 돌아가서
+     "정보 수정"으로 고칩니다. 선생님이 teacher.html에서 이 단원(8번)을 열어줬는지도
+     student1~14.html과 같은 방식(rooms/{반}__access/units/8)으로 확인합니다.
    - 학생마다(반과 무관하게) "시작하기"를 처음 누르는 순간, 외심 시나리오 1개 + 내심 시나리오
      1개 + 등장 순서를 무작위로 딱 1번 확정해서 저장합니다(새로고침해도 그대로 유지).
    - 과제1·3(점 찍기)은 학생 화면에 정답 여부를 보여주지 않습니다("작성함"만 표시). 실제 정답
@@ -1541,8 +1543,12 @@ document.getElementById('announceClose').addEventListener('click', ()=>{
 });
 document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
 
-/* ---------- 반/번호/이름: 이 수행평가 전용 저장(다른 단원 student.html과 연동되지 않음) ---------- */
-const PROFILE_KEY = 'ggb_profile_pa1_local_v1';
+/* ---------- 반/번호/이름: student.html에서 가져오기 ----------
+   student1~14.html과 완전히 같은 방식이다. 이 화면에서는 더 이상 반/번호/이름을 직접 입력받지
+   않는다. student.html에서 과제 링크를 클릭할 때 붙여준 URL 쿼리(classNo/number/name)를
+   최우선으로 쓰고, 없으면 같은 브라우저에 저장된 공용 프로필(localStorage, student1~14.html과
+   동일 키 'ggb_profile_v1')을 사용한다. */
+const PROFILE_KEY = 'ggb_profile_v1';
 function loadProfileFromUrl(){
   const p = new URLSearchParams(location.search);
   const classNo=(p.get('classNo')||'').trim();
@@ -1563,9 +1569,6 @@ function loadProfile(){
     const obj = JSON.parse(raw);
     return (obj && obj.classNo && obj.name) ? obj : null;
   }catch(e){ return null; }
-}
-function saveProfile(classNo, number, name){
-  try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({classNo, number, name, ts:Date.now()})); }catch(e){}
 }
 
 const IDENTITY_KEY = 'ggb_identity_pa1_v1';
@@ -1610,57 +1613,13 @@ document.getElementById('startBtn').addEventListener('click', ()=>{
   const room = document.getElementById('roomCode').value.trim();
   const number = document.getElementById('studentNumber').value.trim();
   const statusEl = document.getElementById('syncStatus');
-  if(!name || !room || !number){ statusEl.textContent = '번호가 빠져있어요. 아래 "정보 수정"을 눌러 번호를 입력해주세요.'; return; }
+  if(!name || !room){ statusEl.textContent = 'student.html에서 반/번호/이름을 먼저 입력해주세요.'; return; }
   startApp(name, room, number);
-});
-(function(){
-  const grid=document.getElementById('manualClassGrid');
-  const hidden=document.getElementById('manualClass');
-  for(let i=1;i<=12;i++){
-    const b=document.createElement('button');
-    b.type='button'; b.textContent=i+'반'; b.dataset.room=String(i);
-    b.addEventListener('click', ()=>{
-      hidden.value = String(i);
-      grid.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));
-      b.classList.add('selected');
-    });
-    grid.appendChild(b);
-  }
-})();
-document.getElementById('manualStartBtn').addEventListener('click', ()=>{
-  const classNo = document.getElementById('manualClass').value.trim();
-  const number = document.getElementById('manualNumber').value.trim();
-  const name = document.getElementById('manualName').value.trim();
-  const statusEl = document.getElementById('syncStatus');
-  if(!classNo || !number || !name){ statusEl.textContent = '반, 번호, 이름을 모두 입력해주세요.'; return; }
-  saveProfile(classNo, number, name);
-  document.getElementById('roomCode').value = classNo;
-  document.getElementById('studentName').value = name;
-  document.getElementById('studentNumber').value = number;
-  startApp(name, classNo, number);
 });
 document.getElementById('switchUserBtn').addEventListener('click', (e)=>{
   e.preventDefault();
   try{ localStorage.removeItem(IDENTITY_KEY); }catch(err){}
   location.reload();
-});
-document.getElementById('profileEditBtn').addEventListener('click', (e)=>{
-  e.preventDefault();
-  const profile = loadProfile();
-  document.getElementById('profileManualBox').style.display = 'block';
-  document.getElementById('profileBox').style.display = 'none';
-  if(profile){
-    document.getElementById('manualNumber').value = profile.number || '';
-    document.getElementById('manualName').value = profile.name || '';
-    const grid = document.getElementById('manualClassGrid');
-    const hidden = document.getElementById('manualClass');
-    if(grid && profile.classNo){
-      hidden.value = String(profile.classNo);
-      grid.querySelectorAll('button').forEach(b=>{
-        b.classList.toggle('selected', b.dataset.room===String(profile.classNo));
-      });
-    }
-  }
 });
 
 if(PREVIEW_MODE){
@@ -1683,25 +1642,55 @@ if(PREVIEW_MODE){
 } else {
   const profile = loadProfile();
   if(!profile){
-    document.getElementById('profileManualBox').style.display = 'block';
+    // student.html을 거치지 않고 이 파일에 바로 들어온 경우: 반/번호/이름을 알 수 없으므로
+    // 안내 문구만 보여주고 "시작하기"는 노출하지 않는다. (student1~14.html과 동일)
+    document.getElementById('profileMissingBox').style.display = 'block';
     document.getElementById('profileBox').style.display = 'none';
   } else {
+    checkUnitAccessAndShowGate(profile);
+  }
+}
+
+/* 선생님이 teacher.html에서 이 단원(8번)을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작
+   화면을 보여준다. student1~14.html의 checkUnitAccessAndShowGate()와 완전히 같은 방식이며,
+   확인하는 단원 번호만 8(rooms/{반}__access/units/8)로 다르다. Firebase가 설정되지 않았거나
+   확인 중 오류가 나면(네트워크 등) 잠금 기능은 선택 기능이므로 그냥 열어준다. */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
     document.getElementById('roomCode').value = profile.classNo;
     document.getElementById('studentName').value = profile.name;
     document.getElementById('studentNumber').value = profile.number || '';
     document.getElementById('profileClassView').textContent = profile.classNo + '반';
     document.getElementById('profileNumberView').textContent = (profile.number || '-') + '번';
     document.getElementById('profileNameView').textContent = profile.name;
-    document.getElementById('profileManualBox').style.display = 'none';
+    document.getElementById('profileMissingBox').style.display = 'none';
+    document.getElementById('unitLockedBox').style.display = 'none';
     document.getElementById('profileBox').style.display = 'block';
 
+    /* 같은 기기에서 이미 이 반·이름으로 시작한 적이 있으면(새로고침 등) 시작 화면을
+       건너뛰고 자동으로 이어서 시작한다. */
     const id = loadIdentity();
     if(id && id.room===profile.classNo && id.name===profile.name){
       startApp(id.name, id.room, id.number);
       document.getElementById('switchUserName').textContent = id.name;
       document.getElementById('switchUserWrap').style.display = 'block';
     }
-  }
+  };
+  const showLocked = ()=>{
+    document.getElementById('profileMissingBox').style.display = 'none';
+    document.getElementById('profileBox').style.display = 'none';
+    document.getElementById('unitLockedBox').style.display = 'block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/8').once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
 }
 
 /* ---------- 제출 / 백업 ---------- */
