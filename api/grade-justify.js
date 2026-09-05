@@ -1,6 +1,6 @@
 // Vercel 서버리스 함수: teacherpa1.html의 "AI로 이유·방법 채점" 버튼이 호출하는 엔드포인트.
 // Gemini API 키를 브라우저에 노출하지 않기 위해, 키는 이 서버 함수 안(Vercel 환경변수)에만
-// 두고, 채점 요청/응답만 브라우저와 주고받는다. (2.5 Flash-Lite는 Google AI Studio 무료
+// 두고, 채점 요청/응답만 브라우저와 주고받는다. (Flash-Lite는 Google AI Studio 무료
 // 티어로도 충분히 쓸 수 있어서, 이 단순한 채점 용도에는 비용이 거의/전혀 들지 않는다.)
 //
 // [설정 방법] Vercel 프로젝트 설정 > Settings > Environment Variables 에서
@@ -11,7 +11,7 @@
 // 요청 형식(POST, JSON): { centerType: '외심'|'내심', reason: string, method: string }
 // 응답 형식(JSON): { reasonCorrect, reasonFeedback, methodCorrect, methodFeedback }
 
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
