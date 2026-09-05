@@ -131,7 +131,9 @@ const SECTIONS = [
         {n:3, label:3, title:'각이등분선의 성질', file:'teacher3.html'},
         {n:4, label:4, title:'삼각형의 외심', file:'teacher4.html'},
         {n:5, label:5, title:'삼각형의 내심', file:'teacher5.html'},
-        {n:6, label:6, title:'생각 넓히기', file:'teacher6.html'}
+        {n:6, label:6, title:'생각 넓히기', file:'teacher6.html'},
+        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'teacher7.html'},
+        {n:8, label:8, title:'문제해결력 수행평가', file:'teacherpa1.html'}
       ]}
   ]},
   { chapter:'VI. 사각형의 성질', groups:[
@@ -197,6 +199,19 @@ let accessData = {}; // {unitNumber: true|false}
 function buildUnitRow(u){
   const row=document.createElement('div');
   row.className='unit-row';
+
+  // file이 없는 항목(예: 아직 만들지 않은 예고용 항목)은 클릭해도 갈 곳이 없으므로
+  // 링크가 아니라 그냥 안내용 텍스트로만 보여주고, 잠금 토글도 붙이지 않는다.
+  if(!u.file){
+    const d=document.createElement('div');
+    d.className='unit-link';
+    d.style.cursor='default'; d.style.opacity='.6';
+    const num=document.createElement('span'); num.className='num'; num.textContent=u.label;
+    const title=document.createElement('span'); title.className='title'; title.textContent=u.title;
+    d.appendChild(num); d.appendChild(title);
+    row.appendChild(d);
+    return row;
+  }
 
   const a=document.createElement('a');
   a.className='unit-link';

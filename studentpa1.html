@@ -462,6 +462,28 @@ class GeoCanvas{
     if(c1&&c2) return circleCircleIntersection(c1.center,c1.r,c2.center,c2.r);
     return [];
   }
+  // 교점 도구 개선: 두 도형을 순서대로 각각 클릭하지 않아도, 두 도형이 실제로 교차하는
+  // 지점 자체를 터치하면 그 두 도형을 자동으로 찾아 바로 교점을 만들어준다(기존의
+  // "도형을 하나씩 순서대로 클릭" 방식도 그대로 남겨둔다 — handleToolClick의 'intersect' 참고).
+  findIntersectionNear(pt, tol){
+    const objs = this.objects.filter(o=>INTERSECTABLE.includes(o.type));
+    let best=null, bd=tol;
+    for(let i=0;i<objs.length;i++){
+      for(let j=i+1;j<objs.length;j++){
+        const o1=objs[i], o2=objs[j];
+        const g1=this.getObjGeom(o1), g2=this.getObjGeom(o2);
+        if(!g1||!g2) continue;
+        if(Object.values(g1).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        if(Object.values(g2).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        this.computeIntersections(o1,o2).forEach(ip=>{
+          if(ip.x<0||ip.x>this.width||ip.y<0||ip.y>this.height) return;
+          const d=dist(pt,ip);
+          if(d<bd){ bd=d; best={o1,o2,point:ip}; }
+        });
+      }
+    }
+    return best;
+  }
   setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
   reset(){
     this.points = this.points.filter(p=>p.locked);
@@ -602,6 +624,15 @@ class GeoCanvas{
         break;
       }
       case 'intersect': {
+        // 두 도형이 만나는 지점을 바로 터치한 경우: 어떤 두 도형인지 자동으로 찾아 바로 교점을 만든다.
+        const direct = this.findIntersectionNear(pt, TOUCH_TOL);
+        if(direct){
+          if(!this.findPointNear(direct.point,6)){
+            this.addPoint(direct.point.x, direct.point.y, {locked:true, trackHistory:true, label:'P', computed:{kind:'intersection', o1:direct.o1.id, o2:direct.o2.id}});
+          }
+          this.pendingObjs=[];
+          break;
+        }
         const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o){
           this.pendingObjs.push(o);
@@ -956,15 +987,12 @@ function scenarioBackground(key){
   }
 }
 
-function randomAssignment(){
-  return {
-    circumIdx: Math.floor(Math.random()*CIRCUM_SCENARIOS.length),
-    incenterIdx: Math.floor(Math.random()*INCENTER_SCENARIOS.length),
-    circumFirst: Math.random()<0.5
-  };
-}
 /* 반(class) 번호로 ver1~4를 결정한다: 4로 나눈 나머지가 1이면 ver1, 2면 ver2, 3이면 ver3, 0이면 ver4.
-   (예: 1,5,9반 -> ver1 / 2,6,10반 -> ver2 / 3,7,11반 -> ver3 / 4,8,12반 -> ver4) */
+   (예: 1,5,9반 -> ver1 / 2,6,10반 -> ver2 / 3,7,11반 -> ver3 / 4,8,12반 -> ver4)
+   circumFirst는 항상 true로 고정한다 — 과제1·2는 항상 외심, 과제3·4는 항상 내심이 되도록 순서를
+   고정해야 teacherpa1.html의 채점 화면(1.외심 점찍기/2.외심 선택/3.내심 점찍기/4.내심 선택)이
+   모든 학생·모든 반에서 항상 같은 의미를 갖는다. 순서를 섞으려면 이 값과 teacherpa1.html의
+   buildTasks() 기본값, 그리고 채점 화면 라벨을 모두 함께 바꿔야 한다. */
 function assignmentForRoom(room){
   const n = parseInt(room, 10);
   let idx = 0;
@@ -1118,12 +1146,9 @@ function initPointPlotTask(task){
   const toolsEl=document.getElementById(`tools-${task.id}`);
   const badge=document.getElementById(`badge-${task.id}`);
   const labelPool = task.centerType==='외심' ? 'OPQRSTUVWXYZLMNKJIHGFED' : 'IPQRSTUVWXYZLMNKJHGFED';
-  const triangleSides = [
-    {type:'segment', p1:'A', p2:'B', color:'#333', locked:true},
-    {type:'segment', p1:'B', p2:'C', color:'#333', locked:true},
-    {type:'segment', p1:'C', p2:'A', color:'#333', locked:true}
-  ];
-  const cv = new GeoCanvas(svg, {points: task.scenario.points, labelPool, background: scenarioBackground(task.scenario.key), presetObjects: triangleSides}, (inst)=>onChange(inst));
+  // 세 변(선분 AB, BC, CA)을 미리 그려주지 않고 점 A, B, C만 보여준다 — 필요한 선분은
+  // 학생이 직접 선분 도구로 그어야 한다.
+  const cv = new GeoCanvas(svg, {points: task.scenario.points, labelPool, background: scenarioBackground(task.scenario.key)}, (inst)=>onChange(inst));
   canvasByTaskId[task.id] = cv;
   buildToolbar(task, cv, toolsEl);
 

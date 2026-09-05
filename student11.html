@@ -44,7 +44,7 @@
     .two-col > div{width:100%;}
   }
 
-  #quadSvg{width:100%;max-width:480px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;touch-action:none;}
+  .quadSvg{width:100%;max-width:480px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;touch-action:none;}
   .canvas-hint{font-size:12px;color:#888;text-align:center;margin-top:8px;}
   .canvas-actions{text-align:center;margin-top:10px;}
   .canvas-actions button{padding:8px 14px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;font-size:12.5px;color:#444;}
@@ -52,8 +52,8 @@
   .input-row textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 12px;font-size:14.5px;font-family:inherit;resize:vertical;}
   .input-row textarea.locked-fixed{background:#f4f6f8;color:#555;}
   .text-min-note{font-size:11.5px;color:#999;margin:6px 0;}
-  #check-p1{margin-top:8px;padding:10px 18px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:14.5px;font-weight:bold;cursor:pointer;}
-  #check-p1.cancel{background:#9e9e9e;}
+  .checkBtn{margin-top:8px;padding:10px 18px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:14.5px;font-weight:bold;cursor:pointer;}
+  .checkBtn.cancel{background:#9e9e9e;}
   .feedback{font-size:13px;margin-top:8px;min-height:16px;}
   .feedback.ok{color:var(--green);font-weight:bold;}
   .feedback.no{color:#888;}
@@ -127,7 +127,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 1</div>
+        <div class="progress-text" id="progressText">완료 0 / 2</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -138,23 +138,23 @@
 
     <div class="task" id="task-p1">
       <div class="task-head">
-        <h2>[과제 1] 평행사변형 ABCD의 꼭짓점 A, B, C, D를 자유롭게 움직여 보세요. 어떤 모양으로 바뀌어도 이 사각형은 항상 평행사변형입니다. 변하지 않고 항상 성립하는 성질을 세 가지 이상 찾아 적어봅시다.</h2>
+        <h2>[과제 1] 평행사변형 ABCD의 점 A, B, C, D를 움직여보며 길이가 항상 같은 변, 크기가 항상 같은 각을 모두 적어봅시다.</h2>
         <span class="badge pending" id="badge-p1">미완료</span>
       </div>
       <div class="two-col">
         <div class="col-canvas">
-          <svg id="quadSvg" viewBox="0 0 600 460"></svg>
+          <svg class="quadSvg" id="svg-p1" viewBox="0 0 600 460"></svg>
           <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
           <div class="canvas-actions">
-            <button id="reshuffleBtn">🔄 새로고침 (다른 모양으로)</button>
+            <button id="reshuffle-p1">🔄 새로고침 (다른 모양으로)</button>
           </div>
         </div>
         <div class="col-text">
           <div class="input-row">
-            <textarea id="input-p1" rows="6" placeholder="예) 두 쌍의 대변의 길이가 각각 같다. (3가지 이상, 40자 이상)"></textarea>
-            <button id="check-p1">제출</button>
+            <textarea id="input-p1" rows="6" placeholder="예) 두 쌍의 대변의 길이가 각각 같다. 두 쌍의 대각의 크기가 각각 같다. (30자 이상)"></textarea>
+            <button class="checkBtn" id="check-p1">제출</button>
           </div>
-          <div class="text-min-note">✏️ 세 가지 이상, 40자 이상 적어야 완료로 인정돼요.</div>
+          <div class="text-min-note">✏️ 같은 변, 같은 각을 모두 적어야 완료로 인정돼요. (30자 이상)</div>
           <div class="feedback" id="fb-p1"></div>
           <div class="class-answers" id="classAnswers-p1" style="display:none;">
             <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
@@ -163,11 +163,39 @@
         </div>
       </div>
     </div>
+
+    <div class="task" id="task-p2" style="display:none;">
+      <div class="task-head">
+        <h2>[과제 2] 평행사변형 ABCD의 점 A, B, C, D를 움직여보며 평행사변형의 대각선은 어떤 특징이 있는지 적어봅시다.</h2>
+        <span class="badge pending" id="badge-p2">미완료</span>
+      </div>
+      <div class="two-col">
+        <div class="col-canvas">
+          <svg class="quadSvg" id="svg-p2" viewBox="0 0 600 460"></svg>
+          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
+          <div class="canvas-actions">
+            <button id="reshuffle-p2">🔄 새로고침 (다른 모양으로)</button>
+          </div>
+        </div>
+        <div class="col-text">
+          <div class="input-row">
+            <textarea id="input-p2" rows="6" placeholder="예) 두 대각선이 서로를 이등분한다. (15자 이상)"></textarea>
+            <button class="checkBtn" id="check-p2">제출</button>
+          </div>
+          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+          <div class="feedback" id="fb-p2"></div>
+          <div class="class-answers" id="classAnswers-p2" style="display:none;">
+            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+            <div class="ca-list" id="classAnswersList-p2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="pagerNav">
     <div class="pager-buttons">
-      <span id="pageLabel">1 / 1</span>
+      <span id="pageLabel">1 / 2</span>
     </div>
   </div>
 </div>
@@ -175,11 +203,13 @@
 <script>
 /* ============================================================
    11. 평행사변형의 성질
-   대각선의 교점 O를 화면 좌표계에서 "고정된 값"으로 들고 있다가, A/B/C/D 중 하나를
-   드래그하면 그 반대쪽 꼭짓점(A↔C, B↔D)을 O에 대한 점대칭으로 다시 계산해서 옮긴다.
-   이렇게 하면 어떤 꼭짓점을 어떻게 움직여도 "두 대각선이 서로를 이등분한다" = 평행사변형
-   조건이 항상 성립한 채로 유지된다. "새로고침"을 누르면 O 자체를 포함해 완전히 새로운
-   임의의 평행사변형을 만든다.
+   과제1(변·각)과 과제2(대각선)는 서로 독립된 평행사변형을 각자 드래그/새로고침한다
+   (다른 모든 과제와 동일한 방식). 두 과제 모두 대각선의 교점 O를 화면 좌표계에서
+   "고정된 값"으로 들고 있다가, A/B/C/D 중 하나를 드래그하면 그 반대쪽 꼭짓점
+   (A↔C, B↔D)을 O에 대한 점대칭으로 다시 계산해서 옮긴다 — 어떤 꼭짓점을 어떻게
+   움직여도 "두 대각선이 서로를 이등분한다" = 평행사변형 조건이 항상 성립한 채로
+   유지된다. 과제1은 화면에 대각선/O를 그리지 않고 변 길이·꼭짓점 각만 표시하고,
+   과제2는 기존과 동일하게 변·각·대각선·O·OA~OD를 모두 표시한다.
    ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
@@ -192,6 +222,7 @@ const FIREBASE_CONFIG = {
 };
 const ACTIVITY_SUFFIX = '__quad11'; // teacher11.html과 반드시 동일해야 함
 const UNIT_LABEL = '11. 평행사변형의 성질';
+const MIN_LEN = { p1:30, p2:15 };
 
 /* ---------- 벡터/기하 유틸 (student12.html과 동일한 함수들) ---------- */
 const NS = 'http://www.w3.org/2000/svg';
@@ -236,19 +267,24 @@ function normalizeQuad(pts){
   return pts;
 }
 
-/* ---------- 평행사변형 상태 + 드래그 ----------
+/* ---------- 평행사변형 상태 + 드래그 (과제1/과제2 각각 독립된 상태를 가진다) ----------
    partner: 드래그 중인 꼭짓점의 "대각선 반대쪽" 꼭짓점 라벨. O는 두 대각선의 고정된 교점. */
 const PARTNER = {A:'C', B:'D', C:'A', D:'B'};
-let quad = null; // {A,B,C,D}
-let O = null;
-let dragging = null; // 드래그 중인 라벨('A'|'B'|'C'|'D') 또는 null
+const STATES = { p1:{quad:null,O:null}, p2:{quad:null,O:null} };
+let dragging = null; // {page, label} 또는 null
 
-function regenerate(){
-  quad = randomParallelogram();
-  O = mid(quad.A, quad.C);
-  drawQuad();
+function regeneratePage(page){
+  const st = STATES[page];
+  st.quad = randomParallelogram();
+  st.O = mid(st.quad.A, st.quad.C);
+  renderPage(page);
 }
-
+function dragVertex(page, label, pt){
+  const st = STATES[page];
+  st.quad[label] = {x:pt.x, y:pt.y};
+  const p = PARTNER[label];
+  st.quad[p] = { x: 2*st.O.x - pt.x, y: 2*st.O.y - pt.y };
+}
 function getSvgCoords(svg, e){
   const pt = svg.createSVGPoint();
   const t = e.touches && e.touches[0] ? e.touches[0] : e;
@@ -257,18 +293,13 @@ function getSvgCoords(svg, e){
   const loc = pt.matrixTransform(ctm);
   return {x:loc.x, y:loc.y};
 }
-function findVertexNear(pt, tol){
+function findVertexNear(quad, pt, tol){
   let best=null, bd=tol;
   ['A','B','C','D'].forEach(k=>{
     const d=dist(quad[k], pt);
     if(d<bd){ bd=d; best=k; }
   });
   return best;
-}
-function dragVertex(label, pt){
-  quad[label] = {x:pt.x, y:pt.y};
-  const p = PARTNER[label];
-  quad[p] = { x: 2*O.x - pt.x, y: 2*O.y - pt.y };
 }
 
 /* ---------- 화면 그리기 ---------- */
@@ -302,9 +333,64 @@ function arcPath(b,a,c,r){
   const sweep = diff>0?1:0;
   return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, mid:{x:b.x+(r+15)*Math.cos(a1+diff/2), y:b.y+(r+15)*Math.sin(a1+diff/2)}};
 }
-function drawQuad(){
-  const svg = document.getElementById('quadSvg');
+function drawVertices(svg, quad, center){
+  [['A',quad.A],['B',quad.B],['C',quad.C],['D',quad.D]].forEach(([name,p])=>{
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',7);
+    c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+    svg.appendChild(c);
+    const lp=labelOffset(p, center, -22);
+    mkText(svg, lp, name, '#212121', 19, true);
+  });
+}
+function drawSidesAndAngles(svg, quad, center){
+  const {A,B,C,D} = quad;
+  // 변 길이 라벨 (AB, BC, CD, DA)
+  [['A','B',A,B],['B','C',B,C],['C','D',C,D],['D','A',D,A]].forEach(([ln1,ln2,p1,p2])=>{
+    const m=mid(p1,p2);
+    const outward=labelOffset(m, center, 16);
+    mkText(svg, outward, (dist(p1,p2)*0.1).toFixed(1), '#1565c0', 14.5, true);
+  });
+  // 각 라벨 (A,B,C,D 내각)
+  const verts={A,B,C,D};
+  const order=['A','B','C','D'];
+  order.forEach((k,i)=>{
+    const prev=verts[order[(i+3)%4]], next=verts[order[(i+1)%4]];
+    const info=arcPath(verts[k], prev, next, 26);
+    const path=document.createElementNS(NS,'path');
+    path.setAttribute('d',info.path); path.setAttribute('stroke','#e65100'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+    svg.appendChild(path);
+    const deg=angleBetweenDeg(sub(prev,verts[k]), sub(next,verts[k]));
+    mkText(svg, info.mid, deg.toFixed(0)+'°', '#e65100', 14, true);
+  });
+}
+
+/* 과제1: 대각선 없이 변 길이 + 각만 표시 */
+function drawQuadSidesAngles(page){
+  const svg = document.getElementById('svg-'+page);
   while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const quad = STATES[page].quad;
+  const {A,B,C,D} = quad;
+  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
+  const center={x:cx,y:cy};
+
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.10');
+  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2.5');
+  svg.appendChild(poly);
+
+  drawSidesAndAngles(svg, quad, center);
+  drawVertices(svg, quad, center);
+  RT.pushStateDebounced();
+}
+
+/* 과제2: 변·각·대각선·O·OA~OD 모두 표시 (OA만 실선, OB/OC/OD는 대각선의 점선 일부) */
+function drawQuadFull(page){
+  const svg = document.getElementById('svg-'+page);
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const quad = STATES[page].quad;
+  const O = STATES[page].O;
   const {A,B,C,D} = quad;
   const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
   const center={x:cx,y:cy};
@@ -319,27 +405,9 @@ function drawQuad(){
   mkLine(svg,A,C,'#9e9e9e','4,3');
   mkLine(svg,B,D,'#9e9e9e','4,3');
 
-  // 변 길이 라벨 (AB, BC, CD, DA)
-  [['A','B',A,B],['B','C',B,C],['C','D',C,D],['D','A',D,A]].forEach(([ln1,ln2,p1,p2])=>{
-    const m=mid(p1,p2);
-    const outward=labelOffset(m, center, 16);
-    mkText(svg, outward, (dist(p1,p2)*0.1).toFixed(1), '#1565c0', 14.5, true);
-  });
+  drawSidesAndAngles(svg, quad, center);
 
-  // 각 라벨 (A,B,C,D 내각)
-  const verts={A,B,C,D};
-  const order=['A','B','C','D'];
-  order.forEach((k,i)=>{
-    const prev=verts[order[(i+3)%4]], next=verts[order[(i+1)%4]];
-    const info=arcPath(verts[k], prev, next, 26);
-    const path=document.createElementNS(NS,'path');
-    path.setAttribute('d',info.path); path.setAttribute('stroke','#e65100'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
-    svg.appendChild(path);
-    const deg=angleBetweenDeg(sub(prev,verts[k]), sub(next,verts[k]));
-    mkText(svg, info.mid, deg.toFixed(0)+'°', '#e65100', 14, true);
-  });
-
-  // O, OA/OB/OC/OD
+  // O, OA(실선)/OB,OC,OD(점선 대각선의 일부) 길이 라벨
   mkLine(svg,O,A,'#8e24aa',null,1);
   const ocirc=document.createElementNS(NS,'circle');
   ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
@@ -352,35 +420,30 @@ function drawQuad(){
     mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12.5, false);
   });
 
-  // 꼭짓점 (맨 위에 그려서 드래그하기 쉽게)
-  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
-    const c=document.createElementNS(NS,'circle');
-    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',7);
-    c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
-    svg.appendChild(c);
-    const lp=labelOffset(p, center, -22);
-    mkText(svg, lp, name, '#212121', 19, true);
-  });
-
+  drawVertices(svg, quad, center);
   RT.pushStateDebounced();
 }
 
-/* ---------- 드래그 이벤트 연결 ---------- */
-(function wireDrag(){
-  const svg = document.getElementById('quadSvg');
+const RENDERERS = { p1: drawQuadSidesAngles, p2: drawQuadFull };
+function renderPage(page){ RENDERERS[page](page); }
+
+/* ---------- 드래그 이벤트 연결 (과제1/과제2 각각) ---------- */
+['p1','p2'].forEach(page=>{
+  regeneratePage(page);
+  const svg = document.getElementById('svg-'+page);
   const down = e=>{
     e.preventDefault();
     if(document.body.classList.contains('app-paused')) return;
     const pt = getSvgCoords(svg, e);
-    const v = findVertexNear(pt, TOUCH_TOL);
-    if(v) dragging = v;
+    const v = findVertexNear(STATES[page].quad, pt, TOUCH_TOL);
+    if(v) dragging = {page, label:v};
   };
   const move = e=>{
-    if(!dragging) return;
+    if(!dragging || dragging.page!==page) return;
     e.preventDefault();
     const pt = getSvgCoords(svg, e);
-    dragVertex(dragging, pt);
-    drawQuad();
+    dragVertex(page, dragging.label, pt);
+    renderPage(page);
   };
   const up = ()=>{ dragging=null; };
   svg.addEventListener('mousedown', down);
@@ -389,24 +452,26 @@ function drawQuad(){
   window.addEventListener('touchmove', move, {passive:false});
   window.addEventListener('mouseup', up);
   window.addEventListener('touchend', up);
-})();
-document.getElementById('reshuffleBtn').addEventListener('click', regenerate);
+  document.getElementById('reshuffle-'+page).addEventListener('click', ()=> regeneratePage(page));
+});
 
-/* ---------- 과제1 서술형: 제출/취소 잠금 + 친구 답변 보기 (기존 단원들과 동일한 패턴) ---------- */
-const results = {};
-(function initTextTask(){
-  const badge=document.getElementById('badge-p1');
-  const fb=document.getElementById('fb-p1');
-  const input=document.getElementById('input-p1');
-  const btn=document.getElementById('check-p1');
-  const MIN_LEN = 40;
+/* ---------- 과제1/과제2 서술형: 제출/취소 잠금 + 친구 답변 보기 (기존 단원들과 동일한 패턴) ---------- */
+const results = { p1:{done:false,value:''}, p2:{done:false,value:''} };
+const classAnswersPicked = { p1:[], p2:[] };
+window.__task11 = {};
+['p1','p2'].forEach(page=>{
+  const badge=document.getElementById('badge-'+page);
+  const fb=document.getElementById('fb-'+page);
+  const input=document.getElementById('input-'+page);
+  const btn=document.getElementById('check-'+page);
+  const minLen = MIN_LEN[page];
   let locked = false;
 
-  function checkReady(){ return (input.value||'').trim().length>=MIN_LEN; }
+  function checkReady(){ return (input.value||'').trim().length>=minLen; }
   function refreshFeedback(){
     if(!locked){
       const okFlag = checkReady();
-      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러 제출해보세요.' : `조금 더 자세히 적어볼까요? (세 가지 이상, ${MIN_LEN}자 이상)`;
+      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러 제출해보세요.' : `조금 더 자세히 적어볼까요? (${minLen}자 이상)`;
       fb.className = 'feedback ' + (okFlag?'ok':'no');
     }
     return checkReady();
@@ -417,7 +482,7 @@ const results = {};
     input.classList.add('locked-fixed');
     btn.textContent = '취소';
     btn.classList.add('cancel');
-    results.p1 = {done:true, value:input.value};
+    results[page] = {done:true, value:input.value};
     badge.textContent = '완료';
     badge.className = 'badge done';
     updateProgress();
@@ -428,16 +493,14 @@ const results = {};
     lockUI();
     fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
     fb.className = 'feedback ok';
-    renderClassAnswers();
+    renderClassAnswers(page);
     RT.pushProgress();
   }
-  // 선생님이 [수업 종료]를 눌렀을 때 쓰는 강제 제출 — 글자 수가 부족해도 무조건 잠근다
-  // (일반 "제출" 버튼과 달리 준비 여부를 따지지 않는다).
   function forceSubmit(){
     lockUI();
     fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
     fb.className = 'feedback ok';
-    renderClassAnswers();
+    renderClassAnswers(page);
     RT.pushProgress();
   }
   function doCancel(){
@@ -446,11 +509,11 @@ const results = {};
     input.classList.remove('locked-fixed');
     btn.textContent = '제출';
     btn.classList.remove('cancel');
-    results.p1 = {done:false, value:input.value};
+    results[page] = {done:false, value:input.value};
     badge.textContent = '미완료';
     badge.className = 'badge pending';
     refreshFeedback();
-    renderClassAnswers();
+    renderClassAnswers(page);
     RT.pushProgress();
     updateProgress();
   }
@@ -463,16 +526,15 @@ const results = {};
     }
   });
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
-  results.p1 = {done:false, value:''};
   refreshFeedback();
 
-  window.__task11 = {doSubmit, doCancel, forceSubmit, isLocked:()=>locked};
-})();
+  window.__task11[page] = {doSubmit, doCancel, forceSubmit, isLocked:()=>locked};
+});
 
-/* ---------- 진행률 표시 (student1~6과 동일한 상단 바 구조) ---------- */
+/* ---------- 진행률 표시 ---------- */
 function updateProgress(){
-  const total = 1;
-  const done = (results.p1 && results.p1.done) ? 1 : 0;
+  const total = 2;
+  const done = ['p1','p2'].filter(p=>results[p].done).length;
   const textEl = document.getElementById('progressText');
   const fillEl = document.getElementById('progressFill');
   if(textEl) textEl.textContent = `완료 ${done} / ${total}`;
@@ -481,40 +543,37 @@ function updateProgress(){
 updateProgress();
 
 // 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고 그대로
-// 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을 때마다
-// 목록이 계속 움직여서 읽기가 힘들어진다.
-let classAnswersPicked = [];
-function renderClassAnswers(){
-  const wrap=document.getElementById('classAnswers-p1');
-  const list=document.getElementById('classAnswersList-p1');
-  const myDone = !!(results.p1 && results.p1.done);
+// 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다).
+function renderClassAnswers(page){
+  const wrap=document.getElementById('classAnswers-'+page);
+  const list=document.getElementById('classAnswersList-'+page);
+  const myDone = !!(results[page] && results[page].done);
   if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
   wrap.style.display='block';
   list.textContent='';
   const entries = Object.keys(RT.allStudents||{})
     .filter(k=>k!==RT.studentKey)
     .map(k=>({key:k, ...RT.allStudents[k]}))
-    .filter(s=> s.progress && s.progress.p1 && s.progress.p1.value && String(s.progress.p1.value).trim().length>0);
+    .filter(s=> s.progress && s.progress[page] && s.progress[page].value && String(s.progress[page].value).trim().length>0);
   if(entries.length===0){
     const empty=document.createElement('div'); empty.className='ca-empty';
     empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
     list.appendChild(empty);
-    classAnswersPicked = [];
+    classAnswersPicked[page] = [];
     return;
   }
-  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
   const pool = new Map(entries.map(s=>[s.key, s]));
-  let picked = classAnswersPicked.filter(k=>pool.has(k));
+  let picked = classAnswersPicked[page].filter(k=>pool.has(k));
   const need = 5 - picked.length;
   if(need>0){
     const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
     picked = picked.concat(fresh);
   }
-  classAnswersPicked = picked;
+  classAnswersPicked[page] = picked;
   picked.map(k=>pool.get(k)).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
-    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress.p1.value);
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[page].value);
     item.appendChild(name); item.appendChild(text);
     list.appendChild(item);
   });
@@ -534,7 +593,6 @@ function loadProfile(){
 function startApp(profile){
   document.getElementById('gateScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
-  regenerate();
   RT.connect(profile.name, profile.classNo, profile.number);
 }
 
@@ -624,7 +682,7 @@ const RT = {
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderClassAnswers(); });
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2'].forEach(renderClassAnswers); });
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
@@ -642,11 +700,12 @@ const RT = {
       // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다(값이 그대로 유지되는 매 스냅샷마다
       // 반복 실행되지 않도록, 마지막으로 처리한 값과 실제로 달라졌을 때만 동작한다).
       const classEnded = !!c.classEnded;
-      const task = window.__task11;
+      const tasks = window.__task11;
+      const applyAll = fn => ['p1','p2'].forEach(p=> tasks[p] && fn(tasks[p]));
       if(this._lastKnownClassEnded===null){
-        if(classEnded && task && !task.isLocked()) task.forceSubmit();
+        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
       } else if(classEnded !== this._lastKnownClassEnded){
-        if(task){ classEnded ? (!task.isLocked() && task.forceSubmit()) : (task.isLocked() && task.doCancel()); }
+        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
       }
       this._lastKnownClassEnded = classEnded;
       this.classEnded = classEnded;
@@ -665,14 +724,16 @@ const RT = {
   pushProgress(){
     if(!this.connected) return;
     this.studentRef.update({
-      progress: { p1: { done: !!(results.p1&&results.p1.done), value: results.p1?results.p1.value:'' } },
-      completed: !!(results.p1&&results.p1.done), total: 1,
+      progress: { p1:results.p1, p2:results.p2 },
+      completed: (results.p1.done && results.p2.done), total: 2,
       lastActive: firebase.database.ServerValue.TIMESTAMP
     });
   },
   pushState(){
-    if(!this.connected || !quad) return;
-    this.studentRef.update({ quad, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    if(!this.connected) return;
+    const quads = {};
+    ['p1','p2'].forEach(p=>{ if(STATES[p].quad) quads[p]=STATES[p].quad; });
+    this.studentRef.update({ quads, lastActive: firebase.database.ServerValue.TIMESTAMP });
   },
   pushStateDebounced(){
     if(!this.connected) return;
@@ -680,7 +741,7 @@ const RT = {
     this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
   },
   /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 150ms 디바운스가 끝나지
-     않아 저장 안 된 마지막 도형 상태(quad)가 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     않아 저장 안 된 마지막 도형 상태(quads)가 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
      visibilitychange 리스너에서 호출). */
   flushPending(){
     if(this._t){
@@ -705,8 +766,8 @@ document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
 
-/* ---------- 페이지 넘기기 (이 파일은 과제가 1개뿐이라 1/1 고정) ---------- */
-const pages = [document.getElementById('task-p1')];
+/* ---------- 페이지 넘기기 (과제 2개) ---------- */
+const pages = [document.getElementById('task-p1'), document.getElementById('task-p2')];
 let currentPage = 0;
 function showPage(idx){
   currentPage = Math.max(0, Math.min(pages.length-1, idx));

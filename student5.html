@@ -558,6 +558,28 @@ class GeoCanvas{
     if(c1&&c2) return circleCircleIntersection(c1.center,c1.r,c2.center,c2.r);
     return [];
   }
+  // 교점 도구 개선: 두 도형을 순서대로 각각 클릭하지 않아도, 두 도형이 실제로 교차하는
+  // 지점 자체를 터치하면 그 두 도형을 자동으로 찾아 바로 교점을 만들어준다(기존의
+  // "도형을 하나씩 순서대로 클릭" 방식도 그대로 남겨둔다 — handleToolClick의 'intersect' 참고).
+  findIntersectionNear(pt, tol){
+    const objs = this.objects.filter(o=>INTERSECTABLE.includes(o.type));
+    let best=null, bd=tol;
+    for(let i=0;i<objs.length;i++){
+      for(let j=i+1;j<objs.length;j++){
+        const o1=objs[i], o2=objs[j];
+        const g1=this.getObjGeom(o1), g2=this.getObjGeom(o2);
+        if(!g1||!g2) continue;
+        if(Object.values(g1).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        if(Object.values(g2).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        this.computeIntersections(o1,o2).forEach(ip=>{
+          if(ip.x<0||ip.x>this.width||ip.y<0||ip.y>this.height) return;
+          const d=dist(pt,ip);
+          if(d<bd){ bd=d; best={o1,o2,point:ip}; }
+        });
+      }
+    }
+    return best;
+  }
   setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
   reset(){
     this.points = this.points.filter(p=>p.locked||p.keep);
@@ -705,6 +727,15 @@ class GeoCanvas{
         break;
       }
       case 'intersect': {
+        // 두 도형이 만나는 지점을 바로 터치한 경우: 어떤 두 도형인지 자동으로 찾아 바로 교점을 만든다.
+        const direct = this.findIntersectionNear(pt, TOUCH_TOL);
+        if(direct){
+          if(!this.findPointNear(direct.point,6)){
+            this.addPoint(direct.point.x, direct.point.y, {locked:true, trackHistory:true, computed:{kind:'intersection', o1:direct.o1.id, o2:direct.o2.id}});
+          }
+          this.pendingObjs=[];
+          break;
+        }
         const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o){
           this.pendingObjs.push(o);
@@ -1282,6 +1313,12 @@ function initConstructTask(task){
   // (snapBtn과 같은 이유로, 이 변수도 GeoCanvas 생성 "전에" 선언해야 첫 render()가 곧바로
   // 부르는 onChange 안에서 TDZ 에러가 나지 않는다.)
   let everSubmitted = false;
+  // 정답을 맞혀서 점이 잠긴 뒤 "되돌리기"를 누르면, 점 좌표 자체는 그대로(정답 위치)이므로
+  // 바로 다음 onChange(=render 직후 자동 호출)에서 다시 r.ok가 true로 나와 즉시 재잠금돼
+  // 버렸다 — 이 때문에 "되돌리기" 버튼이 눌러도 안 되는 것처럼 보이는 버그가 있었다.
+  // autoLockArmed가 false인 동안은 정답이어도 다시 잠그지 않고, 점이 정답 위치를 벗어나면
+  // (r.ok가 false가 되면) 다시 true로 무장해서 다음에 정답을 맞히면 그때 다시 잠근다.
+  let autoLockArmed = true;
 
   const cfg = {points: task.points||[], presetObjects: task.presetObjects||[], movablePoints: task.movablePoints||[], computedPoints: task.computedPoints||[], postObjects: task.postObjects||[]};
   const cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
@@ -1305,6 +1342,7 @@ function initConstructTask(task){
       const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
       const pt = label && cv.byLabel(label);
       if(pt) pt.locked = false;
+      autoLockArmed = false; // 다시 무장되기 전(정답 위치를 벗어나기 전)까지는 자동으로 재잠금하지 않는다.
       lockResetBtn.style.visibility = 'hidden';
       cv.render();
     });
@@ -1322,14 +1360,19 @@ function initConstructTask(task){
     if(task.snapTarget){
       const label = task.movablePoints && task.movablePoints[0] && task.movablePoints[0].label;
       const pt = label && inst.byLabel(label);
-      if(pt && r.ok && !pt.locked){
-        // 정답을 맞춘 순간 점을 고정(잠금)해서 실수로 더 못 움직이게 하고, "되돌리기" 버튼을 보여준다.
-        pt.locked = true;
-        if(lockResetBtn) lockResetBtn.style.visibility = 'visible';
-        // locked 상태는 점 색을 바꿔서(파란색->검정) 보여주는데, 지금은 render() 도중(onChange 안)이라
-        // 여기서 바로 다시 render()를 부르면 render->onChange->render로 재귀호출이 되어버린다.
-        // 그래서 현재 렌더링이 끝난 다음 틱에 한 번 더 그리도록 미룬다.
-        setTimeout(()=>inst.render(), 0);
+      if(pt){
+        if(!r.ok){
+          autoLockArmed = true; // 정답 위치를 벗어났으니 다음에 다시 맞히면 그때 잠그도록 무장한다.
+        } else if(!pt.locked && autoLockArmed){
+          // 정답을 맞춘 순간 점을 고정(잠금)해서 실수로 더 못 움직이게 하고, "되돌리기" 버튼을 보여준다.
+          pt.locked = true;
+          autoLockArmed = false;
+          if(lockResetBtn) lockResetBtn.style.visibility = 'visible';
+          // locked 상태는 점 색을 바꿔서(파란색->검정) 보여주는데, 지금은 render() 도중(onChange 안)이라
+          // 여기서 바로 다시 render()를 부르면 render->onChange->render로 재귀호출이 되어버린다.
+          // 그래서 현재 렌더링이 끝난 다음 틱에 한 번 더 그리도록 미룬다.
+          setTimeout(()=>inst.render(), 0);
+        }
       }
     }
     updateProgress();

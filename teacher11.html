@@ -16,7 +16,7 @@
   header{background:#1a237e;color:#fff;padding:16px;text-align:center;}
   header h1{margin:0 0 4px;font-size:19px;}
   header p{margin:0;font-size:12.5px;opacity:.85;}
-  .wrap{max-width:980px;margin:0 auto;padding:16px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:16px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   #roomCode{flex:1;min-width:140px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:#fff;}
@@ -41,20 +41,24 @@
   th{background:#f0f2f5;font-size:11.5px;color:#555;}
   td.name{text-align:left;font-weight:bold;cursor:pointer;}
   td.name:hover{color:var(--blue);}
-  td.preview{max-width:220px;text-align:left;color:#666;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   tr.selected td{background:#e3f2fd;}
   tr.idle td{opacity:.5;}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
   .dot.on{background:var(--green);}
   .dot.off{background:#bbb;}
+  .ptag{display:inline-block;font-size:11px;font-weight:bold;color:#bbb;}
+  .ptag.done{color:var(--green);}
   .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
 
   .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
-  .grid-wrap{flex:2;min-width:360px;overflow-x:auto;}
+  .grid-wrap{flex:2;min-width:380px;overflow-x:auto;}
   .detail{flex:1;min-width:300px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;}
   .detail h3{margin:0 0 10px;font-size:16px;}
   .detail .answerBox{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:10px 12px;font-size:13.5px;white-space:pre-wrap;margin-bottom:12px;}
-  #previewSvg{width:100%;max-width:260px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;}
+  .detail .detail-block{margin-bottom:18px;padding-bottom:14px;border-bottom:1px dashed #e0e0e0;}
+  .detail .detail-block:last-child{border-bottom:none;}
+  .detail .detail-block h4{margin:0 0 8px;font-size:13px;color:#555;}
+  .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;}
 
   .tab-bar{display:flex;gap:4px;margin:18px 0 0;border-bottom:2px solid #e0e0e0;}
   .tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
@@ -63,7 +67,9 @@
   .tab-panel{display:none;padding-top:16px;}
   .tab-panel.active{display:block;}
 
-  .student-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+  .task-section{margin-bottom:26px;}
+  .task-section-title{font-size:14.5px;font-weight:bold;color:#1a237e;margin:0 0 10px;padding-left:2px;}
+  .student-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
   .student-card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
   .student-card .sc-head{padding:8px 10px;font-size:12.5px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f0f0;}
   .student-card .sc-canvas{background:#fafafa;}
@@ -117,7 +123,7 @@
 
 <header>
   <h1>📊 교사용 실시간 대시보드 — 11. 평행사변형의 성질</h1>
-  <p>학생들이 발견한 평행사변형의 성질(서술형 답변)을 실시간으로 확인해요</p>
+  <p>학생들이 발견한 평행사변형의 성질(변·각·대각선 서술형 답변)을 실시간으로 확인해요</p>
 </header>
 
 <div class="wrap">
@@ -157,7 +163,7 @@
       </div>
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
-        <div>제출 완료: <b id="sumDone">0</b></div>
+        <div>2개 과제 모두 완료: <b id="sumDone">0</b></div>
       </div>
     </div>
 
@@ -175,8 +181,8 @@
                 <th><input type="checkbox" id="checkAll"></th>
                 <th style="text-align:left;">이름</th>
                 <th>번호</th>
-                <th>제출</th>
-                <th style="text-align:left;">답변 미리보기</th>
+                <th>①변·각</th>
+                <th>②대각선</th>
                 <th>최근 활동</th>
               </tr>
             </thead>
@@ -191,16 +197,7 @@
     </div>
 
     <div id="tab-teacher" class="tab-panel">
-      <div class="teacher-split">
-        <div class="teacher-col">
-          <div class="teacher-col-title">🖼 그림</div>
-          <div id="teacherCardsWrap" class="student-cards"></div>
-        </div>
-        <div class="teacher-col">
-          <div class="teacher-col-title">✏️ 텍스트 답변</div>
-          <div id="teacherTextWrap" class="text-answer-list"></div>
-        </div>
-      </div>
+      <div id="teacherTaskSections"></div>
     </div>
 
   </div>
@@ -212,6 +209,8 @@
    반드시 아래 두 가지를 student11.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
+   과제1(변·각, 대각선 숨김)과 과제2(대각선 포함 전체)를 각각 다른 모양으로 미리보기 그린다는
+   점이 1과제짜리였던 예전 버전과 다르다.
    ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
@@ -224,7 +223,6 @@ const FIREBASE_CONFIG = {
 };
 const ACTIVITY_SUFFIX = '__quad11'; // student11.html과 반드시 동일해야 함
 const UNIT_LABEL = '11. 평행사변형의 성질'; // 구글 설문지 "단원" 칸에 채워질 값
-// 학생 답변을 교사가 직접 구글 설문지로 제출할 때 쓰는 설정 — 다른 단원 파일들의 CONFIG와 동일해야 한다.
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
   ENTRY_UNIT: 'entry.926486903',
@@ -235,13 +233,17 @@ const CONFIG = {
   ENTRY_SUCCESS: 'entry.172713041',
   ENTRY_ANSWER: 'entry.1090948288'
 };
+const TASKS = [
+  {key:'p1', showDiagonal:false, title:'변과 각'},
+  {key:'p2', showDiagonal:true,  title:'대각선'}
+];
 
 /* ---------- 미리보기용 기하 유틸 ---------- */
 const NS='http://www.w3.org/2000/svg';
 const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
 
-function drawPreview(quad, svgEl){
-  const svg = svgEl || document.getElementById('previewSvg');
+function drawPreview(quad, showDiagonal, svgEl){
+  const svg = svgEl;
   if(!svg) return;
   while(svg.firstChild) svg.removeChild(svg.firstChild);
   if(!quad || !quad.A || !quad.B || !quad.C || !quad.D) return;
@@ -251,11 +253,13 @@ function drawPreview(quad, svgEl){
   poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.12');
   poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2');
   svg.appendChild(poly);
-  const O = mid(A,C);
-  const oc=document.createElementNS(NS,'circle');
-  oc.setAttribute('cx',O.x); oc.setAttribute('cy',O.y); oc.setAttribute('r',3);
-  oc.setAttribute('fill','#8e24aa');
-  svg.appendChild(oc);
+  if(showDiagonal){
+    const O = mid(A,C);
+    const oc=document.createElementNS(NS,'circle');
+    oc.setAttribute('cx',O.x); oc.setAttribute('cy',O.y); oc.setAttribute('r',3);
+    oc.setAttribute('fill','#8e24aa');
+    svg.appendChild(oc);
+  }
   [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
     const c=document.createElementNS(NS,'circle');
     c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
@@ -406,37 +410,37 @@ function updateClassButtons(){
   if(startBtn) startBtn.classList.toggle('active', !classEnded);
 }
 
-/* ---------- 학생 답변을 구글 설문지로 전송 (교사가 직접) ---------- */
+/* ---------- 학생 답변(과제 2개 전부)을 구글 설문지로 전송 (교사가 직접) ---------- */
 function submitStudentAnswersToGoogleForm(s){
   if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
-  if(!isDone(s)) return 0; // 완료(제출)된 답변만 전송
-  const body=new URLSearchParams();
-  const addField=(entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
-  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
-  addField(CONFIG.ENTRY_ROOM, currentRoomName);
-  addField(CONFIG.ENTRY_NUMBER, s.number);
-  addField(CONFIG.ENTRY_NAME, s.name);
-  addField(CONFIG.ENTRY_TASK, 'p1');
-  addField(CONFIG.ENTRY_SUCCESS, '성공');
-  addField(CONFIG.ENTRY_ANSWER, answerValueOf(s));
-  // 예전에는 form을 만들어 숨겨진 iframe으로 여러 학생을 연달아 제출했는데, 그러면 나중 제출이
-  // 앞의 제출을 가로채서 일부만(보통 마지막 것만) 실제로 전송되는 문제가 있었다.
-  // fetch는 각각 독립된 요청이라 여러 개를 동시에 보내도 서로 방해하지 않는다.
-  fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
-  return 1;
+  let sent=0;
+  const addField=(body,entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
+  TASKS.forEach(t=>{
+    if(!isTaskDone(s,t.key)) return; // 완료(제출)된 과제만 전송
+    const body=new URLSearchParams();
+    addField(body, CONFIG.ENTRY_UNIT, UNIT_LABEL);
+    addField(body, CONFIG.ENTRY_ROOM, currentRoomName);
+    addField(body, CONFIG.ENTRY_NUMBER, s.number);
+    addField(body, CONFIG.ENTRY_NAME, s.name);
+    addField(body, CONFIG.ENTRY_TASK, t.key+'_'+t.title);
+    addField(body, CONFIG.ENTRY_SUCCESS, '성공');
+    addField(body, CONFIG.ENTRY_ANSWER, taskAnswerOf(s,t.key));
+    // fetch는 각각 독립된 요청이라 여러 개를 동시에 보내도 서로 방해하지 않는다.
+    fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
+    sent++;
+  });
+  return sent;
 }
 document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
   if(checkedKeys.size===0) return;
   const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
-  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 답변을 구글 설문지로 제출할까요?`)) return;
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 완료된 과제 답변을 구글 설문지로 제출할까요?`)) return;
   let total=0;
   checkedKeys.forEach(k=>{ if(allStudents[k]) total += submitStudentAnswersToGoogleForm(allStudents[k]); });
   alert(`${checkedKeys.size}명, 총 ${total}개 문항을 설문지로 전송했어요.`);
 });
 
-/* ---------- 수업 시작/종료 (일시정지와는 별개) ----------
-   [수업 종료]를 누르면 반 전체 학생의 "제출" 버튼이 강제로 눌리고,
-   [수업 시작]을 누르면 반대로 전체가 "제출 취소"된다. */
+/* ---------- 수업 시작/종료 (일시정지와는 별개) ---------- */
 document.getElementById('classEndBtn').addEventListener('click', ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
   controlRef.update({ classEnded: true, classEndedTs: Date.now() });
@@ -471,11 +475,17 @@ function fmtTime(ts){
   const d = new Date(ts);
   return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
 }
-function answerValueOf(s){
-  return (s.progress && s.progress.p1 && s.progress.p1.value) ? String(s.progress.p1.value) : '';
+function taskAnswerOf(s, key){
+  return (s.progress && s.progress[key] && s.progress[key].value) ? String(s.progress[key].value) : '';
 }
-function isDone(s){
-  return !!(s.progress && s.progress.p1 && s.progress.p1.done);
+function isTaskDone(s, key){
+  return !!(s.progress && s.progress[key] && s.progress[key].done);
+}
+function doneCountOf(s){
+  return TASKS.filter(t=>isTaskDone(s,t.key)).length;
+}
+function isAllDone(s){
+  return doneCountOf(s)===TASKS.length;
 }
 
 function renderGrid(){
@@ -495,14 +505,14 @@ function renderGrid(){
   }
   const list = keys.map(k=>({ key:k, student: allStudents[k]||{} }));
   list.sort((a,b)=>{
-    if(!!isDone(b.student) !== !!isDone(a.student)) return (isDone(b.student)?1:0)-(isDone(a.student)?1:0);
+    if(doneCountOf(b.student) !== doneCountOf(a.student)) return doneCountOf(b.student)-doneCountOf(a.student);
     return (b.student.lastActive||0)-(a.student.lastActive||0);
   });
 
-  let doneCount=0;
+  let allDoneCount=0;
   list.forEach(item=>{
     const s = item.student;
-    if(isDone(s)) doneCount++;
+    if(isAllDone(s)) allDoneCount++;
     const tr = document.createElement('tr');
     tr.className = [(item.key===selectedKey?'selected':''), (s.online===false?'idle':'')].filter(Boolean).join(' ');
 
@@ -521,28 +531,32 @@ function renderGrid(){
     tdName.appendChild(dot);
     const nameText=document.createElement('span');
     nameText.textContent=displayName(item.key, s.name, s.number);
-    if(isDone(s)){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
+    if(isAllDone(s)){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
-    if(isDone(s)){
-      const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
+    if(isAllDone(s)){
+      const sc=document.createElement('span'); sc.className='submit-check'; sc.title='2개 과제 모두 완료'; sc.textContent='✅';
       tdName.appendChild(sc);
     }else{
-      const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
+      const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 모두 제출하지 않음';
       tdName.appendChild(sd);
     }
     tdName.addEventListener('click', ()=>{ selectedKey = item.key; renderGrid(); renderDetail(item); });
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
-    const tdDone = document.createElement('td'); tdDone.textContent = isDone(s) ? '완료' : '-';
-    const tdPreview = document.createElement('td'); tdPreview.className='preview'; tdPreview.textContent = answerValueOf(s) || '(아직 작성 전)';
+    tr.appendChild(tdName); tr.appendChild(tdNum);
+    TASKS.forEach(t=>{
+      const td=document.createElement('td');
+      const done=isTaskDone(s,t.key);
+      td.innerHTML = done ? '<span class="ptag done">✅</span>' : '<span class="ptag">-</span>';
+      tr.appendChild(td);
+    });
     const tdTime = document.createElement('td'); tdTime.textContent = fmtTime(s.lastActive);
-
-    tr.appendChild(tdName); tr.appendChild(tdNum); tr.appendChild(tdDone); tr.appendChild(tdPreview); tr.appendChild(tdTime);
+    tr.appendChild(tdTime);
     body.appendChild(tr);
   });
 
   document.getElementById('sumCount').textContent = list.length;
-  document.getElementById('sumDone').textContent = doneCount;
+  document.getElementById('sumDone').textContent = allDoneCount;
 
   const checkAll = document.getElementById('checkAll');
   if(checkAll) checkAll.checked = list.length>0 && list.every(i=>checkedKeys.has(i.key));
@@ -555,53 +569,73 @@ function renderGrid(){
   renderTeacherView();
 }
 
-/* ---------- ② 교사용 뷰: 학생 전체의 그림/텍스트 답변을 한눈에 보기 ---------- */
+/* ---------- ② 교사용 뷰: 과제 2개를 각각 섹션으로 나눠서 학생 전체의 그림/텍스트 답변을 한눈에 보기 ---------- */
 function renderTeacherView(){
-  const cardsWrap = document.getElementById('teacherCardsWrap');
-  const textWrap = document.getElementById('teacherTextWrap');
-  if(!cardsWrap || !textWrap) return;
-  cardsWrap.textContent=''; textWrap.textContent='';
+  const wrap = document.getElementById('teacherTaskSections');
+  if(!wrap) return;
+  wrap.textContent='';
   const keys = Object.keys(allStudents);
-  if(keys.length===0){
-    cardsWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
-    textWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
-    return;
-  }
-  const list = keys.map(k=>({key:k, student:allStudents[k]||{}}))
-    .sort((a,b)=> (a.student.number||0)-(b.student.number||0));
+  const list = keys.map(k=>({key:k, student:allStudents[k]||{}})).sort((a,b)=> (a.student.number||0)-(b.student.number||0));
 
-  list.forEach(item=>{
-    const s = item.student;
-    const card = document.createElement('div');
-    card.className='student-card';
-    const head=document.createElement('div'); head.className='sc-head';
-    head.innerHTML = `<span>${displayName(item.key,s.name,s.number)}</span>`;
-    const canvasWrap=document.createElement('div'); canvasWrap.className='sc-canvas';
-    if(s.quad && s.quad.A){
-      const svg=document.createElementNS(NS,'svg');
-      svg.setAttribute('viewBox','0 0 600 460');
-      canvasWrap.appendChild(svg);
-      drawPreview(s.quad, svg);
+  TASKS.forEach((t, idx)=>{
+    const section=document.createElement('div'); section.className='task-section';
+    const title=document.createElement('div'); title.className='task-section-title';
+    title.textContent = `[과제 ${idx+1}] ${t.title}`;
+    section.appendChild(title);
+
+    const split=document.createElement('div'); split.className='teacher-split';
+    const colCanvas=document.createElement('div'); colCanvas.className='teacher-col';
+    colCanvas.innerHTML='<div class="teacher-col-title">🖼 그림</div>';
+    const cardsWrap=document.createElement('div'); cardsWrap.className='student-cards';
+    colCanvas.appendChild(cardsWrap);
+
+    const colText=document.createElement('div'); colText.className='teacher-col';
+    colText.innerHTML='<div class="teacher-col-title">✏️ 텍스트 답변</div>';
+    const textWrap=document.createElement('div'); textWrap.className='text-answer-list';
+    colText.appendChild(textWrap);
+
+    if(list.length===0){
+      cardsWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+      textWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
     } else {
-      canvasWrap.innerHTML = '<div class="sc-empty">아직 도형 없음</div>';
+      list.forEach(item=>{
+        const s = item.student;
+        const card = document.createElement('div');
+        card.className='student-card';
+        const head=document.createElement('div'); head.className='sc-head';
+        head.innerHTML = `<span>${displayName(item.key,s.name,s.number)}</span>`;
+        const canvasWrap=document.createElement('div'); canvasWrap.className='sc-canvas';
+        const quad = s.quads && s.quads[t.key];
+        if(quad && quad.A){
+          const svg=document.createElementNS(NS,'svg');
+          svg.setAttribute('viewBox','0 0 600 460');
+          canvasWrap.appendChild(svg);
+          drawPreview(quad, t.showDiagonal, svg);
+        } else {
+          canvasWrap.innerHTML = '<div class="sc-empty">아직 도형 없음</div>';
+        }
+        const valueEl=document.createElement('div'); valueEl.className='sc-value';
+        valueEl.textContent = isTaskDone(s,t.key) ? '✅ 완료' : '⬜ 미완료';
+        card.appendChild(head); card.appendChild(canvasWrap); card.appendChild(valueEl);
+        cardsWrap.appendChild(card);
+      });
+      list.forEach(item=>{
+        const s = item.student;
+        const val = taskAnswerOf(s,t.key);
+        const box=document.createElement('div'); box.className='text-answer-item';
+        const head=document.createElement('div'); head.className='ta-head';
+        const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
+        const status=document.createElement('span'); status.className='ta-status '+(isTaskDone(s,t.key)?'done':'pending'); status.textContent = isTaskDone(s,t.key)?'완료':'미완료';
+        head.appendChild(name); head.appendChild(status);
+        const text=document.createElement('div'); text.className='ta-text'; text.textContent = val || '(아직 작성 전)';
+        box.appendChild(head); box.appendChild(text);
+        textWrap.appendChild(box);
+      });
     }
-    const valueEl=document.createElement('div'); valueEl.className='sc-value';
-    valueEl.textContent = isDone(s) ? '✅ 완료' : '⬜ 미완료';
-    card.appendChild(head); card.appendChild(canvasWrap); card.appendChild(valueEl);
-    cardsWrap.appendChild(card);
-  });
 
-  list.forEach(item=>{
-    const s = item.student;
-    const val = answerValueOf(s);
-    const box=document.createElement('div'); box.className='text-answer-item';
-    const head=document.createElement('div'); head.className='ta-head';
-    const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
-    const status=document.createElement('span'); status.className='ta-status '+(isDone(s)?'done':'pending'); status.textContent = isDone(s)?'완료':'미완료';
-    head.appendChild(name); head.appendChild(status);
-    const text=document.createElement('div'); text.className='ta-text'; text.textContent = val || '(아직 작성 전)';
-    box.appendChild(head); box.appendChild(text);
-    textWrap.appendChild(box);
+    split.appendChild(colCanvas); split.appendChild(colText);
+    section.appendChild(split);
+    wrap.appendChild(section);
   });
 }
 
@@ -623,20 +657,26 @@ function renderDetail(item){
   h3.textContent = displayName(item.key, item.student.name, item.student.number);
   wrap.appendChild(h3);
 
-  const svg = document.createElementNS(NS,'svg');
-  svg.setAttribute('id','previewSvg'); svg.setAttribute('viewBox','0 0 600 460');
-  wrap.appendChild(svg);
-  drawPreview(item.student.quad);
+  TASKS.forEach((t, idx)=>{
+    const block=document.createElement('div'); block.className='detail-block';
+    const h4=document.createElement('h4');
+    h4.textContent = `[과제 ${idx+1}] ${t.title} ${isTaskDone(item.student,t.key)?'✅':'(미제출)'}`;
+    block.appendChild(h4);
 
-  const answerTitle = document.createElement('div');
-  answerTitle.style.cssText='font-size:12px;font-weight:bold;color:#555;margin:12px 0 6px;';
-  answerTitle.textContent = '✏️ 답변';
-  wrap.appendChild(answerTitle);
+    const svg = document.createElementNS(NS,'svg');
+    svg.setAttribute('class','previewSvg'); svg.setAttribute('viewBox','0 0 600 460');
+    block.appendChild(svg);
+    const quad = item.student.quads && item.student.quads[t.key];
+    drawPreview(quad, t.showDiagonal, svg);
 
-  const box = document.createElement('div');
-  box.className='answerBox';
-  box.textContent = answerValueOf(item.student) || '(아직 작성 전)';
-  wrap.appendChild(box);
+    const box = document.createElement('div');
+    box.className='answerBox';
+    box.style.marginTop='10px';
+    box.textContent = taskAnswerOf(item.student, t.key) || '(아직 작성 전)';
+    block.appendChild(box);
+
+    wrap.appendChild(block);
+  });
 }
 </script>
 </body>

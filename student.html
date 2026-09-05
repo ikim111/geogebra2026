@@ -94,6 +94,7 @@ const BASE_URL = '';
 const STANDALONE_TASKS = [
   {n:0, label:0, title:'지오지브라 연습', file:'student0.html'}
 ];
+
 /* ============================================================
    선생님이 teacher.html에서 반별로 단원을 열고 닫을 수 있게 한 기능과,
    학생이 "결과 제출하기"를 눌러 완료했는지 보여주는 기능에 쓰인다.
@@ -111,7 +112,7 @@ const FIREBASE_CONFIG = {
 };
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
-const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',11:'__quad11',12:'__quad12',13:'__quad13',14:'__quad14'};
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12',13:'__quad13',14:'__quad14'};
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
 /* n = 실제 단원 번호(파일명·Firebase 잠금/완료 경로에 쓰이는 값, 절대 바꾸면 안 됨)
@@ -124,7 +125,9 @@ const SECTIONS = [
         {n:3, label:3, title:'각이등분선의 성질', file:'student3.html'},
         {n:4, label:4, title:'삼각형의 외심', file:'student4.html'},
         {n:5, label:5, title:'삼각형의 내심', file:'student5.html'},
-        {n:6, label:6, title:'생각 넓히기', file:'student6.html'}
+        {n:6, label:6, title:'생각 넓히기', file:'student6.html'},
+        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'student7.html'},
+        {n:8, label:8, title:'문제해결력 수행평가', file:'studentpa1.html'}
       ]}
   ]},
   { chapter:'VI. 사각형의 성질', groups:[
