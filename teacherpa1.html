@@ -19,6 +19,7 @@ if (typeof firebase === 'undefined') {
 </script>
 <script>window.__FB_SDK_OK = (typeof firebase !== 'undefined');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -188,6 +189,7 @@ if (typeof firebase === 'undefined') {
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">채점 화면:</span>
         <button class="pause" id="revealAnswersBtn">🔍 정답보기</button>
         <button class="pause" id="aiGradeAllBtn">🤖 전체 AI 채점 (미채점만)</button>
+        <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
         <span style="font-size:12px;color:#888;">끄면 학생별로 완료/미완료만 보이고, 켜면 정답 여부·이유·작도까지 보여요.</span>
       </div>
       <div class="row" style="margin-top:6px;">
@@ -213,11 +215,12 @@ if (typeof firebase === 'undefined') {
               <th>2. 외심<br><span style="font-weight:normal;">선택</span></th>
               <th>3. 내심<br><span style="font-weight:normal;">점찍기</span></th>
               <th>4. 내심<br><span style="font-weight:normal;">선택</span></th>
+              <th>총점<br><span style="font-weight:normal;">(10점)</span></th>
               <th>진행률</th>
               <th>마지막활동</th>
             </tr>
           </thead>
-          <tbody id="gridBody"><tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr></tbody>
+          <tbody id="gridBody"><tr><td class="empty" colspan="10">아직 접속한 학생이 없어요.</td></tr></tbody>
         </table>
       </div>
       <div class="detail" id="detail">
@@ -367,6 +370,27 @@ function gradeJustify(progressEntry, task, aiEntry){
     choiceOk, reasonOk, methodOk, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
 }
 
+/* 학생 1명의 4개 과제 점수를 모두 더한 총점을 계산한다(외심 점찍기 2점 + 외심 서술형 3점 +
+   내심 점찍기 2점 + 내심 서술형 3점 = 총 10점). 아직 손도 안 댄 과제(status:'none')는 0점으로
+   계산에 포함한다. AI 채점 전인 서술형은 ①선택 점수만 반영된 상태 그대로 더해진다. */
+function computeStudentTotalScore(s){
+  const tasks = buildTasks(s.assignment);
+  let score = 0, maxScore = 0;
+  tasks.forEach(t=>{
+    let grade;
+    if(t.kind==='pointplot'){
+      const lo = s.objectSnapshots && s.objectSnapshots[t.id];
+      grade = gradePointTask(lo, t);
+    } else {
+      const aiEntry = s.aiGrading && s.aiGrading[t.id];
+      grade = gradeJustify(s.progress && s.progress[t.id], t, aiEntry);
+    }
+    score += grade.score || 0;
+    maxScore += grade.maxScore || (t.kind==='pointplot' ? 2 : 3);
+  });
+  return {score, maxScore};
+}
+
 /* ---------- 캔버스 시각화(교사 화면 전용, 읽기 전용) ---------- */
 function drawSnapshotSvg(svg, lo, trueCenter, highlightLabel){
   const NS='http://www.w3.org/2000/svg';
@@ -454,7 +478,7 @@ function render(){
 
   if(keys.length===0){
     const tr=document.createElement('tr');
-    const td=document.createElement('td'); td.className='empty'; td.colSpan=9; td.textContent='아직 접속한 학생이 없어요.';
+    const td=document.createElement('td'); td.className='empty'; td.colSpan=10; td.textContent='아직 접속한 학생이 없어요.';
     tr.appendChild(td); body.appendChild(tr);
     document.getElementById('summary').style.display='none';
     document.getElementById('sumCount').textContent='0';
@@ -529,6 +553,16 @@ function render(){
         cell.addEventListener('click', ()=> selectStudent(s.key));
         td.appendChild(cell); tr.appendChild(td);
       });
+
+      const tdTotal=document.createElement('td');
+      if(answersRevealed){
+        const totalGrade = computeStudentTotalScore(s);
+        tdTotal.textContent = `${totalGrade.score}/${totalGrade.maxScore}점`;
+        tdTotal.style.fontWeight = 'bold';
+      } else {
+        tdTotal.textContent = '-';
+      }
+      tr.appendChild(tdTotal);
 
       const tdPct=document.createElement('td'); tdPct.textContent=pct+'%'; tr.appendChild(tdPct);
       const tdTime=document.createElement('td'); tdTime.textContent=timeAgo(s.lastActive); tr.appendChild(tdTime);
@@ -933,6 +967,56 @@ async function gradeAllJustifyTasks(){
   statusEl.textContent = `완료: ${done}개 채점됨` + (failed? `, ${failed}개 실패(콘솔 참고)` : '');
 }
 document.getElementById('aiGradeAllBtn').addEventListener('click', gradeAllJustifyTasks);
+
+/* 현재 반 학생들의 과제별 점수 + 총점을 엑셀(.xlsx) 파일로 내려받는다. "정답보기"를 켜지
+   않은 상태에서 눌러도 항상 실제 점수를 계산해서 내보낸다(화면에 보이는 것과 무관하게
+   내려받기용 데이터는 항상 최신 채점 결과를 반영). */
+function exportScoresToExcel(){
+  if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const list = Object.keys(students).map(k=>({key:k, ...students[k]}));
+  if(list.length===0){ alert('아직 접속한 학생이 없어요.'); return; }
+  list.sort(byNumber);
+
+  const header = ['번호','이름','배정 순서','외심 시나리오','내심 시나리오',
+    '1.외심(점찍기)','2.외심(선택·서술)','3.내심(점찍기)','4.내심(선택·서술)','총점','제출 여부'];
+  const rows = [header];
+
+  list.forEach(s=>{
+    const tasks = buildTasks(s.assignment);
+    const circumS = tasks.find(t=>t.centerType==='외심').scenario.title;
+    const incenterS = tasks.find(t=>t.centerType==='내심').scenario.title;
+    const orderTxt = s.assignment ? (s.assignment.circumFirst ? '외심→내심' : '내심→외심') : '(배정 전)';
+    const scoreOf = (tid)=>{
+      const t = tasks.find(x=>x.id===tid);
+      let grade;
+      if(t.kind==='pointplot'){
+        const lo = s.objectSnapshots && s.objectSnapshots[tid];
+        grade = gradePointTask(lo, t);
+      } else {
+        const aiEntry = s.aiGrading && s.aiGrading[tid];
+        grade = gradeJustify(s.progress && s.progress[tid], t, aiEntry);
+      }
+      const maxScore = grade.maxScore || (t.kind==='pointplot' ? 2 : 3);
+      return grade.status==='none' ? `0/${maxScore}` : `${grade.score}/${maxScore}`;
+    };
+    const total = computeStudentTotalScore(s);
+    rows.push([
+      s.number || '', s.name || '(이름없음)', orderTxt, circumS, incenterS,
+      scoreOf(1), scoreOf(2), scoreOf(3), scoreOf(4),
+      `${total.score}/${total.maxScore}`,
+      s.submitted ? '제출완료' : '미제출'
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:10},{wch:12},{wch:14},{wch:14},{wch:14},{wch:16},{wch:14},{wch:16},{wch:8},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '점수');
+  const today = new Date();
+  const ymd = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `수행평가_외심내심_${currentRoomName||''}반_${ymd}.xlsx`);
+}
+document.getElementById('exportExcelBtn').addEventListener('click', exportScoresToExcel);
 document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   if(!studentsRef || checkedKeys.size===0) return;
   const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
