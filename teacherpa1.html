@@ -685,6 +685,11 @@ function buildTaskBox(s, t, headerText, key){
         {label:'②이유 — AI 채점'+(grade.aiGraded?'':' (아직 채점 전)'), points:1, done:grade.reasonOk},
         {label:'③방법 — AI 채점'+(grade.aiGraded?'':' (아직 채점 전)'), points:1, done:grade.methodOk}
       ]));
+      if(grade.aiGraded && !grade.choiceOk && grade.choice){
+        const note=document.createElement('div'); note.className='dtext'; note.style.color='#888'; note.style.fontStyle='italic';
+        note.textContent = `※ ②③번은 문제의 정답(${grade.expected})이 아니라 학생이 고른 답(${grade.choice})을 기준으로 채점했어요.`;
+        box.appendChild(note);
+      }
     }
 
     const reasonD=document.createElement('div'); reasonD.innerHTML=`<b>② 이유</b>`+(aiEntry&&aiEntry.reasonFeedback?` — ${aiEntry.reasonFeedback}`:''); reasonD.style.marginTop='8px'; box.appendChild(reasonD);
@@ -699,9 +704,15 @@ function buildTaskBox(s, t, headerText, key){
       aiBtn.addEventListener('click', (ev)=>{
         ev.stopPropagation(); // renderTaskOverview에서는 박스 전체에도 클릭 리스너(학생 이동)가 걸려있어 버블링 방지 필요
         aiBtn.disabled=true; aiBtn.textContent='채점 중...';
+        // 이유·방법은 "이 문제의 정답"이 아니라 "학생이 실제로 고른 점"을 기준으로 채점한다.
+        // 예를 들어 과제2(원래 외심 문제)에서 학생이 내심을 골랐어도, 내심을 고른 이유와
+        // 내심 작도 방법을 올바르게 설명했다면 ②③번 점수는 받을 수 있어야 한다(①선택 점수만
+        // 별도로 틀린 것으로 채점됨). 학생이 선택하지 않았거나 값이 이상하면 문제의 원래
+        // 정답(t.centerType)으로 채점한다.
+        const gradeCenterType = (grade.choice==='내심'||grade.choice==='외심') ? grade.choice : t.centerType;
         fetch('/api/grade-justify', {
           method:'POST', headers:{'content-type':'application/json'},
-          body: JSON.stringify({ centerType: t.centerType, reason: grade.reason||'', method: grade.method||'' })
+          body: JSON.stringify({ centerType: gradeCenterType, reason: grade.reason||'', method: grade.method||'' })
         })
         .then(r=>r.json().then(data=>({ok:r.ok, data})))
         .then(({ok, data})=>{
@@ -928,7 +939,9 @@ function collectUngradedJustifyItems(){
       if(!p || !p.done) return;
       if(s.aiGrading && s.aiGrading[t.id]) return; // 이미 채점됨
       const v = p.value || {};
-      items.push({ key, taskId:t.id, centerType:t.centerType, reason:v.reason||'', method:v.method||'' });
+      // 학생이 실제로 고른 점(v.choice)을 기준으로 이유·방법을 채점한다(위 개별 채점 버튼과 동일 규칙).
+      const gradeCenterType = (v.choice==='내심'||v.choice==='외심') ? v.choice : t.centerType;
+      items.push({ key, taskId:t.id, centerType:gradeCenterType, reason:v.reason||'', method:v.method||'' });
     });
   });
   return items;
@@ -978,7 +991,7 @@ function exportScoresToExcel(){
   list.sort(byNumber);
 
   const header = ['번호','이름','배정 순서','외심 시나리오','내심 시나리오',
-    '1.외심(점찍기)','2.외심(선택·서술)','3.내심(점찍기)','4.내심(선택·서술)','총점','제출 여부'];
+    '1.외심(점찍기) /2점','2.외심(선택·서술) /3점','3.내심(점찍기) /2점','4.내심(선택·서술) /3점','총점 /10점','제출 여부'];
   const rows = [header];
 
   list.forEach(s=>{
@@ -986,6 +999,7 @@ function exportScoresToExcel(){
     const circumS = tasks.find(t=>t.centerType==='외심').scenario.title;
     const incenterS = tasks.find(t=>t.centerType==='내심').scenario.title;
     const orderTxt = s.assignment ? (s.assignment.circumFirst ? '외심→내심' : '내심→외심') : '(배정 전)';
+    // 점수만 숫자로 남긴다(예: "1/2점"이 아니라 그냥 1) — 만점은 헤더에 이미 적어뒀다.
     const scoreOf = (tid)=>{
       const t = tasks.find(x=>x.id===tid);
       let grade;
@@ -996,14 +1010,13 @@ function exportScoresToExcel(){
         const aiEntry = s.aiGrading && s.aiGrading[tid];
         grade = gradeJustify(s.progress && s.progress[tid], t, aiEntry);
       }
-      const maxScore = grade.maxScore || (t.kind==='pointplot' ? 2 : 3);
-      return grade.status==='none' ? `0/${maxScore}` : `${grade.score}/${maxScore}`;
+      return grade.status==='none' ? 0 : grade.score;
     };
     const total = computeStudentTotalScore(s);
     rows.push([
       s.number || '', s.name || '(이름없음)', orderTxt, circumS, incenterS,
       scoreOf(1), scoreOf(2), scoreOf(3), scoreOf(4),
-      `${total.score}/${total.maxScore}`,
+      total.score,
       s.submitted ? '제출완료' : '미제출'
     ]);
   });
