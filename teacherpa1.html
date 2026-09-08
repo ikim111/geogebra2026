@@ -188,11 +188,16 @@ if (typeof firebase === 'undefined') {
       <div class="row">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">채점 화면:</span>
         <button class="pause" id="revealAnswersBtn">🔍 정답보기</button>
-        <button class="pause" id="aiGradeAllBtn">🤖 전체 AI 채점 (미채점만)</button>
+        <button class="pause" id="aiGradeAllBtn">🤖 전체 AI 채점</button>
         <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
         <span style="font-size:12px;color:#888;">끄면 학생별로 완료/미완료만 보이고, 켜면 정답 여부·이유·작도까지 보여요.</span>
       </div>
       <div class="row" style="margin-top:6px;">
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="regradeAllChk">이미 채점된 답안도 다시 채점하기 (체크 해제 시 미채점만)
+        </label>
+      </div>
+      <div class="row" style="margin-top:4px;">
         <span id="aiGradeAllStatus" style="font-size:12px;color:#888;"></span>
       </div>
     </div>
@@ -1001,9 +1006,11 @@ document.getElementById('revealAnswersBtn').addEventListener('click', ()=>{
   render();
 });
 
-/* 반 전체에서 아직 AI 채점(이유·방법)을 하지 않은 서술형 답안(과제2·4)만 모아서 순서대로
-   하나씩 AI 채점 API를 호출하고 결과를 Firebase에 저장한다. 이미 채점된 답안은 건너뛴다. */
-function collectUngradedJustifyItems(){
+/* 반 전체에서 제출된 서술형 답안(과제2·4)을 모아서 순서대로 하나씩 AI 채점 API를 호출하고
+   결과를 Firebase에 저장한다. includeGraded가 false(기본값)면 이미 채점된 답안은 건너뛰고,
+   true면 이미 채점된 답안도 다시 채점 대상에 포함한다(재배포로 채점 기준이 바뀌었을 때 등,
+   예전에 저장된 채점 결과를 새 기준으로 덮어써야 할 때 쓴다). */
+function collectUngradedJustifyItems(includeGraded){
   const items = [];
   Object.keys(students).forEach(key=>{
     const s = students[key];
@@ -1012,7 +1019,7 @@ function collectUngradedJustifyItems(){
       if(t.kind!=='justify') return;
       const p = s.progress && s.progress[t.id];
       if(!p || !p.done) return;
-      if(s.aiGrading && s.aiGrading[t.id]) return; // 이미 채점됨
+      if(!includeGraded && s.aiGrading && s.aiGrading[t.id]) return; // 이미 채점됨(다시 채점 옵션이 꺼져 있으면 건너뜀)
       const v = p.value || {};
       // 학생이 실제로 고른 점(v.choice)을 기준으로 이유·방법을 채점한다(위 개별 채점 버튼과 동일 규칙).
       const gradeCenterType = (v.choice==='내심'||v.choice==='외심') ? v.choice : t.centerType;
@@ -1025,9 +1032,18 @@ async function gradeAllJustifyTasks(){
   const btn=document.getElementById('aiGradeAllBtn');
   const statusEl=document.getElementById('aiGradeAllStatus');
   if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
-  const items = collectUngradedJustifyItems();
-  if(items.length===0){ statusEl.textContent='✅ 아직 채점하지 않은 답안이 없어요 (모두 채점됨 또는 제출된 답안 없음).'; return; }
-  if(!confirm(`아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(학생 수에 따라 시간이 걸릴 수 있어요)`)) return;
+  const includeGraded = !!document.getElementById('regradeAllChk').checked;
+  const items = collectUngradedJustifyItems(includeGraded);
+  if(items.length===0){
+    statusEl.textContent = includeGraded
+      ? '✅ 제출된 서술형 답안이 없어요.'
+      : '✅ 아직 채점하지 않은 답안이 없어요 (모두 채점됨 또는 제출된 답안 없음).';
+    return;
+  }
+  const confirmMsg = includeGraded
+    ? `이미 채점된 답안을 포함해서 총 ${items.length}개를 전부 다시 채점할까요?\n(기존 채점 결과는 새 결과로 덮어써져요. 학생 수에 따라 시간이 걸릴 수 있어요)`
+    : `아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(학생 수에 따라 시간이 걸릴 수 있어요)`;
+  if(!confirm(confirmMsg)) return;
   btn.disabled=true;
   let done=0, failed=0;
   for(let i=0;i<items.length;i++){

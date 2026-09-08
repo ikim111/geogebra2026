@@ -52,6 +52,12 @@
   .submit-panel button.main.cancel{background:#9e9e9e;}
   .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
   #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+  .submit-summary{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left;}
+  .submit-summary .srow{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:9px 12px;border-radius:8px;background:#f7f8fa;color:#999;}
+  .submit-summary .srow.done{background:#e8f5e9;color:#2e7d32;}
+  .submit-summary .srow .sicon{font-size:15px;flex:0 0 auto;}
+  .submit-summary .srow .slabel{flex:1;font-weight:bold;}
+  .submit-summary .srow .sstat{font-size:12px;flex:0 0 auto;}
 
   #syncStatus{font-size:12px;color:#999;margin-top:12px;}
   #syncStatus.on{color:var(--green);font-weight:bold;}
@@ -186,6 +192,7 @@ if (typeof firebase === 'undefined') {
     <div id="taskContainer"></div>
 
     <div class="submit-panel" data-task-id="submit">
+      <div id="submitSummary" class="submit-summary"></div>
       <button class="main" id="submitBtn">결과 제출하기</button><br>
       <button class="backup" id="backupBtn">백업 파일로 저장</button>
       <div id="submitStatus"></div>
@@ -1236,6 +1243,18 @@ function updateProgress(){
   document.getElementById('progressText').textContent = `완료 ${done} / ${total}`;
   document.getElementById('progressFill').style.width = (total? done/total*100 : 0)+'%';
   RT.pushProgressDebounced(done, total);
+  renderSubmitSummary();
+}
+// 마지막 "결과 제출하기" 화면에서 과제 1~4가 각각 완료됐는지 한눈에 볼 수 있게 보여준다.
+// updateProgress()가 호출될 때마다(과제 작성/취소, 새로고침 복원 등) 같이 갱신된다.
+function renderSubmitSummary(){
+  const box = document.getElementById('submitSummary');
+  if(!box || !TASKS.length) return;
+  box.innerHTML = TASKS.map(t=>{
+    const done = !!(results[t.id] && results[t.id].done);
+    const kindLabel = t.kind==='pointplot' ? '점 찍기' : '선택·서술';
+    return `<div class="srow ${done?'done':''}"><span class="sicon">${done?'✅':'⬜'}</span><span class="slabel">과제 ${t.id}. ${t.centerType} — ${kindLabel}</span><span class="sstat">${done?'제출완료':'미완료'}</span></div>`;
+  }).join('');
 }
 
 function restoreProgress(progress){
