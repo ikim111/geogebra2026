@@ -9,7 +9,11 @@
 // 를 등록하고 다시 배포(재배포)하면 이 함수가 그 키를 쓸 수 있다.
 //
 // 요청 형식(POST, JSON): { centerType: '외심'|'내심', reason: string, method: string }
-// 응답 형식(JSON): { reasonCorrect, reasonFeedback, methodCorrect, methodFeedback }
+// 응답 형식(JSON): { reasonCorrect, reasonFeedback, methodPart1Correct, methodPart2Correct,
+//                    methodPart3Correct, methodFeedback }
+// - reasonCorrect: ②이유 문항 정답 여부(2점, 전부-아니면-0점)
+// - methodPart1/2/3Correct: ③방법 문항을 세 요소로 나눠 채점(각 1점, 부분점수 가능).
+//   외심이면 [변]/[수직이등분선]/[교점], 내심이면 [각]/[이등분선]/[교점] 순서.
 
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
@@ -38,13 +42,16 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // [과제2] 외심 채점 기준: (2) 세 점으로부터 거리가 같아야 하기 때문이다. (3) 세 변의
-  // 수직이등분선의 교점을 그린다.
+  // [과제2] 외심 채점 기준: (2) 세 점(꼭짓점)으로부터 거리가 같아야 하기 때문이다. (3) 세 변의
+  // 수직이등분선의 교점을 그린다 → [변]/[수직이등분선]/[교점] 세 요소가 모두 들어가야 만점.
   // [과제4] 내심 채점 기준: (2) 세 변으로부터 거리가 같아야 하기 때문이다. (3) 세 각의
-  // 이등분선의 교점을 그린다.
+  // 이등분선의 교점을 그린다 → [각]/[이등분선]/[교점] 세 요소가 모두 들어가야 만점.
   const expectedReason = centerType === '내심'
     ? '세 변으로부터 거리가 같아야 하기 때문이다.'
-    : '세 점으로부터 거리가 같아야 하기 때문이다.';
+    : '세 점(꼭짓점)으로부터 거리가 같아야 하기 때문이다.';
+  const methodParts = centerType === '내심'
+    ? ['각(세 내각)을 이등분한다는 내용', '(각의) 이등분선이라는 내용', '그 이등분선들의 교점을 찾는다는 내용']
+    : ['변(세 변)을 이등분한다는 내용', '수직이등분선이라는 내용(변에 수직으로 이등분)', '그 수직이등분선들의 교점을 찾는다는 내용'];
   const expectedMethod = centerType === '내심'
     ? '세 각의 이등분선의 교점을 그린다.'
     : '세 변의 수직이등분선의 교점을 그린다.';
@@ -52,15 +59,19 @@ module.exports = async (req, res) => {
   const prompt = `당신은 중학교 수학(삼각형의 외심과 내심) 수행평가 서술형 답안을 채점하는 선생님입니다.
 학생이 이번 문제에서 찾아야 하는 점: ${centerType}
 
-[이유 문항] 모범 답안: "${expectedReason}"
-[방법 문항] 모범 답안: "${expectedMethod}"
+[이유 문항] 모범 답안: "${expectedReason}" — 표현이 다르더라도 핵심 개념(무엇으로부터 거리가 같은지)이 통하면 정답(true)으로 판정하세요.
+
+[방법 문항] 모범 답안: "${expectedMethod}" — 이 문항은 아래 세 가지 요소가 각각 들어있는지 따로따로 채점합니다(부분점수 가능). 표현이 다르더라도 의미가 통하면 정답으로 인정하세요.
+  1번 요소(part1): ${methodParts[0]}
+  2번 요소(part2): ${methodParts[1]}
+  3번 요소(part3): ${methodParts[2]}
+주의: 답안이 완전히 다른 개념(예: ${centerType==='내심' ? '수직이등분선/외심' : '각의 이등분선/내심'} 관련 설명)을 쓴 경우, 그 요소들은 겉으로 비슷한 단어가 있더라도 정답으로 인정하지 마세요(예: "변의 수직이등분선"이라는 답은 [각]/[이등분선(각의)] 요소를 만족하지 않습니다).
 
 학생 답안:
 ② 이유: "${reason || '(작성 안 함)'}"
 ③ 방법: "${method || '(작성 안 함)'}"
 
-채점 기준: 표현이 다르더라도 모범 답안과 핵심 개념(무엇으로부터 거리가 같은지 / 어떤 선의 교점을 그리는지)이 통하면 정답(true), 핵심 개념이 빠졌거나 틀렸으면 오답(false)으로 판정하세요.
-각 문항에 대해 학생에게 보여줄 짧은 한국어 피드백도 한 줄씩 작성하세요.`;
+각 문항에 대해 학생에게 보여줄 짧은 한국어 피드백도 한 줄씩 작성하세요(방법 문항은 세 요소 중 무엇이 부족한지 짚어주세요).`;
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -80,10 +91,12 @@ module.exports = async (req, res) => {
             properties: {
               reasonCorrect: { type: 'boolean' },
               reasonFeedback: { type: 'string' },
-              methodCorrect: { type: 'boolean' },
+              methodPart1Correct: { type: 'boolean' },
+              methodPart2Correct: { type: 'boolean' },
+              methodPart3Correct: { type: 'boolean' },
               methodFeedback: { type: 'string' }
             },
-            required: ['reasonCorrect', 'reasonFeedback', 'methodCorrect', 'methodFeedback']
+            required: ['reasonCorrect', 'reasonFeedback', 'methodPart1Correct', 'methodPart2Correct', 'methodPart3Correct', 'methodFeedback']
           }
         }
       })
@@ -116,7 +129,9 @@ module.exports = async (req, res) => {
     res.status(200).json({
       reasonCorrect: !!parsed.reasonCorrect,
       reasonFeedback: parsed.reasonFeedback || '',
-      methodCorrect: !!parsed.methodCorrect,
+      methodPart1Correct: !!parsed.methodPart1Correct,
+      methodPart2Correct: !!parsed.methodPart2Correct,
+      methodPart3Correct: !!parsed.methodPart3Correct,
       methodFeedback: parsed.methodFeedback || ''
     });
   } catch (err) {
