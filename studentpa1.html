@@ -1069,6 +1069,7 @@ function saveLocalObjSnapshot(identity, taskId, snap){
 /* ---------- 과제 카드 UI ---------- */
 const results = {};
 const canvasByTaskId = {};
+const taskLockRestorers = {};
 let TASKS = [];
 let pages = [];
 let currentPage = 0;
@@ -1080,12 +1081,15 @@ function buildTaskCard(task){
   el.dataset.taskId = String(task.id);
   let bodyHtml;
   if(task.kind==='pointplot'){
+    const pointHint = task.centerType==='외심'
+      ? '위 상황을 읽고, ①세 변의 수직이등분선을 2개 이상 긋고 → ②그 교점(외심) 자리에 점을 찍고 → ③세 꼭짓점을 지나는 원(외접원)까지 그려보세요. 도구를 자유롭게 사용할 수 있어요.'
+      : '위 상황을 읽고, ①세 각의 이등분선을 2개 이상 긋고 → ②그 교점(내심) 자리에 점을 찍고 → ③내심에서 한 변까지 수선을 그어 그 발을 표시하고 → ④세 변에 닿는 원(내접원)까지 그려보세요. 도구를 자유롭게 사용할 수 있어요.';
     bodyHtml = `
       <div class="task-body">
         <div class="scenario-box">${task.scenario.passage}</div>
         <div class="toolbar" id="tools-${task.id}"></div>
         <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
-        <div class="hint">위 상황을 읽고, 알맞은 위치에 점을 찍어 표시해 보세요. 도구를 자유롭게 사용할 수 있어요.</div>
+        <div class="hint">${pointHint}</div>
       </div>`;
   } else {
     bodyHtml = `
@@ -1209,6 +1213,16 @@ function initJustifyTask(task){
     refresh();
   }
   btn.addEventListener('click', ()=> locked?doCancel():doSubmit());
+  // 새로고침(재접속) 후 이 과제를 "제출 완료" 상태로 복원할 때, 실제 제출 직후와 똑같이
+  // 잠금+취소 가능한 상태로 만들기 위해 restoreProgress()가 쓸 수 있게 등록해둔다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    Array.from(radios).forEach(r=>r.disabled=true);
+    reasonEl.disabled = true; methodEl.disabled = true;
+    btn.disabled = false;
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+  };
   reasonEl.addEventListener('input', refresh);
   methodEl.addEventListener('input', refresh);
   Array.from(radios).forEach(r=>r.addEventListener('change', refresh));
@@ -1239,13 +1253,13 @@ function restoreProgress(progress){
       const reasonEl=document.getElementById(`reason-${t.id}`);
       const methodEl=document.getElementById(`method-${t.id}`);
       const radios=document.getElementsByName(`choice-${t.id}`);
-      if(reasonEl){ reasonEl.value=v.reason||''; reasonEl.disabled=true; }
-      if(methodEl){ methodEl.value=v.method||''; methodEl.disabled=true; }
-      Array.from(radios).forEach(r=>{ r.checked = (r.value===v.choice); r.disabled=true; });
-      const btn=document.getElementById(`check-${t.id}`);
-      if(btn){ btn.disabled=true; btn.classList.add('locked-fixed'); btn.textContent='제출됨'; }
+      if(reasonEl){ reasonEl.value=v.reason||''; }
+      if(methodEl){ methodEl.value=v.method||''; }
+      Array.from(radios).forEach(r=>{ r.checked = (r.value===v.choice); });
       const fb=document.getElementById(`fb-${t.id}`);
-      if(fb){ fb.textContent='이전에 제출한 내용이에요.'; fb.className='feedback ok'; }
+      if(fb){ fb.textContent='이전에 제출한 내용이에요. "취소"를 누르면 다시 고칠 수 있어요.'; fb.className='feedback ok'; }
+      // 실제 제출 직후와 똑같이 잠금+취소 가능한 상태로 복원한다(값은 이미 위에서 채워둠).
+      if(taskLockRestorers[t.id]) taskLockRestorers[t.id]();
     }
   });
   updateProgress();

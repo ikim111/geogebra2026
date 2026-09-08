@@ -1127,6 +1127,7 @@ const FREE_TOOLS = ALL_TOOLS;
 const container = document.getElementById('taskContainer');
 const results = {};
 const canvasByTaskId = {};
+const taskLockRestorers = {};
 
 // 과제3·6처럼 "학생이 실제로 그린 다른 과제의 그림을 그대로 보여주기"용 미러링 장치.
 // 원본 과제(sourceTaskId)의 GeoCanvas가 바뀔 때마다 등록된 미러 캔버스들도 같은 상태로
@@ -1424,6 +1425,16 @@ function initTextTask(task){
     renderClassAnswersFor(task);
   }
   btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  // 새로고침(재접속) 후 이 과제를 "제출 완료" 상태로 복원할 때, 실제 제출 직후와 똑같이
+  // 잠금+취소 가능한 상태로 만들기 위해 restoreProgress()가 쓸 수 있게 등록해둔다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.disabled = false;
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+  };
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
   results[task.id]={done:false, value:''};
   refreshFeedback();
@@ -1507,6 +1518,16 @@ function initVerifyTask(task){
     renderClassAnswersFor(task); // 취소하면 친구들 답변 패널도 다시 잠긴다
   }
   btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  // 새로고침(재접속) 후 이 과제를 "제출 완료" 상태로 복원할 때, 실제 제출 직후와 똑같이
+  // 잠금+취소 가능한 상태로 만들기 위해 restoreProgress()가 쓸 수 있게 등록해둔다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.disabled = false;
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+  };
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
   results[task.id]={done:false, value:''};
   refreshFeedback();
@@ -1654,15 +1675,10 @@ function restoreProgress(progress){
     if(fb){ fb.textContent='이전에 이미 완료한 문제예요.'; fb.className='feedback ok'; }
     const input=document.getElementById(`input-${t.id}`);
     if(input && p.value!=null && p.value!==''){ input.value = p.value; }
-    // 서술형 칸(text/verify)은 새로고침 후 그림(도형)이 복원되지 않으므로, 이전에 제출한
-    // 칸은 다시 편집/제출하지 못하게 잠가둔다 (버튼을 눌러도 초기화된 도형 때문에 검증이
-    // 실패해 혼란스러운 상태가 되는 것을 막기 위함).
-    if((t.type==='text' || t.type==='verify') && input){
-      input.disabled = true;
-      input.classList.add('locked-fixed');
-      const btn=document.getElementById(`check-${t.id}`);
-      if(btn){ btn.disabled = true; btn.classList.add('locked-fixed'); btn.textContent='제출됨'; }
-    }
+    // 제출/취소 기능이 있는 과제(text/verify)는, 새로고침 후에도 정말 방금 제출한 것과 같은
+    // "잠금 + 취소 가능" 상태로 복원한다. 도형도 바로 아래에서 restoreObjectSnapshot으로 함께
+    // 복원되므로, 학생이 "취소"를 눌러 다시 고치더라도 정상적으로 재검증된다.
+    if(taskLockRestorers[t.id]) taskLockRestorers[t.id]();
     // 빈칸 채우기 과제는 저장된 value("답1, 답2, 답3")를 다시 쪼개서 각 칸에 채워 넣는다.
     if(t.type==='blanks' && Array.isArray(t.blanksItems) && p.value!=null){
       const parts = String(p.value).split(', ');

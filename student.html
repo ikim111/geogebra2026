@@ -126,10 +126,9 @@ const SECTIONS = [
         {n:4, label:4, title:'삼각형의 외심', file:'student4.html'},
         {n:5, label:5, title:'삼각형의 내심', file:'student5.html'},
         {n:6, label:6, title:'생각 넓히기', file:'student6.html'},
-        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'student7.html'}
-        // 8번(문제해결력 수행평가/studentpa1.html)은 테스트 중이라 학생 목록에서 잠시 숨김.
-        // 다시 노출하려면 위 항목 뒤에 쉼표를 추가하고 아래 줄의 주석을 해제하세요:
-        // ,{n:8, label:8, title:'문제해결력 수행평가', file:'studentpa1.html'}
+        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'student7.html'},
+        {n:8, label:8, title:'문제해결력 수행평가', file:'studentpa1.html'},
+        {n:9, label:'🔗', title:'문제풀이 (Snorkl)', external:true, url:'https://student.snorkl.app/zee6zw'}
       ]}
   ]},
   { chapter:'VI. 사각형의 성질', groups:[
@@ -178,19 +177,26 @@ function saveProfile(p){
 }
 
 function buildTaskLink(t, profile, opts){
-  const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
   const a=document.createElement('a');
   a.className='task-link';
   a.dataset.n = t.n;
-  // 실제 목적지는 항상 데이터셋에 저장해두고, 잠금 여부가 확인된 뒤에만 href로 옮긴다.
-  a.dataset.href = BASE_URL + t.file + '?' + params.toString();
   const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
   const badge=document.createElement('span'); badge.className='badge'; badge.style.display='none';
-  const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
+  const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(badge); a.appendChild(arrow);
+  if(t.external){
+    // Snorkl 같은 외부 사이트 링크: 반/번호/이름은 붙이지 않지만, 선생님이 이 항목을
+    // 열어줬는지는 다른 단원과 똑같이 확인한다(잠금 시스템 적용). 열리면 새 탭으로 연다.
+    a.dataset.external = '1';
+    a.dataset.href = t.url;
+  } else {
+    const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
+    // 실제 목적지는 항상 데이터셋에 저장해두고, 잠금 여부가 확인된 뒤에만 href로 옮긴다.
+    a.dataset.href = BASE_URL + t.file + '?' + params.toString();
+  }
   if(opts && opts.alwaysOpen){
-    a.href = a.dataset.href;
+    unlockTaskLink(a);
   } else {
     // 선생님이 열어줬는지 아직 Firebase에서 확인 전인 상태 - 확인되기 전까지는 잠긴 것과
     // 똑같이 보여준다("로딩 중 잠깐 열려 보이는" 틈을 없애기 위함). 확인 결과 열려있는
@@ -251,8 +257,10 @@ function lockTaskLink(a){
 function unlockTaskLink(a){
   a.classList.remove('locked');
   if(a.dataset.href) a.href = a.dataset.href;
+  const isExternal = a.dataset.external === '1';
+  if(isExternal){ a.target = '_blank'; a.rel = 'noopener'; }
   const arrow = a.querySelector('.arrow');
-  if(arrow) arrow.textContent = '›';
+  if(arrow) arrow.textContent = isExternal ? '↗' : '›';
 }
 function unlockAllPending(){
   document.querySelectorAll('.task-link.locked').forEach(el=> unlockTaskLink(el));

@@ -288,6 +288,24 @@ function distToSegment(p,a,b){
   t = Math.max(0,Math.min(1,t));
   return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
 }
+// distToSegment와 달리 t를 0~1로 자르지 않고 그대로 돌려준다 — "변 위의 중간 지점"인지
+// (수선의 발 판정 등에서 꼭짓점 자체와 구분하기 위해) 확인할 때 쓴다.
+function footInfo(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  return {t, dist: Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy))};
+}
+/* 원(circleCP/circleCR) 중 중심이 target 근처(tolCenter)이고 반지름이 r와 비슷한(tolR)
+   것이 있는지 확인한다. teacherpa1.html의 채점 기준과 같은 판정 로직. */
+function hasCircleNear(c, target, tolCenter, r, tolR){
+  return c.objects.some(o=>{
+    if(o.type!=='circleCP' && o.type!=='circleCR') return false;
+    const g=c.getObjGeom(o);
+    if(!g || !g.center) return false;
+    const rad = o.type==='circleCP' ? dist(g.center,g.through) : dist(g.r1,g.r2);
+    return dist(g.center,target) < tolCenter && Math.abs(rad-r) < tolR;
+  });
+}
 function lineLineIntersection(a1,b1,a2,b2){
   const x1=a1.x,y1=a1.y,x2=b1.x,y2=b1.y,x3=a2.x,y3=a2.y,x4=b2.x,y4=b2.y;
   const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
@@ -970,10 +988,10 @@ const triPreset = (pts)=>[
   {type:'segment',p1:pts[2].label,p2:pts[0].label}
 ];
 
-/* [1페이지] 외심 그리기 채점: 두 변 이상의 수직이등분선을 실제로 그렸는지(1점), 그리고 그
-   교점을 "교점" 도구로 정확히(세 꼭짓점에서 같은 거리인 자리에) 표시했는지(1점)를 각각
-   독립적으로 확인해서, 채점 요소별 체크와 점수를 함께 돌려준다. 힌트 문구는 따로 주지 않고
-   이 채점 요소 목록 자체가 화면에 그대로 보여지는 것으로 대신한다. */
+/* [1페이지] 외심·외접원 그리기 채점: ①수직이등분선을 변 1개당 1점(최대 2점), ②그 교점을
+   "교점" 도구로 정확히(세 꼭짓점에서 같은 거리인 자리에) 표시(1점), ③세 꼭짓점을 지나는
+   원(외접원)을 그렸는지(1점) — 총 4점. teacherpa1.html 수행평가와 같은 채점 기준이다.
+   힌트 문구는 따로 주지 않고 이 채점 요소 목록 자체가 화면에 그대로 보여지는 것으로 대신한다. */
 function checkCircumcenterOnly(c){
   const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
   const hasBisFor=(X,Y)=>c.objects.some(o=>{
@@ -982,26 +1000,30 @@ function checkCircumcenterOnly(c){
     return (samePt(g.p1,X)&&samePt(g.p2,Y))||(samePt(g.p1,Y)&&samePt(g.p2,X));
   });
   const bisCount=[hasBisFor(A,B),hasBisFor(B,Cc),hasBisFor(A,Cc)].filter(Boolean).length;
-  const bisOk = bisCount>=2;
+  const bisScore = Math.min(bisCount, 2); // 변 1개당 1점, 최대 2점
   // 주의: "교점" 도구로 만든 점은 locked:true로 생성되므로 locked 여부로 거르지 않는다.
   const O=c.points.find(p=>p!==A && p!==B && p!==Cc
     && Math.abs(dist(p,A)-dist(p,B))<12 && Math.abs(dist(p,B)-dist(p,Cc))<12 && dist(p,A)>20);
   const centerOk = !!O;
-  const allOk = bisOk && centerOk;
+  const circleOk = centerOk && hasCircleNear(c, O, 22, dist(O,A), 20);
+  const score = bisScore + (centerOk?1:0) + (circleOk?1:0);
+  const maxScore = 4;
+  const allOk = score===maxScore;
   return {
     ok: allOk,
-    msg: allOk ? '🎉 외심을 정확히 작도했어요!' : '',
-    score: (bisOk?1:0)+(centerOk?1:0), maxScore: 2,
+    msg: allOk ? '🎉 외심과 외접원을 정확히 작도했어요!' : '',
+    score, maxScore,
     criteria: [
-      {label:'수직이등분선 2개 이상', points:1, done:bisOk},
-      {label:'외심 표시', points:1, done:centerOk}
+      {label:'수직이등분선 작도 (변 1개당 1점)', points:2, scoreLabel:`${bisScore}/2점`, done: bisScore===2},
+      {label:'외심 표시', points:1, done:centerOk},
+      {label:'외접원 그리기', points:1, done:circleOk}
     ]
   };
 }
 
-/* [2페이지] 내심 그리기 채점: 두 각 이상의 이등분선을 실제로 그렸는지(1점), 그리고 그 교점을
-   "교점" 도구로 정확히(세 변까지 거리가 같은 자리에) 표시했는지(1점)를 각각 독립적으로
-   확인한다. */
+/* [2페이지] 내심·내접원 그리기 채점: ①각의 이등분선 2개 이상(1점), ②그 교점을 "교점"
+   도구로 정확히(세 변까지 거리가 같은 자리에) 표시(1점), ③내심에서 한 변까지 수선의 발을
+   표시(1점), ④세 변에 닿는 원(내접원)을 그렸는지(1점) — 총 4점. */
 function checkIncenterOnly(c){
   const A=c.byLabel('A'), B=c.byLabel('B'), Cc=c.byLabel('C');
   const hasBisAt=(V,X,Y)=>c.objects.some(o=>{
@@ -1016,27 +1038,41 @@ function checkIncenterOnly(c){
     && Math.abs(distToLine(p,B,Cc)-distToLine(p,Cc,A))<10
     && distToLine(p,A,B)>15);
   const centerOk = !!I;
-  const allOk = bisOk && centerOk;
+  const footOk = centerOk && c.points.some(p=>{
+    if(p===A||p===B||p===Cc||p===I) return false;
+    if(dist(p,I) < 15) return false; // 내심 표시점 자체는 제외
+    return [[A,B],[B,Cc],[Cc,A]].some(([X,Y])=>{
+      const f = footInfo(p,X,Y);
+      return f.t>0.08 && f.t<0.92 && f.dist<12;
+    });
+  });
+  const inradius = centerOk ? distToLine(I,A,B) : 0;
+  const circleOk = centerOk && hasCircleNear(c, I, 22, inradius, 15);
+  const score = (bisOk?1:0) + (centerOk?1:0) + (footOk?1:0) + (circleOk?1:0);
+  const maxScore = 4;
+  const allOk = score===maxScore;
   return {
     ok: allOk,
-    msg: allOk ? '🎉 내심을 정확히 작도했어요!' : '',
-    score: (bisOk?1:0)+(centerOk?1:0), maxScore: 2,
+    msg: allOk ? '🎉 내심과 내접원을 정확히 작도했어요!' : '',
+    score, maxScore,
     criteria: [
       {label:'각의 이등분선 2개 이상', points:1, done:bisOk},
-      {label:'내심 표시', points:1, done:centerOk}
+      {label:'내심 표시', points:1, done:centerOk},
+      {label:'내심에서 변까지 수선의 발 표시', points:1, done:footOk},
+      {label:'내접원 그리기', points:1, done:circleOk}
     ]
   };
 }
 
 const TASKS = [
-  { id:1, title:'[1페이지] 삼각형의 외심 그리기 — 수직이등분선을 2개 이상 긋고, 교점 도구로 외심을 표시해봅시다.',
-    tools:['perpBisector','intersect'],
+  { id:1, title:'[1페이지] 삼각형의 외심·외접원 그리기 — 수직이등분선을 2개 이상 긋고, 교점 도구로 외심을 표시한 뒤, 세 꼭짓점을 지나는 외접원까지 그려봅시다.',
+    tools:['perpBisector','intersect','circleCP','circleCR'],
     criteria:true,
     points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
     check: checkCircumcenterOnly },
 
-  { id:2, title:'[2페이지] 삼각형의 내심 그리기 — 각의 이등분선을 2개 이상 긋고, 교점 도구로 내심을 표시해봅시다.',
-    tools:['angleBisector','intersect'],
+  { id:2, title:'[2페이지] 삼각형의 내심·내접원 그리기 — 각의 이등분선을 2개 이상 긋고, 교점 도구로 내심을 표시한 뒤, 내심에서 한 변까지 수선의 발을 표시하고 내접원까지 그려봅시다.',
+    tools:['angleBisector','intersect','perp','circleCP','circleCR'],
     criteria:true,
     points: TRI_ACUTE, presetObjects: triPreset(TRI_ACUTE),
     check: checkIncenterOnly },
@@ -1048,6 +1084,7 @@ const FREE_TOOLS = ALL_TOOLS;
 const container = document.getElementById('taskContainer');
 const results = {};
 const canvasByTaskId = {};
+const taskLockRestorers = {};
 
 // 과제3·6처럼 "학생이 실제로 그린 다른 과제의 그림을 그대로 보여주기"용 미러링 장치.
 // 원본 과제(sourceTaskId)의 GeoCanvas가 바뀔 때마다 등록된 미러 캔버스들도 같은 상태로
@@ -1234,9 +1271,10 @@ function initConstructTask(task){
     fb.textContent = r.msg;
     fb.className = 'feedback ' + (r.ok?'ok':'no');
     if(criteriaBox && r.criteria){
-      criteriaBox.innerHTML = r.criteria.map(cr=>
-        `<div class="criteria-item ${cr.done?'done':''}"><span class="check">${cr.done?'✅':'⬜'}</span><span class="clabel">${cr.label}</span><span class="cpts">${cr.points}점</span></div>`
-      ).join('') + `<div class="criteria-score">점수: ${r.score} / ${r.maxScore}점</div>`;
+      criteriaBox.innerHTML = r.criteria.map(cr=>{
+        const pts = cr.scoreLabel!=null ? cr.scoreLabel : `${cr.points}점`;
+        return `<div class="criteria-item ${cr.done?'done':''}"><span class="check">${cr.done?'✅':'⬜'}</span><span class="clabel">${cr.label}</span><span class="cpts">${pts}</span></div>`;
+      }).join('') + `<div class="criteria-score">점수: ${r.score} / ${r.maxScore}점</div>`;
     }
     if(snapBtn) snapBtn.style.visibility = (!r.ok && r.near) ? 'visible' : 'hidden';
     if(task.snapTarget){
@@ -1353,6 +1391,16 @@ function initTextTask(task){
     renderClassAnswersFor(task);
   }
   btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  // 새로고침(재접속) 후 이 과제를 "제출 완료" 상태로 복원할 때, 실제 제출 직후와 똑같이
+  // 잠금+취소 가능한 상태로 만들기 위해 restoreProgress()가 쓸 수 있게 등록해둔다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.disabled = false;
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+  };
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
   results[task.id]={done:false, value:''};
   refreshFeedback();
@@ -1436,6 +1484,16 @@ function initVerifyTask(task){
     renderClassAnswersFor(task); // 취소하면 친구들 답변 패널도 다시 잠긴다
   }
   btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
+  // 새로고침(재접속) 후 이 과제를 "제출 완료" 상태로 복원할 때, 실제 제출 직후와 똑같이
+  // 잠금+취소 가능한 상태로 만들기 위해 restoreProgress()가 쓸 수 있게 등록해둔다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    btn.disabled = false;
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+  };
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
   results[task.id]={done:false, value:''};
   refreshFeedback();
@@ -1583,15 +1641,10 @@ function restoreProgress(progress){
     if(fb){ fb.textContent='이전에 이미 완료한 문제예요.'; fb.className='feedback ok'; }
     const input=document.getElementById(`input-${t.id}`);
     if(input && p.value!=null && p.value!==''){ input.value = p.value; }
-    // 서술형 칸(text/verify)은 새로고침 후 그림(도형)이 복원되지 않으므로, 이전에 제출한
-    // 칸은 다시 편집/제출하지 못하게 잠가둔다 (버튼을 눌러도 초기화된 도형 때문에 검증이
-    // 실패해 혼란스러운 상태가 되는 것을 막기 위함).
-    if((t.type==='text' || t.type==='verify') && input){
-      input.disabled = true;
-      input.classList.add('locked-fixed');
-      const btn=document.getElementById(`check-${t.id}`);
-      if(btn){ btn.disabled = true; btn.classList.add('locked-fixed'); btn.textContent='제출됨'; }
-    }
+    // 제출/취소 기능이 있는 과제(text/verify)는, 새로고침 후에도 정말 방금 제출한 것과 같은
+    // "잠금 + 취소 가능" 상태로 복원한다. 도형도 바로 아래에서 restoreObjectSnapshot으로 함께
+    // 복원되므로, 학생이 "취소"를 눌러 다시 고치더라도 정상적으로 재검증된다.
+    if(taskLockRestorers[t.id]) taskLockRestorers[t.id]();
     // 빈칸 채우기 과제는 저장된 value("답1, 답2, 답3")를 다시 쪼개서 각 칸에 채워 넣는다.
     if(t.type==='blanks' && Array.isArray(t.blanksItems) && p.value!=null){
       const parts = String(p.value).split(', ');

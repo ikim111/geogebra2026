@@ -215,7 +215,7 @@ if (typeof firebase === 'undefined') {
               <th>2. 외심<br><span style="font-weight:normal;">선택</span></th>
               <th>3. 내심<br><span style="font-weight:normal;">점찍기</span></th>
               <th>4. 내심<br><span style="font-weight:normal;">선택</span></th>
-              <th>총점<br><span style="font-weight:normal;">(10점)</span></th>
+              <th>총점<br><span style="font-weight:normal;">(20점)</span></th>
               <th>진행률</th>
               <th>마지막활동</th>
             </tr>
@@ -315,63 +315,114 @@ function bisectorDir(a,b,c){
 }
 function byLabelSnap(lo, label){ return lo && (lo.points||[]).find(p=>p.label===label); }
 
-/* 과제1·3(점 찍기) 채점: 실제 정답 좌표(trueCenter) 근처에 학생이 만든 점이 있는지, 그리고
-   외심이면 두 변 이상의 수직이등분선을, 내심이면 두 꼭짓점 이상의 각의 이등분선을 실제로
-   그렸는지(=작도 근거)를 함께 확인한다. 학생 화면에는 이 결과를 보여주지 않는다. */
+/* 점 p에서 선분 ab까지의 최단 거리와, 그 발이 선분 위 어디쯤(t: 0=a, 1=b)인지를 함께 준다.
+   t가 0이나 1에 너무 가까우면(꼭짓점 근처) "변 위의 다른 점"이 아니라 그냥 꼭짓점 자체일
+   가능성이 크므로, 수선의 발 판정에서는 t가 중간 구간에 있는지도 같이 확인한다. */
+function pointToSegment(p, a, b){
+  const abx=b.x-a.x, aby=b.y-a.y;
+  const len2 = abx*abx+aby*aby || 1;
+  const t = ((p.x-a.x)*abx + (p.y-a.y)*aby)/len2;
+  const projx=a.x+t*abx, projy=a.y+t*aby;
+  return {t, dist: Math.hypot(p.x-projx, p.y-projy)};
+}
+/* 학생이 그린 원(circleCP/circleCR) 중, 중심이 target 근처(tolCenter)이고 반지름이 r와
+   비슷한(tolR) 것이 있는지 확인한다. 외접원은 중심(외심)에서 세 꼭짓점까지, 내접원은
+   중심(내심)에서 변까지의 거리를 반지름으로 삼는다. */
+function findCircleNear(lo, ptById, target, tolCenter, r, tolR){
+  return (lo.objects||[]).some(o=>{
+    if(o.type!=='circleCP' && o.type!=='circleCR') return false;
+    let c, rad;
+    if(o.type==='circleCP'){ c=ptById[o.center]; const th=ptById[o.through]; if(!c||!th) return false; rad=dist(c,th); }
+    else { c=ptById[o.center]; const r1=ptById[o.r1], r2=ptById[o.r2]; if(!c||!r1||!r2) return false; rad=dist(r1,r2); }
+    return dist(c,target) < tolCenter && Math.abs(rad-r) < tolR;
+  });
+}
+
+/* 과제1·3(점 찍기) 채점.
+   [외심, 4점] ①수직이등분선 작도(변 1개당 1점, 최대 2점) + ②외심 위치 표시(1점) +
+              ③외접원 그리기(1점).
+   [내심, 4점] ①각의 이등분선 2개 이상 작도(1점) + ②내심 위치 표시(1점) +
+              ③내심에서 변까지 수선의 발 표시(1점) + ④내접원 그리기(1점).
+   학생 화면에는 이 결과를 보여주지 않는다(선생님 채점 화면 전용). */
 function gradePointTask(lo, task){
-  if(!lo || !lo.points || !lo.points.length) return {status:'none', score:0, maxScore:2};
+  const maxScore = 4;
+  if(!lo || !lo.points || !lo.points.length) return {status:'none', score:0, maxScore};
   const A=byLabelSnap(lo,'A'), B=byLabelSnap(lo,'B'), C=byLabelSnap(lo,'C');
-  if(!A||!B||!C) return {status:'none', score:0, maxScore:2};
-  let bisCount=0;
+  if(!A||!B||!C) return {status:'none', score:0, maxScore};
+  const ptById={}; (lo.points||[]).forEach(p=>{ ptById[p.id]=p; });
+  const tc = task.scenario.trueCenter;
+  const nearPt=(lo.points||[]).find(p=> !['A','B','C'].includes(p.label) && dist(p,tc) < 22);
+  const hasPointOk = !!nearPt;
+
   if(task.centerType==='외심'){
+    let bisCount=0;
     [[A,B],[B,C],[C,A]].forEach(([X,Y])=>{
       const has=(lo.objects||[]).some(o=>o.type==='perpBisector' && ((o.p1===X.id&&o.p2===Y.id)||(o.p1===Y.id&&o.p2===X.id)));
       if(has) bisCount++;
     });
-  } else {
-    [[B,A,C],[A,B,C],[A,C,B]].forEach(([a,b,c])=>{
-      const has=(lo.objects||[]).some(o=>o.type==='angleBisector' && o.b===b.id && ((o.a===a.id&&o.c===c.id)||(o.a===c.id&&o.c===a.id)));
-      if(has) bisCount++;
-    });
+    const bisScore = Math.min(bisCount, 2); // 변 1개당 1점, 최대 2점
+    const circumR = dist(tc, A);
+    const circleOk = findCircleNear(lo, ptById, tc, 22, circumR, 20);
+    const score = bisScore + (hasPointOk?1:0) + (circleOk?1:0);
+    let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
+    return {status, bisCount, bisScore, hasPoint:hasPointOk, circleOk, score, maxScore};
   }
-  const tc = task.scenario.trueCenter;
-  const nearPt=(lo.points||[]).find(p=> !['A','B','C'].includes(p.label) && dist(p,tc) < 22);
+
+  // 내심
+  let bisCount=0;
+  [[B,A,C],[A,B,C],[A,C,B]].forEach(([a,b,c])=>{
+    const has=(lo.objects||[]).some(o=>o.type==='angleBisector' && o.b===b.id && ((o.a===a.id&&o.c===c.id)||(o.a===c.id&&o.c===a.id)));
+    if(has) bisCount++;
+  });
   const constructOk = bisCount>=2;
-  const hasPointOk = !!nearPt;
-  // ①이등분선 2개 이상(1점) + ②중심 위치 정확(1점) = 총 2점. student7.html 채점요소와 동일한 배점.
-  const score = (constructOk?1:0) + (hasPointOk?1:0);
-  const maxScore = 2;
-  let status;
-  if(constructOk && hasPointOk) status='correct';
-  else if(hasPointOk || bisCount>0) status='partial';
-  else status='none';
-  return {status, bisCount, hasPoint:hasPointOk, constructOk, score, maxScore};
+  const inradius = pointToSegment(tc, A, B).dist; // 참 내심에서 한 변까지의 거리 = 내접원 반지름
+  const footOk = (lo.points||[]).some(p=>{
+    if(['A','B','C'].includes(p.label)) return false;
+    if(dist(p,tc) < 15) return false; // 내심 표시점 자체는 제외
+    return [[A,B],[B,C],[C,A]].some(([X,Y])=>{
+      const r = pointToSegment(p, X, Y);
+      return r.t>0.08 && r.t<0.92 && r.dist<12;
+    });
+  });
+  const circleOk = findCircleNear(lo, ptById, tc, 22, inradius, 15);
+  const score = (constructOk?1:0) + (hasPointOk?1:0) + (footOk?1:0) + (circleOk?1:0);
+  let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
+  return {status, bisCount, constructOk, hasPoint:hasPointOk, footOk, circleOk, score, maxScore};
 }
-// ①선택(1점) + ②이유(1점, AI 채점) + ③방법(1점, AI 채점) = 총 3점.
+// ①선택(1점) + ②이유(2점, AI 채점) + ③방법([변/각]·[이등분선]·[교점] 각 1점, AI 채점) = 총 6점.
 // aiEntry는 rooms/{room}/students/{key}/aiGrading/{taskId}에 저장된 AI 채점 결과
-// {reasonCorrect, reasonFeedback, methodCorrect, methodFeedback}이다. 아직 AI 채점을
-// 하지 않았으면 aiEntry가 없고, 이때 ②③은 "미채점"(null)으로 표시하고 점수에도 넣지 않는다.
+// {reasonCorrect, reasonFeedback, methodPart1Correct, methodPart2Correct, methodPart3Correct,
+// methodFeedback}이다. 아직 AI 채점을 하지 않았으면 aiEntry가 없고, 이때 ②③은
+// "미채점"(null)으로 표시하고 점수에도 넣지 않는다(①선택 점수만 반영).
 function gradeJustify(progressEntry, task, aiEntry){
   if(!progressEntry || !progressEntry.done) return {status:'none'};
   const v = progressEntry.value || {};
   const expected = v.expectedType || task.centerType;
   const choiceOk = v.choice === expected;
+  // 이유·방법은 "이 문제의 정답"이 아니라 학생이 실제로 고른 점을 기준으로 채점한다
+  // (아래 AI 채점 버튼들과 동일한 규칙 — gradeCenterType이 그때 넘긴 값과 같다).
+  const gradeCenterType = (v.choice==='내심'||v.choice==='외심') ? v.choice : task.centerType;
   const aiGraded = !!aiEntry;
   const reasonOk = aiGraded ? !!aiEntry.reasonCorrect : null;
-  const methodOk = aiGraded ? !!aiEntry.methodCorrect : null;
-  const score = (choiceOk?1:0) + (reasonOk?1:0) + (methodOk?1:0);
-  const maxScore = 3;
+  const methodParts = aiGraded ? {
+    p1: !!aiEntry.methodPart1Correct,
+    p2: !!aiEntry.methodPart2Correct,
+    p3: !!aiEntry.methodPart3Correct
+  } : null;
+  const methodScore = methodParts ? (methodParts.p1?1:0)+(methodParts.p2?1:0)+(methodParts.p3?1:0) : 0;
+  const score = (choiceOk?1:0) + (reasonOk?2:0) + methodScore;
+  const maxScore = 6;
   let status;
   if(!aiGraded) status = choiceOk ? 'partial' : 'wrong'; // AI 채점 전에는 선택 여부만 반영
   else if(score===maxScore) status = 'correct';
   else if(score===0) status = 'wrong';
   else status = 'partial';
-  return {status, choice:v.choice, reason:v.reason, method:v.method, expected,
-    choiceOk, reasonOk, methodOk, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
+  return {status, choice:v.choice, reason:v.reason, method:v.method, expected, gradeCenterType,
+    choiceOk, reasonOk, methodParts, methodScore, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
 }
 
-/* 학생 1명의 4개 과제 점수를 모두 더한 총점을 계산한다(외심 점찍기 2점 + 외심 서술형 3점 +
-   내심 점찍기 2점 + 내심 서술형 3점 = 총 10점). 아직 손도 안 댄 과제(status:'none')는 0점으로
+/* 학생 1명의 4개 과제 점수를 모두 더한 총점을 계산한다(외심 점찍기 4점 + 외심 서술형 6점 +
+   내심 점찍기 4점 + 내심 서술형 6점 = 총 20점). 아직 손도 안 댄 과제(status:'none')는 0점으로
    계산에 포함한다. AI 채점 전인 서술형은 ①선택 점수만 반영된 상태 그대로 더해진다. */
 function computeStudentTotalScore(s){
   const tasks = buildTasks(s.assignment);
@@ -386,7 +437,7 @@ function computeStudentTotalScore(s){
       grade = gradeJustify(s.progress && s.progress[t.id], t, aiEntry);
     }
     score += grade.score || 0;
-    maxScore += grade.maxScore || (t.kind==='pointplot' ? 2 : 3);
+    maxScore += grade.maxScore || (t.kind==='pointplot' ? 4 : 6);
   });
   return {score, maxScore};
 }
@@ -628,7 +679,9 @@ function buildCriteriaBox(items){
     const row=document.createElement('div');
     row.className = 'criteria-item' + (it.done===true?' done':it.done===false?' bad':'');
     const mark = it.done===true ? '✅' : it.done===false ? '❌' : '❔';
-    row.innerHTML = `<span class="check">${mark}</span><span class="clabel">${it.label}</span><span class="cpts">${it.points}점</span>`;
+    // scoreLabel이 있으면(예: 부분점수 "1/2점") 그것을 쓰고, 없으면 "N점"으로 보여준다.
+    const ptsText = it.scoreLabel!=null ? it.scoreLabel : `${it.points}점`;
+    row.innerHTML = `<span class="check">${mark}</span><span class="clabel">${it.label}</span><span class="cpts">${ptsText}</span>`;
     box.appendChild(row);
   });
   return box;
@@ -661,11 +714,20 @@ function buildTaskBox(s, t, headerText, key){
     stat.textContent = grade.status==='none' ? '⬜ 미작성' : `점수: ${grade.score} / ${grade.maxScore}점`;
     box.appendChild(stat);
     if(lo){
-      const bisName = t.centerType==='외심' ? '수직이등분선' : '각의 이등분선';
-      box.appendChild(buildCriteriaBox([
-        {label:`①${bisName} 2개 이상 작도 (${grade.bisCount}/3개)`, points:1, done:grade.constructOk},
-        {label:`②${t.centerType} 위치 정확`, points:1, done:grade.hasPoint}
-      ]));
+      if(t.centerType==='외심'){
+        box.appendChild(buildCriteriaBox([
+          {label:`①수직이등분선 작도 (변 1개당 1점, ${grade.bisCount}/3개)`, points:2, scoreLabel:`${grade.bisScore}/2점`, done: grade.bisScore===2?true:(grade.bisScore>0?null:false)},
+          {label:'②외심 위치 정확', points:1, done:grade.hasPoint},
+          {label:'③외접원 그리기', points:1, done:grade.circleOk}
+        ]));
+      } else {
+        box.appendChild(buildCriteriaBox([
+          {label:`①각의 이등분선 2개 이상 작도 (${grade.bisCount}/3개)`, points:1, done:grade.constructOk},
+          {label:'②내심 위치 정확', points:1, done:grade.hasPoint},
+          {label:'③내심에서 변까지 수선의 발 표시', points:1, done:grade.footOk},
+          {label:'④내접원 그리기', points:1, done:grade.circleOk}
+        ]));
+      }
       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 600 400');
       box.appendChild(svg);
       drawSnapshotSvg(svg, lo, t.scenario.trueCenter, t.centerType);
@@ -680,10 +742,16 @@ function buildTaskBox(s, t, headerText, key){
     box.appendChild(stat);
 
     if(grade.status!=='none'){
+      const gct = grade.gradeCenterType || t.centerType;
+      const partNames = gct==='내심' ? ['각','이등분선','교점'] : ['변','수직이등분선','교점'];
+      const mp = grade.methodParts;
+      const notGraded = grade.aiGraded ? '' : ' (아직 채점 전)';
       box.appendChild(buildCriteriaBox([
         {label:`①선택 정답 (선택: ${grade.choice||'-'} / 정답: ${grade.expected})`, points:1, done:grade.choiceOk},
-        {label:'②이유 — AI 채점'+(grade.aiGraded?'':' (아직 채점 전)'), points:1, done:grade.reasonOk},
-        {label:'③방법 — AI 채점'+(grade.aiGraded?'':' (아직 채점 전)'), points:1, done:grade.methodOk}
+        {label:'②이유 — AI 채점'+notGraded, points:2, done:grade.reasonOk},
+        {label:`③-1 [${partNames[0]}] 언급 정확 — AI 채점`+notGraded, points:1, done: mp?mp.p1:null},
+        {label:`③-2 [${partNames[1]}] 언급 정확 — AI 채점`+notGraded, points:1, done: mp?mp.p2:null},
+        {label:`③-3 [${partNames[2]}] 언급 정확 — AI 채점`+notGraded, points:1, done: mp?mp.p3:null}
       ]));
       if(grade.aiGraded && !grade.choiceOk && grade.choice){
         const note=document.createElement('div'); note.className='dtext'; note.style.color='#888'; note.style.fontStyle='italic';
@@ -719,7 +787,10 @@ function buildTaskBox(s, t, headerText, key){
           if(!ok) throw new Error(data.error||'AI 채점에 실패했어요.');
           studentsRef.child(key+'/aiGrading/'+t.id).set({
             reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
-            methodCorrect: !!data.methodCorrect, methodFeedback: data.methodFeedback||'',
+            methodPart1Correct: !!data.methodPart1Correct,
+            methodPart2Correct: !!data.methodPart2Correct,
+            methodPart3Correct: !!data.methodPart3Correct,
+            methodFeedback: data.methodFeedback||'',
             ts: firebase.database.ServerValue.TIMESTAMP
           });
         })
@@ -788,8 +859,11 @@ function submitStudentAnswersToGoogleForm(s){
       const grade = gradePointTask(lo, t);
       if(grade.status==='none') return;
       success = `${grade.score}/${grade.maxScore}점`;
-      const bisName = t.centerType==='외심' ? '수직이등분선' : '각의 이등분선';
-      answer = `[${t.centerType}] ${t.scenario.title} | ①${bisName} 작도: ${grade.bisCount}/3개 (2개 이상 ${grade.constructOk?'O':'X'}) | ②${t.centerType} 위치: ${grade.hasPoint?'정답 근처 O':'근처 아님 X'}`;
+      if(t.centerType==='외심'){
+        answer = `[외심] ${t.scenario.title} | ①수직이등분선 작도: ${grade.bisCount}/3개(${grade.bisScore}/2점) | ②외심 위치: ${grade.hasPoint?'O':'X'} | ③외접원: ${grade.circleOk?'O':'X'}`;
+      } else {
+        answer = `[내심] ${t.scenario.title} | ①각의 이등분선 2개 이상: ${grade.constructOk?'O':'X'}(${grade.bisCount}/3개) | ②내심 위치: ${grade.hasPoint?'O':'X'} | ③수선의 발: ${grade.footOk?'O':'X'} | ④내접원: ${grade.circleOk?'O':'X'}`;
+      }
     } else {
       const p = s.progress && s.progress[t.id];
       const aiEntry = s.aiGrading && s.aiGrading[t.id];
@@ -797,8 +871,9 @@ function submitStudentAnswersToGoogleForm(s){
       if(grade.status==='none') return;
       success = `${grade.score}/${grade.maxScore}점`;
       const reasonMark = grade.reasonOk==null ? '?' : (grade.reasonOk?'O':'X');
-      const methodMark = grade.methodOk==null ? '?' : (grade.methodOk?'O':'X');
-      answer = `①선택:${grade.choice||'(없음)'} (정답:${grade.expected}) ${grade.choiceOk?'O':'X'} | ②이유(AI): ${reasonMark} - "${grade.reason||'(작성 안 함)'}" | ③방법(AI): ${methodMark} - "${grade.method||'(작성 안 함)'}"`;
+      const mp = grade.methodParts;
+      const methodMark = !mp ? '?' : `${(mp.p1?1:0)+(mp.p2?1:0)+(mp.p3?1:0)}/3`;
+      answer = `①선택:${grade.choice||'(없음)'} (정답:${grade.expected}) ${grade.choiceOk?'O':'X'} | ②이유(AI,2점): ${reasonMark} - "${grade.reason||'(작성 안 함)'}" | ③방법(AI,${methodMark}점): "${grade.method||'(작성 안 함)'}"`;
     }
     const body=new URLSearchParams();
     const addField=(entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
@@ -967,7 +1042,10 @@ async function gradeAllJustifyTasks(){
       if(!r.ok) throw new Error(data.error||'AI 채점 실패');
       await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
         reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
-        methodCorrect: !!data.methodCorrect, methodFeedback: data.methodFeedback||'',
+        methodPart1Correct: !!data.methodPart1Correct,
+        methodPart2Correct: !!data.methodPart2Correct,
+        methodPart3Correct: !!data.methodPart3Correct,
+        methodFeedback: data.methodFeedback||'',
         ts: firebase.database.ServerValue.TIMESTAMP
       });
       done++;
@@ -991,7 +1069,7 @@ function exportScoresToExcel(){
   list.sort(byNumber);
 
   const header = ['번호','이름','배정 순서','외심 시나리오','내심 시나리오',
-    '1.외심(점찍기) /2점','2.외심(선택·서술) /3점','3.내심(점찍기) /2점','4.내심(선택·서술) /3점','총점 /10점','제출 여부'];
+    '1.외심(점찍기) /4점','2.외심(선택·서술) /6점','3.내심(점찍기) /4점','4.내심(선택·서술) /6점','총점 /20점','제출 여부'];
   const rows = [header];
 
   list.forEach(s=>{

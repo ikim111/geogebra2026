@@ -133,7 +133,8 @@ const SECTIONS = [
         {n:5, label:5, title:'삼각형의 내심', file:'teacher5.html'},
         {n:6, label:6, title:'생각 넓히기', file:'teacher6.html'},
         {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'teacher7.html'},
-        {n:8, label:8, title:'문제해결력 수행평가', file:'teacherpa1.html'}
+        {n:8, label:8, title:'문제해결력 수행평가', file:'teacherpa1.html'},
+        {n:9, label:'🔗', title:'문제풀이 (Snorkl)', external:true, url:'https://student.snorkl.app/zee6zw'}
       ]}
   ]},
   { chapter:'VI. 사각형의 성질', groups:[
@@ -200,9 +201,9 @@ function buildUnitRow(u){
   const row=document.createElement('div');
   row.className='unit-row';
 
-  // file이 없는 항목(예: 아직 만들지 않은 예고용 항목)은 클릭해도 갈 곳이 없으므로
-  // 링크가 아니라 그냥 안내용 텍스트로만 보여주고, 잠금 토글도 붙이지 않는다.
-  if(!u.file){
+  // file도 external도 없는 항목(예: 아직 만들지 않은 예고용 항목)은 클릭해도 갈 곳이
+  // 없으므로 링크가 아니라 그냥 안내용 텍스트로만 보여주고, 잠금 토글도 붙이지 않는다.
+  if(!u.file && !u.external){
     const d=document.createElement('div');
     d.className='unit-link';
     d.style.cursor='default'; d.style.opacity='.6';
@@ -215,12 +216,23 @@ function buildUnitRow(u){
 
   const a=document.createElement('a');
   a.className='unit-link';
-  a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom);
   const num=document.createElement('span'); num.className='num'; num.textContent=u.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=u.title;
-  const arrow=document.createElement('span'); arrow.className='arrow'; arrow.textContent='›';
+  const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
   row.appendChild(a);
+
+  if(u.external){
+    // Snorkl 같은 외부 사이트 링크: 반 정보는 붙이지 않고 새 탭으로 열지만, 다른
+    // 단원과 똑같이 아래 잠금 토글로 열림/잠김을 조절할 수 있다.
+    a.href = u.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    arrow.textContent = '↗';
+  } else {
+    a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom);
+    arrow.textContent = '›';
+  }
 
   if(u.n===0){
     // 0단원(지오지브라 연습)은 항상 열려있다 — 잠금 대상이 아니다.
