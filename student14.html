@@ -279,6 +279,112 @@ const ACTIVITY_SUFFIX = '__quad14'; // teacher14.html과 반드시 동일해야 
 const UNIT_LABEL = '14. 여러 가지 사각형의 성질';
 const MIN_LEN = 15; // 과제 1~4 공통: 서술형 최소 글자수
 
+/* ---------- 실시간 확인 (Firebase) ----------
+   과제1~4 초기 렌더링(아래쪽의 regeneratePage 호출)이 스크립트 로드 즉시 실행되면서
+   RT.pushStateDebounced()를 곧바로 호출하기 때문에, RT는 반드시 그보다 앞에서 선언돼
+   있어야 한다(원래 실시간 로직 근처인 파일 뒤쪽에 있었더니, RT가 아직 초기화되기 전에
+   호출되어 "Cannot access 'RT' before initialization" 오류로 스크립트 전체가 멈추고
+   학생 화면이 아예 접속되지 않는 버그가 있었다 — student11.html과 동일한 버그). */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.studentRef.update({
+      name, number: number||null,
+      lastActive: firebase.database.ServerValue.TIMESTAMP,
+      online:true
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2','p3','p4'].forEach(renderClassAnswers); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      const classEnded = !!c.classEnded;
+      const tasks = window.__task14;
+      const applyAll = fn => ['p1','p2','p3','p4'].forEach(p=> tasks[p] && fn(tasks[p]));
+      if(this._lastKnownClassEnded===null){
+        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    this.pushProgress();
+    this.pushState();
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    const allDone = ['p1','p2','p3','p4'].every(p=>results[p].done);
+    this.studentRef.update({
+      progress: { p1:results.p1, p2:results.p2, p3:results.p3, p4:results.p4 },
+      completed: allDone, total: 4,
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
+  },
+  pushState(){
+    if(!this.connected) return;
+    const shapes = {};
+    ['p1','p2','p3','p4'].forEach(p=>{ if(SHAPES[p].state.quad) shapes[p]=SHAPES[p].state.quad; });
+    this.studentRef.update({ shapes, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushStateDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
+  },
+  flushPending(){
+    if(this._t){
+      clearTimeout(this._t);
+      this._t=null;
+      this.pushState();
+    }
+  }
+};
+
 /* ---------- 벡터/기하 유틸 (student11.html과 동일한 함수들) ---------- */
 const NS = 'http://www.w3.org/2000/svg';
 const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
@@ -756,107 +862,6 @@ function applyPauseLock(paused){
   document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
   if(typeof updateNavButtons==='function') updateNavButtons();
 }
-
-/* ---------- 실시간 확인 (Firebase) ---------- */
-const RT = {
-  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
-  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
-  classEnded:false, _lastKnownClassEnded:null,
-  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
-  connect(name, room, number){
-    const statusEl=document.getElementById('syncStatus');
-    if(!FIREBASE_CONFIG.apiKey){ return; }
-    if(!name || !room){ return; }
-    try{
-      if(!this.app){
-        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-        this.db = firebase.database();
-      }
-      statusEl.textContent = '🔄 연결 중...';
-      firebase.auth().signInAnonymously()
-        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
-        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
-    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
-  },
-  _afterAuth(uid, name, room, number, statusEl){
-    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    const key = this.sanitize(number) + '_' + this.sanitize(name);
-    this.studentKey = key;
-    this.roomRef = this.db.ref('rooms/'+roomKey);
-    this.studentRef = this.roomRef.child('students/'+key);
-    this.studentsRef = this.roomRef.child('students');
-    this.controlRef = this.roomRef.child('control');
-    this.studentRef.update({
-      name, number: number||null,
-      lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true
-    });
-    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
-
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2','p3','p4'].forEach(renderClassAnswers); });
-
-    this.controlRef.on('value', snap=>{
-      const c = snap.val() || {};
-      this.paused = !!c.paused;
-      applyPauseLock(this.paused);
-      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
-        this.lastSeenAnnounceTs = c.announcementTs;
-        document.getElementById('announceText').textContent = c.announcement;
-        document.getElementById('announceBanner').style.display = 'flex';
-      } else if(!c.announcement){
-        document.getElementById('announceBanner').style.display = 'none';
-      }
-
-      const classEnded = !!c.classEnded;
-      const tasks = window.__task14;
-      const applyAll = fn => ['p1','p2','p3','p4'].forEach(p=> tasks[p] && fn(tasks[p]));
-      if(this._lastKnownClassEnded===null){
-        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
-      } else if(classEnded !== this._lastKnownClassEnded){
-        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
-      }
-      this._lastKnownClassEnded = classEnded;
-      this.classEnded = classEnded;
-    });
-
-    this.connected = true;
-    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
-    statusEl.className = 'on';
-    clearInterval(this.heartbeatTimer);
-    this.heartbeatTimer = setInterval(()=>{
-      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
-    }, 15000);
-    this.pushProgress();
-    this.pushState();
-  },
-  pushProgress(){
-    if(!this.connected) return;
-    const allDone = ['p1','p2','p3','p4'].every(p=>results[p].done);
-    this.studentRef.update({
-      progress: { p1:results.p1, p2:results.p2, p3:results.p3, p4:results.p4 },
-      completed: allDone, total: 4,
-      lastActive: firebase.database.ServerValue.TIMESTAMP
-    });
-  },
-  pushState(){
-    if(!this.connected) return;
-    const shapes = {};
-    ['p1','p2','p3','p4'].forEach(p=>{ if(SHAPES[p].state.quad) shapes[p]=SHAPES[p].state.quad; });
-    this.studentRef.update({ shapes, lastActive: firebase.database.ServerValue.TIMESTAMP });
-  },
-  pushStateDebounced(){
-    if(!this.connected) return;
-    clearTimeout(this._t);
-    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
-  },
-  flushPending(){
-    if(this._t){
-      clearTimeout(this._t);
-      this._t=null;
-      this.pushState();
-    }
-  }
-};
 
 function flushBeforeLeaving(){
   if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();

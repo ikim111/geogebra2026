@@ -224,6 +224,123 @@ const ACTIVITY_SUFFIX = '__quad11'; // teacher11.html과 반드시 동일해야 
 const UNIT_LABEL = '11. 평행사변형의 성질';
 const MIN_LEN = { p1:30, p2:15 };
 
+/* ---------- 실시간 확인 (Firebase) ----------
+   과제1/과제2 초기 렌더링(아래쪽의 regeneratePage 호출)이 스크립트 로드 즉시 실행되면서
+   RT.pushStateDebounced()를 곧바로 호출하기 때문에, RT는 반드시 그보다 앞에서 선언돼
+   있어야 한다(원래 실시간 로직 근처인 파일 뒤쪽에 있었더니, RT가 아직 초기화되기 전에
+   호출되어 "Cannot access 'RT' before initialization" 오류로 스크립트 전체가 멈추고
+   학생 화면이 아예 접속되지 않는 버그가 있었다). */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
+    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
+    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+    // 이어서 접속되게 한다.
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.studentRef.update({
+      name, number: number||null,
+      lastActive: firebase.database.ServerValue.TIMESTAMP,
+      online:true
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2'].forEach(renderClassAnswers); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
+      // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다(값이 그대로 유지되는 매 스냅샷마다
+      // 반복 실행되지 않도록, 마지막으로 처리한 값과 실제로 달라졌을 때만 동작한다).
+      const classEnded = !!c.classEnded;
+      const tasks = window.__task11;
+      const applyAll = fn => ['p1','p2'].forEach(p=> tasks[p] && fn(tasks[p]));
+      if(this._lastKnownClassEnded===null){
+        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    this.pushProgress();
+    this.pushState();
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    this.studentRef.update({
+      progress: { p1:results.p1, p2:results.p2 },
+      completed: (results.p1.done && results.p2.done), total: 2,
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
+  },
+  pushState(){
+    if(!this.connected) return;
+    const quads = {};
+    ['p1','p2'].forEach(p=>{ if(STATES[p].quad) quads[p]=STATES[p].quad; });
+    this.studentRef.update({ quads, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushStateDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 150ms 디바운스가 끝나지
+     않아 저장 안 된 마지막 도형 상태(quads)가 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     visibilitychange 리스너에서 호출). */
+  flushPending(){
+    if(this._t){
+      clearTimeout(this._t);
+      this._t=null;
+      this.pushState();
+    }
+  }
+};
+
 /* ---------- 벡터/기하 유틸 (student12.html과 동일한 함수들) ---------- */
 const NS = 'http://www.w3.org/2000/svg';
 const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
@@ -639,118 +756,6 @@ function applyPauseLock(paused){
   document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
   if(typeof updateNavButtons==='function') updateNavButtons();
 }
-
-/* ---------- 실시간 확인 (Firebase) ---------- */
-const RT = {
-  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
-  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
-  classEnded:false, _lastKnownClassEnded:null,
-  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
-  connect(name, room, number){
-    const statusEl=document.getElementById('syncStatus');
-    if(!FIREBASE_CONFIG.apiKey){ return; }
-    if(!name || !room){ return; }
-    try{
-      if(!this.app){
-        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-        this.db = firebase.database();
-      }
-      statusEl.textContent = '🔄 연결 중...';
-      firebase.auth().signInAnonymously()
-        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
-        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
-    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
-  },
-  _afterAuth(uid, name, room, number, statusEl){
-    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
-    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
-    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
-    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
-    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
-    // 이어서 접속되게 한다.
-    const key = this.sanitize(number) + '_' + this.sanitize(name);
-    this.studentKey = key;
-    this.roomRef = this.db.ref('rooms/'+roomKey);
-    this.studentRef = this.roomRef.child('students/'+key);
-    this.studentsRef = this.roomRef.child('students');
-    this.controlRef = this.roomRef.child('control');
-    this.studentRef.update({
-      name, number: number||null,
-      lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true
-    });
-    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
-
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2'].forEach(renderClassAnswers); });
-
-    this.controlRef.on('value', snap=>{
-      const c = snap.val() || {};
-      this.paused = !!c.paused;
-      applyPauseLock(this.paused);
-      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
-        this.lastSeenAnnounceTs = c.announcementTs;
-        document.getElementById('announceText').textContent = c.announcement;
-        document.getElementById('announceBanner').style.display = 'flex';
-      } else if(!c.announcement){
-        document.getElementById('announceBanner').style.display = 'none';
-      }
-
-      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
-      // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다(값이 그대로 유지되는 매 스냅샷마다
-      // 반복 실행되지 않도록, 마지막으로 처리한 값과 실제로 달라졌을 때만 동작한다).
-      const classEnded = !!c.classEnded;
-      const tasks = window.__task11;
-      const applyAll = fn => ['p1','p2'].forEach(p=> tasks[p] && fn(tasks[p]));
-      if(this._lastKnownClassEnded===null){
-        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
-      } else if(classEnded !== this._lastKnownClassEnded){
-        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
-      }
-      this._lastKnownClassEnded = classEnded;
-      this.classEnded = classEnded;
-    });
-
-    this.connected = true;
-    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
-    statusEl.className = 'on';
-    clearInterval(this.heartbeatTimer);
-    this.heartbeatTimer = setInterval(()=>{
-      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
-    }, 15000);
-    this.pushProgress();
-    this.pushState();
-  },
-  pushProgress(){
-    if(!this.connected) return;
-    this.studentRef.update({
-      progress: { p1:results.p1, p2:results.p2 },
-      completed: (results.p1.done && results.p2.done), total: 2,
-      lastActive: firebase.database.ServerValue.TIMESTAMP
-    });
-  },
-  pushState(){
-    if(!this.connected) return;
-    const quads = {};
-    ['p1','p2'].forEach(p=>{ if(STATES[p].quad) quads[p]=STATES[p].quad; });
-    this.studentRef.update({ quads, lastActive: firebase.database.ServerValue.TIMESTAMP });
-  },
-  pushStateDebounced(){
-    if(!this.connected) return;
-    clearTimeout(this._t);
-    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
-  },
-  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 150ms 디바운스가 끝나지
-     않아 저장 안 된 마지막 도형 상태(quads)가 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
-     visibilitychange 리스너에서 호출). */
-  flushPending(){
-    if(this._t){
-      clearTimeout(this._t);
-      this._t=null;
-      this.pushState();
-    }
-  }
-};
 
 /* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
    저장되지 않은 마지막 변경사항(150ms 디바운스 대기 중인 것)을 즉시 저장한다.
