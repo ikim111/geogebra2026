@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>13. 평행사변형의 성질 활용</title>
+<title>13. 평행사변형이 되는 조건 찾기</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -25,76 +25,105 @@
   #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
   #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
   #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
-  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 8px;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .panel-title{font-size:14.5px;font-weight:bold;color:#1a237e;margin-bottom:10px;}
 
-  .progress-row{display:flex;align-items:center;gap:10px;}
-  .progress-bar{flex:1;height:10px;background:#e0e0e0;border-radius:6px;overflow:hidden;}
-  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
-  .progress-text{font-size:12.5px;color:#555;white-space:nowrap;font-weight:bold;}
-
-  .section-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:10px 14px;margin:22px 0 12px;}
-  .section-title:first-of-type{margin-top:0;}
-  .section-desc{font-size:13px;color:#555;background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);line-height:1.6;}
-
-  .quote-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
-  .quote-box{flex:1 1 220px;background:#e8f0fe;border:1px solid #c5d8fb;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;font-size:13px;color:#0d47a1;position:relative;}
-  .quote-box .who{font-weight:bold;font-size:12px;color:#1a237e;margin-bottom:4px;}
-  .quote-box.alt{background:#fdecea;border-color:#f3c2be;color:#8d1f13;}
-  .quote-box.alt .who{color:#c62828;}
-
-  .ref-figure{text-align:center;margin-bottom:10px;}
-  .ref-figure svg{max-width:100%;height:auto;background:#fafbfc;border:1px solid #eee;border-radius:8px;}
-  .ref-cap{font-size:11.5px;color:#888;margin-top:4px;}
-
-  .task{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
-  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 8px;gap:10px;}
-  .task-head h2{font-size:15px;margin:0;line-height:1.5;font-weight:bold;}
+  .task{background:#fff;border-radius:10px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid #eee;overflow:hidden;}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;gap:12px;}
+  .task-head h2{font-size:17px;margin:0;line-height:1.5;font-weight:bold;color:#222;}
   .task-head h2 .num{color:var(--blue);}
   .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
   .badge.pending{background:#eeeeee;color:#777;}
   .badge.done{background:#e8f5e9;color:var(--green);}
-  .task-body{padding:0 16px 14px;}
+  .task-desc{font-size:13px;color:#888;padding:0 18px 6px;}
+  .task-action{font-size:14.5px;font-weight:bold;color:var(--red);padding:2px 18px 16px;}
 
-  .ox-row{display:flex;gap:10px;margin-bottom:10px;}
-  .ox-row label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:bold;padding:8px 16px;border:1px solid #ccc;border-radius:8px;cursor:pointer;color:#555;}
-  .ox-row input{width:16px;height:16px;cursor:pointer;}
-  .ox-row label.checked{background:#e3f2fd;border-color:var(--blue);color:var(--blue);}
-  .ox-row input:disabled ~ span, .ox-row label.locked{opacity:.7;cursor:not-allowed;}
+  .two-col{display:flex;gap:16px;align-items:flex-start;}
+  .two-col > .panel{margin-bottom:0;}
+  .col-canvas{flex:1 1 380px;min-width:300px;}
+  .col-cond{flex:1 1 340px;min-width:280px;}
+  @media (max-width:760px){
+    .two-col{flex-direction:column;}
+    .two-col > .panel{width:100%;margin-bottom:16px;}
+  }
 
-  .input-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;}
-  .input-row textarea{flex:1;min-width:220px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;}
-  .input-row textarea:disabled{background:#f5f5f5;color:#555;resize:none;}
-  .input-row button{padding:9px 16px;border:none;background:var(--blue);color:#fff;border-radius:6px;cursor:pointer;font-size:13px;align-self:flex-start;font-weight:bold;}
-  .input-row button.cancel{background:#9e9e9e;}
-  .text-min-note{font-size:11.5px;color:#999;margin-top:6px;}
-  .feedback{font-size:13px;margin-top:8px;min-height:16px;}
-  .feedback.ok{color:var(--green);font-weight:bold;}
-  .feedback.no{color:#888;}
+  #quadSvg{width:100%;max-width:480px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;}
+  .canvas-actions{text-align:center;margin-top:10px;}
+  .canvas-actions button{padding:8px 14px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;font-size:12.5px;color:#444;}
+  .canvas-status{text-align:center;font-size:13px;font-weight:bold;margin-top:8px;min-height:18px;}
+  .canvas-status.ok{color:var(--green);}
+  .canvas-status.no{color:#888;}
 
-  .class-answers{margin-top:14px;border-top:1px dashed #ddd;padding-top:10px;}
-  .ca-title{font-size:12.5px;font-weight:bold;color:#555;margin-bottom:6px;}
-  .ca-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
-  .ca-name{font-size:11px;color:#888;font-weight:bold;}
-  .ca-text{font-size:13px;margin-top:2px;white-space:pre-wrap;}
-  .ca-empty{color:#999;font-size:12.5px;text-align:center;padding:10px 4px;}
+  .ol{text-decoration:overline;}
+  .cond-list{display:flex;flex-direction:column;gap:2px;}
+  .cond-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;cursor:pointer;}
+  .cond-item:hover{background:#f7f8fa;}
+  .cond-item input{width:18px;height:18px;flex:0 0 auto;cursor:pointer;}
+  .cond-item .cond-label{font-size:15.5px;font-weight:bold;}
+  .cond-item .cond-desc{font-size:11.5px;color:#888;margin-top:2px;}
+
+  .mission-progress{margin-bottom:10px;}
+  .progress-row{display:flex;align-items:center;gap:10px;}
+  .progress-bar{flex:1;height:10px;background:#e0e0e0;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:12.5px;color:#555;white-space:nowrap;font-weight:bold;}
+  .mission-clear-badge{display:none;margin-top:8px;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:bold;text-align:center;}
+
+  .record-list{display:flex;flex-direction:column;gap:8px;}
+  .record-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:9px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .record-item.minimal{background:#e8f5e9;border-color:#a5d6a7;}
+  .record-main{flex:1;}
+  .record-conds{font-size:13.5px;font-weight:bold;color:#222;}
+  .record-name{font-size:11.5px;color:#666;margin-top:3px;}
+  .record-badge{display:inline-block;font-size:10.5px;font-weight:bold;padding:2px 7px;border-radius:10px;background:var(--green);color:#fff;margin-left:6px;vertical-align:middle;}
+  .record-badge.extra{background:#9e9e9e;}
+  .record-del{flex:0 0 auto;border:none;background:#fdecea;color:var(--red);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;}
+  .record-empty{color:#999;font-size:13px;text-align:center;padding:16px 4px;}
 
   .submit-panel{text-align:center;}
   .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
   .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
   #submitStatus{margin-top:10px;font-size:13px;color:#333;}
 
+
+  .cond2-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid #eee;}
+  .cond2-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .cond2-sym{font-size:16px;font-weight:bold;color:#1a237e;}
+  .cond2-card textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;resize:vertical;}
+  .cond2-card textarea.locked-fixed{background:#f4f6f8;color:#555;}
+  .cond2-fb{font-size:12px;margin-top:6px;min-height:15px;color:#888;}
+  .cond2-fb.ok{color:var(--green);font-weight:bold;}
+  .cond2-actions{margin-top:10px;}
+  .cond2-submit{padding:9px 18px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:13.5px;font-weight:bold;cursor:pointer;}
+  .cond2-submit.cancel{background:#9e9e9e;}
+
+  .feedback{font-size:13px;margin-top:8px;min-height:16px;}
+  .feedback.ok{color:var(--green);font-weight:bold;}
+  .feedback.no{color:#888;}
+  .class-answers{margin-top:14px;border-top:1px dashed #ddd;padding-top:10px;}
+  .ca-title{font-size:12.5px;font-weight:bold;color:#555;margin-bottom:6px;}
+  .ca-item{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+  .ca-name{font-size:11px;color:#888;font-weight:bold;}
+  .ca-text{font-size:13px;margin-top:2px;white-space:pre-wrap;}
+  .ca-sym{font-size:11.5px;color:#1a237e;font-weight:bold;margin-top:6px;}
+  .ca-empty{color:#999;font-size:12.5px;text-align:center;padding:10px 4px;}
   #syncStatus{font-size:11.5px;color:#999;margin-top:8px;}
   #syncStatus.on{color:var(--green);font-weight:bold;}
-  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
-  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
 
   #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
   #lockOverlay h2{font-size:22px;margin-bottom:8px;}
   #lockOverlay p{font-size:14px;opacity:.85;}
-  body.app-paused .task{ pointer-events:none !important; opacity:.5; }
-  body.final-locked .task{ pointer-events:none !important; opacity:.6; }
-  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  body.app-paused .two-col, body.app-paused #condList, body.app-paused .canvas-actions,
+  body.app-paused .submit-panel, body.app-paused .record-del,
+  body.app-paused #cond2List{ pointer-events:none !important; opacity:.5; }
+
+  body.final-locked .two-col, body.final-locked #condList, body.final-locked .canvas-actions,
+  body.final-locked .record-del,
+  body.final-locked #submitBtn{ pointer-events:none !important; opacity:.6; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
 
 
   #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
@@ -119,8 +148,8 @@
 <div id="gateScreen">
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
-    <h1>13. 평행사변형의 성질 활용</h1>
-    <p class="gate-sub">평행사변형의 성질을 여러 상황에 적용해 생각을 나눠봐요 — 김형준 선생님</p>
+    <h1>13. 평행사변형이 되는 조건 찾기</h1>
+    <p class="gate-sub">사각형 ABCD가 평행사변형이 되려면 어떤 조건이 필요할까요? — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
@@ -144,363 +173,100 @@
 
 <div id="appScreen">
   <div id="stickyBar">
-    <div id="unitTitleBar">13. 평행사변형의 성질 활용</div>
+    <div id="unitTitleBar">13. 평행사변형이 되는 조건 찾기</div>
     <div class="sticky-controls">
       <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 9</div>
+        <div class="progress-text" id="progressText">완료 0 / 2</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
   </div>
 
-  <div class="wrap" id="pageWrap">
+  <div class="wrap">
 
     <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
 
-    <!-- ===== PDF 1 : 넓이를 4등분하는 방법 ===== -->
-    <div class="pgpage" data-task-id="1">
-    <div class="section-title">생각을 나누는 의사소통 — 평행사변형의 넓이 4등분하기</div>
-    <div class="section-desc">다음은 영은이와 재호가 평행사변형의 성질을 이용하여 넓이를 4등분하는 방법에 대하여 나누는 대화이다.</div>
-    <div class="quote-row">
-      <div class="quote-box">
-        <div class="who">영은</div>
-        평행사변형의 두 대각선을 그으면 돼.
-        <div class="ref-figure" style="margin-top:8px;">
-          <svg viewBox="0 0 260 180"><polygon points="90,30 230,30 190,150 50,150" fill="#fff3cd" stroke="#333" stroke-width="2"/><line x1="90" y1="30" x2="190" y2="150" stroke="#c62828" stroke-width="2"/><line x1="230" y1="30" x2="50" y2="150" stroke="#c62828" stroke-width="2"/></svg>
+    <div id="page1View">
+      <div class="task">
+        <div class="task-head">
+          <h2><span class="num">[과제 1]</span> 조건을 선택해서 그림의 사각형이 평행사변형이 되도록 해보자.</h2>
+          <span class="badge pending" id="taskBadge">미완료</span>
+        </div>
+        <div class="task-desc">조건 체크박스를 하나 이상 선택하면 사각형이 다시 그려져요. 여러 개를 함께 선택할 수도 있어요.</div>
+        <div class="task-action">가장 적은 조건으로 평행사변형을 완성해보자!</div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel col-canvas">
+          <div class="panel-title">사각형 ABCD (대각선 AC, BD의 교점 O)</div>
+          <svg id="quadSvg" viewBox="0 0 600 420"></svg>
+          <div class="canvas-status" id="canvasStatus"></div>
+          <div class="canvas-actions">
+            <button id="reshuffleBtn">🔄 다른 모양으로 다시 그리기</button>
+          </div>
+        </div>
+
+        <div class="panel col-cond">
+          <div class="panel-title">조건을 선택하세요 (여러 개 선택 가능)</div>
+          <div id="condList" class="cond-list"></div>
         </div>
       </div>
-      <div class="quote-box alt">
-        <div class="who">재호</div>
-        같은 간격으로 평행선을 3개 그으면 돼.
-        <div class="ref-figure" style="margin-top:8px;">
-          <svg viewBox="0 0 260 180"><polygon points="90,30 230,30 190,150 50,150" fill="#fff3cd" stroke="#333" stroke-width="2"/><line x1="60" y1="60" x2="200" y2="60" stroke="#c62828" stroke-width="2"/><line x1="70" y1="90" x2="210" y2="90" stroke="#c62828" stroke-width="2"/><line x1="80" y1="120" x2="220" y2="120" stroke="#c62828" stroke-width="2"/></svg>
+
+      <div class="panel">
+        <div class="panel-title">📒 평행사변형이 되었던 순간의 기록</div>
+        <div class="mission-progress">
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill" id="missionFill"></div></div>
+            <div class="progress-text" id="missionText">최소조건 발견 0 / 6</div>
+          </div>
         </div>
+        <div id="missionClearBadge" class="mission-clear-badge">🏆 미션 클리어! 가장 적은 조건(2개) 조합을 모두 찾았어요!</div>
+        <div id="recordList" class="record-list"></div>
+      </div>
+
+      <div class="panel submit-panel">
+        <button class="main" id="submitBtn">기록 제출하기</button><br>
+        <button class="backup" id="backupBtn">백업 파일로 저장</button>
+        <div id="submitStatus"></div>
       </div>
     </div>
 
-    <div class="task" id="task-1">
-      <div class="task-head">
-        <h2><span class="num">[활동1]</span> 두 사람의 방법으로 평행사변형의 넓이가 4등분되는 이유를 설명해 보자.</h2>
-        <span class="badge pending" id="badge-1">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="input-row">
-          <textarea id="input-1" rows="3" placeholder="여기에 생각을 적어보세요 (20자 이상)"></textarea>
-          <button id="check-1">제출</button>
+    <div id="page2View" style="display:none;">
+      <div class="task">
+        <div class="task-head">
+          <h2><span class="num">[과제 2]</span> 찾은 최소조건들을 말로 정리해보자.</h2>
+          <span class="badge pending" id="taskBadge2">미완료</span>
         </div>
-        <div class="text-min-note">✏️ 20자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-1"></div>
-        <div class="class-answers" id="classAnswers-1" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-1"></div>
-        </div>
+        <div class="task-desc">1페이지에서 사각형이 평행사변형이 되도록 만들었던 가장 적은 조건 조합 6가지예요. 각 조합을 "~이면 평행사변형이 된다."와 같은 완전한 문장으로 표현해보세요.</div>
       </div>
-    </div>
-    </div>
 
-    <div class="pgpage" data-task-id="2">
-    <div class="section-title">생각을 나누는 의사소통 — 평행사변형의 넓이 4등분하기 (계속)</div>
-
-    <div class="task" id="task-2">
-      <div class="task-head">
-        <h2><span class="num">[활동2]</span> 선분 2개 또는 3개를 그어 평행사변형의 넓이를 4등분하는 다른 방법을 찾아 말로 설명해 보자.</h2>
-        <span class="badge pending" id="badge-2">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="input-row">
-          <textarea id="input-2" rows="3" placeholder="어떤 선분을 어디에 그었는지, 왜 4등분이 되는지 적어보세요 (15자 이상)"></textarea>
-          <button id="check-2">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-2"></div>
-        <div class="class-answers" id="classAnswers-2" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-2"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 2 : 빨대로 평행사변형 만들기 ===== -->
-    <div class="pgpage" data-task-id="3">
-    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기</div>
-    <div class="section-desc">다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.</div>
-    <div class="quote-row">
-      <div class="quote-box">
-        <div class="who">수현</div>
-        나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.
-      </div>
-      <div class="quote-box alt">
-        <div class="who">정우</div>
-        나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.
-      </div>
-    </div>
-
-    <div class="task" id="task-3">
-      <div class="task-head">
-        <h2><span class="num">[활동1]</span> 수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?</h2>
-        <span class="badge pending" id="badge-3">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ox-row" id="ox-3">
-          <label><input type="radio" name="ox-3" value="O"><span>⭕ 항상 그렇다</span></label>
-          <label><input type="radio" name="ox-3" value="X"><span>❌ 항상 그렇지는 않다</span></label>
-        </div>
-        <div class="input-row">
-          <textarea id="input-3" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
-          <button id="check-3">제출</button>
-        </div>
-        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-3"></div>
-        <div class="class-answers" id="classAnswers-3" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-3"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <div class="pgpage" data-task-id="4">
-    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)</div>
-
-    <div class="task" id="task-4">
-      <div class="task-head">
-        <h2><span class="num">[활동2]</span> 정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?</h2>
-        <span class="badge pending" id="badge-4">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ox-row" id="ox-4">
-          <label><input type="radio" name="ox-4" value="O"><span>⭕ 항상 그렇다</span></label>
-          <label><input type="radio" name="ox-4" value="X"><span>❌ 항상 그렇지는 않다</span></label>
-        </div>
-        <div class="input-row">
-          <textarea id="input-4" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
-          <button id="check-4">제출</button>
-        </div>
-        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-4"></div>
-        <div class="class-answers" id="classAnswers-4" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-4"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 3 : 한 쌍만 평행 + 길이 같음 ===== -->
-    <div class="pgpage" data-task-id="5">
-    <div class="section-title">생각을 나누는 의사소통 — 조건을 하나만 바꾸면?</div>
-
-    <div class="task" id="task-5">
-      <div class="task-head">
-        <h2><span class="num">[활동]</span> 한 쌍의 대변이 평행하고 한 쌍의 대변의 길이가 같은 사각형은 평행사변형이 될까?</h2>
-        <span class="badge pending" id="badge-5">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ox-row" id="ox-5">
-          <label><input type="radio" name="ox-5" value="O"><span>⭕ 항상 평행사변형이다</span></label>
-          <label><input type="radio" name="ox-5" value="X"><span>❌ 항상 그런 것은 아니다</span></label>
-        </div>
-        <div class="input-row">
-          <textarea id="input-5" rows="3" placeholder="예를 들어 그 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-5">제출</button>
-        </div>
-        <div class="text-min-note">✏️ O/X를 고르고 예시와 이유를 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-5"></div>
-        <div class="class-answers" id="classAnswers-5" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-5"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 4 : 모눈종이 위 평행사변형 ===== -->
-    <div class="pgpage" data-task-id="6">
-    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기</div>
-    <div class="section-desc">다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.</div>
-
-    <div class="task" id="task-6">
-      <div class="task-head">
-        <h2><span class="num">[활동1]</span> 평행사변형의 세 꼭짓점이 주어진 경우</h2>
-        <span class="badge pending" id="badge-6">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ref-figure">
-          <svg viewBox="0 0 260 200">
-            <defs><pattern id="grid6" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M 26 0 L 0 0 0 26" fill="none" stroke="#ddd" stroke-width="1"/></pattern></defs>
-            <rect width="260" height="200" fill="url(#grid6)"/>
-            <circle cx="78" cy="52" r="4" fill="#c62828"/>
-            <circle cx="182" cy="78" r="4" fill="#c62828"/>
-            <circle cx="52" cy="130" r="4" fill="#c62828"/>
-          </svg>
-          <div class="ref-cap">빨간 점 3개가 평행사변형의 세 꼭짓점이에요. 네 번째 점을 어디에 찍어야 할까요? (경우가 여러 개일 수 있어요)</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-6" rows="3" placeholder="네 번째 점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-6">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-6"></div>
-        <div class="class-answers" id="classAnswers-6" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-6"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <div class="pgpage" data-task-id="7">
-    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기 (계속)</div>
-
-    <div class="task" id="task-7">
-      <div class="task-head">
-        <h2><span class="num">[활동2]</span> 평행사변형의 두 꼭짓점과 두 대각선의 교점 O가 주어진 경우</h2>
-        <span class="badge pending" id="badge-7">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ref-figure">
-          <svg viewBox="0 0 260 200">
-            <defs><pattern id="grid7" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M 26 0 L 0 0 0 26" fill="none" stroke="#ddd" stroke-width="1"/></pattern></defs>
-            <rect width="260" height="200" fill="url(#grid7)"/>
-            <circle cx="78" cy="52" r="4" fill="#c62828"/>
-            <circle cx="182" cy="104" r="4" fill="#c62828"/>
-            <circle cx="130" cy="78" r="4" fill="#1565c0"/>
-            <text x="138" y="74" font-size="13" fill="#1565c0" font-weight="bold">O</text>
-          </svg>
-          <div class="ref-cap">빨간 점 2개는 평행사변형의 두 꼭짓점, 파란 점 O는 두 대각선의 교점이에요. 나머지 두 꼭짓점은 어디일까요?</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-7" rows="3" placeholder="나머지 두 꼭짓점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-7">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-7"></div>
-        <div class="class-answers" id="classAnswers-7" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-7"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 5 : 대각선 교점을 지나는 직선 ===== -->
-    <div class="pgpage" data-task-id="8">
-    <div class="section-title">생각을 나누는 의사소통 — 넓이를 이등분하는 직선</div>
-
-    <div class="task" id="task-8">
-      <div class="task-head">
-        <h2><span class="num">[활동]</span> 평행사변형 ABCD의 두 대각선의 교점 O를 지나는 직선은 □ABCD의 넓이를 이등분한다. 그 이유를 설명해 보자.</h2>
-        <span class="badge pending" id="badge-8">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ref-figure">
-          <svg viewBox="0 0 260 200">
-            <polygon points="90,30 230,30 190,150 50,150" fill="#fff" stroke="#333" stroke-width="2"/>
-            <line x1="90" y1="30" x2="190" y2="150" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <line x1="230" y1="30" x2="50" y2="150" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <line x1="65" y1="10" x2="205" y2="170" stroke="#c62828" stroke-width="2.5"/>
-            <circle cx="140" cy="90" r="3.5" fill="#1565c0"/>
-            <text x="146" y="86" font-size="13" font-weight="bold" fill="#1565c0">O</text>
-            <text x="76" y="24" font-size="13" font-weight="bold">A</text>
-            <text x="234" y="24" font-size="13" font-weight="bold">B</text>
-            <text x="194" y="168" font-size="13" font-weight="bold">C</text>
-            <text x="34" y="168" font-size="13" font-weight="bold">D</text>
-          </svg>
-          <div class="ref-cap">회색 점선은 대각선, 빨간 직선은 O를 지나지만 대각선은 아닌 임의의 직선이에요.</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-8" rows="4" placeholder="합동인 도형을 찾아 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-8">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-8"></div>
-        <div class="class-answers" id="classAnswers-8" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-8"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 6 : 합동 증명 ===== -->
-    <div class="pgpage" data-task-id="9">
-    <div class="section-title">생각을 나누는 의사소통 — 두 삼각형의 합동 증명</div>
-
-    <div class="task" id="task-9">
-      <div class="task-head">
-        <h2><span class="num">[활동]</span> □ABCD와 □AECF가 모두 평행사변형일 때, △ABE와 △CDF가 서로 합동임을 증명해 보자.</h2>
-        <span class="badge pending" id="badge-9">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="ref-figure">
-          <svg viewBox="0 0 320 220">
-            <polygon points="100,50 370,50 310,180 40,180" fill="#fff" stroke="#333" stroke-width="2" transform="scale(0.82) translate(-10,0)"/>
-            <polygon points="100,50 121,180 310,180 289,50" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3" transform="scale(0.82) translate(-10,0)"/>
-            <g transform="scale(0.82) translate(-10,0)">
-              <polygon points="100,50 40,180 121,180" fill="#a5d6a7" opacity="0.7"/>
-              <polygon points="289,50 310,180 121,180" fill="#a5d6a7" opacity="0.7"/>
-              <text x="90" y="44" font-size="15" font-weight="bold">A</text>
-              <text x="293" y="44" font-size="15" font-weight="bold">F</text>
-              <text x="372" y="44" font-size="15" font-weight="bold">D</text>
-              <text x="20" y="196" font-size="15" font-weight="bold">B</text>
-              <text x="112" y="200" font-size="15" font-weight="bold">E</text>
-              <text x="312" y="196" font-size="15" font-weight="bold">C</text>
-            </g>
-          </svg>
-          <div class="ref-cap">□ABCD(큰 평행사변형)와 □AECF(안쪽 평행사변형)가 겹쳐 있는 그림이에요. (초록색: △ABE, △CDF)</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-9" rows="4" placeholder="합동 조건을 이용해 증명 과정을 적어보자 (20자 이상)"></textarea>
-          <button id="check-9">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 20자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-9"></div>
-        <div class="class-answers" id="classAnswers-9" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-9"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <div class="panel submit-panel">
-      <button class="main" id="submitBtn">결과 제출하기</button><br>
-      <button class="backup" id="backupBtn">백업 파일로 저장</button>
-      <div id="submitStatus"></div>
+      <div id="cond2List"></div>
     </div>
 
   </div>
 
   <div id="pagerNav">
     <div class="pager-buttons">
-      <span id="pageLabel">1 / 10</span>
+      <span id="pageLabel">1 / 2</span>
     </div>
   </div>
 </div>
 
 <script>
 /* ============================================================
-   13. 평행사변형의 성질 활용 (과제13 PDF 기반)
-   전부 서술형 텍스트 + 참고 그림(SVG)으로 구성된 9개 활동.
-   student1~6, student11~12과 동일한 제출/취소/친구 답변 보기 패턴을 사용한다.
+   13. 평행사변형이 되는 조건 찾기
+   사각형 ABCD에서 8개의 개별 조건(대변 평행 2종 / 대변 길이 2종 / 대각 크기 2종 /
+   대각선 반토막 2종)을 자유롭게 체크하면, 그 조건들을 만족하는 새 사각형을 즉시 다시
+   그린다. 평행사변형이 되도록 "강제하는" 조합(교과서의 5가지 조건, 방향별로 6가지)일
+   때만 실제로 평행사변형이 나오고, 그 순간의 조건 조합을 기록에 남긴다.
 
-   선생님 설정 안내: teacher13.html과 FIREBASE_CONFIG / ACTIVITY_SUFFIX를 반드시 동일하게 맞춘다.
+   선생님 설정 안내(Firebase 실시간 확인을 쓰려면)는 teacher13.html과 동일한
+   FIREBASE_CONFIG / ACTIVITY_SUFFIX를 이 파일에도 채우면 된다. 비워두면 실시간
+   확인 없이도 활동 자체는 그대로 동작한다(기록 저장은 로컬 + 백업 파일로 가능).
    ============================================================ */
-const UNIT_LABEL = '13. 평행사변형의 성질 활용';
-const CONFIG = {
-  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
-  ENTRY_UNIT: 'entry.926486903',
-  ENTRY_ROOM: 'entry.2051553698',
-  ENTRY_NUMBER: 'entry.553461765',
-  ENTRY_NAME: 'entry.1279750620',
-  ENTRY_TASK: 'entry.863803595',
-  ENTRY_SUCCESS: 'entry.172713041',
-  ENTRY_ANSWER: 'entry.1090948288'
-};
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
   authDomain: 'brojuntest.firebaseapp.com',
@@ -510,157 +276,506 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__quad13'; // teacher13.html과 반드시 동일해야 함
+const ACTIVITY_SUFFIX = '__quad12'; // teacher13.html과 반드시 동일해야 함
 
-/* ---------- 과제 정의 ---------- */
-const TASKS = [
-  { id:1, minLen:20, kind:'text' },
-  { id:2, minLen:15, kind:'text' },
-  { id:3, minLen:10, kind:'ox' },
-  { id:4, minLen:10, kind:'ox' },
-  { id:5, minLen:15, kind:'ox' },
-  { id:6, minLen:15, kind:'text' },
-  { id:7, minLen:15, kind:'text' },
-  { id:8, minLen:15, kind:'text' },
-  { id:9, minLen:20, kind:'text' }
+/* ---------- 벡터/기하 유틸 ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+const scl=(a,s)=>({x:a.x*s,y:a.y*s});
+const vlen=a=>Math.hypot(a.x,a.y);
+const norm=a=>{const m=vlen(a)||1e-9;return {x:a.x/m,y:a.y/m};};
+const dot=(a,b)=>a.x*b.x+a.y*b.y;
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function lerpVec(a,b,t){ return {x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t}; }
+function lerp(a,b,t){ return a+(b-a)*t; }
+function angleBetweenDeg(v1,v2){
+  const m=vlen(v1)*vlen(v2)||1e-9;
+  let c=dot(v1,v2)/m; c=Math.max(-1,Math.min(1,c));
+  return Math.acos(c)*180/Math.PI;
+}
+function rotateAround(p,center,rad){
+  const v=sub(p,center); const cos=Math.cos(rad), sin=Math.sin(rad);
+  return add(center,{x:v.x*cos-v.y*sin, y:v.x*sin+v.y*cos});
+}
+function projectOntoLine(p,a,b){
+  const dv=sub(b,a); const len2=dot(dv,dv)||1e-9;
+  const t=dot(sub(p,a),dv)/len2;
+  return add(a, scl(dv,t));
+}
+
+/* ---------- 8개 조건 정의 (수학 기호 표기) ----------
+   선분 이름은 <span class="ol"> (CSS text-decoration:overline)으로 감싸서 "AB" 전체 위에
+   윗줄 하나가 깔끔하게 이어지도록 한다(유니코드 결합 윗줄 문자를 글자마다 붙이면 글꼴에
+   따라 끊기거나 옆의 ∥ 기호에 번져 보이는 문제가 있어서 이 방식으로 바꿨다). */
+function seg(s){ return `<span class="ol">${s}</span>`; }
+const CONDITIONS = [
+  { id:'ab_cd_par', label:`${seg('AB')} ∥ ${seg('CD')}`, desc:'선분 AB와 선분 CD가 평행' },
+  { id:'ad_bc_par', label:`${seg('AD')} ∥ ${seg('BC')}`, desc:'선분 AD와 선분 BC가 평행' },
+  { id:'ab_cd_eq',  label:`${seg('AB')} = ${seg('CD')}`, desc:'선분 AB와 선분 CD의 길이가 같음' },
+  { id:'ad_bc_eq',  label:`${seg('AD')} = ${seg('BC')}`, desc:'선분 AD와 선분 BC의 길이가 같음' },
+  { id:'a_c_eq',    label:`∠A = ∠C`, desc:'각 A와 각 C의 크기가 같음' },
+  { id:'b_d_eq',    label:`∠B = ∠D`, desc:'각 B와 각 D의 크기가 같음' },
+  { id:'oa_oc_eq',  label:`${seg('OA')} = ${seg('OC')}`, desc:'대각선 AC 위의 점 O에서 OA와 OC의 길이가 같음' },
+  { id:'ob_od_eq',  label:`${seg('OB')} = ${seg('OD')}`, desc:'대각선 BD 위의 점 O에서 OB와 OD의 길이가 같음' }
 ];
-const results = {};
+const CONDITION_MAP = {};
+CONDITIONS.forEach(c=>CONDITION_MAP[c.id]=c);
 
-function checkReady(task){
-  const val = (document.getElementById('input-'+task.id).value||'').trim();
-  const lenOk = val.length >= task.minLen;
-  if(task.kind==='ox'){
-    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
-    return lenOk && !!picked;
-  }
-  return lenOk;
+/* 평행사변형이 되도록 "강제하는" 최소 조건 조합 (중2 교과서 5가지 정리를 방향별로 6가지로 표기) */
+const CANONICAL_MINIMAL = [
+  { ids:['ab_cd_par','ad_bc_par'], name:'두 쌍의 대변이 각각 평행하다 (정의)', sym:`${seg('AB')}∥${seg('CD')} + ${seg('AD')}∥${seg('BC')}` },
+  { ids:['ab_cd_eq','ad_bc_eq'],   name:'두 쌍의 대변의 길이가 각각 같다', sym:`${seg('AB')}=${seg('CD')} + ${seg('AD')}=${seg('BC')}` },
+  { ids:['a_c_eq','b_d_eq'],       name:'두 쌍의 대각의 크기가 각각 같다', sym:`∠A=∠C + ∠B=∠D` },
+  { ids:['oa_oc_eq','ob_od_eq'],   name:'대각선이 서로를 이등분한다', sym:`${seg('OA')}=${seg('OC')} + ${seg('OB')}=${seg('OD')}` },
+  { ids:['ab_cd_par','ab_cd_eq'],  name:'한 쌍의 대변(AB, CD)이 평행하고 그 길이가 같다', sym:`${seg('AB')}∥${seg('CD')} + ${seg('AB')}=${seg('CD')}` },
+  { ids:['ad_bc_par','ad_bc_eq'],  name:'한 쌍의 대변(AD, BC)이 평행하고 그 길이가 같다', sym:`${seg('AD')}∥${seg('BC')} + ${seg('AD')}=${seg('BC')}` }
+];
+function isRuleForcing(selectedIds){
+  const set = new Set(selectedIds);
+  return CANONICAL_MINIMAL.some(m => m.ids.every(id=>set.has(id)));
 }
-function currentValue(task){
-  const val = document.getElementById('input-'+task.id).value;
-  if(task.kind==='ox'){
-    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
-    return (picked ? `[${picked.value}] ` : '') + val;
-  }
-  return val;
+function matchedMinimal(selectedIds){
+  const set = new Set(selectedIds);
+  return CANONICAL_MINIMAL.filter(m => m.ids.every(id=>set.has(id)) && m.ids.length===selectedIds.length);
 }
 
-function initTask(task){
-  const badge=document.getElementById(`badge-${task.id}`);
-  const fb=document.getElementById(`fb-${task.id}`);
-  const input=document.getElementById(`input-${task.id}`);
-  const btn=document.getElementById(`check-${task.id}`);
-  const oxWrap = task.kind==='ox' ? document.getElementById(`ox-${task.id}`) : null;
-  let locked = false;
-
-  function refreshFeedback(){
-    if(locked) return true;
-    const okFlag = checkReady(task);
-    if(task.kind==='ox' && !document.querySelector(`input[name="ox-${task.id}"]:checked`)){
-      fb.textContent = '⭕ 또는 ❌ 중 하나를 먼저 골라주세요.';
-      fb.className = 'feedback no';
-    } else {
-      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러보세요.' : `조금 더 자세히 적어볼까요? (${task.minLen}자 이상)`;
-      fb.className = 'feedback ' + (okFlag?'ok':'no');
-    }
-    return okFlag;
-  }
-  function setOxLocked(disabled){
-    if(!oxWrap) return;
-    oxWrap.querySelectorAll('input').forEach(r=>{ r.disabled = disabled; });
-    oxWrap.querySelectorAll('label').forEach(l=>{ l.classList.toggle('locked', disabled); });
-  }
-  function doSubmit(){
-    const ok = refreshFeedback();
-    if(!ok) return;
-    locked = true;
-    input.disabled = true;
-    input.classList.add('locked-fixed');
-    setOxLocked(true);
-    btn.textContent = '취소';
-    btn.classList.add('cancel');
-    results[task.id] = {done:true, value: currentValue(task)};
-    badge.textContent='완료'; badge.className='badge done';
-    fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
-    fb.className = 'feedback ok';
-    renderClassAnswersFor(task);
-    updateProgress();
-    // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
-  }
-  function doCancel(){
-    locked = false;
-    input.disabled = false;
-    input.classList.remove('locked-fixed');
-    setOxLocked(false);
+/* ---------- 2페이지: 최소조건을 말로 표현하기 ---------- */
+const PAGE2_MIN_LEN = 12; // 문장 하나당 최소 글자수
+function buildCond2List(){
+  const wrap = document.getElementById('cond2List');
+  wrap.textContent = '';
+  CANONICAL_MINIMAL.forEach((m, i)=>{
+    const card = document.createElement('div');
+    card.className = 'cond2-card';
+    const head = document.createElement('div');
+    head.className = 'cond2-head';
+    const sym = document.createElement('div');
+    sym.className = 'cond2-sym';
+    sym.innerHTML = `${i+1}. ${m.sym}`;
+    const badge = document.createElement('span');
+    badge.className = 'badge pending';
+    badge.id = 'p2-badge-'+i;
+    badge.textContent = '미완료';
+    head.appendChild(sym); head.appendChild(badge);
+    const ta = document.createElement('textarea');
+    ta.id = 'p2-input-'+i;
+    ta.rows = 2;
+    const fb = document.createElement('div');
+    fb.className = 'cond2-fb';
+    fb.id = 'p2-fb-'+i;
+    const actions = document.createElement('div');
+    actions.className = 'cond2-actions';
+    const btn = document.createElement('button');
+    btn.className = 'cond2-submit';
+    btn.id = 'p2-check-'+i;
     btn.textContent = '제출';
-    btn.classList.remove('cancel');
-    results[task.id] = {done:false, value: currentValue(task)};
-    badge.textContent='미완료'; badge.className='badge pending';
-    refreshFeedback();
-    renderClassAnswersFor(task);
-    updateProgress();
-  }
-  btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
-  input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
-  if(oxWrap){
-    oxWrap.querySelectorAll('input').forEach(r=>{
-      r.addEventListener('change', ()=>{
-        oxWrap.querySelectorAll('label').forEach(l=> l.classList.toggle('checked', l.querySelector('input').checked));
-        if(!locked) refreshFeedback();
-      });
-    });
-  }
-  results[task.id] = {done:false, value:''};
-  refreshFeedback();
-}
-TASKS.forEach(initTask);
-
-// 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
-// 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
-// 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
-const classAnswersPicked = {};
-function renderClassAnswersFor(task){
-  const wrap=document.getElementById(`classAnswers-${task.id}`);
-  const list=document.getElementById(`classAnswersList-${task.id}`);
-  const myDone = !!(results[task.id] && results[task.id].done);
-  if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
-  wrap.style.display='block';
-  list.textContent='';
-  const entries = Object.keys(RT.allStudents||{})
-    .filter(k=>k!==RT.studentKey)
-    .map(k=>({key:k, ...RT.allStudents[k]}))
-    .filter(s=> s.progress && s.progress['t'+task.id] && s.progress['t'+task.id].value && String(s.progress['t'+task.id].value).trim().length>0);
-  if(entries.length===0){
-    const empty=document.createElement('div'); empty.className='ca-empty';
-    empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
-    list.appendChild(empty);
-    classAnswersPicked[task.id] = [];
-    return;
-  }
-  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
-  const pool = new Map(entries.map(s=>[s.key, s]));
-  let picked = (classAnswersPicked[task.id]||[]).filter(k=>pool.has(k));
-  const need = 5 - picked.length;
-  if(need>0){
-    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
-    picked = picked.concat(fresh);
-  }
-  classAnswersPicked[task.id] = picked;
-  picked.map(k=>pool.get(k)).forEach(s=>{
-    const item=document.createElement('div'); item.className='ca-item';
-    const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
-    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress['t'+task.id].value);
-    item.appendChild(name); item.appendChild(text);
-    list.appendChild(item);
+    actions.appendChild(btn);
+    const ca = document.createElement('div');
+    ca.className = 'class-answers';
+    ca.id = 'classAnswers-p2-'+i;
+    ca.style.display = 'none';
+    ca.innerHTML = '<div class="ca-title">👀 친구들은 이렇게 표현했어요</div><div class="ca-list" id="classAnswersList-p2-'+i+'"></div>';
+    card.appendChild(head); card.appendChild(ta); card.appendChild(fb); card.appendChild(actions); card.appendChild(ca);
+    wrap.appendChild(card);
   });
 }
-function renderAllClassAnswers(){ TASKS.forEach(t=>renderClassAnswersFor(t)); }
 
-function updateProgress(){
-  const total = TASKS.length;
-  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-  document.getElementById('progressText').textContent = `완료 ${done} / ${total}`;
-  document.getElementById('progressFill').style.width = (done/total*100)+'%';
-  RT.pushProgress();
+/* ---------- 완화(relaxation) 기반 사각형 생성 엔진 ----------
+   선택된 조건들을 "조금씩 만족시키는" 계산을 여러 번 반복해서 사각형을 조정한다.
+   조건 조합이 평행사변형을 강제하지 않으면 매번 다른 일반 사각형에 수렴하고,
+   강제하는 조합이면 계산 자체가 평행사변형에 수렴한다(단, 강제 여부의 최종 판정은
+   위 CANONICAL_MINIMAL 규칙으로 하고, 강제 조합일 때는 계산 대신 곧바로 무작위
+   평행사변형을 만든다 — 계산에만 맡기면 몇몇 특수한(교과서에 없는) 조합에서 계산이
+   우연히 평행사변형 쪽으로 쏠리는 경우가 있어, 그런 조합은 재시도 + 보정으로 확실히
+   평행사변형이 아닌 모양을 만들도록 한다). */
+function nudgeParallelOnce(pts,aK,bK,cK,dK,alpha){
+  const A=pts[aK],B=pts[bK],C=pts[cK],D=pts[dK];
+  const dirAB=norm(sub(B,A));
+  const M=mid(C,D);
+  const h=scl(sub(D,C),0.5);
+  const L=vlen(h);
+  if(L<1e-6) return;
+  const sign = dot(h,dirAB)>=0 ? 1 : -1;
+  const target=scl(dirAB, sign*L);
+  const newH=lerpVec(h,target,alpha);
+  pts[cK]=sub(M,newH);
+  pts[dK]=add(M,newH);
+}
+function applyParallel(pts,s1,s2,t1,t2,alpha,it){
+  if(it%2===0) nudgeParallelOnce(pts,s1,s2,t1,t2,alpha);
+  else nudgeParallelOnce(pts,t1,t2,s1,s2,alpha);
+}
+function scaleSegAbout(pts,aK,bK,newLen){
+  const A=pts[aK],B=pts[bK];
+  const M=mid(A,B);
+  const cur=dist(A,B)||1e-6;
+  const factor=newLen/cur;
+  pts[aK]=add(M,scl(sub(A,M),factor));
+  pts[bK]=add(M,scl(sub(B,M),factor));
+}
+function applyEqualLength(pts,aK,bK,cK,dK,alpha){
+  const Lab=dist(pts[aK],pts[bK]), Lcd=dist(pts[cK],pts[dK]);
+  const avg=(Lab+Lcd)/2;
+  scaleSegAbout(pts,aK,bK, lerp(Lab,avg,alpha));
+  scaleSegAbout(pts,cK,dK, lerp(Lcd,avg,alpha));
+}
+function angleAt(pts,vK,p1K,p2K){
+  return angleBetweenDeg(sub(pts[p1K],pts[vK]), sub(pts[p2K],pts[vK]));
+}
+function nudgeAngleArm(pts,vK,armK,otherK,targetDeg,capDeg){
+  const cur=angleAt(pts,vK,armK,otherK);
+  const diff=targetDeg-cur;
+  if(Math.abs(diff)<0.05) return;
+  const stepDeg=Math.max(-capDeg,Math.min(capDeg,diff));
+  const rad=stepDeg*Math.PI/180;
+  const candPlus=rotateAround(pts[armK],pts[vK],rad);
+  const candMinus=rotateAround(pts[armK],pts[vK],-rad);
+  const angPlus=angleBetweenDeg(sub(candPlus,pts[vK]), sub(pts[otherK],pts[vK]));
+  const angMinus=angleBetweenDeg(sub(candMinus,pts[vK]), sub(pts[otherK],pts[vK]));
+  pts[armK] = Math.abs(angPlus-targetDeg) < Math.abs(angMinus-targetDeg) ? candPlus : candMinus;
+}
+function applyEqualAngle(pts,vA,vC,armX,armY,alpha,it){
+  const angA=angleAt(pts,vA,armX,armY);
+  const angC=angleAt(pts,vC,armX,armY);
+  const target=(angA+angC)/2;
+  const cap=1.2;
+  if(it%2===0){
+    nudgeAngleArm(pts,vA,armY,armX,target,cap);
+    nudgeAngleArm(pts,vC,armY,armX,target,cap);
+  }else{
+    nudgeAngleArm(pts,vA,armX,armY,target,cap);
+    nudgeAngleArm(pts,vC,armX,armY,target,cap);
+  }
+}
+function applyDiagBisect(pts,aK,cK,bK,dK,alpha){
+  const Mac=mid(pts[aK],pts[cK]);
+  const P=projectOntoLine(Mac, pts[bK], pts[dK]);
+  const shift=scl(sub(Mac,P),alpha);
+  pts[bK]=add(pts[bK],shift);
+  pts[dK]=add(pts[dK],shift);
+}
+function applyConstraint(id,pts,alpha,it){
+  switch(id){
+    case 'ab_cd_par': applyParallel(pts,'A','B','C','D',alpha,it); break;
+    case 'ad_bc_par': applyParallel(pts,'A','D','B','C',alpha,it); break;
+    case 'ab_cd_eq':  applyEqualLength(pts,'A','B','C','D',alpha); break;
+    case 'ad_bc_eq':  applyEqualLength(pts,'A','D','B','C',alpha); break;
+    case 'a_c_eq':    applyEqualAngle(pts,'A','C','B','D',alpha,it); break;
+    case 'b_d_eq':    applyEqualAngle(pts,'B','D','A','C',alpha,it); break;
+    case 'oa_oc_eq':  applyDiagBisect(pts,'A','C','B','D',alpha); break;
+    case 'ob_od_eq':  applyDiagBisect(pts,'B','D','A','C',alpha); break;
+  }
+}
+function relax(initPts, condIds, iterations, alpha){
+  const pts={A:{...initPts.A},B:{...initPts.B},C:{...initPts.C},D:{...initPts.D}};
+  for(let it=0; it<iterations; it++){
+    condIds.forEach(id=>applyConstraint(id,pts,alpha,it));
+  }
+  return pts;
+}
+function randomBaseQuad(){
+  let angles = [-100,-15,60,150].map(a=> (a + (Math.random()*50-25)) * Math.PI/180);
+  angles.sort((a,b)=>a-b);
+  const radii = angles.map(()=> 110 + Math.random()*70);
+  const pts={};
+  ['A','B','C','D'].forEach((k,i)=>{
+    pts[k] = { x:300+radii[i]*Math.cos(angles[i]), y:210+radii[i]*Math.sin(angles[i]) };
+  });
+  return pts;
+}
+function randomParallelogram(){
+  const angle1 = Math.random()*Math.PI*2;
+  const len1 = 90+Math.random()*70;
+  const angleGap = (30 + Math.random()*110) * Math.PI/180;
+  const angle2 = angle1+angleGap*(Math.random()<0.5?1:-1);
+  const len2 = 90+Math.random()*70;
+  const u = {x:Math.cos(angle1)*len1, y:Math.sin(angle1)*len1};
+  const v = {x:Math.cos(angle2)*len2, y:Math.sin(angle2)*len2};
+  const A = {x:0,y:0};
+  const B = add(A,u);
+  const D = add(A,v);
+  const C = add(B,v);
+  return normalizeQuad({A,B,C,D});
+}
+function normalizeQuad(pts){
+  const cx=(pts.A.x+pts.B.x+pts.C.x+pts.D.x)/4;
+  const cy=(pts.A.y+pts.B.y+pts.C.y+pts.D.y)/4;
+  ['A','B','C','D'].forEach(k=>{ pts[k]={x:pts[k].x-cx,y:pts[k].y-cy}; });
+  let maxR=0;
+  ['A','B','C','D'].forEach(k=>{ maxR=Math.max(maxR, vlen(pts[k])); });
+  const targetR = 170;
+  const s = maxR>1e-6 ? targetR/maxR : 1;
+  ['A','B','C','D'].forEach(k=>{ pts[k]={x:pts[k].x*s+300,y:pts[k].y*s+210}; });
+  return pts;
+}
+function polygonArea(pts){
+  const p=[pts.A,pts.B,pts.C,pts.D]; let s=0;
+  for(let i=0;i<4;i++){ const a=p[i], b=p[(i+1)%4]; s+= a.x*b.y - b.x*a.y; }
+  return Math.abs(s)/2;
+}
+function ccw(a,b,c){ return (c.y-a.y)*(b.x-a.x) - (b.y-a.y)*(c.x-a.x); }
+function segIntersects(p1,p2,p3,p4){
+  const d1=ccw(p3,p4,p1), d2=ccw(p3,p4,p2), d3=ccw(p1,p2,p3), d4=ccw(p1,p2,p4);
+  return ((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0));
+}
+function isSimpleQuad(pts){
+  return !segIntersects(pts.A,pts.B,pts.C,pts.D) && !segIntersects(pts.B,pts.C,pts.D,pts.A);
+}
+function isParallelogram(pts, tol){
+  return dist(mid(pts.A,pts.C), mid(pts.B,pts.D)) < tol;
+}
+function perturbAwayFromParallelogram(pts){
+  const curMidBD = mid(pts.B,pts.D);
+  let dir = norm(sub(pts.D, curMidBD));
+  if(vlen(sub(pts.D,curMidBD))<1e-6) dir={x:1,y:0};
+  const perpDir = {x:-dir.y, y:dir.x};
+  const kick = 35 + Math.random()*25;
+  pts.D = add(pts.D, scl(perpDir, kick*(Math.random()<0.5?1:-1)));
+  return pts;
+}
+function generateQuad(selectedIds){
+  if(isRuleForcing(selectedIds)){
+    return { pts: randomParallelogram(), isParallelogram:true };
+  }
+  for(let attempt=0; attempt<12; attempt++){
+    let base = randomBaseQuad();
+    let result = selectedIds.length ? relax(base, selectedIds, 260, 0.16) : base;
+    result = normalizeQuad(result);
+    if(!isSimpleQuad(result)) continue;
+    if(polygonArea(result) < 3000) continue;
+    if(isParallelogram(result, 6)) continue;
+    return { pts: result, isParallelogram:false };
+  }
+  let base = randomBaseQuad();
+  let result = selectedIds.length ? relax(base, selectedIds, 260, 0.16) : base;
+  result = normalizeQuad(result);
+  if(isParallelogram(result,6) || !isSimpleQuad(result) || polygonArea(result)<3000){
+    result = perturbAwayFromParallelogram(result);
+    result = normalizeQuad(result);
+    // 짧게 한 번 더 다듬기(과하게 튀지 않도록) — 다시 평행사변형으로 붙어버리면 보정판을 그대로 사용
+    if(selectedIds.length){
+      const polished = normalizeQuad(relax(result, selectedIds, 40, 0.08));
+      if(!isParallelogram(polished,6) && isSimpleQuad(polished)) result = polished;
+    }
+  }
+  return { pts: result, isParallelogram:false };
+}
+
+/* ---------- 화면 그리기 ---------- */
+let currentQuad = null;
+let currentIsParallelogram = false;
+
+function drawQuad(pts){
+  const svg = document.getElementById('quadSvg');
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const {A,B,C,D} = pts;
+  const O = (function(){
+    const x1=A.x,y1=A.y,x2=C.x,y2=C.y,x3=B.x,y3=B.y,x4=D.x,y4=D.y;
+    const den=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+    if(Math.abs(den)<1e-9) return mid(A,C);
+    const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/den;
+    return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+  })();
+
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', currentIsParallelogram ? '#43a047' : '#1565c0');
+  poly.setAttribute('fill-opacity', currentIsParallelogram ? '0.16' : '0.10');
+  poly.setAttribute('stroke', currentIsParallelogram ? '#2e7d32' : '#1565c0');
+  poly.setAttribute('stroke-width', '2.5');
+  svg.appendChild(poly);
+
+  function mkLine(p1,p2,color,dash){
+    const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',p1.x); l.setAttribute('y1',p1.y); l.setAttribute('x2',p2.x); l.setAttribute('y2',p2.y);
+    l.setAttribute('stroke',color); l.setAttribute('stroke-width',1.6);
+    if(dash) l.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(l);
+  }
+  mkLine(A,C,'#9e9e9e','4,3');
+  mkLine(B,D,'#9e9e9e','4,3');
+
+  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
+  const labelPos = (p)=>{
+    const d = norm(sub(p,{x:cx,y:cy}));
+    return { x:p.x + d.x*20, y:p.y + d.y*20 };
+  };
+  [['A',A,'#212121'],['B',B,'#212121'],['C',C,'#212121'],['D',D,'#212121']].forEach(([name,p,color])=>{
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5.5);
+    c.setAttribute('fill',color); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+    svg.appendChild(c);
+    const lp = labelPos(p);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',lp.x); t.setAttribute('y',lp.y);
+    t.setAttribute('font-size','17'); t.setAttribute('font-weight','bold'); t.setAttribute('fill',color);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
+    t.textContent=name;
+    svg.appendChild(t);
+  });
+  const oc=document.createElementNS(NS,'circle');
+  oc.setAttribute('cx',O.x); oc.setAttribute('cy',O.y); oc.setAttribute('r',4.5);
+  oc.setAttribute('fill','#c62828'); oc.setAttribute('stroke','#fff'); oc.setAttribute('stroke-width','1.2');
+  svg.appendChild(oc);
+  const ot=document.createElementNS(NS,'text');
+  ot.setAttribute('x',O.x+11); ot.setAttribute('y',O.y-9);
+  ot.setAttribute('font-size','14.5'); ot.setAttribute('font-weight','bold'); ot.setAttribute('fill','#c62828');
+  ot.textContent='O';
+  svg.appendChild(ot);
+}
+
+/* ---------- 조건 체크박스 UI ---------- */
+let selectedConditionIds = [];
+
+function buildConditionList(){
+  const wrap = document.getElementById('condList');
+  wrap.textContent='';
+  CONDITIONS.forEach(c=>{
+    const row = document.createElement('label');
+    row.className='cond-item';
+    const cb = document.createElement('input');
+    cb.type='checkbox'; cb.value=c.id;
+    cb.addEventListener('change', onConditionChange);
+    const textWrap = document.createElement('div');
+    const lbl = document.createElement('div');
+    lbl.className='cond-label'; lbl.innerHTML=c.label;
+    const desc = document.createElement('div');
+    desc.className='cond-desc'; desc.textContent=c.desc;
+    textWrap.appendChild(lbl); textWrap.appendChild(desc);
+    row.appendChild(cb); row.appendChild(textWrap);
+    wrap.appendChild(row);
+  });
+}
+
+function currentSelectedIds(){
+  return Array.from(document.querySelectorAll('#condList input:checked')).map(i=>i.value);
+}
+
+function onConditionChange(){
+  selectedConditionIds = currentSelectedIds();
+  regenerate();
+}
+
+function regenerate(){
+  const r = generateQuad(selectedConditionIds);
+  currentQuad = r.pts;
+  currentIsParallelogram = r.isParallelogram;
+  drawQuad(currentQuad);
+  const statusEl = document.getElementById('canvasStatus');
+  if(currentIsParallelogram){
+    statusEl.textContent = '✅ 평행사변형이 되었어요!';
+    statusEl.className = 'canvas-status ok';
+    tryLogRecord(selectedConditionIds);
+  } else if(selectedConditionIds.length===0){
+    statusEl.textContent = '조건을 선택해보세요.';
+    statusEl.className = 'canvas-status no';
+  } else {
+    statusEl.textContent = '아직 평행사변형이 아니에요. (조건은 만족하지만 다른 모양도 가능해요)';
+    statusEl.className = 'canvas-status no';
+  }
+}
+
+/* ---------- 기록 저장/삭제 ---------- */
+const RECORDS_KEY_PREFIX = 'quad12_records_';
+let records = [];
+let recordsStorageKey = 'quad12_records_anon';
+
+function recordKeyOf(ids){ return [...ids].sort().join(','); }
+
+function tryLogRecord(ids){
+  const key = recordKeyOf(ids);
+  if(records.some(r=>recordKeyOf(r.conditionIds)===key)) return; // 이미 같은 조합을 기록했으면 중복 추가 안 함
+  const minimalMatches = matchedMinimal(ids);
+  const isMinimal = minimalMatches.length>0;
+  const rec = {
+    id: 'r'+Date.now()+'_'+Math.floor(Math.random()*1000),
+    conditionIds: ids,
+    conditionLabels: ids.map(id=>CONDITION_MAP[id].label),
+    isMinimal,
+    minimalName: isMinimal ? minimalMatches[0].name : null,
+    ts: Date.now()
+  };
+  records.push(rec);
+  saveRecordsLocal();
+  renderRecords();
+  RT.pushRecordsDebounced();
+}
+
+function deleteRecord(id){
+  records = records.filter(r=>r.id!==id);
+  saveRecordsLocal();
+  renderRecords();
+  RT.pushRecordsDebounced();
+}
+
+function saveRecordsLocal(){
+  try{ localStorage.setItem(recordsStorageKey, JSON.stringify(records)); }catch(e){}
+}
+function loadRecordsLocal(){
+  try{
+    const raw = localStorage.getItem(recordsStorageKey);
+    records = raw ? JSON.parse(raw) : [];
+  }catch(e){ records=[]; }
+}
+
+function minimalFoundCount(){
+  const foundKeys = new Set();
+  records.forEach(r=>{
+    if(r.isMinimal){
+      foundKeys.add(recordKeyOf(r.conditionIds));
+    }
+  });
+  return foundKeys.size;
+}
+
+function renderRecords(){
+  const list = document.getElementById('recordList');
+  list.textContent='';
+  if(records.length===0){
+    const empty=document.createElement('div');
+    empty.className='record-empty';
+    empty.textContent='아직 기록이 없어요. 조건을 선택해서 평행사변형을 만들어보세요!';
+    list.appendChild(empty);
+  } else {
+    [...records].sort((a,b)=>b.ts-a.ts).forEach(r=>{
+      const item=document.createElement('div');
+      item.className='record-item' + (r.isMinimal ? ' minimal' : '');
+      const main=document.createElement('div');
+      main.className='record-main';
+      const condsEl=document.createElement('div');
+      condsEl.className='record-conds';
+      condsEl.innerHTML = r.conditionLabels.join('&nbsp;&nbsp;+&nbsp;&nbsp;');
+      const badge=document.createElement('span');
+      if(r.isMinimal){ badge.className='record-badge'; badge.textContent='⭐ 최소조건'; }
+      else { badge.className='record-badge extra'; badge.textContent='조건 '+r.conditionIds.length+'개'; }
+      condsEl.appendChild(badge);
+      main.appendChild(condsEl);
+      const nameEl=document.createElement('div');
+      nameEl.className='record-name';
+      nameEl.textContent = r.isMinimal ? r.minimalName : '평행사변형이 되었지만 최소 조건은 아니에요.';
+      main.appendChild(nameEl);
+      const del=document.createElement('button');
+      del.className='record-del'; del.textContent='✕';
+      del.addEventListener('click', ()=>deleteRecord(r.id));
+      item.appendChild(main); item.appendChild(del);
+      list.appendChild(item);
+    });
+  }
+
+  const foundCount = minimalFoundCount();
+  document.getElementById('missionFill').style.width = Math.min(100, foundCount/6*100)+'%';
+  document.getElementById('missionText').textContent = `최소조건 발견 ${foundCount} / 6`;
+  document.getElementById('missionClearBadge').style.display = foundCount>=6 ? 'block' : 'none';
+
+  const taskBadge = document.getElementById('taskBadge');
+  if(records.length>0){
+    taskBadge.textContent='완료'; taskBadge.className='badge done';
+  } else {
+    taskBadge.textContent='미완료'; taskBadge.className='badge pending';
+  }
+  if(typeof updateProgress==='function') updateProgress();
 }
 
 /* ---------- 게이트(반/번호/이름) ---------- */
@@ -673,13 +788,20 @@ function loadProfile(){
     return (obj && obj.classNo && obj.name) ? obj : null;
   }catch(e){ return null; }
 }
-let CURRENT_PROFILE = null;
+
 function startApp(profile){
-  CURRENT_PROFILE = profile;
   document.getElementById('gateScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
+  recordsStorageKey = RECORDS_KEY_PREFIX + (profile.classNo||'x') + '_' + (profile.number||'x') + '_' + (profile.name||'x');
+  loadRecordsLocal();
+  buildConditionList();
+  buildCond2List();
+  initTextTask2();
+  regenerate();
+  renderRecords();
   RT.connect(profile.name, profile.classNo, profile.number);
 }
+
 (function initGate(){
   const profile = loadProfile();
   if(!profile){
@@ -717,56 +839,186 @@ function checkUnitAccessAndShowGate(profile){
   }catch(e){ showOpen(); }
 }
 
-/* ---------- 제출 / 백업 ---------- */
-function buildPayload(){
-  const total = TASKS.length;
-  const completed = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-  return {
-    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
-    unit: UNIT_LABEL, completed, total,
-    answers: TASKS.map(t=>({task:t.id, done:!!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:''})),
-    exportedAt: new Date().toISOString()
-  };
-}
-/* ---------- 전체 제출/취소 잠금 ----------
-   "결과 제출하기"를 누르면 이 페이지 전체(9개 활동 모두)가 더 이상 수정 불가 상태로 잠기고,
-   버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다. 선생님이 [수업 종료]를 누르면 반 전체
-   학생이 이 상태로 강제 전환되고, [수업 시작]을 누르면 다같이 취소(해제)된다 — 이때는
-   학생이 직접 "제출 취소"를 누를 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
-let finalLocked = false;
-function applyFinalLock(locked){
-  finalLocked = locked;
-  document.body.classList.toggle('final-locked', locked);
-  const btn = document.getElementById('submitBtn');
-  const statusEl = document.getElementById('submitStatus');
-  btn.textContent = locked ? '제출 취소' : '결과 제출하기';
-  btn.classList.toggle('cancel', locked);
-  statusEl.textContent = locked
-    ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.'
-    : '';
-}
+document.getElementById('reshuffleBtn').addEventListener('click', regenerate);
+
+/* ---------- 제출 / 백업 ----------
+   1페이지의 이 버튼은 "지금까지 찾은 기록"을 확인/저장하는 버튼이다(기록은 사실 찾을 때마다
+   이미 자동으로 저장된다). 이 활동 전체의 최종 제출/잠금은 2페이지의 "제출" 버튼이 담당한다
+   (마지막 페이지에서 한 번에 전체를 제출/취소하는 기존 단원들과 같은 방식). */
 document.getElementById('submitBtn').addEventListener('click', ()=>{
-  if(finalLocked){
-    if(RT.classEnded){
-      alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.');
-      return;
-    }
-    applyFinalLock(false);
-    if(RT.connected) RT.studentRef.update({ submitted:false, submittedAt:null });
-  } else {
-    applyFinalLock(true);
-    if(RT.connected) RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
-  }
+  RT.pushRecords(false);
+  const statusEl = document.getElementById('submitStatus');
+  statusEl.textContent = `✅ 지금까지의 기록을 저장했어요! (기록 ${records.length}개, 최소조건 ${minimalFoundCount()}/6) 마지막 제출은 2페이지의 "제출" 버튼으로 해주세요.`;
 });
 document.getElementById('backupBtn').addEventListener('click', ()=>{
-  const payload = buildPayload();
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const profile = loadProfile() || {};
+  const data = {
+    classNo: profile.classNo, number: profile.number, name: profile.name,
+    records, missionScore: minimalFoundCount(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `평행사변형활용_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  a.href = url; a.download = `평행사변형조건_${profile.classNo||''}반_${profile.number||''}_${profile.name||''}.json`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
+
+/* ---------- 과제2 서술형: 조건 6개를 각각 독립적으로 제출/취소 + 친구 답변 보기
+   (student1~6과 동일한 패턴 — 문장 하나를 제출하면 그 문장만 잠기고 "취소" 버튼으로
+   바뀌며, 그 조건에 한해 다른 친구들의 답변이 바로 보인다. 6개를 모두 제출해야
+   과제2 전체가 "완료"로 표시되고, 그때 1페이지(조건 선택/기록)도 함께 잠긴다.) ---------- */
+const results2 = { p2: { done:false, answers: CANONICAL_MINIMAL.map(()=>''), itemsDone: CANONICAL_MINIMAL.map(()=>false) } };
+const p2Tasks = [];
+// 이 함수는 buildCond2List()가 카드(p2-input-0 등)를 만든 "뒤"에 호출해야 한다
+// (startApp()에서 buildCond2List() 다음 줄에 호출). 카드가 없는 상태에서 먼저 실행하면
+// document.getElementById가 null을 반환해 addEventListener에서 바로 오류가 난다.
+function initTextTask2(){
+  const pageBadge = document.getElementById('taskBadge2');
+  let wasDone = false; // teacher13.html의 구글설문 전송/이름 색 표시가 s.submitted를 보므로,
+                        // "6개 모두 제출" ↔ "그중 하나라도 취소"로 바뀌는 순간에만 갱신한다.
+
+  // 6개 중 몇 개가 제출됐는지에 따라 과제2 전체 배지와, 1페이지를 잠그는
+  // body.final-locked 클래스, Firebase로 내보낼 progress.p2 값을 다시 맞춘다.
+  function syncOverall(){
+    results2.p2.itemsDone = p2Tasks.map(t=>t.isLocked());
+    results2.p2.answers = p2Tasks.map(t=>t.input.value);
+    results2.p2.done = results2.p2.itemsDone.every(Boolean);
+    pageBadge.textContent = results2.p2.done ? '완료' : '미완료';
+    pageBadge.className = 'badge ' + (results2.p2.done ? 'done' : 'pending');
+    document.body.classList.toggle('final-locked', results2.p2.done);
+    if(results2.p2.done !== wasDone){
+      wasDone = results2.p2.done;
+      if(RT.connected){
+        RT.studentRef.update(results2.p2.done
+          ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP }
+          : { submitted:false, submittedAt:null });
+      }
+    }
+    if(typeof updateProgress==='function') updateProgress();
+  }
+
+  CANONICAL_MINIMAL.forEach((m, i)=>{
+    const input = document.getElementById('p2-input-'+i);
+    const fb = document.getElementById('p2-fb-'+i);
+    const badge = document.getElementById('p2-badge-'+i);
+    const btn = document.getElementById('p2-check-'+i);
+    let locked = false;
+
+    function checkReady(){ return (input.value||'').trim().length >= PAGE2_MIN_LEN; }
+    function refreshFeedback(){
+      if(!locked){
+        const ok = checkReady();
+        fb.textContent = ok ? '준비됐어요! "제출" 버튼을 눌러보세요.' : `${PAGE2_MIN_LEN}자 이상, "~이면 평행사변형이 된다"와 같은 문장으로 적어보세요.`;
+        fb.className = 'cond2-fb ' + (ok?'ok':'');
+      }
+      return checkReady();
+    }
+    function lockUI(){
+      locked = true;
+      input.disabled = true;
+      input.classList.add('locked-fixed');
+      btn.textContent = '취소';
+      btn.classList.add('cancel');
+      badge.textContent = '완료';
+      badge.className = 'badge done';
+    }
+    function doSubmit(){
+      const ok = refreshFeedback();
+      if(!ok) return;
+      lockUI();
+      fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
+      fb.className = 'cond2-fb ok';
+      syncOverall();
+      renderClassAnswers2(i);
+      RT.pushProgress2();
+    }
+    // 선생님이 [수업 종료]를 눌렀을 때 쓰는 강제 제출 — 다 안 채웠어도 무조건 잠근다.
+    function forceSubmit(){
+      lockUI();
+      fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
+      fb.className = 'cond2-fb ok';
+      syncOverall();
+      renderClassAnswers2(i);
+      RT.pushProgress2();
+    }
+    function doCancel(){
+      locked = false;
+      input.disabled = false;
+      input.classList.remove('locked-fixed');
+      btn.textContent = '제출';
+      btn.classList.remove('cancel');
+      badge.textContent = '미완료';
+      badge.className = 'badge pending';
+      refreshFeedback();
+      syncOverall();
+      renderClassAnswers2(i);
+      RT.pushProgress2();
+    }
+    btn.addEventListener('click', ()=>{
+      if(locked){
+        if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+        doCancel();
+      } else {
+        doSubmit();
+      }
+    });
+    input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
+
+    p2Tasks.push({ isLocked:()=>locked, doSubmit, doCancel, forceSubmit, input });
+  });
+
+  syncOverall();
+
+  // 선생님의 [수업 종료]/[수업 시작]이 눌렸을 때 전체를 강제 제출/취소하기 위한 창구.
+  window.__task12p2 = {
+    isLocked: ()=> p2Tasks.every(t=>t.isLocked()),
+    forceSubmit: ()=>{ p2Tasks.forEach(t=>{ if(!t.isLocked()) t.forceSubmit(); }); },
+    doCancel: ()=>{ p2Tasks.forEach(t=>{ if(t.isLocked()) t.doCancel(); }); }
+  };
+}
+
+// 조건별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지
+// 않고 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이
+// 답을 적을 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+const classAnswersPicked2 = CANONICAL_MINIMAL.map(()=>[]);
+function renderClassAnswers2(i){
+  const wrap = document.getElementById('classAnswers-p2-'+i);
+  const list = document.getElementById('classAnswersList-p2-'+i);
+  if(!wrap || !list) return;
+  const myDone = !!(results2.p2.itemsDone && results2.p2.itemsDone[i]);
+  if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  list.textContent='';
+  const entries = Object.keys(RT.allStudents||{})
+    .filter(k=>k!==RT.studentKey)
+    .map(k=>({key:k, ...RT.allStudents[k]}))
+    .filter(s=> s.progress && s.progress.p2 && Array.isArray(s.progress.p2.itemsDone) && s.progress.p2.itemsDone[i]
+             && Array.isArray(s.progress.p2.answers) && (s.progress.p2.answers[i]||'').trim().length>0);
+  if(entries.length===0){
+    const empty=document.createElement('div'); empty.className='ca-empty';
+    empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
+    list.appendChild(empty);
+    classAnswersPicked2[i] = [];
+    return;
+  }
+  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
+  const pool = new Map(entries.map(s=>[s.key, s]));
+  let picked = classAnswersPicked2[i].filter(k=>pool.has(k));
+  const need = 5 - picked.length;
+  if(need>0){
+    const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
+    picked = picked.concat(fresh);
+  }
+  classAnswersPicked2[i] = picked;
+  picked.map(k=>pool.get(k)).forEach(s=>{
+    const item=document.createElement('div'); item.className='ca-item';
+    const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = s.progress.p2.answers[i] || '';
+    item.appendChild(name); item.appendChild(text);
+    list.appendChild(item);
+  });
+}
 
 /* ---------- 화면 잠금 / 공지 적용 ---------- */
 function applyPauseLock(paused){
@@ -775,29 +1027,10 @@ function applyPauseLock(paused){
   if(typeof updateNavButtons==='function') updateNavButtons();
 }
 
-/* ---------- Google 설문지 자동 저장 ---------- */
-function submitTaskToGoogleForm(taskId, statusText, answerText){
-  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
-  if(!CURRENT_PROFILE) return;
-  let iframe=document.getElementById('hiddenSubmitFrame');
-  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
-  const form=document.createElement('form');
-  form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
-  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
-  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
-  addField(CONFIG.ENTRY_ROOM, CURRENT_PROFILE.classNo);
-  addField(CONFIG.ENTRY_NUMBER, CURRENT_PROFILE.number);
-  addField(CONFIG.ENTRY_NAME, CURRENT_PROFILE.name);
-  addField(CONFIG.ENTRY_TASK, taskId);
-  addField(CONFIG.ENTRY_SUCCESS, statusText);
-  addField(CONFIG.ENTRY_ANSWER, answerText);
-  document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
-}
-
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
-  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
-  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null, connected:false, heartbeatTimer:null,
+  paused:false, lastSeenAnnounceTs:0, studentKey:null, allStudents:{},
   classEnded:false, _lastKnownClassEnded:null,
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
@@ -836,7 +1069,7 @@ const RT = {
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; CANONICAL_MINIMAL.forEach((_,i)=>renderClassAnswers2(i)); });
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
@@ -851,12 +1084,13 @@ const RT = {
       }
 
       // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
-      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다.
+      // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다.
       const classEnded = !!c.classEnded;
+      const task = window.__task12p2;
       if(this._lastKnownClassEnded===null){
-        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
+        if(classEnded && task && !task.isLocked()) task.forceSubmit();
       } else if(classEnded !== this._lastKnownClassEnded){
-        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
+        if(task){ classEnded ? (!task.isLocked() && task.forceSubmit()) : (task.isLocked() && task.doCancel()); }
       }
       this._lastKnownClassEnded = classEnded;
       this.classEnded = classEnded;
@@ -869,30 +1103,70 @@ const RT = {
     this.heartbeatTimer = setInterval(()=>{
       if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
     }, 15000);
-    this.pushProgress();
+    this.pushRecords(false);
   },
-  pushProgress(){
+  pushRecords(markSubmitted){
     if(!this.connected) return;
-    const progress = {};
-    TASKS.forEach(t=>{ progress['t'+t.id] = { done: !!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:'' }; });
-    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-    this.studentRef.update({ progress, completed: done, total: TASKS.length, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    const payload = {
+      records: records.map(r=>({conditionIds:r.conditionIds, conditionLabels:r.conditionLabels, isMinimal:r.isMinimal, minimalName:r.minimalName, ts:r.ts})),
+      missionScore: minimalFoundCount(),
+      recordCount: records.length,
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    };
+    if(markSubmitted){ payload.submitted = true; payload.submittedAt = firebase.database.ServerValue.TIMESTAMP; }
+    this.studentRef.update(payload);
+  },
+  pushRecordsDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushRecords(false); }, 300);
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 300ms 디바운스가 끝나지
+     않아 저장 안 된 마지막 기록(records)이 있으면 즉시 강제로 저장한다(아래쪽 pagehide/
+     visibilitychange 리스너에서 호출). */
+  flushPending(){
+    if(this._t){
+      clearTimeout(this._t);
+      this._t=null;
+      this.pushRecords(false);
+    }
+  },
+  pushProgress2(){
+    if(!this.connected) return;
+    this.studentRef.update({
+      progress: { p2: { done: !!results2.p2.done, answers: results2.p2.answers, itemsDone: results2.p2.itemsDone } },
+      lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
   }
 };
+
+/* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
+   저장되지 않은 마지막 변경사항(디바운스 대기 중인 것)을 즉시 저장한다.
+   pagehide는 페이지 이동/탭 닫기 등 대부분의 "떠나는" 상황에서 안정적으로 발생하고,
+   visibilitychange(hidden)는 모바일에서 다른 앱으로 전환하거나 화면을 끌 때도 잡아준다. */
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
 
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
 
-/* ---------- 페이지 넘기기 (활동 9개 + 마지막 제출 페이지, student1~6과 동일한 구조) ---------- */
-const pages = [...document.querySelectorAll('#pageWrap > .pgpage'), document.querySelector('.submit-panel')];
-let currentPage = 0;
-function pageTaskNum(idx){
-  const p = pages[idx];
-  if(!p) return null;
-  const n = parseInt(p.dataset.taskId, 10);
-  return isNaN(n) ? null : n;
+/* ---------- 진행률 표시 + 페이지 넘기기 (student1~6과 동일한 상단 바 구조) ---------- */
+function updateProgress(){
+  const total = 2;
+  const done = (records.length>0 ? 1 : 0) + ((results2.p2 && results2.p2.done) ? 1 : 0);
+  const textEl = document.getElementById('progressText');
+  const fillEl = document.getElementById('progressFill');
+  if(textEl) textEl.textContent = `완료 ${done} / ${total}`;
+  if(fillEl) fillEl.style.width = (done/total*100)+'%';
 }
+updateProgress();
+
+const pages = [document.getElementById('page1View'), document.getElementById('page2View')];
+let currentPage = 0;
 function showPage(idx){
   currentPage = Math.max(0, Math.min(pages.length-1, idx));
   pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });

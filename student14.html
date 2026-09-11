@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>14. 여러 가지 사각형의 성질</title>
+<title>14. 평행사변형의 조건 의사소통</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -12,13 +12,12 @@
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --purple:#6a1b9a; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
-  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
-  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
-  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
-  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
   #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
   #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
   .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar .progress-row{flex:1;margin-top:0;}
+  #stickyBar .progress-bar{background:#3a3f44;}
+  #stickyBar .progress-text{color:#e8eaed;}
   #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
   #stickyBar #nextBtn:disabled{background:#ccc;cursor:not-allowed;}
   #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
@@ -26,34 +25,58 @@
   #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
   #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
   #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
-  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 8px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
 
-  .task{background:#fff;border-radius:10px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid #eee;overflow:hidden;}
-  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;gap:12px;}
-  .task-head h2{font-size:16.5px;margin:0;line-height:1.55;font-weight:bold;color:#222;}
+  .progress-row{display:flex;align-items:center;gap:10px;}
+  .progress-bar{flex:1;height:10px;background:#e0e0e0;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:12.5px;color:#555;white-space:nowrap;font-weight:bold;}
+
+  .section-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:10px 14px;margin:22px 0 12px;}
+  .section-title:first-of-type{margin-top:0;}
+  .section-desc{font-size:13px;color:#555;background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);line-height:1.6;}
+
+  .quote-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .quote-box{flex:1 1 220px;background:#e8f0fe;border:1px solid #c5d8fb;border-radius:12px;border-top-left-radius:2px;padding:10px 14px;font-size:13px;color:#0d47a1;position:relative;}
+  .quote-box .who{font-weight:bold;font-size:12px;color:#1a237e;margin-bottom:4px;}
+  .quote-box.alt{background:#fdecea;border-color:#f3c2be;color:#8d1f13;}
+  .quote-box.alt .who{color:#c62828;}
+
+  .ref-figure{text-align:center;margin-bottom:10px;}
+  .ref-figure svg{max-width:100%;height:auto;background:#fafbfc;border:1px solid #eee;border-radius:8px;}
+  .ref-cap{font-size:11.5px;color:#888;margin-top:4px;}
+
+  .gc-wrap{text-align:center;margin:10px 0;}
+  .gc-wrap svg{width:100%;max-width:280px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;touch-action:none;}
+  .gc-tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;}
+  .gc-tools button{padding:7px 12px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;font-size:12.5px;color:#444;}
+  .gc-tools button.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .gc-tools button.reset{background:#fff3e0;border-color:#ffcc80;color:#e65100;}
+  .gc-hint{font-size:11.5px;color:#888;margin:6px 0 2px;text-align:center;}
+  .gc-wrap.gc-locked{pointer-events:none;opacity:.7;}
+
+  .task{background:#fff;border-radius:10px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 8px;gap:10px;}
+  .task-head h2{font-size:15px;margin:0;line-height:1.5;font-weight:bold;}
+  .task-head h2 .num{color:var(--blue);}
   .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
   .badge.pending{background:#eeeeee;color:#777;}
   .badge.done{background:#e8f5e9;color:var(--green);}
+  .task-body{padding:0 16px 14px;}
 
-  .two-col{display:flex;gap:16px;align-items:flex-start;padding:0 18px 18px;}
-  .col-canvas{flex:1 1 380px;min-width:300px;}
-  .col-text{flex:1 1 320px;min-width:280px;}
-  @media (max-width:760px){
-    .two-col{flex-direction:column;}
-    .two-col > div{width:100%;}
-  }
+  .ox-row{display:flex;gap:10px;margin-bottom:10px;}
+  .ox-row label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:bold;padding:8px 16px;border:1px solid #ccc;border-radius:8px;cursor:pointer;color:#555;}
+  .ox-row input{width:16px;height:16px;cursor:pointer;}
+  .ox-row label.checked{background:#e3f2fd;border-color:var(--blue);color:var(--blue);}
+  .ox-row input:disabled ~ span, .ox-row label.locked{opacity:.7;cursor:not-allowed;}
 
-  .quadSvg{width:100%;max-width:480px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto;touch-action:none;}
-  .canvas-hint{font-size:12px;color:#888;text-align:center;margin-top:8px;}
-  .canvas-actions{text-align:center;margin-top:10px;}
-  .canvas-actions button{padding:8px 14px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;font-size:12.5px;color:#444;}
-
-  .input-row textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 12px;font-size:14.5px;font-family:inherit;resize:vertical;}
-  .input-row textarea.locked-fixed{background:#f4f6f8;color:#555;}
-  .text-min-note{font-size:11.5px;color:#999;margin:6px 0;}
-  .checkBtn{margin-top:8px;padding:10px 18px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:14.5px;font-weight:bold;cursor:pointer;}
-  .checkBtn.cancel{background:#9e9e9e;}
+  .input-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;}
+  .input-row textarea{flex:1;min-width:220px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;}
+  .input-row textarea:disabled{background:#f5f5f5;color:#555;resize:none;}
+  .input-row button{padding:9px 16px;border:none;background:var(--blue);color:#fff;border-radius:6px;cursor:pointer;font-size:13px;align-self:flex-start;font-weight:bold;}
+  .input-row button.cancel{background:#9e9e9e;}
+  .text-min-note{font-size:11.5px;color:#999;margin-top:6px;}
   .feedback{font-size:13px;margin-top:8px;min-height:16px;}
   .feedback.ok{color:var(--green);font-weight:bold;}
   .feedback.no{color:#888;}
@@ -65,13 +88,22 @@
   .ca-text{font-size:13px;margin-top:2px;white-space:pre-wrap;}
   .ca-empty{color:#999;font-size:12.5px;text-align:center;padding:10px 4px;}
 
+  .submit-panel{text-align:center;}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:10px;font-size:13px;color:#333;}
+
+  #syncStatus{font-size:11.5px;color:#999;margin-top:8px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
   #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
   #lockOverlay h2{font-size:22px;margin-bottom:8px;}
   #lockOverlay p{font-size:14px;opacity:.85;}
-  body.app-paused .two-col, body.app-paused .canvas-actions{ pointer-events:none !important; opacity:.5; }
-
-  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
-  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+  body.app-paused .task{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .task{ pointer-events:none !important; opacity:.6; }
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
 
 
   #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
@@ -96,8 +128,8 @@
 <div id="gateScreen">
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
-    <h1>14. 여러 가지 사각형의 성질</h1>
-    <p class="gate-sub">직사각형, 마름모, 정사각형, 등변사다리꼴을 살펴보고 대각선의 특징을 찾아봅시다 — 김형준 선생님</p>
+    <h1>14. 평행사변형의 조건 의사소통</h1>
+    <p class="gate-sub">평행사변형의 성질을 여러 상황에 적용해 생각을 나눠봐요 — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
@@ -121,7 +153,7 @@
 
 <div id="appScreen">
   <div id="stickyBar">
-    <div id="unitTitleBar">14. 여러 가지 사각형의 성질</div>
+    <div id="unitTitleBar">14. 평행사변형의 조건 의사소통</div>
     <div class="sticky-controls">
       <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn">◀ 이전</button>
@@ -133,139 +165,197 @@
     </div>
   </div>
 
-  <div class="wrap">
+  <div class="wrap" id="pageWrap">
+
     <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
 
-    <div class="task" id="task-p1">
-      <div class="task-head">
-        <h2>[과제 1] 점 A, B, C, D를 움직여보며 직사각형의 대각선의 특징을 적어봅시다.</h2>
-        <span class="badge pending" id="badge-p1">미완료</span>
+    <!-- ===== PDF 2 : 빨대로 평행사변형 만들기 =====
+         (과제1·2 "넓이 4등분 — 직접 작도"는 student12.html의 과제3·4로 이동했다.) -->
+    <div class="pgpage" data-task-id="3">
+    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기</div>
+    <div class="section-desc">다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.</div>
+    <div class="quote-row">
+      <div class="quote-box">
+        <div class="who">수현</div>
+        나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.
       </div>
-      <div class="two-col">
-        <div class="col-canvas">
-          <svg class="quadSvg" id="svg-p1" viewBox="0 0 600 460"></svg>
-          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
-          <div class="canvas-actions">
-            <button id="reshuffle-p1">🔄 새로고침 (다른 모양으로)</button>
-          </div>
-        </div>
-        <div class="col-text">
-          <div class="input-row">
-            <textarea id="input-p1" rows="6" placeholder="예) 두 대각선의 길이가 서로 같다. (15자 이상)"></textarea>
-            <button class="checkBtn" id="check-p1">제출</button>
-          </div>
-          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-          <div class="feedback" id="fb-p1"></div>
-          <div class="class-answers" id="classAnswers-p1" style="display:none;">
-            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
-            <div class="ca-list" id="classAnswersList-p1"></div>
-          </div>
-        </div>
+      <div class="quote-box alt">
+        <div class="who">정우</div>
+        나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.
       </div>
     </div>
 
-    <div class="task" id="task-p2" style="display:none;">
+    <div class="task" id="task-3">
       <div class="task-head">
-        <h2>[과제 2] 점 A, B, C, D를 움직여보며 마름모의 대각선의 특징을 적어봅시다.</h2>
-        <span class="badge pending" id="badge-p2">미완료</span>
+        <h2><span class="num">[활동1]</span> 수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?</h2>
+        <span class="badge pending" id="badge-3">미완료</span>
       </div>
-      <div class="two-col">
-        <div class="col-canvas">
-          <svg class="quadSvg" id="svg-p2" viewBox="0 0 600 460"></svg>
-          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
-          <div class="canvas-actions">
-            <button id="reshuffle-p2">🔄 새로고침 (다른 모양으로)</button>
-          </div>
+      <div class="task-body">
+        <div class="gc-wrap" id="gcWrap-3">
+          <svg id="gcSvg-3" viewBox="0 0 260 190"></svg>
+          <div class="gc-tools"><button class="reset" id="quadReset-3">🔄 처음 모양으로</button></div>
+          <div class="gc-hint">주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요.</div>
         </div>
-        <div class="col-text">
-          <div class="input-row">
-            <textarea id="input-p2" rows="6" placeholder="예) 두 대각선이 서로 수직으로 만난다. (15자 이상)"></textarea>
-            <button class="checkBtn" id="check-p2">제출</button>
-          </div>
-          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-          <div class="feedback" id="fb-p2"></div>
-          <div class="class-answers" id="classAnswers-p2" style="display:none;">
-            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
-            <div class="ca-list" id="classAnswersList-p2"></div>
-          </div>
+        <div class="ox-row" id="ox-5">
+          <label><input type="radio" name="ox-3" value="O"><span>⭕ 항상 그렇다</span></label>
+          <label><input type="radio" name="ox-3" value="X"><span>❌ 항상 그렇지는 않다</span></label>
+        </div>
+        <div class="input-row">
+          <textarea id="input-3" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
+          <button id="check-3">제출</button>
+        </div>
+        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-3"></div>
+        <div class="class-answers" id="classAnswers-3" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-3"></div>
         </div>
       </div>
+    </div>
     </div>
 
-    <div class="task" id="task-p3" style="display:none;">
+
+    <div class="pgpage" data-task-id="4">
+    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)</div>
+
+    <div class="task" id="task-4">
       <div class="task-head">
-        <h2>[과제 3] 점 A, B, C, D를 움직여보며 정사각형의 대각선의 특징을 적어봅시다.</h2>
-        <span class="badge pending" id="badge-p3">미완료</span>
+        <h2><span class="num">[활동2]</span> 정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?</h2>
+        <span class="badge pending" id="badge-4">미완료</span>
       </div>
-      <div class="two-col">
-        <div class="col-canvas">
-          <svg class="quadSvg" id="svg-p3" viewBox="0 0 600 460"></svg>
-          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
-          <div class="canvas-actions">
-            <button id="reshuffle-p3">🔄 새로고침 (다른 모양으로)</button>
-          </div>
+      <div class="task-body">
+        <div class="gc-wrap" id="gcWrap-4">
+          <svg id="gcSvg-4" viewBox="0 0 260 190"></svg>
+          <div class="gc-tools"><button class="reset" id="quadReset-4">🔄 처음 모양으로</button></div>
+          <div class="gc-hint">주황색 점 D를 드래그해 보세요. 빨간 눈금(1개) 한 쌍, 파란 눈금(2개) 한 쌍이 각각 항상 길이가 같아요.</div>
         </div>
-        <div class="col-text">
-          <div class="input-row">
-            <textarea id="input-p3" rows="6" placeholder="예) 두 대각선의 길이가 같고 수직으로 만난다. (15자 이상)"></textarea>
-            <button class="checkBtn" id="check-p3">제출</button>
-          </div>
-          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-          <div class="feedback" id="fb-p3"></div>
-          <div class="class-answers" id="classAnswers-p3" style="display:none;">
-            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
-            <div class="ca-list" id="classAnswersList-p3"></div>
-          </div>
+        <div class="ox-row" id="ox-6">
+          <label><input type="radio" name="ox-4" value="O"><span>⭕ 항상 그렇다</span></label>
+          <label><input type="radio" name="ox-4" value="X"><span>❌ 항상 그렇지는 않다</span></label>
+        </div>
+        <div class="input-row">
+          <textarea id="input-4" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
+          <button id="check-4">제출</button>
+        </div>
+        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-4"></div>
+        <div class="class-answers" id="classAnswers-4" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-4"></div>
         </div>
       </div>
+    </div>
     </div>
 
-    <div class="task" id="task-p4" style="display:none;">
+    <!-- ===== PDF 4 : 모눈종이 위 평행사변형 ===== -->
+    <div class="pgpage" data-task-id="5">
+    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기</div>
+    <div class="section-desc">다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.</div>
+
+    <div class="task" id="task-5">
       <div class="task-head">
-        <h2>[과제 4] 점 A, B, C, D를 움직여보며 등변사다리꼴의 특징을 적어봅시다.</h2>
-        <span class="badge pending" id="badge-p4">미완료</span>
+        <h2><span class="num">[활동1]</span> 평행사변형의 세 꼭짓점이 주어진 경우</h2>
+        <span class="badge pending" id="badge-5">미완료</span>
       </div>
-      <div class="two-col">
-        <div class="col-canvas">
-          <svg class="quadSvg" id="svg-p4" viewBox="0 0 600 460"></svg>
-          <div class="canvas-hint">점 A, B, C, D를 손가락(또는 마우스)으로 드래그해보세요.</div>
-          <div class="canvas-actions">
-            <button id="reshuffle-p4">🔄 새로고침 (다른 모양으로)</button>
+      <div class="task-body">
+        <div class="gc-wrap" id="gcWrap-5">
+          <svg id="drawSvg-5" viewBox="0 0 260 208"></svg>
+          <div class="gc-tools" id="drawTools-5">
+            <button data-tool="pen">✏️ 펜</button>
+            <button data-tool="eraser">🧽 지우기</button>
+            <button id="drawClearAll-5">🗑 전체 지우기</button>
+            <button data-tool="point">📍 점찍기</button>
+            <button id="drawUndoPoint-5">↩️ 점찍기취소</button>
+            <button class="reset" id="drawReset-5">🔄 초기화</button>
           </div>
+          <div class="gc-hint">빨간 점 3개가 평행사변형의 세 꼭짓점이에요. 네 번째 점을 어디에 찍어야 할까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.</div>
         </div>
-        <div class="col-text">
-          <div class="input-row">
-            <textarea id="input-p4" rows="6" placeholder="예) 두 대각선의 길이가 서로 같다. (15자 이상)"></textarea>
-            <button class="checkBtn" id="check-p4">제출</button>
-          </div>
-          <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-          <div class="feedback" id="fb-p4"></div>
-          <div class="class-answers" id="classAnswers-p4" style="display:none;">
-            <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
-            <div class="ca-list" id="classAnswersList-p4"></div>
-          </div>
+        <div class="input-row">
+          <textarea id="input-5" rows="3" placeholder="네 번째 점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-5">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-5"></div>
+        <div class="class-answers" id="classAnswers-5" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-5"></div>
         </div>
       </div>
     </div>
+    </div>
+
+
+    <div class="pgpage" data-task-id="6">
+    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기 (계속)</div>
+
+    <div class="task" id="task-6">
+      <div class="task-head">
+        <h2><span class="num">[활동2]</span> 평행사변형의 한 꼭짓점과 두 대각선의 교점 O가 주어진 경우</h2>
+        <span class="badge pending" id="badge-6">미완료</span>
+      </div>
+      <div class="task-body">
+        <div class="gc-wrap" id="gcWrap-6">
+          <svg id="drawSvg-6" viewBox="0 0 260 208"></svg>
+          <div class="gc-tools" id="drawTools-6">
+            <button data-tool="pen">✏️ 펜</button>
+            <button data-tool="eraser">🧽 지우기</button>
+            <button id="drawClearAll-6">🗑 전체 지우기</button>
+            <button data-tool="point">📍 점찍기</button>
+            <button id="drawUndoPoint-6">↩️ 점찍기취소</button>
+            <button class="reset" id="drawReset-6">🔄 초기화</button>
+          </div>
+          <div class="gc-hint">주황 점은 평행사변형의 한 꼭짓점, 파란 점 O는 두 대각선의 교점이에요. 나머지 세 꼭짓점은 어디일까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.</div>
+        </div>
+        <div class="input-row">
+          <textarea id="input-6" rows="3" placeholder="나머지 세 꼭짓점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
+          <button id="check-6">제출</button>
+        </div>
+        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
+        <div class="feedback" id="fb-6"></div>
+        <div class="class-answers" id="classAnswers-6" style="display:none;">
+          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
+          <div class="ca-list" id="classAnswersList-6"></div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="panel submit-panel">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+
   </div>
 
   <div id="pagerNav">
     <div class="pager-buttons">
-      <span id="pageLabel">1 / 4</span>
+      <span id="pageLabel">1 / 5</span>
     </div>
   </div>
 </div>
 
 <script>
 /* ============================================================
-   14. 여러 가지 사각형의 성질
-   직사각형/마름모/정사각형은 "두 대각선이 서로를 이등분한다"는 평행사변형 성질을 공유하므로,
-   대각선의 교점 O를 화면 좌표계에서 고정한 채 각 도형 특유의 조건(직사각형=두 대각선 길이가
-   같음, 마름모=두 대각선이 수직, 정사각형=둘 다)만 追加로 걸어서 꼭짓점을 드래그해도 항상
-   그 도형이 유지되게 만든다. 등변사다리꼴은 평행사변형이 아니라서(대각선이 서로를 이등분하지
-   않음) 완전히 다른 방식 — 대칭축을 기준으로 아랫변 A,B / 윗변 D,C가 각각 좌우 대칭을 이루도록
-   좌표를 관리한다. "새로고침" 버튼을 누르면 해당 도형만 완전히 새로운 임의의 모양으로 바뀐다.
+   14. 평행사변형의 조건 의사소통 (과제13 PDF 기반)
+   (구 student13.html의 3~8번째 활동을 분리) 빨대 드래그형 사각형 + 모눈종이 그리기로 구성된 4개 활동.
+   ("넓이 4등분 — 직접 작도" 2개 활동은 student12.html의 과제3·4로 이동했다.)
+   조건에 맞춰 평행사변형을 직접 만들어보며 확인하는 활동 위주라 [평행사변형의 조건 의사소통]으로 분리했다.
+   student1~6, student11~12과 동일한 제출/취소/친구 답변 보기 패턴을 사용한다.
+
+   선생님 설정 안내: teacher14.html과 FIREBASE_CONFIG / ACTIVITY_SUFFIX를 반드시 동일하게 맞춘다.
    ============================================================ */
+const UNIT_LABEL = '14. 평행사변형의 조건 의사소통';
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
   authDomain: 'brojuntest.firebaseapp.com',
@@ -275,534 +365,440 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__quad14'; // teacher14.html과 반드시 동일해야 함
-const UNIT_LABEL = '14. 여러 가지 사각형의 성질';
-const MIN_LEN = 15; // 과제 1~4 공통: 서술형 최소 글자수
+const ACTIVITY_SUFFIX = '__quad14c'; // teacher14.html과 반드시 동일해야 함
 
-/* ---------- 실시간 확인 (Firebase) ----------
-   과제1~4 초기 렌더링(아래쪽의 regeneratePage 호출)이 스크립트 로드 즉시 실행되면서
-   RT.pushStateDebounced()를 곧바로 호출하기 때문에, RT는 반드시 그보다 앞에서 선언돼
-   있어야 한다(원래 실시간 로직 근처인 파일 뒤쪽에 있었더니, RT가 아직 초기화되기 전에
-   호출되어 "Cannot access 'RT' before initialization" 오류로 스크립트 전체가 멈추고
-   학생 화면이 아예 접속되지 않는 버그가 있었다 — student11.html과 동일한 버그). */
-const RT = {
-  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
-  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
-  classEnded:false, _lastKnownClassEnded:null,
-  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
-  connect(name, room, number){
-    const statusEl=document.getElementById('syncStatus');
-    if(!FIREBASE_CONFIG.apiKey){ return; }
-    if(!name || !room){ return; }
-    try{
-      if(!this.app){
-        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-        this.db = firebase.database();
-      }
-      statusEl.textContent = '🔄 연결 중...';
-      firebase.auth().signInAnonymously()
-        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
-        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
-    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
-  },
-  _afterAuth(uid, name, room, number, statusEl){
-    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    const key = this.sanitize(number) + '_' + this.sanitize(name);
-    this.studentKey = key;
-    this.roomRef = this.db.ref('rooms/'+roomKey);
-    this.studentRef = this.roomRef.child('students/'+key);
-    this.studentsRef = this.roomRef.child('students');
-    this.controlRef = this.roomRef.child('control');
-    this.studentRef.update({
-      name, number: number||null,
-      lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true
-    });
-    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
-
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; ['p1','p2','p3','p4'].forEach(renderClassAnswers); });
-
-    this.controlRef.on('value', snap=>{
-      const c = snap.val() || {};
-      this.paused = !!c.paused;
-      applyPauseLock(this.paused);
-      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
-        this.lastSeenAnnounceTs = c.announcementTs;
-        document.getElementById('announceText').textContent = c.announcement;
-        document.getElementById('announceBanner').style.display = 'flex';
-      } else if(!c.announcement){
-        document.getElementById('announceBanner').style.display = 'none';
-      }
-
-      const classEnded = !!c.classEnded;
-      const tasks = window.__task14;
-      const applyAll = fn => ['p1','p2','p3','p4'].forEach(p=> tasks[p] && fn(tasks[p]));
-      if(this._lastKnownClassEnded===null){
-        if(classEnded) applyAll(t=>{ if(!t.isLocked()) t.forceSubmit(); });
-      } else if(classEnded !== this._lastKnownClassEnded){
-        applyAll(t=> classEnded ? (!t.isLocked() && t.forceSubmit()) : (t.isLocked() && t.doCancel()));
-      }
-      this._lastKnownClassEnded = classEnded;
-      this.classEnded = classEnded;
-    });
-
-    this.connected = true;
-    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
-    statusEl.className = 'on';
-    clearInterval(this.heartbeatTimer);
-    this.heartbeatTimer = setInterval(()=>{
-      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
-    }, 15000);
-    this.pushProgress();
-    this.pushState();
-  },
-  pushProgress(){
-    if(!this.connected) return;
-    const allDone = ['p1','p2','p3','p4'].every(p=>results[p].done);
-    this.studentRef.update({
-      progress: { p1:results.p1, p2:results.p2, p3:results.p3, p4:results.p4 },
-      completed: allDone, total: 4,
-      lastActive: firebase.database.ServerValue.TIMESTAMP
-    });
-  },
-  pushState(){
-    if(!this.connected) return;
-    const shapes = {};
-    ['p1','p2','p3','p4'].forEach(p=>{ if(SHAPES[p].state.quad) shapes[p]=SHAPES[p].state.quad; });
-    this.studentRef.update({ shapes, lastActive: firebase.database.ServerValue.TIMESTAMP });
-  },
-  pushStateDebounced(){
-    if(!this.connected) return;
-    clearTimeout(this._t);
-    this._t = setTimeout(()=>{ this._t=null; this.pushState(); }, 150);
-  },
-  flushPending(){
-    if(this._t){
-      clearTimeout(this._t);
-      this._t=null;
-      this.pushState();
-    }
-  }
+/* ---------- 과제3·4용 "빨대(변) 드래그" 캔버스 ----------
+   [그림1]의 빨대 활동을 인터랙티브 사각형으로 구현한 것. 사각형 ABCD를 주고 학생이
+   꼭짓점 D를 드래그하면, 정해진 조건(수현: 한 쌍은 평행 유지 + 다른 한 쌍은 길이 항상
+   같음 / 정우: 두 쌍 모두 길이 항상 같음)을 만족하도록 C가 자동으로 계산되어 따라온다.
+   이렇게 하면 "빨대로 이동+회전시켜 배치"한 것과 같은 효과를 내면서도, 주어진 조건은
+   항상 정확히 유지된 채로 다양한 모양을 만들어볼 수 있다. */
+function circleCircleIntersect(c1,r1,c2,r2){
+  const dx=c2.x-c1.x, dy=c2.y-c1.y;
+  const d=Math.hypot(dx,dy);
+  if(d<1e-6 || d>r1+r2 || d<Math.abs(r1-r2)) return null;
+  const a=(r1*r1 - r2*r2 + d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0, r1*r1-a*a));
+  const px=c1.x+a*dx/d, py=c1.y+a*dy/d;
+  const ox=-dy/d*h, oy=dx/d*h;
+  return [ {x:px+ox,y:py+oy}, {x:px-ox,y:py-oy} ];
+}
+const QUAD_A = {x:70,y:150}, QUAD_B = {x:190,y:150}; // 3,4페이지 공통 기준변(고정)
+const quadState = {
+  3: { D:{x:100,y:60}, init:{x:100,y:60} },
+  4: { D:{x:100,y:60}, init:{x:100,y:60}, prevC:null }
 };
-
-/* ---------- 벡터/기하 유틸 (student11.html과 동일한 함수들) ---------- */
-const NS = 'http://www.w3.org/2000/svg';
-const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
-const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
-const vlen=a=>Math.hypot(a.x,a.y);
-const norm=a=>{const m=vlen(a)||1e-9;return {x:a.x/m,y:a.y/m};};
-const dot=(a,b)=>a.x*b.x+a.y*b.y;
-const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
-const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const clampR=(v,r)=>Math.max(r[0],Math.min(r[1],v));
-function angleBetweenDeg(v1,v2){
-  const m=vlen(v1)*vlen(v2)||1e-9;
-  let c=dot(v1,v2)/m; c=Math.max(-1,Math.min(1,c));
-  return Math.acos(c)*180/Math.PI;
+// 수현(3): AB∥DC 이고 DC의 길이는 자유, BC=AD(다른 한 쌍은 길이만 항상 같음).
+function quad5Compute(){
+  const A=QUAD_A, B=QUAD_B, D=quadState[3].D;
+  const dxLocal = D.x - A.x;
+  const C = { x: B.x - dxLocal, y: D.y };
+  return [A,B,C,D];
 }
-function lineIntersect(p1,p2,p3,p4){
-  const d1=sub(p2,p1), d2=sub(p4,p3);
-  const denom = d1.x*d2.y - d1.y*d2.x;
-  if(Math.abs(denom)<1e-9) return mid(p1,p3);
-  const t = ((p3.x-p1.x)*d2.y - (p3.y-p1.y)*d2.x)/denom;
-  return { x:p1.x+d1.x*t, y:p1.y+d1.y*t };
+// 정우(4): AB=DC 이고 BC=AD (두 쌍 모두 길이만 항상 같음) → 두 원의 교점으로 C를 구한다.
+function quad6Compute(){
+  const st = quadState[4];
+  const A=QUAD_A, B=QUAD_B, D=st.D;
+  const r1=gcDist(A,B), r2=gcDist(A,D);
+  const cands = circleCircleIntersect(D,r1,B,r2);
+  let C;
+  if(!cands){ C = st.prevC || {x:B.x, y:D.y}; }
+  else if(!st.prevC){ C = cands[0].y<=cands[1].y ? cands[0] : cands[1]; }
+  else { C = gcDist(cands[0],st.prevC)<=gcDist(cands[1],st.prevC) ? cands[0] : cands[1]; }
+  st.prevC = C;
+  return [A,B,C,D];
 }
-const TOUCH_TOL = 30;
-
-/* ---------- 4개 도형(직사각형/마름모/정사각형/등변사다리꼴) 공통 상태·드래그 엔진 ---------- */
-const SHAPE_RANGE = { rectW:[45,170], rectH:[45,170], rhombP:[45,170], rhombQ:[45,170], squareR:[45,150], trapAB:[40,190], trapY:[-190,190] };
-const MIN_GAP_TRAP = 70;
-const CENTER = {x:300, y:220};
-
-function computeLocalQuad(kind, p){
-  if(kind==='rect') return { A:{x:-p.w,y:-p.h}, B:{x:p.w,y:-p.h}, C:{x:p.w,y:p.h}, D:{x:-p.w,y:p.h} };
-  if(kind==='rhombus') return { A:{x:0,y:-p.pv}, B:{x:p.qv,y:0}, C:{x:0,y:p.pv}, D:{x:-p.qv,y:0} };
-  if(kind==='square') return { A:{x:-p.r,y:-p.r}, B:{x:p.r,y:-p.r}, C:{x:p.r,y:p.r}, D:{x:-p.r,y:p.r} };
-  return { A:{x:-p.a,y:p.y1}, B:{x:p.a,y:p.y1}, C:{x:p.b,y:p.y2}, D:{x:-p.b,y:p.y2} }; // trap
-}
-function toWorldPt(state, local){
-  const c=Math.cos(state.phi), s=Math.sin(state.phi);
-  return { x: state.T.x + local.x*c - local.y*s, y: state.T.y + local.x*s + local.y*c };
-}
-function toLocalPt(state, world){
-  const dx=world.x-state.T.x, dy=world.y-state.T.y;
-  const c=Math.cos(state.phi), s=Math.sin(state.phi);
-  return { x: dx*c+dy*s, y: -dx*s+dy*c };
-}
-function recomputeQuad(kind, state){
-  const L = computeLocalQuad(kind, state.params);
-  state.quad = { A:toWorldPt(state,L.A), B:toWorldPt(state,L.B), C:toWorldPt(state,L.C), D:toWorldPt(state,L.D) };
-}
-function regenerateShape(kind, state){
-  const rnd=(lo,hi)=>lo+Math.random()*(hi-lo);
-  state.phi = rnd(0, Math.PI*2);
-  state.T = {x:CENTER.x, y:CENTER.y};
-  if(kind==='rect'){
-    state.params = { w: rnd(60,150), h: rnd(60,150) };
-  } else if(kind==='rhombus'){
-    const base=rnd(55,95), ratio=rnd(1.3,2.0);
-    state.params = Math.random()<0.5 ? {pv:base, qv:base*ratio} : {pv:base*ratio, qv:base};
-  } else if(kind==='square'){
-    state.params = { r: rnd(70,140) };
-  } else {
-    let a=rnd(90,150), b=a*rnd(0.35,0.75);
-    if(Math.random()<0.5){ const t=a; a=b; b=t; }
-    const h=rnd(70,110);
-    state.params = { a, b, y1:h, y2:-h };
+// tickPairs: [{pair:[i,j], count:1|2, color}] — 길이가 같은 변에 눈금(tick) 표시.
+// parallelPairs: [[i,j],...] — 평행한 변에 화살표(chevron) 표시.
+function renderQuadSvg(svg, pts, opts){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const mk=(tag)=>document.createElementNS(GC_NS,tag);
+  const poly=mk('polygon');
+  poly.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill','#fff8e1'); poly.setAttribute('stroke','#333'); poly.setAttribute('stroke-width','2');
+  svg.appendChild(poly);
+  const mid=(p1,p2)=>({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2});
+  const mkLine=(a,b,color,w)=>{
+    const l=mk('line');
+    l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
+    l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||2.5); l.setAttribute('stroke-linecap','round');
+    svg.appendChild(l);
+  };
+  function drawTicks(p1,p2,color,count){
+    const m=mid(p1,p2); const u=gcNorm(gcSub(p2,p1)); const perp={x:-u.y,y:u.x};
+    const offs = count===2 ? [-3,3] : [0];
+    offs.forEach(o=>{
+      const c={x:m.x+u.x*o, y:m.y+u.y*o};
+      mkLine({x:c.x-perp.x*5,y:c.y-perp.y*5}, {x:c.x+perp.x*5,y:c.y+perp.y*5}, color, 2.5);
+    });
   }
-  recomputeQuad(kind, state);
-}
-function dragUpdateShape(kind, state, label, worldPt){
-  const local = toLocalPt(state, worldPt);
-  const p = state.params;
-  if(kind==='rect'){
-    p.w = clampR(Math.abs(local.x), SHAPE_RANGE.rectW);
-    p.h = clampR(Math.abs(local.y), SHAPE_RANGE.rectH);
-  } else if(kind==='rhombus'){
-    if(label==='A'||label==='C') p.pv = clampR(Math.abs(local.y), SHAPE_RANGE.rhombP);
-    else p.qv = clampR(Math.abs(local.x), SHAPE_RANGE.rhombQ);
-  } else if(kind==='square'){
-    p.r = clampR((Math.abs(local.x)+Math.abs(local.y))/2, SHAPE_RANGE.squareR);
-  } else {
-    if(label==='A'||label==='B'){
-      p.a = clampR(Math.abs(local.x), SHAPE_RANGE.trapAB);
-      p.y1 = clampR(Math.max(local.y, p.y2+MIN_GAP_TRAP), SHAPE_RANGE.trapY);
-    } else {
-      p.b = clampR(Math.abs(local.x), SHAPE_RANGE.trapAB);
-      p.y2 = clampR(Math.min(local.y, p.y1-MIN_GAP_TRAP), SHAPE_RANGE.trapY);
-    }
+  function drawArrow(p1,p2,color){
+    const m=mid(p1,p2); const u=gcNorm(gcSub(p2,p1)); const perp={x:-u.y,y:u.x};
+    const tip={x:m.x+u.x*5,y:m.y+u.y*5};
+    mkLine({x:m.x-u.x*4+perp.x*4,y:m.y-u.y*4+perp.y*4}, tip, color, 2.5);
+    mkLine({x:m.x-u.x*4-perp.x*4,y:m.y-u.y*4-perp.y*4}, tip, color, 2.5);
   }
-  recomputeQuad(kind, state);
-}
-function findVertexNear(quad, pt, tol){
-  let best=null, bd=tol;
-  ['A','B','C','D'].forEach(k=>{
-    const d=dist(quad[k], pt);
-    if(d<bd){ bd=d; best=k; }
-  });
-  return best;
-}
-function getSvgCoords(svg, e){
-  const pt = svg.createSVGPoint();
-  const t = e.touches && e.touches[0] ? e.touches[0] : e;
-  pt.x=t.clientX; pt.y=t.clientY;
-  const ctm = svg.getScreenCTM().inverse();
-  const loc = pt.matrixTransform(ctm);
-  return {x:loc.x, y:loc.y};
-}
-
-/* ---------- 그리기 유틸 ---------- */
-function labelOffset(p, center, d){
-  const dir = norm(sub(p, center));
-  return { x:p.x + dir.x*d, y:p.y + dir.y*d };
-}
-function mkLine(svg,p1,p2,color,dash,w){
-  const l=document.createElementNS(NS,'line');
-  l.setAttribute('x1',p1.x); l.setAttribute('y1',p1.y); l.setAttribute('x2',p2.x); l.setAttribute('y2',p2.y);
-  l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||1.6);
-  if(dash) l.setAttribute('stroke-dasharray',dash);
-  svg.appendChild(l);
-}
-function mkText(svg,p,text,color,size,bold){
-  const t=document.createElementNS(NS,'text');
-  t.setAttribute('x',p.x); t.setAttribute('y',p.y);
-  t.setAttribute('font-size',size||12); if(bold) t.setAttribute('font-weight','bold');
-  t.setAttribute('fill',color); t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
-  t.textContent=text;
-  svg.appendChild(t);
-}
-function arcPath(b,a,c,r){
-  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
-  let diff=a2-a1;
-  while(diff<=-Math.PI) diff+=2*Math.PI;
-  while(diff>Math.PI) diff-=2*Math.PI;
-  const end=a1+diff;
-  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
-  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
-  const sweep = diff>0?1:0;
-  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, mid:{x:b.x+(r+15)*Math.cos(a1+diff/2), y:b.y+(r+15)*Math.sin(a1+diff/2)}};
-}
-function drawAngleArc(svg, vertex, ref1, ref2, r, color){
-  const info=arcPath(vertex, ref1, ref2, r);
-  const path=document.createElementNS(NS,'path');
-  path.setAttribute('d',info.path); path.setAttribute('stroke',color); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
-  svg.appendChild(path);
-  const deg=angleBetweenDeg(sub(ref1,vertex), sub(ref2,vertex));
-  mkText(svg, info.mid, deg.toFixed(0)+'°', color, 12, true);
-}
-function drawVertices(svg, quad, center){
-  ['A','B','C','D'].forEach(name=>{
-    const p=quad[name];
-    const c=document.createElementNS(NS,'circle');
-    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',7);
-    c.setAttribute('fill','#212121'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+  (opts.parallelPairs||[]).forEach(([i,j])=> drawArrow(pts[i],pts[j], opts.parallelColor||'#00838f'));
+  (opts.tickPairs||[]).forEach(tp=> tp.pair.forEach(([i,j])=> drawTicks(pts[i],pts[j], tp.color, tp.count)));
+  const labels=['A','B','C','D'];
+  pts.forEach((p,i)=>{
+    const isDrag = i===opts.dragIndex;
+    const c=mk('circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r', isDrag?7:4);
+    c.setAttribute('fill', isDrag?'#e65100':'#1565c0');
     svg.appendChild(c);
-    const lp=labelOffset(p, center, -22);
-    mkText(svg, lp, name, '#212121', 19, true);
+    const t=mk('text');
+    t.setAttribute('x', p.x + (i===2?8:(i===3?-14:8)));
+    t.setAttribute('y', p.y - 8);
+    t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('fill', isDrag?'#e65100':'#1565c0');
+    t.textContent = labels[i];
+    svg.appendChild(t);
+  });
+}
+function setupQuadDragTask(taskId, computeFn, dPoint, opts){
+  const svg = document.getElementById('gcSvg-'+taskId);
+  if(!svg) return;
+  function redraw(){ renderQuadSvg(svg, computeFn(), opts); }
+  redraw();
+  let dragging=false;
+  function getPt(e){
+    const rect=svg.getBoundingClientRect();
+    const t=e.touches && e.touches[0] ? e.touches[0] : e;
+    return { x:(t.clientX-rect.left)*(260/rect.width), y:(t.clientY-rect.top)*(190/rect.height) };
+  }
+  function clamp(p){ return { x:Math.max(15,Math.min(245,p.x)), y:Math.max(15,Math.min(135,p.y)) }; }
+  function locked(){
+    const wrap = svg.closest('.gc-wrap');
+    return document.body.classList.contains('app-paused') || document.body.classList.contains('final-locked') || (wrap && wrap.classList.contains('gc-locked'));
+  }
+  const onDown = e=>{
+    if(locked()) return;
+    const p=getPt(e);
+    if(gcDist(p,dPoint) > 30) return; // 주황 점 근처를 눌러야 드래그 시작
+    dragging=true; e.preventDefault();
+  };
+  const onMove = e=>{
+    if(!dragging || locked()) return;
+    e.preventDefault();
+    const p=clamp(getPt(e));
+    dPoint.x=p.x; dPoint.y=p.y;
+    redraw();
+  };
+  const onUp = ()=>{ dragging=false; };
+  svg.addEventListener('mousedown', onDown);
+  svg.addEventListener('touchstart', onDown, {passive:false});
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, {passive:false});
+  window.addEventListener('mouseup', onUp);
+  window.addEventListener('touchend', onUp);
+  const resetBtn = document.getElementById('quadReset-'+taskId);
+  if(resetBtn) resetBtn.addEventListener('click', ()=>{
+    dPoint.x = quadState[taskId].init.x; dPoint.y = quadState[taskId].init.y;
+    if(taskId===4) quadState[4].prevC = null;
+    redraw();
   });
 }
 
-/* 직사각형/마름모/정사각형 공통 렌더 — 대각선 교점 O에서 갈라지는 12개 각(삼각형 ABO/AOD/OCD/OBC)과
-   OA,OB,OC,OD 길이를 표시한다. */
-function drawParallelogramFamily(svg, quad){
-  while(svg.firstChild) svg.removeChild(svg.firstChild);
-  const {A,B,C,D} = quad;
-  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
-  const center={x:cx,y:cy};
-  const O = mid(A,C);
-
-  const poly = document.createElementNS(NS,'polygon');
-  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.10');
-  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2.5');
-  svg.appendChild(poly);
-
-  mkLine(svg,A,C,'#9e9e9e','4,3');
-  mkLine(svg,B,D,'#9e9e9e','4,3');
-
-  // 삼각형 ABO / AOD / OCD / OBC의 세 각씩, 총 12개
-  drawAngleArc(svg, A, O, B, 20, '#e65100'); // OAB
-  drawAngleArc(svg, B, A, O, 20, '#e65100'); // ABO
-  drawAngleArc(svg, O, A, B, 14, '#e65100'); // AOB
-  drawAngleArc(svg, A, O, D, 30, '#e65100'); // OAD
-  drawAngleArc(svg, D, O, A, 20, '#e65100'); // ODA
-  drawAngleArc(svg, O, A, D, 22, '#e65100'); // AOD
-  drawAngleArc(svg, C, O, D, 20, '#e65100'); // OCD
-  drawAngleArc(svg, D, O, C, 30, '#e65100'); // ODC
-  drawAngleArc(svg, O, C, D, 18, '#e65100'); // COD
-  drawAngleArc(svg, B, O, C, 20, '#e65100'); // OBC
-  drawAngleArc(svg, C, O, B, 30, '#e65100'); // OCB
-  drawAngleArc(svg, O, B, C, 26, '#e65100'); // BOC
-
-  // O, OA/OB/OC/OD
-  const ocirc=document.createElementNS(NS,'circle');
-  ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
-  ocirc.setAttribute('fill','#8e24aa');
-  svg.appendChild(ocirc);
-  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 16, true);
-  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
-    const m=mid(O,p);
-    const outward=labelOffset(m, center, 3);
-    mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12.5, false);
-  });
-
-  drawVertices(svg, quad, center);
-}
-
-/* 등변사다리꼴 렌더 — 두 대각선의 실제 교점 O(등분점이 아님), OA~OD 길이, 네 꼭짓점의 전체 각
-   (DAB,ABC,BCD,CDA), 네 변의 길이(AB,BC,CD,DA)를 표시한다. */
-function drawTrapezoid(svg, quad){
-  while(svg.firstChild) svg.removeChild(svg.firstChild);
-  const {A,B,C,D} = quad;
-  const cx=(A.x+B.x+C.x+D.x)/4, cy=(A.y+B.y+C.y+D.y)/4;
-  const center={x:cx,y:cy};
-  const O = lineIntersect(A,C,B,D);
-
-  const poly = document.createElementNS(NS,'polygon');
-  poly.setAttribute('points', [A,B,C,D].map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('fill', '#1565c0'); poly.setAttribute('fill-opacity','0.10');
-  poly.setAttribute('stroke', '#1565c0'); poly.setAttribute('stroke-width', '2.5');
-  svg.appendChild(poly);
-
-  mkLine(svg,A,C,'#9e9e9e','4,3');
-  mkLine(svg,B,D,'#9e9e9e','4,3');
-
-  // 변 길이 라벨 (AB,BC,CD,DA)
-  [['A','B',A,B],['B','C',B,C],['C','D',C,D],['D','A',D,A]].forEach(([ln1,ln2,p1,p2])=>{
-    const m=mid(p1,p2);
-    const outward=labelOffset(m, center, 16);
-    mkText(svg, outward, (dist(p1,p2)*0.1).toFixed(1), '#1565c0', 14, true);
-  });
-
-  // 네 꼭짓점의 전체 내각 (DAB, ABC, BCD, CDA)
-  drawAngleArc(svg, A, D, B, 26, '#e65100');
-  drawAngleArc(svg, B, A, C, 26, '#e65100');
-  drawAngleArc(svg, C, B, D, 26, '#e65100');
-  drawAngleArc(svg, D, C, A, 26, '#e65100');
-
-  // O, OA/OB/OC/OD
-  const ocirc=document.createElementNS(NS,'circle');
-  ocirc.setAttribute('cx',O.x); ocirc.setAttribute('cy',O.y); ocirc.setAttribute('r',4);
-  ocirc.setAttribute('fill','#8e24aa');
-  svg.appendChild(ocirc);
-  mkText(svg, {x:O.x+13,y:O.y-11}, 'O', '#8e24aa', 16, true);
-  [['A',A],['B',B],['C',C],['D',D]].forEach(([name,p])=>{
-    const m=mid(O,p);
-    const outward=labelOffset(m, center, 3);
-    mkText(svg, outward, 'O'+name+'='+(dist(O,p)*0.1).toFixed(1), '#8e24aa', 12, false);
-  });
-
-  drawVertices(svg, quad, center);
-}
-
-/* ---------- 과제별 상태 ---------- */
-const SHAPES = {
-  p1: {kind:'rect', state:{}},
-  p2: {kind:'rhombus', state:{}},
-  p3: {kind:'square', state:{}},
-  p4: {kind:'trap', state:{}}
+/* ---------- 과제5·6용 "모눈종이 그리기" 캔버스 ----------
+   학생이 직접 펜으로 그림을 그리거나("펜"), 자기가 생각하는 네 번째(또는 나머지) 꼭짓점의
+   위치에 점을 찍어볼 수 있게("점찍기") 한 인터랙티브 모눈종이. 빨간/파란 기준점은 원래
+   ref-figure에 있던 것과 같은 위치에 고정으로 그려주고(학생이 지우거나 옮길 수 없음),
+   학생이 그린 선과 찍은 점만 지우기/취소/초기화 대상이 된다.
+   완료 조건(제출 가능 여부)은 다른 활동처럼 서술형 글자 수만 본다 — 그림은 생각을 돕는
+   보조 도구일 뿐, 자동 채점 대상이 아니다(선생님이 글과 그림을 함께 보고 판단한다). */
+// 모눈종이는 가로 10칸 x 세로 8칸(칸 크기 26px, viewBox 260x208)이고, 좌표는 왼쪽 아래를
+// 원점(0,0)으로 하는 격자 좌표(가로 gx, 세로 gy)로 적은 뒤 SVG 좌표로 변환한다.
+const DRAW_GRID_SIZE = 26;
+const DRAW_GRID_ROWS = 8;
+function gridToSvg(gx, gy){ return { x: gx*DRAW_GRID_SIZE, y: (DRAW_GRID_ROWS-gy)*DRAW_GRID_SIZE }; }
+const DRAW_REFS = {
+  5: [
+    Object.assign(gridToSvg(3,3), {color:'#c62828'}),
+    Object.assign(gridToSvg(7,4), {color:'#c62828'}),
+    Object.assign(gridToSvg(5,6), {color:'#c62828'})
+  ],
+  6: [
+    Object.assign(gridToSvg(2,6), {color:'#e65100'}),
+    Object.assign(gridToSvg(5,4), {color:'#1565c0', label:'O'})
+  ]
 };
-let dragging = null; // {page, label} 또는 null
-
-function renderPage(page){
-  const svg = document.getElementById('svg-'+page);
-  const {kind, state} = SHAPES[page];
-  if(kind==='trap') drawTrapezoid(svg, state.quad); else drawParallelogramFamily(svg, state.quad);
-  RT.pushStateDebounced();
+const DRAW_CANVASES = {};
+class DrawCanvas{
+  constructor(svg, refs, gridId){
+    this.svg=svg; this.refs=refs; this.gridId=gridId;
+    this.strokes=[]; this.points=[]; this.tool='pen'; this.curStroke=null;
+    this.render();
+  }
+  render(){
+    while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+    const mk=(t)=>document.createElementNS(GC_NS,t);
+    const defs=mk('defs');
+    const pat=mk('pattern'); pat.setAttribute('id',this.gridId); pat.setAttribute('width','26'); pat.setAttribute('height','26'); pat.setAttribute('patternUnits','userSpaceOnUse');
+    const gp=mk('path'); gp.setAttribute('d','M 26 0 L 0 0 0 26'); gp.setAttribute('fill','none'); gp.setAttribute('stroke','#ddd'); gp.setAttribute('stroke-width','1');
+    pat.appendChild(gp); defs.appendChild(pat); this.svg.appendChild(defs);
+    const rect=mk('rect'); rect.setAttribute('width','260'); rect.setAttribute('height','208'); rect.setAttribute('fill','url(#'+this.gridId+')');
+    this.svg.appendChild(rect);
+    const drawStroke=(st)=>{
+      const pl=mk('polyline');
+      pl.setAttribute('points', st.map(p=>`${p.x},${p.y}`).join(' '));
+      pl.setAttribute('fill','none'); pl.setAttribute('stroke','#333'); pl.setAttribute('stroke-width','2.5');
+      pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+      this.svg.appendChild(pl);
+    };
+    this.strokes.forEach(drawStroke);
+    if(this.curStroke && this.curStroke.length>1) drawStroke(this.curStroke);
+    this.points.forEach(p=>{
+      const c=mk('circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','5');
+      c.setAttribute('fill','#e65100'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+      this.svg.appendChild(c);
+    });
+    this.refs.forEach(r=>{
+      const c=mk('circle'); c.setAttribute('cx',r.x); c.setAttribute('cy',r.y); c.setAttribute('r','4'); c.setAttribute('fill',r.color);
+      this.svg.appendChild(c);
+      if(r.label){
+        const t=mk('text'); t.setAttribute('x',r.x+8); t.setAttribute('y',r.y-4);
+        t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('fill',r.color);
+        t.textContent=r.label;
+        this.svg.appendChild(t);
+      }
+    });
+  }
+  findStrokeNear(pt, tol){
+    for(let i=this.strokes.length-1;i>=0;i--){
+      const st=this.strokes[i];
+      if(st.length===1){ if(gcDist(pt, st[0])<tol) return i; continue; }
+      for(let j=0;j<st.length-1;j++){
+        if(distToSegmentPts(pt, st[j], st[j+1]) < tol) return i;
+      }
+    }
+    return -1;
+  }
 }
-function regeneratePage(page){
-  const {kind, state} = SHAPES[page];
-  regenerateShape(kind, state);
-  renderPage(page);
+function setupDrawTask(taskId, onChange){
+  const svg = document.getElementById('drawSvg-'+taskId);
+  const refs = DRAW_REFS[taskId];
+  if(!svg || !refs) return;
+  const dc = new DrawCanvas(svg, refs, 'drawgrid'+taskId);
+  DRAW_CANVASES[taskId] = dc;
+  const toolBtns = document.querySelectorAll(`#drawTools-${taskId} button[data-tool]`);
+  function setTool(t){ dc.tool=t; toolBtns.forEach(b=> b.classList.toggle('active', b.dataset.tool===t)); }
+  toolBtns.forEach(b=> b.addEventListener('click', ()=> setTool(b.dataset.tool)));
+  setTool('pen');
+  function getPt(e){
+    const rect = svg.getBoundingClientRect();
+    const t = e.touches && e.touches[0] ? e.touches[0] : e;
+    return { x:(t.clientX-rect.left)*(260/rect.width), y:(t.clientY-rect.top)*(208/rect.height) };
+  }
+  // "점찍기" 도구는 자유 위치가 아니라 항상 가장 가까운 격자점(모눈종이 눈금 교차점)에만
+  // 찍히도록 스냅한다(펜 도구는 자유롭게 그릴 수 있도록 스냅하지 않는다).
+  function snapToGrid(p){
+    const x = Math.max(0, Math.min(260, Math.round(p.x/DRAW_GRID_SIZE)*DRAW_GRID_SIZE));
+    const y = Math.max(0, Math.min(208, Math.round(p.y/DRAW_GRID_SIZE)*DRAW_GRID_SIZE));
+    return {x,y};
+  }
+  function locked(){
+    const wrap = svg.closest('.gc-wrap');
+    return document.body.classList.contains('app-paused') || document.body.classList.contains('final-locked') || (wrap && wrap.classList.contains('gc-locked'));
+  }
+  let dragging=false;
+  const onDown = e=>{
+    if(locked()) return;
+    e.preventDefault();
+    const p = getPt(e);
+    if(dc.tool==='pen'){ dc.curStroke=[p]; dragging=true; dc.render(); }
+    else if(dc.tool==='eraser'){
+      dragging=true;
+      const idx=dc.findStrokeNear(p,10);
+      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); onChange(); }
+    } else if(dc.tool==='point'){
+      dc.points.push(snapToGrid(p)); dc.render(); onChange();
+    }
+  };
+  const onMove = e=>{
+    if(!dragging || locked()) return;
+    e.preventDefault();
+    const p = getPt(e);
+    if(dc.tool==='pen' && dc.curStroke){ dc.curStroke.push(p); dc.render(); }
+    else if(dc.tool==='eraser'){
+      const idx=dc.findStrokeNear(p,10);
+      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); onChange(); }
+    }
+  };
+  const onUp = ()=>{
+    if(dc.tool==='pen' && dc.curStroke){
+      if(dc.curStroke.length>1){ dc.strokes.push(dc.curStroke); onChange(); }
+      dc.curStroke=null;
+      dc.render();
+    }
+    dragging=false;
+  };
+  svg.addEventListener('mousedown', onDown);
+  svg.addEventListener('touchstart', onDown, {passive:false});
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, {passive:false});
+  window.addEventListener('mouseup', onUp);
+  window.addEventListener('touchend', onUp);
+  const clearBtn = document.getElementById('drawClearAll-'+taskId);
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; dc.render(); onChange(); });
+  const undoBtn = document.getElementById('drawUndoPoint-'+taskId);
+  if(undoBtn) undoBtn.addEventListener('click', ()=>{ if(locked()) return; dc.points.pop(); dc.render(); onChange(); });
+  const resetBtn = document.getElementById('drawReset-'+taskId);
+  if(resetBtn) resetBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; setTool('pen'); dc.render(); onChange(); });
 }
-['p1','p2','p3','p4'].forEach(page=>{
-  regeneratePage(page);
-  const svg = document.getElementById('svg-'+page);
-  const down = e=>{
-    e.preventDefault();
-    if(document.body.classList.contains('app-paused')) return;
-    const pt = getSvgCoords(svg, e);
-    const {state} = SHAPES[page];
-    const v = findVertexNear(state.quad, pt, TOUCH_TOL);
-    if(v) dragging = {page, label:v};
-  };
-  const move = e=>{
-    if(!dragging || dragging.page!==page) return;
-    e.preventDefault();
-    const pt = getSvgCoords(svg, e);
-    const {kind, state} = SHAPES[page];
-    dragUpdateShape(kind, state, dragging.label, pt);
-    renderPage(page);
-  };
-  const up = ()=>{ dragging=null; };
-  svg.addEventListener('mousedown', down);
-  svg.addEventListener('touchstart', down, {passive:false});
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, {passive:false});
-  window.addEventListener('mouseup', up);
-  window.addEventListener('touchend', up);
-  document.getElementById('reshuffle-'+page).addEventListener('click', ()=> regeneratePage(page));
-});
 
-/* ---------- 과제 1~4 서술형: 제출/취소 잠금 + 친구 답변 보기 (기존 단원들과 동일한 패턴) ---------- */
-const results = { p1:{done:false,value:''}, p2:{done:false,value:''}, p3:{done:false,value:''}, p4:{done:false,value:''} };
-const classAnswersPicked = { p1:[], p2:[], p3:[], p4:[] };
-window.__task14 = {};
-['p1','p2','p3','p4'].forEach(page=>{
-  const badge=document.getElementById('badge-'+page);
-  const fb=document.getElementById('fb-'+page);
-  const input=document.getElementById('input-'+page);
-  const btn=document.getElementById('check-'+page);
+/* ---------- 과제 정의 ---------- */
+const TASKS = [
+  { id:3, minLen:10, kind:'ox', quad:'sh' },
+  { id:4, minLen:10, kind:'ox', quad:'jw' },
+  { id:5, minLen:15, kind:'text', draw:true },
+  { id:6, minLen:15, kind:'text', draw:true }
+];
+const results = {};
+
+function checkReady(task){
+  const val = (document.getElementById('input-'+task.id).value||'').trim();
+  const lenOk = val.length >= task.minLen;
+  if(task.kind==='ox'){
+    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
+    return lenOk && !!picked;
+  }
+  return lenOk;
+}
+function currentValue(task){
+  const val = document.getElementById('input-'+task.id).value;
+  if(task.kind==='ox'){
+    const picked = document.querySelector(`input[name="ox-${task.id}"]:checked`);
+    return (picked ? `[${picked.value}] ` : '') + val;
+  }
+  return val;
+}
+
+function initTask(task){
+  const badge=document.getElementById(`badge-${task.id}`);
+  const fb=document.getElementById(`fb-${task.id}`);
+  const input=document.getElementById(`input-${task.id}`);
+  const btn=document.getElementById(`check-${task.id}`);
+  const oxWrap = task.kind==='ox' ? document.getElementById(`ox-${task.id}`) : null;
+  const gcWrap = (task.quad || task.draw) ? document.getElementById(`gcWrap-${task.id}`) : null;
   let locked = false;
 
-  function checkReady(){ return (input.value||'').trim().length>=MIN_LEN; }
   function refreshFeedback(){
-    if(!locked){
-      const okFlag = checkReady();
-      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러 제출해보세요.' : `조금 더 자세히 적어볼까요? (${MIN_LEN}자 이상)`;
+    if(locked) return true;
+    const okFlag = checkReady(task);
+    if(task.kind==='ox' && !document.querySelector(`input[name="ox-${task.id}"]:checked`)){
+      fb.textContent = '⭕ 또는 ❌ 중 하나를 먼저 골라주세요.';
+      fb.className = 'feedback no';
+    } else {
+      fb.textContent = okFlag ? '준비됐어요! "제출" 버튼을 눌러보세요.' : `조금 더 자세히 적어볼까요? (${task.minLen}자 이상)`;
       fb.className = 'feedback ' + (okFlag?'ok':'no');
     }
-    return checkReady();
+    return okFlag;
   }
-  function lockUI(){
+  if(task.quad==='sh') setupQuadDragTask(3, quad5Compute, quadState[3].D, { dragIndex:3, parallelPairs:[[0,1],[3,2]], tickPairs:[{pair:[[1,2],[3,0]], count:1, color:'#c62828'}], parallelColor:'#00838f' });
+  if(task.quad==='jw') setupQuadDragTask(4, quad6Compute, quadState[4].D, { dragIndex:3, tickPairs:[{pair:[[0,1],[3,2]], count:1, color:'#c62828'},{pair:[[1,2],[3,0]], count:2, color:'#1565c0'}] });
+  if(task.draw) setupDrawTask(task.id, refreshFeedback);
+  function setOxLocked(disabled){
+    if(!oxWrap) return;
+    oxWrap.querySelectorAll('input').forEach(r=>{ r.disabled = disabled; });
+    oxWrap.querySelectorAll('label').forEach(l=>{ l.classList.toggle('locked', disabled); });
+  }
+  function setConstructLocked(disabled){
+    if(gcWrap) gcWrap.classList.toggle('gc-locked', disabled);
+  }
+  function doSubmit(){
+    const ok = refreshFeedback();
+    if(!ok) return;
     locked = true;
     input.disabled = true;
     input.classList.add('locked-fixed');
+    setOxLocked(true);
+    setConstructLocked(true);
     btn.textContent = '취소';
     btn.classList.add('cancel');
-    results[page] = {done:true, value:input.value};
-    badge.textContent = '완료';
-    badge.className = 'badge done';
-    updateProgress();
-  }
-  function doSubmit(){
-    const canSubmit = refreshFeedback();
-    if(!canSubmit) return;
-    lockUI();
+    results[task.id] = {done:true, value: currentValue(task)};
+    badge.textContent='완료'; badge.className='badge done';
     fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
     fb.className = 'feedback ok';
-    renderClassAnswers(page);
-    RT.pushProgress();
-  }
-  function forceSubmit(){
-    lockUI();
-    fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
-    fb.className = 'feedback ok';
-    renderClassAnswers(page);
-    RT.pushProgress();
+    renderClassAnswersFor(task);
+    updateProgress();
+    // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
   }
   function doCancel(){
     locked = false;
     input.disabled = false;
     input.classList.remove('locked-fixed');
+    setOxLocked(false);
+    setConstructLocked(false);
     btn.textContent = '제출';
     btn.classList.remove('cancel');
-    results[page] = {done:false, value:input.value};
-    badge.textContent = '미완료';
-    badge.className = 'badge pending';
+    results[task.id] = {done:false, value: currentValue(task)};
+    badge.textContent='미완료'; badge.className='badge pending';
     refreshFeedback();
-    renderClassAnswers(page);
-    RT.pushProgress();
+    renderClassAnswersFor(task);
     updateProgress();
   }
-  btn.addEventListener('click', ()=>{
-    if(locked){
-      if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
-      doCancel();
-    } else {
-      doSubmit();
-    }
-  });
+  btn.addEventListener('click', ()=>{ locked ? doCancel() : doSubmit(); });
   input.addEventListener('input', ()=>{ if(!locked) refreshFeedback(); });
+  if(oxWrap){
+    oxWrap.querySelectorAll('input').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        oxWrap.querySelectorAll('label').forEach(l=> l.classList.toggle('checked', l.querySelector('input').checked));
+        if(!locked) refreshFeedback();
+      });
+    });
+  }
+  results[task.id] = {done:false, value:''};
   refreshFeedback();
-
-  window.__task14[page] = {doSubmit, doCancel, forceSubmit, isLocked:()=>locked};
-});
-
-/* ---------- 진행률 표시 ---------- */
-function updateProgress(){
-  const total = 4;
-  const done = ['p1','p2','p3','p4'].filter(p=>results[p].done).length;
-  const textEl = document.getElementById('progressText');
-  const fillEl = document.getElementById('progressFill');
-  if(textEl) textEl.textContent = `완료 ${done} / ${total}`;
-  if(fillEl) fillEl.style.width = (done/total*100)+'%';
 }
-updateProgress();
+TASKS.forEach(initTask);
 
-function renderClassAnswers(page){
-  const wrap=document.getElementById('classAnswers-'+page);
-  const list=document.getElementById('classAnswersList-'+page);
-  const myDone = !!(results[page] && results[page].done);
+// 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
+// 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
+// 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+const classAnswersPicked = {};
+function renderClassAnswersFor(task){
+  const wrap=document.getElementById(`classAnswers-${task.id}`);
+  const list=document.getElementById(`classAnswersList-${task.id}`);
+  const myDone = !!(results[task.id] && results[task.id].done);
   if(!RT.connected || !myDone){ wrap.style.display='none'; return; }
   wrap.style.display='block';
   list.textContent='';
   const entries = Object.keys(RT.allStudents||{})
     .filter(k=>k!==RT.studentKey)
     .map(k=>({key:k, ...RT.allStudents[k]}))
-    .filter(s=> s.progress && s.progress[page] && s.progress[page].value && String(s.progress[page].value).trim().length>0);
+    .filter(s=> s.progress && s.progress['t'+task.id] && s.progress['t'+task.id].value && String(s.progress['t'+task.id].value).trim().length>0);
   if(entries.length===0){
     const empty=document.createElement('div'); empty.className='ca-empty';
     empty.textContent='아직 다른 친구들의 답변이 없어요. 잠시 후 다시 확인해보세요.';
     list.appendChild(empty);
-    classAnswersPicked[page] = [];
+    classAnswersPicked[task.id] = [];
     return;
   }
+  // 전체가 아니라 최대 5명만 보여준다. 이미 뽑혔던 친구는 그대로 두고, 빈 자리만 새로 채운다.
   const pool = new Map(entries.map(s=>[s.key, s]));
-  let picked = classAnswersPicked[page].filter(k=>pool.has(k));
+  let picked = (classAnswersPicked[task.id]||[]).filter(k=>pool.has(k));
   const need = 5 - picked.length;
   if(need>0){
     const fresh = entries.filter(s=>!picked.includes(s.key)).sort(()=>Math.random()-0.5).slice(0,need).map(s=>s.key);
     picked = picked.concat(fresh);
   }
-  classAnswersPicked[page] = picked;
+  classAnswersPicked[task.id] = picked;
   picked.map(k=>pool.get(k)).forEach(s=>{
     const item=document.createElement('div'); item.className='ca-item';
     const name=document.createElement('div'); name.className='ca-name'; name.textContent = s.name || '(이름없음)';
-    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress[page].value);
+    const text=document.createElement('div'); text.className='ca-text'; text.textContent = String(s.progress['t'+task.id].value);
     item.appendChild(name); item.appendChild(text);
     list.appendChild(item);
   });
+}
+function renderAllClassAnswers(){ TASKS.forEach(t=>renderClassAnswersFor(t)); }
+
+function updateProgress(){
+  const total = TASKS.length;
+  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  document.getElementById('progressText').textContent = `완료 ${done} / ${total}`;
+  document.getElementById('progressFill').style.width = (done/total*100)+'%';
+  RT.pushProgress();
 }
 
 /* ---------- 게이트(반/번호/이름) ---------- */
@@ -815,13 +811,13 @@ function loadProfile(){
     return (obj && obj.classNo && obj.name) ? obj : null;
   }catch(e){ return null; }
 }
-
+let CURRENT_PROFILE = null;
 function startApp(profile){
+  CURRENT_PROFILE = profile;
   document.getElementById('gateScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   RT.connect(profile.name, profile.classNo, profile.number);
 }
-
 (function initGate(){
   const profile = loadProfile();
   if(!profile){
@@ -831,6 +827,9 @@ function startApp(profile){
   checkUnitAccessAndShowGate(profile);
 })();
 
+/* 선생님이 이 단원을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작 화면을 보여준다.
+   Firebase가 설정되지 않았거나 확인 중 오류가 나면(네트워크 등) 기존처럼 그냥 열어준다
+   (잠금 기능은 어디까지나 선택 기능이라, 이것 때문에 과제 자체를 못 하게 막지는 않는다). */
 function checkUnitAccessAndShowGate(profile){
   const showOpen = ()=>{
     document.getElementById('profileBox').style.display='block';
@@ -856,6 +855,57 @@ function checkUnitAccessAndShowGate(profile){
   }catch(e){ showOpen(); }
 }
 
+/* ---------- 제출 / 백업 ---------- */
+function buildPayload(){
+  const total = TASKS.length;
+  const completed = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  return {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed, total,
+    answers: TASKS.map(t=>({task:t.id, done:!!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:''})),
+    exportedAt: new Date().toISOString()
+  };
+}
+/* ---------- 전체 제출/취소 잠금 ----------
+   "결과 제출하기"를 누르면 이 페이지 전체(9개 활동 모두)가 더 이상 수정 불가 상태로 잠기고,
+   버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다. 선생님이 [수업 종료]를 누르면 반 전체
+   학생이 이 상태로 강제 전환되고, [수업 시작]을 누르면 다같이 취소(해제)된다 — 이때는
+   학생이 직접 "제출 취소"를 누를 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  const btn = document.getElementById('submitBtn');
+  const statusEl = document.getElementById('submitStatus');
+  btn.textContent = locked ? '제출 취소' : '결과 제출하기';
+  btn.classList.toggle('cancel', locked);
+  statusEl.textContent = locked
+    ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.'
+    : '';
+}
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){
+      alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.');
+      return;
+    }
+    applyFinalLock(false);
+    if(RT.connected) RT.studentRef.update({ submitted:false, submittedAt:null });
+  } else {
+    applyFinalLock(true);
+    if(RT.connected) RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+  }
+});
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  const payload = buildPayload();
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `평행사변형활용_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
 /* ---------- 화면 잠금 / 공지 적용 ---------- */
 function applyPauseLock(paused){
   document.body.classList.toggle('app-paused', paused);
@@ -863,19 +913,124 @@ function applyPauseLock(paused){
   if(typeof updateNavButtons==='function') updateNavButtons();
 }
 
-function flushBeforeLeaving(){
-  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+/* ---------- Google 설문지 자동 저장 ---------- */
+function submitTaskToGoogleForm(taskId, statusText, answerText){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
+  if(!CURRENT_PROFILE) return;
+  let iframe=document.getElementById('hiddenSubmitFrame');
+  if(!iframe){ iframe=document.createElement('iframe'); iframe.name='hiddenSubmitFrame'; iframe.id='hiddenSubmitFrame'; iframe.style.display='none'; document.body.appendChild(iframe); }
+  const form=document.createElement('form');
+  form.action=CONFIG.GOOGLE_FORM_URL; form.method='POST'; form.target='hiddenSubmitFrame';
+  const addField=(entryName,val)=>{ if(!entryName) return; const f=document.createElement('input'); f.name=entryName; f.value=(val==null?'':val); form.appendChild(f); };
+  addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+  addField(CONFIG.ENTRY_ROOM, CURRENT_PROFILE.classNo);
+  addField(CONFIG.ENTRY_NUMBER, CURRENT_PROFILE.number);
+  addField(CONFIG.ENTRY_NAME, CURRENT_PROFILE.name);
+  addField(CONFIG.ENTRY_TASK, taskId);
+  addField(CONFIG.ENTRY_SUCCESS, statusText);
+  addField(CONFIG.ENTRY_ANSWER, answerText);
+  document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
-window.addEventListener('pagehide', flushBeforeLeaving);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
+    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
+    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+    // 이어서 접속되게 한다.
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.studentRef.update({
+      name, number: number||null,
+      lastActive: firebase.database.ServerValue.TIMESTAMP,
+      online:true
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
+      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
+      } else if(classEnded !== this._lastKnownClassEnded){
+        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    this.pushProgress();
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress['t'+t.id] = { done: !!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:'' }; });
+    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  }
+};
 
 document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
 
-/* ---------- 페이지 넘기기 (4개 과제) ---------- */
-const pages = ['p1','p2','p3','p4'].map(p=>document.getElementById('task-'+p));
+/* ---------- 페이지 넘기기 (활동 6개 + 마지막 제출 페이지, student1~6과 동일한 구조) ---------- */
+const pages = [...document.querySelectorAll('#pageWrap > .pgpage'), document.querySelector('.submit-panel')];
 let currentPage = 0;
+function pageTaskNum(idx){
+  const p = pages[idx];
+  if(!p) return null;
+  const n = parseInt(p.dataset.taskId, 10);
+  return isNaN(n) ? null : n;
+}
 function showPage(idx){
   currentPage = Math.max(0, Math.min(pages.length-1, idx));
   pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
