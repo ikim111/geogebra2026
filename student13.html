@@ -926,6 +926,7 @@ const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null, connected:false, heartbeatTimer:null,
   paused:false, lastSeenAnnounceTs:0, studentKey:null, allStudents:{}, minTaskId:null, maxTaskId:null,
   classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(),
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
     const statusEl=document.getElementById('syncStatus');
@@ -959,6 +960,13 @@ const RT = {
 
     this.studentRef.once('value').then(snap=>{
       const existing = snap.val();
+      // 이 단원은 과제1(records)·과제2(progress.p2) 모두 단일 progress[t.id] 구조를 쓰지
+      // 않아서, visited(열어봤는지) 여부만 별도의 최상위 visitedTasks 맵으로 저장/복원한다.
+      if(existing && existing.visitedTasks){
+        Object.keys(existing.visitedTasks).forEach(k=>{
+          if(existing.visitedTasks[k]) this.visitedTasks.add(parseInt(k,10));
+        });
+      }
       // 과제2(서술형 6종)의 이전 답변/잠금 상태를 복원한다 — 다른 0~7 단원의 restoreProgress와
       // 같은 역할. 과제1(기록)은 애초에 localStorage에 저장돼 같은 기기에서는 이미 복원되지만,
       // 다른 기기로 접속했을 때를 대비해 서버에 남아있는 기록도 같이 병합해준다(중복은
@@ -1085,6 +1093,16 @@ const RT = {
       progress: { p2: { done: !!results2.p2.done, answers: results2.p2.answers, itemsDone: results2.p2.itemsDone } },
       lastActive: firebase.database.ServerValue.TIMESTAMP
     });
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      const visitedTasks = {};
+      this.visitedTasks.forEach(id=>{ visitedTasks[id] = true; });
+      this.studentRef.update({ currentTaskId: taskId, visitedTasks, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    }
   }
 };
 
@@ -1215,6 +1233,7 @@ function showPage(idx){
   if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
   window.scrollTo(0,0);
   updateNavButtons();
+  RT.setViewingTask(pageTaskNum(currentPage));
 }
 function clampToPacing(){
   if(RT.minTaskId==null && RT.maxTaskId==null) return;

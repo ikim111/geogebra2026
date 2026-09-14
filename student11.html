@@ -225,6 +225,7 @@ const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
   connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
   classEnded:false, _lastKnownClassEnded:null, minTaskId:null, maxTaskId:null,
+  viewingTaskId:null, visitedTasks:new Set(),
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
     const statusEl=document.getElementById('syncStatus');
@@ -252,6 +253,23 @@ const RT = {
 
     this.studentRef.once('value').then(snap=>{
       const existing = snap.val();
+      // 과제별 답변/완료(잠금) 상태를 복원한다 — 다른 0~7 단원의 restoreProgress와 같은 역할.
+      // TASKS의 id(숫자, progress 키)↔key(p1/p2, results/입력창 id 키)가 서로 다르므로 둘 다 사용한다.
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{
+          const p = existing.progress[t.id];
+          if(!p) return;
+          if(p.visited) this.visitedTasks.add(t.id);
+          if(!p.done) return;
+          results[t.key] = {done:true, value:p.value};
+          const badge=document.getElementById('badge-'+t.key);
+          if(badge){ badge.textContent='완료'; badge.className='badge done'; }
+          const input=document.getElementById('input-'+t.key);
+          if(input && p.value!=null && p.value!==''){ input.value = p.value; }
+          if(taskLockRestorers[t.key]) taskLockRestorers[t.key]();
+        });
+        updateProgress();
+      }
       if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
       this.studentRef.update({
         name, number: number||null,
@@ -309,12 +327,22 @@ const RT = {
   pushProgress(){
     if(!this.connected) return;
     const progress = {};
-    TASKS.forEach(t=>{ progress[t.id] = results[t.key]; });
+    TASKS.forEach(t=>{ progress[t.id] = { done: results[t.key].done, value: results[t.key].value, visited: this.visitedTasks.has(t.id) }; });
     const done = TASKS.filter(t=>results[t.key].done).length;
     this.studentRef.update({
       progress, completed: done, total: TASKS.length,
+      currentTaskId: this.viewingTaskId,
       lastActive: firebase.database.ServerValue.TIMESTAMP
     });
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
   },
   pushState(){
     if(!this.connected) return;
@@ -615,6 +643,7 @@ TASKS.forEach(task=>{
 /* ---------- 과제별 서술형: 제출/취소 잠금 + 친구 답변 보기 ---------- */
 const results = {}; TASKS.forEach(t=>{ results[t.key]={done:false,value:''}; });
 const classAnswersPicked = {}; TASKS.forEach(t=>{ classAnswersPicked[t.key]=[]; });
+const taskLockRestorers = {};
 window.__task11 = {};
 TASKS.forEach(task=>{
   const page = task.key;
@@ -687,6 +716,7 @@ TASKS.forEach(task=>{
   refreshFeedback();
 
   window.__task11[page] = {doSubmit, doCancel, forceSubmit, isLocked:()=>locked};
+  taskLockRestorers[page] = ()=> lockUI();
 });
 
 /* ---------- 진행률 표시 ---------- */
@@ -762,6 +792,7 @@ function showPage(idx){
   if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
   window.scrollTo(0,0);
   updateNavButtons();
+  RT.setViewingTask(pageTaskNum(currentPage));
 }
 function clampToPacing(){
   if(RT.minTaskId==null && RT.maxTaskId==null) return;

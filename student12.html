@@ -919,6 +919,7 @@ const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
   connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
   classEnded:false, _lastKnownClassEnded:null, minTaskId:null, maxTaskId:null,
+  viewingTaskId:null, visitedTasks:new Set(),
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
     const statusEl=document.getElementById('syncStatus');
@@ -949,7 +950,9 @@ const RT = {
       if(existing && existing.progress){
         TASKS.forEach(t=>{
           const p = existing.progress[t.id];
-          if(!p || !p.done) return;
+          if(!p) return;
+          if(p.visited) this.visitedTasks.add(t.id);
+          if(!p.done) return;
           results[t.id] = {done:true, value:p.value};
           const badge=document.getElementById(`badge-${t.id}`);
           if(badge){ badge.textContent='완료'; badge.className='badge done'; }
@@ -1019,9 +1022,18 @@ const RT = {
   pushProgress(){
     if(!this.connected) return;
     const progress = {};
-    TASKS.forEach(t=>{ progress[t.id] = { done: !!(results[t.id]&&results[t.id].done), value: (results[t.id]&&results[t.id].value!=null) ? String(results[t.id].value) : '' }; });
+    TASKS.forEach(t=>{ progress[t.id] = { done: !!(results[t.id]&&results[t.id].done), value: (results[t.id]&&results[t.id].value!=null) ? String(results[t.id].value) : '', visited: this.visitedTasks.has(t.id) }; });
     const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-    this.studentRef.update({ progress, completed: done, total: TASKS.length, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
   },
   _objTimers: {},
   _writeObjSnapshot(taskId, cv){
@@ -1133,17 +1145,21 @@ function initConstructTask(task){
     points: quad.map((p,i)=>({x:p.x, y:p.y, label:labels[i]})),
     presetObjects: [{type:'polygon', ids:labels.slice()}]
   };
-  const cv = new GeoCanvas(svg, cfg, ()=>onChange());
-  canvasByTaskId[task.id] = cv;
-  buildToolbar(task, cv, toolsEl);
-
-  function checkReady(){
-    return (input.value||'').trim().length>=task.minLen && cv.objects.length>0;
+  // GeoCanvas 생성자는 내부에서 render()를 즉시 한 번 호출하고, 그 render()가 onChange ->
+  // refreshFeedback을 동기적으로 부른다. 그 시점엔 "const cv = new GeoCanvas(...)" 대입이
+  // 아직 끝나기 전이라(TDZ) cv를 직접 참조하면 "Cannot access 'cv' before initialization"
+  // 오류가 난다(예전 파일에서 실제로 나던 버그). GeoCanvas가 render()마다 콜백에 넘겨주는
+  // 인스턴스(inst)를 그대로 쓰도록 고쳐서 cv에 의존하지 않게 한다 (student1.html과 동일한 패턴).
+  let cv;
+  function checkReady(instArg){
+    const target = instArg || cv;
+    return (input.value||'').trim().length>=task.minLen && target.objects.length>0;
   }
-  function refreshFeedback(){
+  function refreshFeedback(instArg){
     if(locked) return true;
-    const hasShape = cv.objects.length>0;
-    const okFlag = checkReady();
+    const target = instArg || cv;
+    const hasShape = target.objects.length>0;
+    const okFlag = checkReady(instArg);
     if(!hasShape){
       fb.textContent = '먼저 도구를 이용해 도형 위에 선을 그어보세요.';
       fb.className = 'feedback no';
@@ -1153,10 +1169,13 @@ function initConstructTask(task){
     }
     return okFlag;
   }
-  function onChange(){
-    RT.pushObjectsDebounced(task.id, cv);
-    refreshFeedback();
+  function onChange(inst){
+    RT.pushObjectsDebounced(task.id, inst);
+    refreshFeedback(inst);
   }
+  cv = new GeoCanvas(svg, cfg, (inst)=>onChange(inst));
+  canvasByTaskId[task.id] = cv;
+  buildToolbar(task, cv, toolsEl);
   function lockUI(){
     locked = true;
     input.disabled = true; input.classList.add('locked-fixed');
@@ -1339,6 +1358,7 @@ function showPage(idx){
   if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
   window.scrollTo(0,0);
   updateNavButtons();
+  RT.setViewingTask(pageTaskNum(currentPage));
 }
 function clampToPacing(){
   if(RT.minTaskId==null && RT.maxTaskId==null) return;

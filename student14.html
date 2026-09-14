@@ -25,7 +25,10 @@
   #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
   #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
   #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
   #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
   .wrap{max-width:760px;margin:0 auto;padding:16px 16px 8px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
 
@@ -154,6 +157,7 @@
 
 <div id="appScreen">
   <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
   <div id="stickyBar">
     <div id="unitTitleBar">14. 평행사변형의 조건 의사소통</div>
     <div class="sticky-controls">
@@ -171,156 +175,7 @@
 
     <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
 
-    <!-- ===== PDF 2 : 빨대로 평행사변형 만들기 =====
-         (과제1·2 "넓이 4등분 — 직접 작도"는 student12.html의 과제3·4로 이동했다.) -->
-    <div class="pgpage" data-task-id="3">
-    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기</div>
-    <div class="section-desc">다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.</div>
-    <div class="quote-row">
-      <div class="quote-box">
-        <div class="who">수현</div>
-        나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.
-      </div>
-      <div class="quote-box alt">
-        <div class="who">정우</div>
-        나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.
-      </div>
-    </div>
-
-    <div class="task" id="task-3">
-      <div class="task-head">
-        <h2><span class="num">[활동1]</span> 수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?</h2>
-        <span class="badge pending" id="badge-3">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="gc-wrap" id="gcWrap-3">
-          <svg id="gcSvg-3" viewBox="0 0 260 190"></svg>
-          <div class="gc-tools"><button class="reset" id="quadReset-3">🔄 처음 모양으로</button></div>
-          <div class="gc-hint">주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요.</div>
-        </div>
-        <div class="ox-row" id="ox-5">
-          <label><input type="radio" name="ox-3" value="O"><span>⭕ 항상 그렇다</span></label>
-          <label><input type="radio" name="ox-3" value="X"><span>❌ 항상 그렇지는 않다</span></label>
-        </div>
-        <div class="input-row">
-          <textarea id="input-3" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
-          <button id="check-3">제출</button>
-        </div>
-        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-3"></div>
-        <div class="class-answers" id="classAnswers-3" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-3"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-
-    <div class="pgpage" data-task-id="4">
-    <div class="section-title">생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)</div>
-
-    <div class="task" id="task-4">
-      <div class="task-head">
-        <h2><span class="num">[활동2]</span> 정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?</h2>
-        <span class="badge pending" id="badge-4">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="gc-wrap" id="gcWrap-4">
-          <svg id="gcSvg-4" viewBox="0 0 260 190"></svg>
-          <div class="gc-tools"><button class="reset" id="quadReset-4">🔄 처음 모양으로</button></div>
-          <div class="gc-hint">주황색 점 D를 드래그해 보세요. 빨간 눈금(1개) 한 쌍, 파란 눈금(2개) 한 쌍이 각각 항상 길이가 같아요.</div>
-        </div>
-        <div class="ox-row" id="ox-6">
-          <label><input type="radio" name="ox-4" value="O"><span>⭕ 항상 그렇다</span></label>
-          <label><input type="radio" name="ox-4" value="X"><span>❌ 항상 그렇지는 않다</span></label>
-        </div>
-        <div class="input-row">
-          <textarea id="input-4" rows="3" placeholder="그렇게 판단한 이유를 설명해보자 (10자 이상)"></textarea>
-          <button id="check-4">제출</button>
-        </div>
-        <div class="text-min-note">✏️ O/X를 고르고 이유를 10자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-4"></div>
-        <div class="class-answers" id="classAnswers-4" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-4"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <!-- ===== PDF 4 : 모눈종이 위 평행사변형 ===== -->
-    <div class="pgpage" data-task-id="5">
-    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기</div>
-    <div class="section-desc">다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.</div>
-
-    <div class="task" id="task-5">
-      <div class="task-head">
-        <h2><span class="num">[활동1]</span> 평행사변형의 세 꼭짓점이 주어진 경우</h2>
-        <span class="badge pending" id="badge-5">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="gc-wrap" id="gcWrap-5">
-          <svg id="drawSvg-5" viewBox="0 0 260 208"></svg>
-          <div class="gc-tools" id="drawTools-5">
-            <button data-tool="pen">✏️ 펜</button>
-            <button data-tool="eraser">🧽 지우기</button>
-            <button id="drawClearAll-5">🗑 전체 지우기</button>
-            <button data-tool="point">📍 점찍기</button>
-            <button id="drawUndoPoint-5">↩️ 점찍기취소</button>
-            <button class="reset" id="drawReset-5">🔄 초기화</button>
-          </div>
-          <div class="gc-hint">빨간 점 3개가 평행사변형의 세 꼭짓점이에요. 네 번째 점을 어디에 찍어야 할까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-5" rows="3" placeholder="네 번째 점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-5">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-5"></div>
-        <div class="class-answers" id="classAnswers-5" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-5"></div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-
-    <div class="pgpage" data-task-id="6">
-    <div class="section-title">생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기 (계속)</div>
-
-    <div class="task" id="task-6">
-      <div class="task-head">
-        <h2><span class="num">[활동2]</span> 평행사변형의 한 꼭짓점과 두 대각선의 교점 O가 주어진 경우</h2>
-        <span class="badge pending" id="badge-6">미완료</span>
-      </div>
-      <div class="task-body">
-        <div class="gc-wrap" id="gcWrap-6">
-          <svg id="drawSvg-6" viewBox="0 0 260 208"></svg>
-          <div class="gc-tools" id="drawTools-6">
-            <button data-tool="pen">✏️ 펜</button>
-            <button data-tool="eraser">🧽 지우기</button>
-            <button id="drawClearAll-6">🗑 전체 지우기</button>
-            <button data-tool="point">📍 점찍기</button>
-            <button id="drawUndoPoint-6">↩️ 점찍기취소</button>
-            <button class="reset" id="drawReset-6">🔄 초기화</button>
-          </div>
-          <div class="gc-hint">주황 점은 평행사변형의 한 꼭짓점, 파란 점 O는 두 대각선의 교점이에요. 나머지 세 꼭짓점은 어디일까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.</div>
-        </div>
-        <div class="input-row">
-          <textarea id="input-6" rows="3" placeholder="나머지 세 꼭짓점의 위치와 그 이유를 설명해보자 (15자 이상)"></textarea>
-          <button id="check-6">제출</button>
-        </div>
-        <div class="text-min-note">✏️ 15자 이상 적어야 완료로 인정돼요.</div>
-        <div class="feedback" id="fb-6"></div>
-        <div class="class-answers" id="classAnswers-6" style="display:none;">
-          <div class="ca-title">👀 친구들은 이렇게 생각했어요</div>
-          <div class="ca-list" id="classAnswersList-6"></div>
-        </div>
-      </div>
-    </div>
-    </div>
+    <div id="taskContainer"></div>
 
     <div class="panel submit-panel">
       <button class="main" id="submitBtn">결과 제출하기</button><br>
@@ -331,6 +186,7 @@
   </div>
 
   <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
     <div class="pager-buttons">
       <span id="pageLabel">1 / 5</span>
     </div>
@@ -340,15 +196,29 @@
 <script>
 /* ============================================================
    14. 평행사변형의 조건 의사소통 (과제13 PDF 기반)
-   (구 student13.html의 3~8번째 활동을 분리) 빨대 드래그형 사각형 + 모눈종이 그리기로 구성된 4개 활동.
-   ("넓이 4등분 — 직접 작도" 2개 활동은 student12.html의 과제3·4로 이동했다.)
-   조건에 맞춰 평행사변형을 직접 만들어보며 확인하는 활동 위주라 [평행사변형의 조건 의사소통]으로 분리했다.
-   student1~6, student11~12과 동일한 제출/취소/친구 답변 보기 패턴을 사용한다.
+   0~7번/11~13번 단원과 동일한 방식으로 완전히 재작성했다: 과제 내용을 TASKS 배열에
+   데이터로 담아두고, buildPageEl()이 그 데이터를 읽어 매번 HTML을 새로 만들어
+   #taskContainer에 채워 넣는다(예전처럼 활동 카드 HTML을 본문에 직접 써두지 않는다).
+
+   (구 student13.html의 3~8번째 활동을 분리) 빨대 드래그형 사각형 + 모눈종이 그리기로
+   구성된 4개 활동. ("넓이 4등분 — 직접 작도" 2개 활동은 student12.html의 과제3·4로 이동했다.)
+   조건에 맞춰 평행사변형을 직접 만들어보며 확인하는 활동 위주라 [평행사변형의 조건
+   의사소통]으로 분리했다. student1~6, student11~13과 동일한 제출/취소/친구 답변 보기/
+   자동이어하기/속도조절/전체제출잠금/미리보기 패턴을 사용한다.
+
+   [버그 수정 메모] 이 파일은 예전 버전에서 GC_NS/gcDist/gcNorm/gcSub/distToSegmentPts를
+   "사용"만 하고 실제로 어디에도 "정의"하지 않아서, 페이지를 열자마자 과제 초기화 중에
+   ReferenceError가 나 화면 전체가 멈추는(접속 안 되는) 버그가 있었다. 이번 재작성에서
+   그 유틸 함수들을 실제로 정의해 근본 원인을 없앴다. 또한 과제3의 O/X 묶음 div가
+   id="ox-5"로(과제4는 id="ox-6"으로) 잘못 붙어 있어 라디오를 클릭해도 선택 강조 표시와
+   실시간 안내 문구 갱신이 되지 않던 버그도, HTML을 데이터 기반으로 새로 생성하면서
+   id="ox-3"/"ox-4"로 바로잡았다.
 
    선생님 설정 안내: teacher14.html과 FIREBASE_CONFIG / ACTIVITY_SUFFIX를 반드시 동일하게 맞춘다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || null;
 
 const UNIT_LABEL = '14. 평행사변형의 조건 의사소통';
 const CONFIG = {
@@ -372,12 +242,29 @@ const FIREBASE_CONFIG = {
 };
 const ACTIVITY_SUFFIX = '__quad14c'; // teacher14.html과 반드시 동일해야 함
 
+/* ---------- 벡터/SVG 유틸 ----------
+   빨대(변) 드래그 캔버스와 모눈종이 그리기 캔버스가 공통으로 쓰는 아주 작은 유틸 세트. */
+const GC_NS = 'http://www.w3.org/2000/svg';
+function gcSub(a,b){ return { x:a.x-b.x, y:a.y-b.y }; }
+function gcNorm(v){ const m=Math.hypot(v.x,v.y)||1e-9; return { x:v.x/m, y:v.y/m }; }
+function gcDist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function distToSegmentPts(p,a,b){
+  const l2 = gcDist(a,b)**2;
+  if(l2<1e-9) return gcDist(p,a);
+  let t = ((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/l2;
+  t = Math.max(0, Math.min(1,t));
+  return gcDist(p, {x:a.x+t*(b.x-a.x), y:a.y+t*(b.y-a.y)});
+}
+
 /* ---------- 과제3·4용 "빨대(변) 드래그" 캔버스 ----------
    [그림1]의 빨대 활동을 인터랙티브 사각형으로 구현한 것. 사각형 ABCD를 주고 학생이
    꼭짓점 D를 드래그하면, 정해진 조건(수현: 한 쌍은 평행 유지 + 다른 한 쌍은 길이 항상
    같음 / 정우: 두 쌍 모두 길이 항상 같음)을 만족하도록 C가 자동으로 계산되어 따라온다.
    이렇게 하면 "빨대로 이동+회전시켜 배치"한 것과 같은 효과를 내면서도, 주어진 조건은
-   항상 정확히 유지된 채로 다양한 모양을 만들어볼 수 있다. */
+   항상 정확히 유지된 채로 다양한 모양을 만들어볼 수 있다.
+   viewBox는 260x190을 그대로 유지했다 — 드래그 인식 반경(30px)·경계 clamp 등 픽셀
+   단위로 손으로 맞춰둔 상호작용 수치가 많아, 600x400으로 억지로 키우면 그 수치들을
+   전부 다시 조정해야 해서 회귀 위험만 커진다고 판단했다(모눈종이 26px 격자와 같은 이유). */
 function circleCircleIntersect(c1,r1,c2,r2){
   const dx=c2.x-c1.x, dy=c2.y-c1.y;
   const d=Math.hypot(dx,dy);
@@ -393,6 +280,7 @@ const quadState = {
   3: { D:{x:100,y:60}, init:{x:100,y:60} },
   4: { D:{x:100,y:60}, init:{x:100,y:60}, prevC:null }
 };
+const QUAD_REDRAW = {}; // taskId -> redraw(), 재접속 시 저장된 D점 위치를 복원하고 다시 그리는 데 쓴다.
 // 수현(3): AB∥DC 이고 DC의 길이는 자유, BC=AD(다른 한 쌍은 길이만 항상 같음).
 function quad5Compute(){
   const A=QUAD_A, B=QUAD_B, D=quadState[3].D;
@@ -465,6 +353,12 @@ function setupQuadDragTask(taskId, computeFn, dPoint, opts){
   if(!svg) return;
   function redraw(){ renderQuadSvg(svg, computeFn(), opts); }
   redraw();
+  QUAD_REDRAW[taskId] = redraw;
+  function pushSnap(){
+    RT.pushObjectSnapshot(taskId, taskId===4
+      ? { D:{x:dPoint.x,y:dPoint.y}, prevC: quadState[4].prevC }
+      : { D:{x:dPoint.x,y:dPoint.y} });
+  }
   let dragging=false;
   function getPt(e){
     const rect=svg.getBoundingClientRect();
@@ -488,6 +382,7 @@ function setupQuadDragTask(taskId, computeFn, dPoint, opts){
     const p=clamp(getPt(e));
     dPoint.x=p.x; dPoint.y=p.y;
     redraw();
+    pushSnap();
   };
   const onUp = ()=>{ dragging=false; };
   svg.addEventListener('mousedown', onDown);
@@ -501,6 +396,7 @@ function setupQuadDragTask(taskId, computeFn, dPoint, opts){
     dPoint.x = quadState[taskId].init.x; dPoint.y = quadState[taskId].init.y;
     if(taskId===4) quadState[4].prevC = null;
     redraw();
+    pushSnap();
   });
 }
 
@@ -585,6 +481,10 @@ function setupDrawTask(taskId, onChange){
   if(!svg || !refs) return;
   const dc = new DrawCanvas(svg, refs, 'drawgrid'+taskId);
   DRAW_CANVASES[taskId] = dc;
+  function notify(){
+    onChange();
+    RT.pushObjectSnapshot(taskId, { strokes: dc.strokes, points: dc.points });
+  }
   const toolBtns = document.querySelectorAll(`#drawTools-${taskId} button[data-tool]`);
   function setTool(t){ dc.tool=t; toolBtns.forEach(b=> b.classList.toggle('active', b.dataset.tool===t)); }
   toolBtns.forEach(b=> b.addEventListener('click', ()=> setTool(b.dataset.tool)));
@@ -614,9 +514,9 @@ function setupDrawTask(taskId, onChange){
     else if(dc.tool==='eraser'){
       dragging=true;
       const idx=dc.findStrokeNear(p,10);
-      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); onChange(); }
+      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); notify(); }
     } else if(dc.tool==='point'){
-      dc.points.push(snapToGrid(p)); dc.render(); onChange();
+      dc.points.push(snapToGrid(p)); dc.render(); notify();
     }
   };
   const onMove = e=>{
@@ -626,12 +526,12 @@ function setupDrawTask(taskId, onChange){
     if(dc.tool==='pen' && dc.curStroke){ dc.curStroke.push(p); dc.render(); }
     else if(dc.tool==='eraser'){
       const idx=dc.findStrokeNear(p,10);
-      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); onChange(); }
+      if(idx>=0){ dc.strokes.splice(idx,1); dc.render(); notify(); }
     }
   };
   const onUp = ()=>{
     if(dc.tool==='pen' && dc.curStroke){
-      if(dc.curStroke.length>1){ dc.strokes.push(dc.curStroke); onChange(); }
+      if(dc.curStroke.length>1){ dc.strokes.push(dc.curStroke); notify(); }
       dc.curStroke=null;
       dc.render();
     }
@@ -644,21 +544,153 @@ function setupDrawTask(taskId, onChange){
   window.addEventListener('mouseup', onUp);
   window.addEventListener('touchend', onUp);
   const clearBtn = document.getElementById('drawClearAll-'+taskId);
-  if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; dc.render(); onChange(); });
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; dc.render(); notify(); });
   const undoBtn = document.getElementById('drawUndoPoint-'+taskId);
-  if(undoBtn) undoBtn.addEventListener('click', ()=>{ if(locked()) return; dc.points.pop(); dc.render(); onChange(); });
+  if(undoBtn) undoBtn.addEventListener('click', ()=>{ if(locked()) return; dc.points.pop(); dc.render(); notify(); });
   const resetBtn = document.getElementById('drawReset-'+taskId);
-  if(resetBtn) resetBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; setTool('pen'); dc.render(); onChange(); });
+  if(resetBtn) resetBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; setTool('pen'); dc.render(); notify(); });
+}
+// 재접속 시 저장된 빨대 D점 위치 / 모눈종이 스트로크·점을 복원한다(GeoCanvas 기반 단원의
+// restoreObjectSnapshot과 같은 역할을 이 단원의 커스텀 엔진에 맞게 수행한다).
+function restoreCustomSnapshots(snapshots){
+  if(!snapshots) return;
+  [3,4].forEach(id=>{
+    const snap = snapshots[id];
+    if(!snap || !snap.D) return;
+    quadState[id].D.x = snap.D.x; quadState[id].D.y = snap.D.y;
+    if(id===4) quadState[4].prevC = snap.prevC || null;
+    if(QUAD_REDRAW[id]) QUAD_REDRAW[id]();
+  });
+  [5,6].forEach(id=>{
+    const snap = snapshots[id];
+    const dc = DRAW_CANVASES[id];
+    if(snap && dc){ dc.strokes = snap.strokes||[]; dc.points = snap.points||[]; dc.render(); }
+  });
 }
 
-/* ---------- 과제 정의 ---------- */
+/* ---------- 과제 정의 (0~7과 동일한 방식: TASKS 데이터 → buildPageEl로 HTML 생성) ---------- */
 const TASKS = [
-  { id:3, minLen:10, kind:'ox', quad:'sh' },
-  { id:4, minLen:10, kind:'ox', quad:'jw' },
-  { id:5, minLen:15, kind:'text', draw:true },
-  { id:6, minLen:15, kind:'text', draw:true }
+  { id:3, kind:'ox', quad:'sh', minLen:10,
+    sectionTitle:'생각을 나누는 의사소통 — 빨대로 평행사변형 만들기',
+    sectionDesc:'다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.',
+    quotes:[
+      {who:'수현', text:'나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.'},
+      {who:'정우', text:'나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.', alt:true}
+    ],
+    numLabel:'[활동1]', title:'수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?',
+    hint:'주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요.',
+    placeholder:'그렇게 판단한 이유를 설명해보자 (10자 이상)' },
+  { id:4, kind:'ox', quad:'jw', minLen:10,
+    sectionTitle:'생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)',
+    numLabel:'[활동2]', title:'정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?',
+    hint:'주황색 점 D를 드래그해 보세요. 빨간 눈금(1개) 한 쌍, 파란 눈금(2개) 한 쌍이 각각 항상 길이가 같아요.',
+    placeholder:'그렇게 판단한 이유를 설명해보자 (10자 이상)' },
+  { id:5, kind:'text', draw:true, minLen:15,
+    sectionTitle:'생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기',
+    sectionDesc:'다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.',
+    numLabel:'[활동1]', title:'평행사변형의 세 꼭짓점이 주어진 경우',
+    hint:'빨간 점 3개가 평행사변형의 세 꼭짓점이에요. 네 번째 점을 어디에 찍어야 할까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.',
+    placeholder:'네 번째 점의 위치와 그 이유를 설명해보자 (15자 이상)' },
+  { id:6, kind:'text', draw:true, minLen:15,
+    sectionTitle:'생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기 (계속)',
+    numLabel:'[활동2]', title:'평행사변형의 한 꼭짓점과 두 대각선의 교점 O가 주어진 경우',
+    hint:'주황 점은 평행사변형의 한 꼭짓점, 파란 점 O는 두 대각선의 교점이에요. 나머지 세 꼭짓점은 어디일까요? (경우가 여러 개일 수 있어요) — 펜으로 그려보거나 점찍기로 표시해보세요.',
+    placeholder:'나머지 세 꼭짓점의 위치와 그 이유를 설명해보자 (15자 이상)' }
 ];
+const taskContainer = document.getElementById('taskContainer');
 const results = {};
+const taskLockRestorers = {};
+
+function buildPageEl(task){
+  const page = document.createElement('div');
+  page.className = 'pgpage';
+  page.dataset.taskId = String(task.id);
+
+  if(task.sectionTitle){
+    const st = document.createElement('div'); st.className='section-title'; st.textContent = task.sectionTitle;
+    page.appendChild(st);
+  }
+  if(task.sectionDesc){
+    const sd = document.createElement('div'); sd.className='section-desc'; sd.textContent = task.sectionDesc;
+    page.appendChild(sd);
+  }
+  if(task.quotes){
+    const qr = document.createElement('div'); qr.className='quote-row';
+    task.quotes.forEach(q=>{
+      const qb = document.createElement('div'); qb.className='quote-box'+(q.alt?' alt':'');
+      const who = document.createElement('div'); who.className='who'; who.textContent=q.who;
+      qb.appendChild(who);
+      qb.appendChild(document.createTextNode(q.text));
+      qr.appendChild(qb);
+    });
+    page.appendChild(qr);
+  }
+
+  const taskEl = document.createElement('div'); taskEl.className='task'; taskEl.id='task-'+task.id;
+  const head = document.createElement('div'); head.className='task-head';
+  const h2 = document.createElement('h2'); h2.innerHTML = `<span class="num">${task.numLabel||''}</span> ${task.title}`;
+  const badge = document.createElement('span'); badge.className='badge pending'; badge.id='badge-'+task.id; badge.textContent='미완료';
+  head.appendChild(h2); head.appendChild(badge);
+  taskEl.appendChild(head);
+
+  const body = document.createElement('div'); body.className='task-body';
+
+  const gcWrap = document.createElement('div'); gcWrap.className='gc-wrap'; gcWrap.id='gcWrap-'+task.id;
+  if(task.quad){
+    const svg = document.createElementNS(GC_NS,'svg'); svg.id='gcSvg-'+task.id; svg.setAttribute('viewBox','0 0 260 190');
+    gcWrap.appendChild(svg);
+    const tools = document.createElement('div'); tools.className='gc-tools';
+    const resetBtn = document.createElement('button'); resetBtn.className='reset'; resetBtn.id='quadReset-'+task.id; resetBtn.textContent='🔄 처음 모양으로';
+    tools.appendChild(resetBtn);
+    gcWrap.appendChild(tools);
+    const hint = document.createElement('div'); hint.className='gc-hint'; hint.textContent = task.hint||'';
+    gcWrap.appendChild(hint);
+  } else if(task.draw){
+    const svg = document.createElementNS(GC_NS,'svg'); svg.id='drawSvg-'+task.id; svg.setAttribute('viewBox','0 0 260 208');
+    gcWrap.appendChild(svg);
+    const tools = document.createElement('div'); tools.className='gc-tools'; tools.id='drawTools-'+task.id;
+    tools.innerHTML =
+      '<button data-tool="pen">✏️ 펜</button>' +
+      '<button data-tool="eraser">🧽 지우기</button>' +
+      `<button id="drawClearAll-${task.id}">🗑 전체 지우기</button>` +
+      '<button data-tool="point">📍 점찍기</button>' +
+      `<button id="drawUndoPoint-${task.id}">↩️ 점찍기취소</button>` +
+      `<button class="reset" id="drawReset-${task.id}">🔄 초기화</button>`;
+    gcWrap.appendChild(tools);
+    const hint = document.createElement('div'); hint.className='gc-hint'; hint.textContent = task.hint||'';
+    gcWrap.appendChild(hint);
+  }
+  body.appendChild(gcWrap);
+
+  if(task.kind==='ox'){
+    const oxRow = document.createElement('div'); oxRow.className='ox-row'; oxRow.id='ox-'+task.id;
+    oxRow.innerHTML =
+      `<label><input type="radio" name="ox-${task.id}" value="O"><span>⭕ 항상 그렇다</span></label>` +
+      `<label><input type="radio" name="ox-${task.id}" value="X"><span>❌ 항상 그렇지는 않다</span></label>`;
+    body.appendChild(oxRow);
+  }
+
+  const inputRow = document.createElement('div'); inputRow.className='input-row';
+  const ta = document.createElement('textarea'); ta.id='input-'+task.id; ta.rows=3; ta.placeholder = task.placeholder||'';
+  const btn = document.createElement('button'); btn.id='check-'+task.id; btn.textContent='제출';
+  inputRow.appendChild(ta); inputRow.appendChild(btn);
+  body.appendChild(inputRow);
+
+  const note = document.createElement('div'); note.className='text-min-note';
+  note.textContent = `✏️ ${task.kind==='ox' ? 'O/X를 고르고 이유를 ' : ''}${task.minLen}자 이상 적어야 완료로 인정돼요.`;
+  body.appendChild(note);
+
+  const fb = document.createElement('div'); fb.className='feedback'; fb.id='fb-'+task.id;
+  body.appendChild(fb);
+
+  const ca = document.createElement('div'); ca.className='class-answers'; ca.id='classAnswers-'+task.id; ca.style.display='none';
+  ca.innerHTML = `<div class="ca-title">👀 친구들은 이렇게 생각했어요</div><div class="ca-list" id="classAnswersList-${task.id}"></div>`;
+  body.appendChild(ca);
+
+  taskEl.appendChild(body);
+  page.appendChild(taskEl);
+  return page;
+}
 
 function checkReady(task){
   const val = (document.getElementById('input-'+task.id).value||'').trim();
@@ -752,10 +784,22 @@ function initTask(task){
       });
     });
   }
+  // 재접속 시 "제출 완료" 상태를 실제 제출 직후와 똑같이(잠금+취소 가능) 복원하는 데 쓴다.
+  taskLockRestorers[task.id] = ()=>{
+    locked = true;
+    input.disabled = true;
+    input.classList.add('locked-fixed');
+    setOxLocked(true);
+    setConstructLocked(true);
+    btn.textContent = '취소';
+    btn.classList.add('cancel');
+    badge.textContent='완료'; badge.className='badge done';
+    fb.textContent = '이전에 이미 완료한 문제예요. "취소"를 누르면 다시 고칠 수 있어요.';
+    fb.className = 'feedback ok';
+  };
   results[task.id] = {done:false, value:''};
   refreshFeedback();
 }
-TASKS.forEach(initTask);
 
 // 과제별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지 않고
 // 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이 답을 적을
@@ -806,7 +850,283 @@ function updateProgress(){
   RT.pushProgress();
 }
 
-/* ---------- 게이트(반/번호/이름) ---------- */
+// 재접속했을 때 과제별 서술형 답변/O·X 선택/잠금(완료) 상태를 전부 복원한다(개요 화면
+// 전체 제출 여부만 보던 예전과 달리, 과제 하나하나의 진행 상황을 다시 그려준다).
+function restoreProgress(progress){
+  if(!progress) return;
+  TASKS.forEach(t=>{
+    const p = progress['t'+t.id];
+    if(!p) return;
+    const raw = (p.value!=null) ? String(p.value) : '';
+    if(t.kind==='ox'){
+      const m = raw.match(/^\[(O|X)\]\s?/);
+      const oxVal = m ? m[1] : null;
+      const textVal = m ? raw.slice(m[0].length) : raw;
+      if(oxVal){
+        const radio = document.querySelector(`input[name="ox-${t.id}"][value="${oxVal}"]`);
+        if(radio){
+          radio.checked = true;
+          const wrap = document.getElementById('ox-'+t.id);
+          if(wrap) wrap.querySelectorAll('label').forEach(l=> l.classList.toggle('checked', l.querySelector('input').checked));
+        }
+      }
+      const input = document.getElementById('input-'+t.id);
+      if(input) input.value = textVal;
+    } else {
+      const input = document.getElementById('input-'+t.id);
+      if(input && raw) input.value = raw;
+    }
+    if(p.done){
+      results[t.id] = {done:true, value: raw};
+      if(taskLockRestorers[t.id]) taskLockRestorers[t.id]();
+      renderClassAnswersFor(t);
+    }
+  });
+  updateProgress();
+}
+
+/* ---------- 실시간 확인 (Firebase) ----------
+   TASKS.forEach(initTask)보다 먼저 선언해야 한다 — setupQuadDragTask/setupDrawTask가 만드는
+   이벤트 핸들러 클로저들이 RT.pushObjectSnapshot을 참조하는데, RT가 아직 선언되기 전(TDZ)에
+   TASKS.forEach가 그 함수들을 동기적으로 실행하면 안전하지 않다(student1.html과 동일 순서). */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  _progressTimer:null, _snapTimers:{}, _lastSnapData:{},
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=document.getElementById('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey){ return; }
+    if(!name || !room){ return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
+    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
+    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
+    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
+    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
+    // 이어서 접속되게 한다.
+    const key = this.sanitize(number) + '_' + this.sanitize(name);
+    this.studentKey = key;
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+key);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        Object.keys(existing.progress).forEach(pkey=>{
+          const p = existing.progress[pkey];
+          if(p && p.visited){
+            const m = /^t(\d+)$/.exec(pkey);
+            if(m) this.visitedTasks.add(parseInt(m[1],10));
+          }
+        });
+        if(typeof restoreProgress==='function') restoreProgress(existing.progress);
+      }
+      // 저장된 빨대 D점 위치 / 모눈종이 스트로크·점을 복원한다(GeoCanvas 기반 단원의
+      // objectSnapshots 복원과 같은 역할).
+      if(existing && existing.objectSnapshots && typeof restoreCustomSnapshots==='function'){
+        restoreCustomSnapshots(existing.objectSnapshots);
+      }
+      // 이전에 "결과 제출하기"까지 눌러 전체 잠금 상태였다면 새로고침 후에도 그대로 잠긴 채로 보여준다.
+      if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+    });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        document.getElementById('announceText').textContent = c.announcement;
+        document.getElementById('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        document.getElementById('announceBanner').style.display = 'none';
+      }
+
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      if(typeof clampToPacing==='function') clampToPacing();
+      if(typeof updateNavButtons==='function') updateNavButtons();
+
+      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
+      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
+      } else if(classEnded !== this._lastKnownClassEnded){
+        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    this.connected = true;
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+    // 주의: 여기서 곧바로 pushProgress를 부르면, 아직 기존 진행 상황(existing.progress)을
+    // 복원(restoreProgress)하기 "전"이라 results가 비어 있는 상태로 completed:0을 그대로
+    // Firebase에 써버린다. restoreProgress()가 끝에서 updateProgress()를 불러 정확한 값을
+    // 다시 push하므로, 여기서는 미리 push하지 않는다.
+  },
+  pushProgress(){
+    if(!this.connected) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress['t'+t.id] = { done: !!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:'', visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushObjectSnapshot(taskId, data){
+    if(!this.connected) return;
+    this._lastSnapData[taskId] = data;
+    clearTimeout(this._snapTimers[taskId]);
+    this._snapTimers[taskId] = setTimeout(()=>{
+      this._snapTimers[taskId]=null;
+      this.studentRef.child('objectSnapshots/'+taskId).set({...this._lastSnapData[taskId], ts: firebase.database.ServerValue.TIMESTAMP});
+    }, 150);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  /* 학생이 홈버튼을 누르거나 탭을 닫는 등 화면을 벗어날 때, 아직 디바운스가 끝나지 않아
+     저장 안 된 마지막 변경사항이 있으면 즉시 강제로 저장한다. */
+  flushPending(){
+    if(!this.connected) return;
+    this.pushProgress();
+    Object.keys(this._snapTimers).forEach(id=>{
+      if(this._snapTimers[id]){
+        clearTimeout(this._snapTimers[id]);
+        this._snapTimers[id]=null;
+        this.studentRef.child('objectSnapshots/'+id).set({...this._lastSnapData[id], ts: firebase.database.ServerValue.TIMESTAMP});
+      }
+    });
+  }
+};
+
+function flushBeforeLeaving(){
+  if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
+}
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+
+// TASKS를 실제 DOM으로 그려 넣고 초기화한다 — RT가 이미 선언된 "뒤"에 실행해야, 각 과제의
+// 이벤트 핸들러(드래그/그리기 등)가 참조하는 RT.pushObjectSnapshot 등이 안전하게 연결된다.
+taskContainer && TASKS.forEach(t=> taskContainer.appendChild(buildPageEl(t)));
+TASKS.forEach(t=>{
+  try{ initTask(t); }
+  catch(err){
+    const box=document.createElement('div');
+    box.style.cssText='background:#ffebee;color:#b71c1c;border:2px solid #e57373;padding:10px;margin:10px 16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+    box.textContent = `[디버그] 과제 ${t.id} 처리 중 오류: ${err.message}\n${err.stack||''}`;
+    taskContainer.appendChild(box);
+    console.error('Task', t.id, err);
+  }
+});
+
+document.getElementById('announceClose').addEventListener('click', ()=>{
+  document.getElementById('announceBanner').style.display='none';
+});
+
+/* ---------- 페이지 넘기기 ----------
+   게이트(반/번호/이름) 섹션보다 먼저 선언해야 한다 — 아래쪽 startApp()이 게이트 화면에서
+   곧바로(같은 기기 자동 이어하기로) 동기적으로 호출될 수 있는데, 그 안에서 쓰는 showPage/
+   currentPage/RT가 아직 선언되기 전(TDZ)이면 "Cannot access before initialization" 오류가 난다. */
+const pages = [...document.querySelectorAll('#taskContainer > .pgpage'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){
+  const p = pages[idx];
+  if(!p) return null;
+  const n = parseInt(p.dataset.taskId, 10);
+  return isNaN(n) ? null : n;
+}
+function taskIdToPageIdx(n){
+  return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n);
+}
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  const label=document.getElementById('pageLabel');
+  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){
+    const idx = taskIdToPageIdx(RT.maxTaskId);
+    if(idx>=0){ showPage(idx); return; }
+  }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){
+    const idx = taskIdToPageIdx(RT.minTaskId);
+    if(idx>=0){ showPage(idx); }
+  }
+}
+function updateNavButtons(){
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  const pacingMsg=document.getElementById('pacingMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0;
+  const isLast = currentPage===pages.length-1;
+  const nextNum = pageTaskNum(currentPage+1);
+  const prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused;
+  nextBtn.disabled = isLast || blockedNext || RT.paused;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}~${RT.maxTaskId}번 화면만 진행하도록 설정했어요.`;
+    } else if(RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.maxTaskId}번까지만 진행하도록 설정했어요.`;
+    } else if(RT.minTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}번부터 진행하도록 설정했어요.`;
+    }
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+}
+document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
 const PROFILE_KEY = 'ggb_profile_v1';
 function loadProfile(){
   try{
@@ -816,12 +1136,31 @@ function loadProfile(){
     return (obj && obj.classNo && obj.name) ? obj : null;
   }catch(e){ return null; }
 }
+
+const IDENTITY_KEY = 'ggb_identity_quad14c_v1';
+function saveIdentity(name, room, number){
+  try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){}
+}
+function loadIdentity(){
+  try{
+    const raw = localStorage.getItem(IDENTITY_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+function clearIdentity(){
+  try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){}
+}
+
 let CURRENT_PROFILE = null;
 function startApp(profile){
   CURRENT_PROFILE = profile;
   document.getElementById('gateScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
   RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
 }
 (function initGate(){
   const profile = loadProfile();
@@ -843,6 +1182,15 @@ function checkUnitAccessAndShowGate(profile){
     document.getElementById('profileNameView').textContent = profile.name;
     document.getElementById('unitLockedBox').style.display='none';
     document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
+
+    /* 같은 기기에서 이미 이 반·이름으로 시작한 적이 있으면(새로고침 등) 시작 화면을
+       건너뛰고 자동으로 이어서 시작한다. */
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      document.getElementById('switchUserName').textContent = id.name;
+      document.getElementById('switchUserWrap').style.display = 'block';
+    }
   };
   const showLocked = ()=>{
     document.getElementById('profileBox').style.display='none';
@@ -859,6 +1207,11 @@ function checkUnitAccessAndShowGate(profile){
     }).catch(()=> showOpen());
   }catch(e){ showOpen(); }
 }
+document.getElementById('switchUserBtn').addEventListener('click', (e)=>{
+  e.preventDefault();
+  clearIdentity();
+  location.reload();
+});
 
 /* ---------- 제출 / 백업 ---------- */
 function buildPayload(){
@@ -872,7 +1225,7 @@ function buildPayload(){
   };
 }
 /* ---------- 전체 제출/취소 잠금 ----------
-   "결과 제출하기"를 누르면 이 페이지 전체(9개 활동 모두)가 더 이상 수정 불가 상태로 잠기고,
+   "결과 제출하기"를 누르면 이 페이지 전체(4개 활동 모두)가 더 이상 수정 불가 상태로 잠기고,
    버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다. 선생님이 [수업 종료]를 누르면 반 전체
    학생이 이 상태로 강제 전환되고, [수업 시작]을 누르면 다같이 취소(해제)된다 — 이때는
    학생이 직접 "제출 취소"를 누를 수 없다(선생님이 [수업 시작]을 눌러야 풀린다). */
@@ -918,7 +1271,8 @@ function applyPauseLock(paused){
   if(typeof updateNavButtons==='function') updateNavButtons();
 }
 
-/* ---------- Google 설문지 자동 저장 ---------- */
+/* ---------- Google 설문지 자동 저장 (현재는 호출되지 않음 — 선생님이 대시보드에서
+   "설문 제출"로 직접 전송한다. 다른 단원 파일들과의 일관성을 위해 함수 정의는 남겨둔다.) ---------- */
 function submitTaskToGoogleForm(taskId, statusText, answerText){
   if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK && CONFIG.ENTRY_SUCCESS && CONFIG.ENTRY_ANSWER)) return;
   if(!CURRENT_PROFILE) return;
@@ -937,151 +1291,37 @@ function submitTaskToGoogleForm(taskId, statusText, answerText){
   document.body.appendChild(form); form.submit(); setTimeout(()=>form.remove(),500);
 }
 
-/* ---------- 실시간 확인 (Firebase) ---------- */
-const RT = {
-  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
-  connected:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
-  classEnded:false, _lastKnownClassEnded:null,
-  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
-  connect(name, room, number){
-    const statusEl=document.getElementById('syncStatus');
-    if(!FIREBASE_CONFIG.apiKey){ return; }
-    if(!name || !room){ return; }
-    try{
-      if(!this.app){
-        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
-        this.db = firebase.database();
-      }
-      statusEl.textContent = '🔄 연결 중...';
-      firebase.auth().signInAnonymously()
-        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
-        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; });
-    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; }
-  },
-  _afterAuth(uid, name, room, number, statusEl){
-    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
-    // 예전에는 학생 키를 "uid + 이름"으로 만들었다. 그런데 uid는 Firebase 익명 로그인
-    // 세션이 유지되는 동안만 같은 값이라서, 기기를 바꾸거나(폰↔크롬북 등) 브라우저 저장공간이
-    // 지워지면 새 uid가 발급돼 완전히 새로운(빈) 학생 기록으로 취급됐다 — 번호/이름을 똑같이
-    // 입력해도 예전 진행 상황이 사라진 것처럼 보이는 원인이었다. 이제는 번호+이름 조합으로
-    // 키를 만들어서, 어느 기기/브라우저로 들어오든 번호와 이름만 같으면 항상 같은 기록에
-    // 이어서 접속되게 한다.
-    const key = this.sanitize(number) + '_' + this.sanitize(name);
-    this.studentKey = key;
-    this.roomRef = this.db.ref('rooms/'+roomKey);
-    this.studentRef = this.roomRef.child('students/'+key);
-    this.studentsRef = this.roomRef.child('students');
-    this.controlRef = this.roomRef.child('control');
-    this.studentRef.update({
-      name, number: number||null,
-      lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true
-    });
-    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
-
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
-
-    this.controlRef.on('value', snap=>{
-      const c = snap.val() || {};
-      this.paused = !!c.paused;
-      applyPauseLock(this.paused);
-      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
-        this.lastSeenAnnounceTs = c.announcementTs;
-        document.getElementById('announceText').textContent = c.announcement;
-        document.getElementById('announceBanner').style.display = 'flex';
-      } else if(!c.announcement){
-        document.getElementById('announceBanner').style.display = 'none';
-      }
-
-      // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
-      // 반 전체 학생에게 전체 제출/전체 취소를 강제로 반영한다.
-      const classEnded = !!c.classEnded;
-      if(this._lastKnownClassEnded===null){
-        if(classEnded && typeof applyFinalLock==='function') applyFinalLock(true);
-      } else if(classEnded !== this._lastKnownClassEnded){
-        if(typeof applyFinalLock==='function') applyFinalLock(classEnded);
-      }
-      this._lastKnownClassEnded = classEnded;
-      this.classEnded = classEnded;
-    });
-
-    this.connected = true;
-    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
-    statusEl.className = 'on';
-    clearInterval(this.heartbeatTimer);
-    this.heartbeatTimer = setInterval(()=>{
-      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
-    }, 15000);
-    this.pushProgress();
-  },
-  pushProgress(){
-    if(!this.connected) return;
-    const progress = {};
-    TASKS.forEach(t=>{ progress['t'+t.id] = { done: !!(results[t.id]&&results[t.id].done), value: results[t.id]?results[t.id].value:'' }; });
-    const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
-    this.studentRef.update({ progress, completed: done, total: TASKS.length, lastActive: firebase.database.ServerValue.TIMESTAMP });
-  }
-};
-
-document.getElementById('announceClose').addEventListener('click', ()=>{
-  document.getElementById('announceBanner').style.display='none';
-});
-
-/* ---------- 페이지 넘기기 (활동 6개 + 마지막 제출 페이지, student1~6과 동일한 구조) ---------- */
-const pages = [...document.querySelectorAll('#pageWrap > .pgpage'), document.querySelector('.submit-panel')];
-let currentPage = 0;
-function pageTaskNum(idx){
-  const p = pages[idx];
-  if(!p) return null;
-  const n = parseInt(p.dataset.taskId, 10);
-  return isNaN(n) ? null : n;
-}
-function showPage(idx){
-  currentPage = Math.max(0, Math.min(pages.length-1, idx));
-  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
-  const label=document.getElementById('pageLabel');
-  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
-  window.scrollTo(0,0);
-  updateNavButtons();
-}
-function updateNavButtons(){
-  const prevBtn=document.getElementById('prevBtn');
-  const nextBtn=document.getElementById('nextBtn');
-  if(!prevBtn||!nextBtn) return;
-  prevBtn.disabled = currentPage===0 || RT.paused;
-  nextBtn.disabled = currentPage===pages.length-1 || RT.paused;
-}
-document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
-document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
-
 /* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
    ?preview=1로 열리면 반/번호/이름 입력 없이 바로 appScreen을 보여주고(Firebase 연결 없음,
-   읽기 전용), 교사쪽 iframe이 postMessage로 "이전/다음 페이지" 신호를 보내면 그대로
-   showPage(currentPage±1)를 호출해서 페이지를 넘긴다. 페이지 수·구조가 파일마다 달라도
-   showPage/currentPage/pages는 모든 studentN.html에 공통으로 있어서 이 방식이 그대로 통한다. */
+   읽기 전용), 교사쪽 iframe이 postMessage로 taskId 기반 이동 신호(ggbPreviewGoto)를 보내면
+   그 taskId에 해당하는 페이지로 곧바로 이동한다(0~7번 단원들과 동일한 프로토콜). */
 if(PREVIEW_MODE){
   document.getElementById('previewBanner').style.display = 'block';
   document.getElementById('gateScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
-  showPage(0);
-  function reportPreviewState(){
+  const initIdx = PREVIEW_TASK!=null ? taskIdToPageIdx(PREVIEW_TASK) : 0;
+  showPage(initIdx >= 0 ? initIdx : 0);
+  function reportPreviewHeight(){
     if(window.parent && window.parent !== window){
-      window.parent.postMessage({type:'ggbPreviewState', idx: currentPage, total: pages.length, height: document.documentElement.scrollHeight}, window.location.origin);
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
     }
   }
   window.addEventListener('message', (e)=>{
     if(e.origin !== window.location.origin) return;
-    if(e.data && e.data.type==='ggbPreviewNav'){
-      if(e.data.dir==='prev') showPage(currentPage-1);
-      else if(e.data.dir==='next') showPage(currentPage+1);
-      reportPreviewState();
-      requestAnimationFrame(reportPreviewState);
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
     }
   });
-  reportPreviewState();
-  window.addEventListener('resize', reportPreviewState);
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(reportPreviewHeight).observe(document.body);
+  }
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
 }
-showPage(0);
 </script>
 </body>
 </html>

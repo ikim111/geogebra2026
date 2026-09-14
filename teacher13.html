@@ -66,12 +66,25 @@
   .icon6 span.got{background:var(--green);}
   .clear-badge{display:inline-block;background:#fff8e1;color:#8d6e00;border:1px solid #ffca28;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
   .score-cell{font-weight:bold;color:var(--blue);}
+  .pbar-wrap{width:60px;height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;}
+  .pbar-fill{height:100%;background:var(--green);}
   .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
   .locked-col{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px)!important;opacity:.7;}
+  /* 이 단원은 과제1(조건 아이콘6개)·과제2(✅/- 배지)가 다른 단원처럼 하나의 사각형 .cell로
+     표현되지 않아서, 각 열 앞에 작은 상태 점(.cell)을 하나 덧붙여 안 함/진행중/오류/완료/
+     지금 보는 중을 함께 보여준다(기존 아이콘6·배지 표시는 그대로 유지). */
+  .cell{width:14px;height:14px;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px;}
+  .cell.done{background:var(--green);}
+  .cell.progress{background:#ffb300;}
+  .cell.pending{background:#e0e0e0;}
+  .cell.current{outline:2px solid var(--blue);outline-offset:1px;}
+  .cell.locked{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px)!important;opacity:.7;}
+  .cell.error{background:#ffebee;border:2px solid var(--red);}
   .grid-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#666;margin:6px 2px 10px;align-items:center;}
   .grid-legend span{display:inline-flex;align-items:center;gap:5px;}
   .grid-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
   .grid-legend i.locked{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px);}
+  .grid-legend i.error{background:#ffebee;border:2px solid var(--red);}
 
   .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
   .grid-wrap{flex:2;min-width:360px;overflow-x:auto;}
@@ -120,6 +133,7 @@
   .text-answer-item .ta-status{font-size:11px;padding:2px 9px;border-radius:10px;white-space:nowrap;}
   .text-answer-item .ta-status.done{background:#e8f5e9;color:var(--green);}
   .text-answer-item .ta-status.pending{background:#fff3e0;color:var(--orange);}
+  .text-answer-item .ta-live{color:var(--red);font-weight:bold;font-size:11.5px;margin-left:6px;}
   .text-answer-item .ta-text{font-size:13px;color:#333;white-space:pre-wrap;word-break:break-word;margin-bottom:4px;}
   .text-answer-empty{color:#999;font-size:13.5px;text-align:center;padding:24px 10px;}
 </style>
@@ -234,9 +248,12 @@
       <div class="layout">
         <div class="grid-wrap">
           <div class="grid-legend">
-            <span><i style="background:#e0e0e0;"></i>미완료</span>
+            <span><i style="background:#e0e0e0;"></i>안 함 (아직 열어보지 않음)</span>
+            <span><i style="background:#ffb300;"></i>진행중 (열어봤지만 미완료)</span>
+            <span><i class="error"></i>오류 (입력했지만 제출 안 함)</span>
             <span><i style="background:var(--green);"></i>완료</span>
             <span><i class="locked"></i>속도조절로 제한된 화면</span>
+            <span>각 열 앞의 작은 점 = 그 과제의 진행 상태 (테두리 파란색 = 지금 보는 중)</span>
           </div>
           <table id="grid">
             <thead>
@@ -244,6 +261,7 @@
                 <th><input type="checkbox" id="checkAll"></th>
                 <th style="text-align:left;">이름</th>
                 <th>번호</th>
+                <th>진행률</th>
                 <th class="taskcol" id="th-task1" title="클릭하면 ② 교사용 뷰에서 [과제 1]을 볼 수 있어요">최소조건 발견</th>
                 <th>발견 개수</th>
                 <th class="taskcol" id="th-task2" title="클릭하면 ② 교사용 뷰에서 [과제 2]를 볼 수 있어요">2페이지</th>
@@ -251,7 +269,7 @@
                 <th>최근 활동</th>
               </tr>
             </thead>
-            <tbody id="gridBody"><tr><td class="empty" colspan="8">아직 접속한 학생이 없어요.</td></tr></tbody>
+            <tbody id="gridBody"><tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr></tbody>
           </table>
         </div>
         <div class="detail" id="detail">
@@ -378,6 +396,12 @@ function displayName(key, name, number){
   let h=0;
   for(let i=0;i<key.length;i++) h=(h*31 + key.charCodeAt(i)) >>> 0;
   return PSEUDONYMS[h % PSEUDONYMS.length];
+}
+function byNumber(a, b){
+  const na = parseInt(a.number, 10), nb = parseInt(b.number, 10);
+  const va = isNaN(na) ? Infinity : na, vb = isNaN(nb) ? Infinity : nb;
+  if(va !== vb) return va - vb;
+  return (a.name||'').localeCompare(b.name||'');
 }
 
 function populateRoomSelect(){
@@ -590,6 +614,9 @@ document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
   document.getElementById('connStatus').textContent='반을 선택하고 "시작하기"를 눌러주세요.';
 });
 
+function taskVisited(s, taskId){
+  return !!(s.visitedTasks && s.visitedTasks[taskId]);
+}
 function studentMinimalFound(student){
   const found = new Set();
   (student.records||[]).forEach(r=>{
@@ -702,7 +729,7 @@ function renderGrid(){
   const locked1 = paceStart!=null && paceEnd!=null && (1<paceStart || 1>paceEnd);
   const locked2 = paceStart!=null && paceEnd!=null && (2<paceStart || 2>paceEnd);
   if(keys.length===0){
-    body.innerHTML = '<tr><td class="empty" colspan="8">아직 접속한 학생이 없어요.</td></tr>';
+    body.innerHTML = '<tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr>';
     document.getElementById('sumCount').textContent='0';
     document.getElementById('sumClear').textContent='0';
     document.getElementById('sumAvg').textContent='0';
@@ -719,9 +746,7 @@ function renderGrid(){
     const found = studentMinimalFound(s);
     return { key:k, student:s, foundSet:found, score:found.size };
   });
-  list.sort((a,b)=>{
-    return b.score - a.score || (b.student.lastActive||0)-(a.student.lastActive||0);
-  });
+  list.sort((a,b)=> byNumber(a.student,b.student));
 
   let clearCount=0, scoreSum=0;
   list.forEach(item=>{
@@ -764,9 +789,27 @@ function renderGrid(){
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
 
+    const p2DoneForPct = !!(s.progress && s.progress.p2 && s.progress.p2.done);
+    const pct = Math.round(((item.score/6) + (p2DoneForPct?1:0)) / 2 * 100);
+    const tdPct=document.createElement('td');
+    const pbarWrap=document.createElement('span'); pbarWrap.className='pbar-wrap';
+    const pbarFill=document.createElement('span'); pbarFill.className='pbar-fill'; pbarFill.style.width=pct+'%';
+    pbarWrap.appendChild(pbarFill);
+    tdPct.appendChild(pbarWrap);
+    tdPct.appendChild(document.createTextNode(' '+pct+'%'));
+
     const tdIcons = document.createElement('td');
     if(locked1) tdIcons.classList.add('locked-col');
-    const icon6 = document.createElement('div'); icon6.className='icon6';
+    const done1 = item.score>0;
+    const visited1 = taskVisited(s,1);
+    const cur1 = s.currentTaskId===1;
+    const stateClass1 = done1 ? 'done' : (visited1 ? 'progress' : 'pending');
+    const stateLabel1 = done1 ? '완료(1개 이상 발견)' : (visited1 ? '진행중' : '안 함');
+    const dot1 = document.createElement('span');
+    dot1.className = ['cell', stateClass1, (cur1?'current':'')].filter(Boolean).join(' ');
+    dot1.title = `과제 1: 조건 선택 & 기록 — ${stateLabel1}`;
+    tdIcons.appendChild(dot1);
+    const icon6 = document.createElement('div'); icon6.className='icon6'; icon6.style.display='inline-flex';
     CANONICAL_MINIMAL.forEach(m=>{
       const key = recordKeyOf(m.ids);
       const sp = document.createElement('span');
@@ -777,13 +820,25 @@ function renderGrid(){
     tdIcons.appendChild(icon6);
 
     const tdScore = document.createElement('td'); tdScore.className='score-cell'; tdScore.textContent = item.score+' / 6';
-    const p2Done = !!(s.progress && s.progress.p2 && s.progress.p2.done);
-    const tdPage2 = document.createElement('td'); tdPage2.textContent = p2Done ? '✅' : '-';
+    const p2 = s.progress && s.progress.p2;
+    const p2Done = !!(p2 && p2.done);
+    const p2HasValue = !!(p2 && Array.isArray(p2.answers) && p2.answers.some(a=>a && String(a).trim()));
+    const isError2 = !p2Done && p2HasValue;
+    const visited2 = taskVisited(s,2);
+    const cur2 = s.currentTaskId===2;
+    const stateClass2 = p2Done ? 'done' : (isError2 ? 'error' : (visited2 ? 'progress' : 'pending'));
+    const stateLabel2 = p2Done ? '완료' : (isError2 ? '입력함(확인 필요)' : (visited2 ? '진행중' : '안 함'));
+    const tdPage2 = document.createElement('td');
+    const dot2 = document.createElement('span');
+    dot2.className = ['cell', stateClass2, (cur2?'current':'')].filter(Boolean).join(' ');
+    dot2.title = `과제 2: 최소조건 말로 표현 — ${stateLabel2}`;
+    tdPage2.appendChild(dot2);
+    tdPage2.appendChild(document.createTextNode(p2Done ? '✅' : '-'));
     if(locked2) tdPage2.classList.add('locked-col');
     const tdTotal = document.createElement('td'); tdTotal.textContent = (s.records||[]).length;
     const tdTime = document.createElement('td'); tdTime.textContent = fmtTime(s.lastActive);
 
-    tr.appendChild(tdName); tr.appendChild(tdNum); tr.appendChild(tdIcons);
+    tr.appendChild(tdName); tr.appendChild(tdNum); tr.appendChild(tdPct); tr.appendChild(tdIcons);
     tr.appendChild(tdScore); tr.appendChild(tdPage2); tr.appendChild(tdTotal); tr.appendChild(tdTime);
     body.appendChild(tr);
   });
@@ -822,16 +877,18 @@ function renderDetail(item){
 
   const meta=document.createElement('div');
   meta.style.cssText='font-size:12.5px;color:#888;margin-bottom:10px;';
-  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 제출: ${s.submitted?'✅ 완료':'미제출'}`;
+  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 현재 보는 중: 과제 ${s.currentTaskId||'-'} · 제출: ${s.submitted?'✅ 완료':'미제출'}`;
   wrap.appendChild(meta);
 
   TASK_LABELS.forEach(t=>{
     const done = t.id===1 ? item.score>0 : !!(s.progress && s.progress.p2 && s.progress.p2.done);
+    const visited = taskVisited(s, t.id);
+    const label = done ? '✅ 완료' : (visited ? '🟠 진행중' : '⬜ 안 함');
     const row=document.createElement('div'); row.className='drow';
     row.title='클릭하면 이 학생의 기록(또는 문장)을 볼 수 있어요';
     row.addEventListener('click', ()=> openTaskDetail(item, t));
     const left=document.createElement('span'); left.textContent = `과제 ${t.id}. ${t.label}`;
-    const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = done ? '✅ 완료' : '⬜ 미완료';
+    const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = label;
     row.appendChild(left); row.appendChild(right);
     wrap.appendChild(row);
   });
@@ -841,7 +898,9 @@ function openTaskDetail(item, t){
   const s = item.student;
   const key = item.key;
   document.getElementById('tdmTitle').textContent = `과제 ${t.id}. ${t.label}`;
-  const doneLabel = t.id===1 ? (item.score>0?'✅ 완료':'⬜ 미완료') : ((s.progress&&s.progress.p2&&s.progress.p2.done)?'✅ 완료':'⬜ 미완료');
+  const done = t.id===1 ? item.score>0 : !!(s.progress&&s.progress.p2&&s.progress.p2.done);
+  const visited = taskVisited(s, t.id);
+  const doneLabel = done ? '✅ 완료' : (visited ? '🟠 진행중' : '⬜ 안 함');
   document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${doneLabel}`;
 
   const canvasWrap = document.getElementById('tdmCanvasWrap');
@@ -926,10 +985,11 @@ function renderTeacherView(){
 
   list.forEach(item=>{
     const s = item.student;
+    const isLive1 = s.currentTaskId===1;
     const card = document.createElement('div');
     card.className='student-card';
     const head=document.createElement('div'); head.className='sc-head';
-    head.innerHTML = `<span>${displayName(item.key,s.name,s.number)}</span><span>${item.score} / 6</span>`;
+    head.innerHTML = `<span>${displayName(item.key,s.name,s.number)}${isLive1?' <span style="color:var(--red);font-weight:bold;font-size:11px;">● 지금 보는 중</span>':''}</span><span>${item.score} / 6</span>`;
     const iconWrap=document.createElement('div'); iconWrap.className='sc-canvas';
     const icon6=document.createElement('div'); icon6.className='icon6';
     CANONICAL_MINIMAL.forEach(m=>{
@@ -949,12 +1009,19 @@ function renderTeacherView(){
   list.forEach(item=>{
     const s = item.student;
     const p2 = s.progress && s.progress.p2;
+    const isLive2 = s.currentTaskId===2;
     const box=document.createElement('div'); box.className='text-answer-item';
     const head=document.createElement('div'); head.className='ta-head';
+    const nameWrap=document.createElement('span');
     const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
+    nameWrap.appendChild(name);
+    if(isLive2){
+      const live=document.createElement('span'); live.className='ta-live'; live.textContent='● 지금 보는 중';
+      nameWrap.appendChild(live);
+    }
     const done = !!(p2 && p2.done);
     const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
-    head.appendChild(name); head.appendChild(status);
+    head.appendChild(nameWrap); head.appendChild(status);
     box.appendChild(head);
     if(!p2 || !Array.isArray(p2.answers) || p2.answers.every(a=>!a)){
       const text=document.createElement('div'); text.className='ta-text'; text.textContent='(아직 작성한 문장이 없어요)';
