@@ -68,6 +68,8 @@
   .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
   .tab-panel{display:none;padding-top:16px;}
   .tab-panel.active{display:block;}
+  .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
 
   .pace-track{display:flex;gap:4px;user-select:none;flex-wrap:wrap;}
   .pace-chip{width:30px;height:30px;border-radius:6px;border:1px solid #ccc;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:bold;cursor:pointer;color:#555;transition:background .1s,color .1s;}
@@ -166,6 +168,7 @@
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
+      <button class="tab-btn" data-tab="student">③ 학생용</button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
@@ -200,6 +203,22 @@
       <div class="teacher-col">
         <div class="teacher-col-title">✏️ 선택한 활동의 학생 답변</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
+      </div>
+    </div>
+
+    <div id="tab-student" class="tab-panel">
+      <div class="panel">
+        <div class="preview-topbar">
+          <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
+          <div class="row">
+            <button id="previewPrevBtn">◀ 이전</button>
+            <span id="previewLabel">1 / 1</span>
+            <button id="previewNextBtn">다음 ▶</button>
+          </div>
+        </div>
+      </div>
+      <div style="border:1px solid #ddd;border-radius:10px;overflow:visible;background:#fff;">
+        <iframe id="previewFrame" title="학생 화면 미리보기" scrolling="auto" style="width:100%;height:900px;border:none;display:block;"></iframe>
       </div>
     </div>
 
@@ -599,7 +618,45 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='teacher') renderTeacherView();
+    if(btn.dataset.tab==='student') ensurePreviewLoaded();
   });
+});
+
+/* ---------- ③ 학생용 뷰: 실제 학생 파일을 미리보기 모드(iframe)로 띄워서 보여줌 ----------
+   student14.html이 ?preview=1로 열리면 반/번호/이름 입력 없이 바로 appScreen을 보여준다(읽기
+   전용, 실제 학생 데이터에는 영향 없음). "이전/다음" 버튼은 절대 페이지 번호가 아니라
+   "한 페이지 앞/뒤로"라는 상대적인 신호(ggbPreviewNav)만 보내고, 학생쪽이 자기 파일의
+   showPage/currentPage/pages를 그대로 써서 처리한 뒤 현재 위치(ggbPreviewState)를 돌려준다. */
+let previewLoaded=false;
+function ensurePreviewLoaded(){
+  const frame=document.getElementById('previewFrame');
+  if(!previewLoaded){
+    frame.src = 'student14.html?preview=1';
+    previewLoaded=true;
+  }
+}
+window.addEventListener('message', (e)=>{
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type==='ggbPreviewState'){
+    const label=document.getElementById('previewLabel');
+    if(label && typeof e.data.idx==='number' && typeof e.data.total==='number'){
+      label.textContent = (e.data.idx+1)+' / '+e.data.total;
+      document.getElementById('previewPrevBtn').disabled = e.data.idx<=0;
+      document.getElementById('previewNextBtn').disabled = e.data.idx>=e.data.total-1;
+    }
+    if(typeof e.data.height==='number'){
+      const frame=document.getElementById('previewFrame');
+      if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
+    }
+  }
+});
+document.getElementById('previewPrevBtn').addEventListener('click', ()=>{
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow) frame.contentWindow.postMessage({type:'ggbPreviewNav', dir:'prev'}, window.location.origin);
+});
+document.getElementById('previewNextBtn').addEventListener('click', ()=>{
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow) frame.contentWindow.postMessage({type:'ggbPreviewNav', dir:'next'}, window.location.origin);
 });
 
 function renderDetail(item){

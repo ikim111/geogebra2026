@@ -25,6 +25,10 @@
   #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
   #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
   #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
   .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
   .panel-title{font-size:14.5px;font-weight:bold;color:#1a237e;margin-bottom:10px;}
@@ -81,8 +85,9 @@
   .record-del{flex:0 0 auto;border:none;background:#fdecea;color:var(--red);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;}
   .record-empty{color:#999;font-size:13px;text-align:center;padding:16px 4px;}
 
-  .submit-panel{text-align:center;}
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
   .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
   .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
   #submitStatus{margin-top:10px;font-size:13px;color:#333;}
 
@@ -120,7 +125,7 @@
 
   body.final-locked .two-col, body.final-locked #condList, body.final-locked .canvas-actions,
   body.final-locked .record-del,
-  body.final-locked #submitBtn{ pointer-events:none !important; opacity:.6; }
+  body.final-locked #cond2List{ pointer-events:none !important; opacity:.6; }
 
   #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13.5px;align-items:center;justify-content:space-between;gap:10px;}
   #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
@@ -172,6 +177,8 @@
 </div>
 
 <div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
   <div id="stickyBar">
     <div id="unitTitleBar">13. 평행사변형이 되는 조건 찾기</div>
     <div class="sticky-controls">
@@ -185,72 +192,24 @@
     </div>
   </div>
 
-  <div class="wrap">
+  <div class="wrap" id="pageWrap">
 
     <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
 
-    <div id="page1View">
-      <div class="task">
-        <div class="task-head">
-          <h2><span class="num">[과제 1]</span> 조건을 선택해서 그림의 사각형이 평행사변형이 되도록 해보자.</h2>
-          <span class="badge pending" id="taskBadge">미완료</span>
-        </div>
-        <div class="task-desc">조건 체크박스를 하나 이상 선택하면 사각형이 다시 그려져요. 여러 개를 함께 선택할 수도 있어요.</div>
-        <div class="task-action">가장 적은 조건으로 평행사변형을 완성해보자!</div>
-      </div>
+    <div id="taskContainer"></div>
 
-      <div class="two-col">
-        <div class="panel col-canvas">
-          <div class="panel-title">사각형 ABCD (대각선 AC, BD의 교점 O)</div>
-          <svg id="quadSvg" viewBox="0 0 600 420"></svg>
-          <div class="canvas-status" id="canvasStatus"></div>
-          <div class="canvas-actions">
-            <button id="reshuffleBtn">🔄 다른 모양으로 다시 그리기</button>
-          </div>
-        </div>
-
-        <div class="panel col-cond">
-          <div class="panel-title">조건을 선택하세요 (여러 개 선택 가능)</div>
-          <div id="condList" class="cond-list"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title">📒 평행사변형이 되었던 순간의 기록</div>
-        <div class="mission-progress">
-          <div class="progress-row">
-            <div class="progress-bar"><div class="progress-fill" id="missionFill"></div></div>
-            <div class="progress-text" id="missionText">최소조건 발견 0 / 6</div>
-          </div>
-        </div>
-        <div id="missionClearBadge" class="mission-clear-badge">🏆 미션 클리어! 가장 적은 조건(2개) 조합을 모두 찾았어요!</div>
-        <div id="recordList" class="record-list"></div>
-      </div>
-
-      <div class="panel submit-panel">
-        <button class="main" id="submitBtn">기록 제출하기</button><br>
-        <button class="backup" id="backupBtn">백업 파일로 저장</button>
-        <div id="submitStatus"></div>
-      </div>
-    </div>
-
-    <div id="page2View" style="display:none;">
-      <div class="task">
-        <div class="task-head">
-          <h2><span class="num">[과제 2]</span> 찾은 최소조건들을 말로 정리해보자.</h2>
-          <span class="badge pending" id="taskBadge2">미완료</span>
-        </div>
-        <div class="task-desc">1페이지에서 사각형이 평행사변형이 되도록 만들었던 가장 적은 조건 조합 6가지예요. 각 조합을 "~이면 평행사변형이 된다."와 같은 완전한 문장으로 표현해보세요.</div>
-      </div>
-
-      <div id="cond2List"></div>
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
     </div>
 
   </div>
 
   <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
     <div class="pager-buttons">
-      <span id="pageLabel">1 / 2</span>
+      <span id="pageLabel">1 / 1</span>
     </div>
   </div>
 </div>
@@ -258,15 +217,38 @@
 <script>
 /* ============================================================
    13. 평행사변형이 되는 조건 찾기
-   사각형 ABCD에서 8개의 개별 조건(대변 평행 2종 / 대변 길이 2종 / 대각 크기 2종 /
-   대각선 반토막 2종)을 자유롭게 체크하면, 그 조건들을 만족하는 새 사각형을 즉시 다시
-   그린다. 평행사변형이 되도록 "강제하는" 조합(교과서의 5가지 조건, 방향별로 6가지)일
-   때만 실제로 평행사변형이 나오고, 그 순간의 조건 조합을 기록에 남긴다.
+   0~7번/11·12번 단원과 동일한 방식으로 재작성했다: 과제 내용을 TASKS 배열에 데이터로
+   담아두고, buildTaskCard()가 그 데이터를 읽어 매번 HTML을 새로 만들어 #taskContainer에
+   채워 넣는다(예전처럼 과제 카드 HTML을 본문에 직접 써두지 않는다).
+
+   이 단원의 엔진은 사각형 ABCD에서 8개의 개별 조건(대변 평행 2종 / 대변 길이 2종 /
+   대각 크기 2종 / 대각선 반토막 2종)을 자유롭게 체크하면, 그 조건들을 만족하는 새
+   사각형을 즉시 다시 그리는 "완화(relaxation) 기반 사각형 생성 엔진"이다(과제1).
+   평행사변형이 되도록 "강제하는" 조합(교과서의 5가지 조건, 방향별로 6가지)일 때만
+   실제로 평행사변형이 나오고, 그 순간의 조건 조합을 기록에 남긴다. 과제2는 그렇게
+   찾은 6가지 최소조건 조합을 각각 독립적으로 "~이면 평행사변형이 된다"라는 문장으로
+   제출/취소할 수 있는 서술형 6종 세트다. 두 과제의 수학적 로직은 그대로 두고, 주변의
+   게이트/자동이어하기/속도조절/제출·백업/미리보기 골격만 다른 단원과 동일하게 맞췄다.
 
    선생님 설정 안내(Firebase 실시간 확인을 쓰려면)는 teacher13.html과 동일한
    FIREBASE_CONFIG / ACTIVITY_SUFFIX를 이 파일에도 채우면 된다. 비워두면 실시간
    확인 없이도 활동 자체는 그대로 동작한다(기록 저장은 로컬 + 백업 파일로 가능).
    ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const UNIT_LABEL = '13. 평행사변형이 되는 조건 찾기';
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
   authDomain: 'brojuntest.firebaseapp.com',
@@ -339,47 +321,6 @@ function isRuleForcing(selectedIds){
 function matchedMinimal(selectedIds){
   const set = new Set(selectedIds);
   return CANONICAL_MINIMAL.filter(m => m.ids.every(id=>set.has(id)) && m.ids.length===selectedIds.length);
-}
-
-/* ---------- 2페이지: 최소조건을 말로 표현하기 ---------- */
-const PAGE2_MIN_LEN = 12; // 문장 하나당 최소 글자수
-function buildCond2List(){
-  const wrap = document.getElementById('cond2List');
-  wrap.textContent = '';
-  CANONICAL_MINIMAL.forEach((m, i)=>{
-    const card = document.createElement('div');
-    card.className = 'cond2-card';
-    const head = document.createElement('div');
-    head.className = 'cond2-head';
-    const sym = document.createElement('div');
-    sym.className = 'cond2-sym';
-    sym.innerHTML = `${i+1}. ${m.sym}`;
-    const badge = document.createElement('span');
-    badge.className = 'badge pending';
-    badge.id = 'p2-badge-'+i;
-    badge.textContent = '미완료';
-    head.appendChild(sym); head.appendChild(badge);
-    const ta = document.createElement('textarea');
-    ta.id = 'p2-input-'+i;
-    ta.rows = 2;
-    const fb = document.createElement('div');
-    fb.className = 'cond2-fb';
-    fb.id = 'p2-fb-'+i;
-    const actions = document.createElement('div');
-    actions.className = 'cond2-actions';
-    const btn = document.createElement('button');
-    btn.className = 'cond2-submit';
-    btn.id = 'p2-check-'+i;
-    btn.textContent = '제출';
-    actions.appendChild(btn);
-    const ca = document.createElement('div');
-    ca.className = 'class-answers';
-    ca.id = 'classAnswers-p2-'+i;
-    ca.style.display = 'none';
-    ca.innerHTML = '<div class="ca-title">👀 친구들은 이렇게 표현했어요</div><div class="ca-list" id="classAnswersList-p2-'+i+'"></div>';
-    card.appendChild(head); card.appendChild(ta); card.appendChild(fb); card.appendChild(actions); card.appendChild(ca);
-    wrap.appendChild(card);
-  });
 }
 
 /* ---------- 완화(relaxation) 기반 사각형 생성 엔진 ----------
@@ -569,6 +510,7 @@ let currentIsParallelogram = false;
 
 function drawQuad(pts){
   const svg = document.getElementById('quadSvg');
+  if(!svg) return;
   while(svg.firstChild) svg.removeChild(svg.firstChild);
   const {A,B,C,D} = pts;
   const O = (function(){
@@ -631,6 +573,7 @@ let selectedConditionIds = [];
 
 function buildConditionList(){
   const wrap = document.getElementById('condList');
+  if(!wrap) return;
   wrap.textContent='';
   CONDITIONS.forEach(c=>{
     const row = document.createElement('label');
@@ -664,6 +607,7 @@ function regenerate(){
   currentIsParallelogram = r.isParallelogram;
   drawQuad(currentQuad);
   const statusEl = document.getElementById('canvasStatus');
+  if(!statusEl) return;
   if(currentIsParallelogram){
     statusEl.textContent = '✅ 평행사변형이 되었어요!';
     statusEl.className = 'canvas-status ok';
@@ -677,7 +621,7 @@ function regenerate(){
   }
 }
 
-/* ---------- 기록 저장/삭제 ---------- */
+/* ---------- 기록 저장/삭제 (localStorage, 같은 기기에서 이어보기용) ---------- */
 const RECORDS_KEY_PREFIX = 'quad12_records_';
 let records = [];
 let recordsStorageKey = 'quad12_records_anon';
@@ -732,6 +676,7 @@ function minimalFoundCount(){
 
 function renderRecords(){
   const list = document.getElementById('recordList');
+  if(!list) return;
   list.textContent='';
   if(records.length===0){
     const empty=document.createElement('div');
@@ -765,136 +710,89 @@ function renderRecords(){
   }
 
   const foundCount = minimalFoundCount();
-  document.getElementById('missionFill').style.width = Math.min(100, foundCount/6*100)+'%';
-  document.getElementById('missionText').textContent = `최소조건 발견 ${foundCount} / 6`;
-  document.getElementById('missionClearBadge').style.display = foundCount>=6 ? 'block' : 'none';
+  const missionFill = document.getElementById('missionFill');
+  const missionText = document.getElementById('missionText');
+  const missionClearBadge = document.getElementById('missionClearBadge');
+  if(missionFill) missionFill.style.width = Math.min(100, foundCount/6*100)+'%';
+  if(missionText) missionText.textContent = `최소조건 발견 ${foundCount} / 6`;
+  if(missionClearBadge) missionClearBadge.style.display = foundCount>=6 ? 'block' : 'none';
 
   const taskBadge = document.getElementById('taskBadge');
-  if(records.length>0){
-    taskBadge.textContent='완료'; taskBadge.className='badge done';
-  } else {
-    taskBadge.textContent='미완료'; taskBadge.className='badge pending';
+  if(taskBadge){
+    if(records.length>0){
+      taskBadge.textContent='완료'; taskBadge.className='badge done';
+    } else {
+      taskBadge.textContent='미완료'; taskBadge.className='badge pending';
+    }
   }
+  results[1] = { done: records.length>0 };
   if(typeof updateProgress==='function') updateProgress();
 }
-
-/* ---------- 게이트(반/번호/이름) ---------- */
-const PROFILE_KEY = 'ggb_profile_v1';
-function loadProfile(){
-  try{
-    const raw = localStorage.getItem(PROFILE_KEY);
-    if(!raw) return null;
-    const obj = JSON.parse(raw);
-    return (obj && obj.classNo && obj.name) ? obj : null;
-  }catch(e){ return null; }
-}
-
-function startApp(profile){
-  document.getElementById('gateScreen').style.display='none';
-  document.getElementById('appScreen').style.display='block';
-  recordsStorageKey = RECORDS_KEY_PREFIX + (profile.classNo||'x') + '_' + (profile.number||'x') + '_' + (profile.name||'x');
-  loadRecordsLocal();
-  buildConditionList();
-  buildCond2List();
-  initTextTask2();
-  regenerate();
-  renderRecords();
-  RT.connect(profile.name, profile.classNo, profile.number);
-}
-
-(function initGate(){
-  const profile = loadProfile();
-  if(!profile){
-    document.getElementById('profileMissingBox').style.display='block';
-    return;
-  }
-  checkUnitAccessAndShowGate(profile);
-})();
-
-/* 선생님이 이 단원을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작 화면을 보여준다.
-   Firebase가 설정되지 않았거나 확인 중 오류가 나면(네트워크 등) 기존처럼 그냥 열어준다
-   (잠금 기능은 어디까지나 선택 기능이라, 이것 때문에 과제 자체를 못 하게 막지는 않는다). */
-function checkUnitAccessAndShowGate(profile){
-  const showOpen = ()=>{
-    document.getElementById('profileBox').style.display='block';
-    document.getElementById('profileClassView').textContent = profile.classNo+'반';
-    document.getElementById('profileNumberView').textContent = profile.number || '-';
-    document.getElementById('profileNameView').textContent = profile.name;
-    document.getElementById('unitLockedBox').style.display='none';
-    document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
-  };
-  const showLocked = ()=>{
-    document.getElementById('profileBox').style.display='none';
-    document.getElementById('unitLockedBox').style.display='block';
-  };
-  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
-  try{
-    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    firebase.auth().signInAnonymously().then(()=>{
-      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
-      firebase.database().ref('rooms/'+roomKey+'/units/13').once('value').then(snap=>{
-        if(snap.val()===true) showOpen(); else showLocked();
-      }).catch(()=> showOpen());
-    }).catch(()=> showOpen());
-  }catch(e){ showOpen(); }
-}
-
-document.getElementById('reshuffleBtn').addEventListener('click', regenerate);
-
-/* ---------- 제출 / 백업 ----------
-   1페이지의 이 버튼은 "지금까지 찾은 기록"을 확인/저장하는 버튼이다(기록은 사실 찾을 때마다
-   이미 자동으로 저장된다). 이 활동 전체의 최종 제출/잠금은 2페이지의 "제출" 버튼이 담당한다
-   (마지막 페이지에서 한 번에 전체를 제출/취소하는 기존 단원들과 같은 방식). */
-document.getElementById('submitBtn').addEventListener('click', ()=>{
-  RT.pushRecords(false);
-  const statusEl = document.getElementById('submitStatus');
-  statusEl.textContent = `✅ 지금까지의 기록을 저장했어요! (기록 ${records.length}개, 최소조건 ${minimalFoundCount()}/6) 마지막 제출은 2페이지의 "제출" 버튼으로 해주세요.`;
-});
-document.getElementById('backupBtn').addEventListener('click', ()=>{
-  const profile = loadProfile() || {};
-  const data = {
-    classNo: profile.classNo, number: profile.number, name: profile.name,
-    records, missionScore: minimalFoundCount(), exportedAt: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `평행사변형조건_${profile.classNo||''}반_${profile.number||''}_${profile.name||''}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
 
 /* ---------- 과제2 서술형: 조건 6개를 각각 독립적으로 제출/취소 + 친구 답변 보기
    (student1~6과 동일한 패턴 — 문장 하나를 제출하면 그 문장만 잠기고 "취소" 버튼으로
    바뀌며, 그 조건에 한해 다른 친구들의 답변이 바로 보인다. 6개를 모두 제출해야
-   과제2 전체가 "완료"로 표시되고, 그때 1페이지(조건 선택/기록)도 함께 잠긴다.) ---------- */
+   과제2 전체가 "완료"로 표시된다. 페이지 전체의 최종 잠금은 이제 다른 0~7 단원과
+   동일하게 맨 아래 공통 제출 패널의 "결과 제출하기" 버튼이 전담한다.) ---------- */
+const PAGE2_MIN_LEN = 12; // 문장 하나당 최소 글자수
 const results2 = { p2: { done:false, answers: CANONICAL_MINIMAL.map(()=>''), itemsDone: CANONICAL_MINIMAL.map(()=>false) } };
 const p2Tasks = [];
-// 이 함수는 buildCond2List()가 카드(p2-input-0 등)를 만든 "뒤"에 호출해야 한다
-// (startApp()에서 buildCond2List() 다음 줄에 호출). 카드가 없는 상태에서 먼저 실행하면
-// document.getElementById가 null을 반환해 addEventListener에서 바로 오류가 난다.
+
+function buildCond2List(){
+  const wrap = document.getElementById('cond2List');
+  if(!wrap) return;
+  wrap.textContent = '';
+  CANONICAL_MINIMAL.forEach((m, i)=>{
+    const card = document.createElement('div');
+    card.className = 'cond2-card';
+    const head = document.createElement('div');
+    head.className = 'cond2-head';
+    const sym = document.createElement('div');
+    sym.className = 'cond2-sym';
+    sym.innerHTML = `${i+1}. ${m.sym}`;
+    const badge = document.createElement('span');
+    badge.className = 'badge pending';
+    badge.id = 'p2-badge-'+i;
+    badge.textContent = '미완료';
+    head.appendChild(sym); head.appendChild(badge);
+    const ta = document.createElement('textarea');
+    ta.id = 'p2-input-'+i;
+    ta.rows = 2;
+    const fb = document.createElement('div');
+    fb.className = 'cond2-fb';
+    fb.id = 'p2-fb-'+i;
+    const actions = document.createElement('div');
+    actions.className = 'cond2-actions';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cond2-submit';
+    btn.id = 'p2-check-'+i;
+    btn.textContent = '제출';
+    actions.appendChild(btn);
+    const ca = document.createElement('div');
+    ca.className = 'class-answers';
+    ca.id = 'classAnswers-p2-'+i;
+    ca.style.display = 'none';
+    ca.innerHTML = '<div class="ca-title">👀 친구들은 이렇게 표현했어요</div><div class="ca-list" id="classAnswersList-p2-'+i+'"></div>';
+    card.appendChild(head); card.appendChild(ta); card.appendChild(fb); card.appendChild(actions); card.appendChild(ca);
+    wrap.appendChild(card);
+  });
+}
+
+// 이 함수는 buildCond2List()가 카드(p2-input-0 등)를 만든 "뒤"에 호출해야 한다.
 function initTextTask2(){
   const pageBadge = document.getElementById('taskBadge2');
-  let wasDone = false; // teacher13.html의 구글설문 전송/이름 색 표시가 s.submitted를 보므로,
-                        // "6개 모두 제출" ↔ "그중 하나라도 취소"로 바뀌는 순간에만 갱신한다.
 
-  // 6개 중 몇 개가 제출됐는지에 따라 과제2 전체 배지와, 1페이지를 잠그는
-  // body.final-locked 클래스, Firebase로 내보낼 progress.p2 값을 다시 맞춘다.
+  // 6개 중 몇 개가 제출됐는지에 따라 과제2 전체 배지와 Firebase로 내보낼 progress.p2 값을
+  // 맞춘다. 페이지 전체를 잠그는 최종 제출/취소는 더 이상 여기서 자동으로 처리하지 않고,
+  // 맨 아래 공통 제출 패널(submitBtn/applyFinalLock)이 전담한다 — 0~7 단원과 동일한 방식.
   function syncOverall(){
     results2.p2.itemsDone = p2Tasks.map(t=>t.isLocked());
     results2.p2.answers = p2Tasks.map(t=>t.input.value);
     results2.p2.done = results2.p2.itemsDone.every(Boolean);
     pageBadge.textContent = results2.p2.done ? '완료' : '미완료';
     pageBadge.className = 'badge ' + (results2.p2.done ? 'done' : 'pending');
-    document.body.classList.toggle('final-locked', results2.p2.done);
-    if(results2.p2.done !== wasDone){
-      wasDone = results2.p2.done;
-      if(RT.connected){
-        RT.studentRef.update(results2.p2.done
-          ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP }
-          : { submitted:false, submittedAt:null });
-      }
-    }
+    results[2] = { done: results2.p2.done };
     if(typeof updateProgress==='function') updateProgress();
   }
 
@@ -979,8 +877,7 @@ function initTextTask2(){
 }
 
 // 조건별로 마지막에 뽑힌 친구들의 key를 기억해서, 다시 그릴 때마다 무작위로 재섞지
-// 않고 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다). 안 그러면 다른 학생이
-// 답을 적을 때마다 목록이 계속 움직여서 읽기가 힘들어진다.
+// 않고 그대로 유지한다(빈 자리가 생겼을 때만 새 친구로 채운다).
 const classAnswersPicked2 = CANONICAL_MINIMAL.map(()=>[]);
 function renderClassAnswers2(i){
   const wrap = document.getElementById('classAnswers-p2-'+i);
@@ -1020,17 +917,14 @@ function renderClassAnswers2(i){
   });
 }
 
-/* ---------- 화면 잠금 / 공지 적용 ---------- */
-function applyPauseLock(paused){
-  document.body.classList.toggle('app-paused', paused);
-  document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
-  if(typeof updateNavButtons==='function') updateNavButtons();
-}
-
-/* ---------- 실시간 확인 (Firebase) ---------- */
+/* ---------- 실시간 확인 (Firebase) ----------
+   TASKS.forEach(...)보다 먼저 선언해야 한다 — 각 과제 초기화 함수(initQuadConditionTask/
+   initCondPhrasesTask)가 만드는 이벤트 핸들러 클로저들이 RT를 참조하는데, RT가 아직
+   선언되기 전(TDZ)에 TASKS.forEach가 그 함수들을 동기적으로 실행하면 안전하지 않다
+   (student1.html/student12.html과 동일한 순서). */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null, connected:false, heartbeatTimer:null,
-  paused:false, lastSeenAnnounceTs:0, studentKey:null, allStudents:{},
+  paused:false, lastSeenAnnounceTs:0, studentKey:null, allStudents:{}, minTaskId:null, maxTaskId:null,
   classEnded:false, _lastKnownClassEnded:null,
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
@@ -1062,10 +956,49 @@ const RT = {
     this.studentRef = this.roomRef.child('students/'+key);
     this.studentsRef = this.roomRef.child('students');
     this.controlRef = this.roomRef.child('control');
-    this.studentRef.update({
-      name, number: number||null,
-      lastActive: firebase.database.ServerValue.TIMESTAMP,
-      online:true
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      // 과제2(서술형 6종)의 이전 답변/잠금 상태를 복원한다 — 다른 0~7 단원의 restoreProgress와
+      // 같은 역할. 과제1(기록)은 애초에 localStorage에 저장돼 같은 기기에서는 이미 복원되지만,
+      // 다른 기기로 접속했을 때를 대비해 서버에 남아있는 기록도 같이 병합해준다(중복은
+      // tryLogRecord와 같은 방식으로 조건 조합 키 기준으로 걸러낸다).
+      if(existing && existing.progress && existing.progress.p2){
+        const p2 = existing.progress.p2;
+        if(Array.isArray(p2.answers)){
+          p2.answers.forEach((val,i)=>{
+            const input = document.getElementById('p2-input-'+i);
+            if(input && val) input.value = val;
+          });
+        }
+        if(Array.isArray(p2.itemsDone)){
+          p2.itemsDone.forEach((done,i)=>{
+            if(done && p2Tasks[i] && !p2Tasks[i].isLocked()) p2Tasks[i].doSubmit();
+          });
+        }
+      }
+      if(existing && Array.isArray(existing.records) && existing.records.length){
+        let merged = false;
+        existing.records.forEach(r=>{
+          const rkey = recordKeyOf(r.conditionIds||[]);
+          if(!records.some(rec=>recordKeyOf(rec.conditionIds)===rkey)){
+            records.push({
+              id: r.id || ('r'+Date.now()+'_'+Math.floor(Math.random()*1000)),
+              conditionIds: r.conditionIds||[], conditionLabels: r.conditionLabels||[],
+              isMinimal: !!r.isMinimal, minimalName: r.minimalName||null, ts: r.ts||Date.now()
+            });
+            merged = true;
+          }
+        });
+        if(merged){ saveRecordsLocal(); renderRecords(); }
+      }
+      if(existing && existing.submitted && typeof applyFinalLock==='function'){ applyFinalLock(true); }
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
@@ -1082,15 +1015,30 @@ const RT = {
       } else if(!c.announcement){
         document.getElementById('announceBanner').style.display = 'none';
       }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      if(typeof clampToPacing==='function') clampToPacing();
+      if(typeof updateNavButtons==='function') updateNavButtons();
 
       // 일시정지와는 완전히 별개인 기능: 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만
-      // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다.
+      // 이 학생에게 전체 제출/전체 취소를 강제로 반영한다(과제2 개별 항목 + 페이지 전체 잠금 모두).
       const classEnded = !!c.classEnded;
-      const task = window.__task12p2;
+      const forceAll = ()=>{
+        const task = window.__task12p2;
+        if(task && !task.isLocked()) task.forceSubmit();
+        if(typeof applyFinalLock==='function') applyFinalLock(true);
+        this.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+      };
+      const cancelAll = ()=>{
+        const task = window.__task12p2;
+        if(task && task.isLocked()) task.doCancel();
+        if(typeof applyFinalLock==='function') applyFinalLock(false);
+        this.studentRef.update({ submitted:false, submittedAt:null });
+      };
       if(this._lastKnownClassEnded===null){
-        if(classEnded && task && !task.isLocked()) task.forceSubmit();
+        if(classEnded) forceAll();
       } else if(classEnded !== this._lastKnownClassEnded){
-        if(task){ classEnded ? (!task.isLocked() && task.forceSubmit()) : (task.isLocked() && task.doCancel()); }
+        classEnded ? forceAll() : cancelAll();
       }
       this._lastKnownClassEnded = classEnded;
       this.classEnded = classEnded;
@@ -1140,10 +1088,270 @@ const RT = {
   }
 };
 
+/* ---------- 과제 카드 생성 (0~7과 동일한 방식: TASKS 데이터 → buildTaskCard) ---------- */
+const TASKS = [
+  { id:1, type:'quadCondition' },
+  { id:2, type:'condPhrases' }
+];
+const container = document.getElementById('taskContainer');
+const results = {};
+
+function buildTaskCard(task){
+  const el = document.createElement('div');
+  el.className = 'task-page';
+  el.dataset.taskId = task.id;
+  if(task.type==='quadCondition'){
+    el.innerHTML = `
+      <div class="task">
+        <div class="task-head">
+          <h2><span class="num">[과제 1]</span> 조건을 선택해서 그림의 사각형이 평행사변형이 되도록 해보자.</h2>
+          <span class="badge pending" id="taskBadge">미완료</span>
+        </div>
+        <div class="task-desc">조건 체크박스를 하나 이상 선택하면 사각형이 다시 그려져요. 여러 개를 함께 선택할 수도 있어요.</div>
+        <div class="task-action">가장 적은 조건으로 평행사변형을 완성해보자!</div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel col-canvas">
+          <div class="panel-title">사각형 ABCD (대각선 AC, BD의 교점 O)</div>
+          <svg id="quadSvg" viewBox="0 0 600 420"></svg>
+          <div class="canvas-status" id="canvasStatus"></div>
+          <div class="canvas-actions">
+            <button type="button" id="reshuffleBtn">🔄 다른 모양으로 다시 그리기</button>
+          </div>
+        </div>
+
+        <div class="panel col-cond">
+          <div class="panel-title">조건을 선택하세요 (여러 개 선택 가능)</div>
+          <div id="condList" class="cond-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">📒 평행사변형이 되었던 순간의 기록</div>
+        <div class="mission-progress">
+          <div class="progress-row">
+            <div class="progress-bar"><div class="progress-fill" id="missionFill"></div></div>
+            <div class="progress-text" id="missionText">최소조건 발견 0 / 6</div>
+          </div>
+        </div>
+        <div id="missionClearBadge" class="mission-clear-badge">🏆 미션 클리어! 가장 적은 조건(2개) 조합을 모두 찾았어요!</div>
+        <div id="recordList" class="record-list"></div>
+      </div>
+    `;
+  } else if(task.type==='condPhrases'){
+    el.innerHTML = `
+      <div class="task">
+        <div class="task-head">
+          <h2><span class="num">[과제 2]</span> 찾은 최소조건들을 말로 정리해보자.</h2>
+          <span class="badge pending" id="taskBadge2">미완료</span>
+        </div>
+        <div class="task-desc">1페이지에서 사각형이 평행사변형이 되도록 만들었던 가장 적은 조건 조합 6가지예요. 각 조합을 "~이면 평행사변형이 된다."와 같은 완전한 문장으로 표현해보세요.</div>
+      </div>
+      <div id="cond2List"></div>
+    `;
+  }
+  container.appendChild(el);
+  return el;
+}
+
+function initQuadConditionTask(task){
+  buildTaskCard(task);
+  buildConditionList();
+  document.getElementById('reshuffleBtn').addEventListener('click', regenerate);
+  results[task.id] = { done:false };
+  regenerate();
+  loadRecordsLocal();
+  renderRecords();
+}
+
+function initCondPhrasesTask(task){
+  buildTaskCard(task);
+  buildCond2List();
+  initTextTask2();
+  results[task.id] = { done:false };
+}
+
+TASKS.forEach(t=>{
+  try{
+    if(t.type==='quadCondition') initQuadConditionTask(t);
+    else initCondPhrasesTask(t);
+  }catch(err){
+    const box=document.createElement('div');
+    box.style.cssText='background:#ffebee;color:#b71c1c;border:2px solid #e57373;padding:10px;margin:10px 16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+    box.textContent = `[디버그] 과제 ${t.id} 처리 중 오류: ${err.message}\n${err.stack||''}`;
+    container.appendChild(box);
+    console.error('Task', t.id, err);
+  }
+});
+
+/* ---------- 화면 잠금 / 공지 적용 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  document.getElementById('lockOverlay').style.display = paused ? 'flex' : 'none';
+  if(typeof updateNavButtons==='function') updateNavButtons();
+}
+
+/* ---------- 페이지 넘기기 ----------
+   게이트(반/번호/이름) 섹션보다 먼저 선언해야 한다 — 아래쪽 startApp()이 게이트 화면에서
+   곧바로(같은 기기 자동 이어하기로) 동기적으로 호출될 수 있는데, 그 안에서 쓰는 showPage/
+   currentPage가 아직 선언되기 전(TDZ)이면 "Cannot access before initialization" 오류가 난다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task-page'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+
+function pageTaskNum(idx){
+  const p = pages[idx];
+  if(!p) return null;
+  const n = parseInt(p.dataset.taskId, 10);
+  return isNaN(n) ? null : n;
+}
+function taskIdToPageIdx(n){
+  return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n);
+}
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  const label=document.getElementById('pageLabel');
+  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){
+    const idx = taskIdToPageIdx(RT.maxTaskId);
+    if(idx>=0){ showPage(idx); return; }
+  }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){
+    const idx = taskIdToPageIdx(RT.minTaskId);
+    if(idx>=0){ showPage(idx); }
+  }
+}
+function updateNavButtons(){
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  const pacingMsg=document.getElementById('pacingMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0;
+  const isLast = currentPage===pages.length-1;
+  const nextNum = pageTaskNum(currentPage+1);
+  const prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused;
+  nextBtn.disabled = isLast || blockedNext || RT.paused;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}~${RT.maxTaskId}번 화면만 진행하도록 설정했어요.`;
+    } else if(RT.maxTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.maxTaskId}번까지만 진행하도록 설정했어요.`;
+    } else if(RT.minTaskId!=null){
+      pacingMsg.textContent = `⏸ 선생님이 ${RT.minTaskId}번부터 진행하도록 설정했어요.`;
+    }
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+}
+document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+
+const IDENTITY_KEY = 'ggb_identity_quad12_v1';
+function saveIdentity(name, room, number){
+  try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){}
+}
+function loadIdentity(){
+  try{
+    const raw = localStorage.getItem(IDENTITY_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+function clearIdentity(){
+  try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){}
+}
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  document.getElementById('gateScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  recordsStorageKey = RECORDS_KEY_PREFIX + (profile.classNo||'x') + '_' + (profile.number||'x') + '_' + (profile.name||'x');
+  loadRecordsLocal();
+  renderRecords();
+  regenerate();
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+
+(function initGate(){
+  const profile = loadProfile();
+  if(!profile){
+    document.getElementById('profileMissingBox').style.display='block';
+    return;
+  }
+  checkUnitAccessAndShowGate(profile);
+})();
+
+/* 선생님이 이 단원을 이 반에 열어줬는지 Firebase에서 확인한 뒤 시작 화면을 보여준다.
+   Firebase가 설정되지 않았거나 확인 중 오류가 나면(네트워크 등) 기존처럼 그냥 열어준다
+   (잠금 기능은 어디까지나 선택 기능이라, 이것 때문에 과제 자체를 못 하게 막지는 않는다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    document.getElementById('profileBox').style.display='block';
+    document.getElementById('profileClassView').textContent = profile.classNo+'반';
+    document.getElementById('profileNumberView').textContent = profile.number || '-';
+    document.getElementById('profileNameView').textContent = profile.name;
+    document.getElementById('profileMissingBox').style.display='none';
+    document.getElementById('unitLockedBox').style.display='none';
+    document.getElementById('startBtn').addEventListener('click', ()=>startApp(profile));
+
+    /* 같은 기기에서 이미 이 반·이름으로 시작한 적이 있으면(새로고침 등) 시작 화면을
+       건너뛰고 자동으로 이어서 시작한다. */
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      document.getElementById('switchUserName').textContent = id.name;
+      document.getElementById('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    document.getElementById('profileBox').style.display='none';
+    document.getElementById('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/13').once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+document.getElementById('switchUserBtn').addEventListener('click', (e)=>{
+  e.preventDefault();
+  clearIdentity();
+  location.reload();
+});
+
 /* 학생이 홈버튼을 누르거나, 탭을 닫거나, 다른 앱으로 전환하는 등 화면을 벗어날 때 아직
-   저장되지 않은 마지막 변경사항(디바운스 대기 중인 것)을 즉시 저장한다.
-   pagehide는 페이지 이동/탭 닫기 등 대부분의 "떠나는" 상황에서 안정적으로 발생하고,
-   visibilitychange(hidden)는 모바일에서 다른 앱으로 전환하거나 화면을 끌 때도 잡아준다. */
+   저장되지 않은 마지막 변경사항(디바운스 대기 중인 것)을 즉시 저장한다. */
 function flushBeforeLeaving(){
   if(RT.connected && typeof RT.flushPending==='function') RT.flushPending();
 }
@@ -1154,10 +1362,10 @@ document.getElementById('announceClose').addEventListener('click', ()=>{
   document.getElementById('announceBanner').style.display='none';
 });
 
-/* ---------- 진행률 표시 + 페이지 넘기기 (student1~6과 동일한 상단 바 구조) ---------- */
+/* ---------- 진행률 표시 ---------- */
 function updateProgress(){
-  const total = 2;
-  const done = (records.length>0 ? 1 : 0) + ((results2.p2 && results2.p2.done) ? 1 : 0);
+  const total = TASKS.length;
+  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
   const textEl = document.getElementById('progressText');
   const fillEl = document.getElementById('progressFill');
   if(textEl) textEl.textContent = `완료 ${done} / ${total}`;
@@ -1165,26 +1373,95 @@ function updateProgress(){
 }
 updateProgress();
 
-const pages = [document.getElementById('page1View'), document.getElementById('page2View')];
-let currentPage = 0;
-function showPage(idx){
-  currentPage = Math.max(0, Math.min(pages.length-1, idx));
-  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
-  const label=document.getElementById('pageLabel');
-  if(label) label.textContent = `${currentPage+1} / ${pages.length}`;
-  window.scrollTo(0,0);
-  updateNavButtons();
+document.addEventListener('contextmenu', e=>{
+  if(document.body.classList.contains('app-paused')) e.preventDefault();
+});
+
+/* ---------- 전체 제출/취소 잠금 ----------
+   "결과 제출하기"를 누르면 이 페이지 전체(과제1의 조건 선택/기록 + 과제2의 서술형 6종)가
+   더 이상 수정 불가 상태로 잠기고, 버튼이 "제출 취소"로 바뀐다. 다시 누르면 풀린다.
+   선생님이 [수업 종료]를 누르면 반 전체 학생이 이 상태로 강제 전환되고, [수업 시작]을
+   누르면 다같이 취소(해제)된다 — 이때는 학생이 직접 "제출 취소"를 누를 수 없다. */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  const btn = document.getElementById('submitBtn');
+  const statusEl = document.getElementById('submitStatus');
+  btn.textContent = locked ? '제출 취소' : '결과 제출하기';
+  btn.classList.toggle('cancel', locked);
+  statusEl.textContent = locked
+    ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.'
+    : '';
 }
-function updateNavButtons(){
-  const prevBtn=document.getElementById('prevBtn');
-  const nextBtn=document.getElementById('nextBtn');
-  if(!prevBtn||!nextBtn) return;
-  prevBtn.disabled = currentPage===0 || RT.paused;
-  nextBtn.disabled = currentPage===pages.length-1 || RT.paused;
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  if(!CURRENT_PROFILE){ alert('반/번호/이름 정보가 없어요. student.html에서 다시 시작해주세요.'); return; }
+  if(finalLocked){
+    if(RT.classEnded){
+      alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.');
+      return;
+    }
+    applyFinalLock(false);
+    if(RT.connected) RT.studentRef.update({ submitted:false, submittedAt:null });
+  } else {
+    applyFinalLock(true);
+    RT.pushRecords(false);
+    if(RT.connected) RT.studentRef.update({ submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP });
+  }
+});
+function buildPayload(){
+  const total = TASKS.length;
+  const done = TASKS.filter(t=>results[t.id] && results[t.id].done).length;
+  return {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: done, total,
+    records: records.map(r=>({conditionIds:r.conditionIds, conditionLabels:r.conditionLabels, isMinimal:r.isMinimal, minimalName:r.minimalName})),
+    missionScore: minimalFoundCount(),
+    page2Answers: results2.p2.answers,
+    exportedAt: new Date().toISOString()
+  };
 }
-document.getElementById('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
-document.getElementById('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
-showPage(0);
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  const payload = buildPayload();
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `평행사변형조건_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N으로 열리면 반/번호/이름 입력 없이 바로 appScreen을 그 과제 페이지로
+   보여주고(Firebase 연결 없음, 읽기 전용), 교사쪽이 postMessage로 특정 taskId를 보내면
+   taskIdToPageIdx로 그 과제 페이지를 바로 찾아 보여준다(0~7·11·12번 단원과 동일한 프로토콜). */
+if(PREVIEW_MODE){
+  document.getElementById('previewBanner').style.display = 'block';
+  document.getElementById('gateScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(reportPreviewHeight).observe(document.body);
+  }
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
 </script>
 </body>
 </html>

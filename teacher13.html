@@ -16,7 +16,7 @@
   header{background:#1a237e;color:#fff;padding:16px;text-align:center;}
   header h1{margin:0 0 4px;font-size:19px;}
   header p{margin:0;font-size:12.5px;opacity:.85;}
-  .wrap{max-width:980px;margin:0 auto;padding:16px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px;}
   .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   #roomCode{flex:1;min-width:140px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:#fff;}
@@ -52,6 +52,8 @@
   table{border-collapse:collapse;width:100%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:13px;}
   th,td{padding:9px 8px;text-align:center;border-bottom:1px solid #eee;}
   th{background:#f0f2f5;font-size:11.5px;color:#555;}
+  th.taskcol{cursor:pointer;}
+  th.taskcol:hover{background:#dde4ee;color:var(--blue);}
   td.name{text-align:left;font-weight:bold;cursor:pointer;}
   td.name:hover{color:var(--blue);}
   tr.selected td{background:#e3f2fd;}
@@ -65,11 +67,21 @@
   .clear-badge{display:inline-block;background:#fff8e1;color:#8d6e00;border:1px solid #ffca28;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
   .score-cell{font-weight:bold;color:var(--blue);}
   .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
+  .locked-col{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px)!important;opacity:.7;}
+  .grid-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#666;margin:6px 2px 10px;align-items:center;}
+  .grid-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .grid-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .grid-legend i.locked{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px);}
 
   .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
   .grid-wrap{flex:2;min-width:360px;overflow-x:auto;}
   .detail{flex:1;min-width:280px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;}
   .detail h3{margin:0 0 10px;font-size:16px;}
+  .detail .drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;cursor:pointer;border-radius:4px;}
+  .detail .drow:hover{background:#f5f7fa;}
+  .detail .drow .st{font-weight:bold;}
+  .detail .drow .st.ok{color:var(--green);}
+  .detail .drow .st.no{color:#999;}
   .drec{background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;}
   .drec.minimal{background:#e8f5e9;border-color:#a5d6a7;}
   .drec b{display:block;font-size:13.5px;margin-bottom:2px;}
@@ -81,6 +93,15 @@
   .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
   .tab-panel{display:none;padding-top:16px;}
   .tab-panel.active{display:block;}
+  .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
+
+  .pace-track{display:flex;gap:4px;user-select:none;flex-wrap:wrap;}
+  .pace-chip{width:30px;height:30px;border-radius:6px;border:1px solid #ccc;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:bold;cursor:pointer;color:#555;transition:background .1s,color .1s;}
+  .pace-chip:hover{border-color:#0066CC;}
+  .pace-chip.selected{background:#0066CC;color:#fff;border-color:#0066CC;}
+  .pace-chip.range-edge{outline:2px solid #ff9800;outline-offset:1px;}
+  .pace-badge{display:none;margin-top:8px;font-size:12.5px;color:#0052a3;background:#e8f0fe;border:1px solid #b3d1ff;padding:7px 12px;border-radius:6px;}
 
   .student-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
   .student-card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;}
@@ -133,6 +154,18 @@
 })();
 </script>
 
+<!-- 요약뷰에서 학생 상세 패널의 과제 행을 클릭하면, 그 학생이 그 과제에서 찾은 기록(과제1) 또는
+     말로 표현한 문장(과제2)을 보여주는 모달. teacher1/11/12.html과 같은 패턴이다. -->
+<div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+    <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
+    <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
+    <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
+    <div id="tdmCanvasWrap" style="border-radius:8px;margin-bottom:12px;overflow:hidden;"></div>
+    <div id="tdmTextWrap"></div>
+  </div>
+</div>
+
 <header>
   <h1>📊 교사용 실시간 대시보드 — 13. 평행사변형이 되는 조건 찾기</h1>
   <p>학생들이 어떤 조건 조합으로 평행사변형을 발견했는지 실시간으로 확인해요</p>
@@ -173,6 +206,12 @@
         <button class="pause" id="classStartBtn">▶ 수업 시작</button>
         <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
       </div>
+      <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
+        <div id="paceTrack" class="pace-track"></div>
+        <button class="pause" id="paceClearBtn">제한 해제</button>
+      </div>
+      <div id="paceBadge" class="pace-badge"></div>
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>미션 클리어: <b class="gold" id="sumClear">0</b></div>
@@ -188,20 +227,26 @@
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
+      <button class="tab-btn" data-tab="student">③ 학생용</button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
       <div class="layout">
         <div class="grid-wrap">
+          <div class="grid-legend">
+            <span><i style="background:#e0e0e0;"></i>미완료</span>
+            <span><i style="background:var(--green);"></i>완료</span>
+            <span><i class="locked"></i>속도조절로 제한된 화면</span>
+          </div>
           <table id="grid">
             <thead>
               <tr>
                 <th><input type="checkbox" id="checkAll"></th>
                 <th style="text-align:left;">이름</th>
                 <th>번호</th>
-                <th>최소조건 발견</th>
+                <th class="taskcol" id="th-task1" title="클릭하면 ② 교사용 뷰에서 [과제 1]을 볼 수 있어요">최소조건 발견</th>
                 <th>발견 개수</th>
-                <th>2페이지</th>
+                <th class="taskcol" id="th-task2" title="클릭하면 ② 교사용 뷰에서 [과제 2]를 볼 수 있어요">2페이지</th>
                 <th>전체 기록</th>
                 <th>최근 활동</th>
               </tr>
@@ -211,7 +256,7 @@
         </div>
         <div class="detail" id="detail">
           <h3>학생 선택</h3>
-          <div class="empty">표에서 이름을 클릭하면<br>그 학생이 찾은 기록이<br>여기 자세히 나와요.</div>
+          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>과제 행을 클릭하면<br>기록(또는 문장)을 자세히 볼 수 있어요.</div>
         </div>
       </div>
     </div>
@@ -219,13 +264,29 @@
     <div id="tab-teacher" class="tab-panel">
       <div class="teacher-split">
         <div class="teacher-col">
-          <div class="teacher-col-title">🧩 발견한 최소조건</div>
+          <div class="teacher-col-title">🧩 발견한 최소조건 (과제 1)</div>
           <div id="teacherCardsWrap" class="student-cards"></div>
         </div>
         <div class="teacher-col">
-          <div class="teacher-col-title">✏️ 말로 표현한 문장 (2페이지)</div>
+          <div class="teacher-col-title">✏️ 말로 표현한 문장 (과제 2)</div>
           <div id="teacherTextWrap" class="text-answer-list"></div>
         </div>
+      </div>
+    </div>
+
+    <div id="tab-student" class="tab-panel">
+      <div class="panel">
+        <div class="preview-topbar">
+          <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
+          <div class="row">
+            <button id="previewPrevBtn">◀ 이전</button>
+            <span id="previewLabel">1 / 2</span>
+            <button id="previewNextBtn">다음 ▶</button>
+          </div>
+        </div>
+      </div>
+      <div style="border:1px solid #ddd;border-radius:10px;overflow:visible;background:#fff;">
+        <iframe id="previewFrame" title="학생 화면 미리보기" scrolling="auto" style="width:100%;height:900px;border:none;display:block;"></iframe>
       </div>
     </div>
 
@@ -234,7 +295,13 @@
 
 <script>
 /* ============================================================
-   student13.html과 짝이 되는 교사용 실시간 대시보드.
+   student13.html과 짝이 되는 교사용 실시간 대시보드 — 0~7번/11·12번 단원 teacher파일과
+   동일한 구조(속도조절/익명화/반초기화/선택삭제/과제 열 클릭/과제 상세 모달/taskId 기반
+   미리보기)를 쓴다. 이 단원은 과제가 2개뿐이다: 과제1은 조건 체크박스 + 사각형 작도
+   엔진(기록은 사각형이 평행사변형이 될 때마다 자동 저장), 과제2는 그렇게 찾은 최소조건
+   6가지를 각각 문장으로 표현하는 서술형 6종 세트다. 학생 표의 열 구성(아이콘/점수 등)은
+   이 단원만의 고유한 데이터 모양이라 다른 단원처럼 TASK_LABELS 그대로의 열을 쓰지 않고,
+   대신 TASK_LABELS는 속도조절 칩 + 상세 모달 + 열 클릭 이동에만 쓴다.
    반드시 아래 두 가지를 student13.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -261,6 +328,12 @@ const CONFIG = {
   ENTRY_SUCCESS: 'entry.172713041',
   ENTRY_ANSWER: 'entry.1090948288'
 };
+
+// student13.html의 TASKS(2개)와 맞춰주세요 — 속도조절 칩/상세 모달/열 클릭 이동에 쓰인다.
+const TASK_LABELS = [
+  {id:1, label:'조건 선택 & 기록'},
+  {id:2, label:'최소조건 말로 표현'}
+];
 
 function seg(s){ return `<span class="ol">${s}</span>`; }
 const CANONICAL_MINIMAL = [
@@ -294,6 +367,8 @@ renderLegend();
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
+let paceStart=null, paceEnd=null;
+let paceAnchor=null, paceDragging=false;
 
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
@@ -327,6 +402,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       studentsRef = roomRef.child('students');
       controlRef = roomRef.child('control');
       selectedKey = null; checkedKeys = new Set();
+      setPaceRange(null, null, /*fromRemote*/true);
       studentsRef.on('value', snap=>{
         allStudents = snap.val() || {};
         renderGrid();
@@ -337,6 +413,13 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
         updatePauseBtn();
         classEnded = !!c.classEnded;
         updateClassButtons();
+        if(c.minTaskId!=null || c.maxTaskId!=null){
+          const mn = c.minTaskId!=null ? c.minTaskId : 1;
+          const mx = c.maxTaskId!=null ? c.maxTaskId : TASK_LABELS.length;
+          setPaceRange(mn, mx, /*fromRemote*/true);
+        }else{
+          setPaceRange(null, null, /*fromRemote*/true);
+        }
       });
       document.getElementById('teacherGateScreen').style.display='none';
       document.getElementById('teacherAppScreen').style.display='block';
@@ -355,7 +438,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
   const sel = document.getElementById('roomCode');
   if([...sel.options].some(o=>o.value===classNo)){
     sel.value = classNo;
-    document.getElementById('connectBtn').click();
+    setTimeout(()=> document.getElementById('connectBtn').click(), 0);
   }
 })();
 
@@ -447,7 +530,7 @@ function submitStudentAnswersToGoogleForm(s){
     fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
   };
   let count=0;
-  // 1페이지: 학생이 찾아낸 최소조건들
+  // 과제1: 학생이 찾아낸 최소조건들
   const found = studentMinimalFound(s);
   CANONICAL_MINIMAL.forEach(m=>{
     const key = recordKeyOf(m.ids);
@@ -455,7 +538,7 @@ function submitStudentAnswersToGoogleForm(s){
     sendRow('p1_'+m.short, m.sym.replace(/<[^>]*>/g,'') + ' — ' + m.name);
     count++;
   });
-  // 2페이지: 말로 표현한 문장
+  // 과제2: 말로 표현한 문장
   const p2 = s.progress && s.progress.p2;
   if(p2 && p2.done && Array.isArray(p2.answers)){
     p2.answers.forEach((a,i)=>{
@@ -524,11 +607,100 @@ function fmtTime(ts){
   return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
 }
 
+/* ---------- 속도조절(화면 범위 제한) ---------- */
+let paceMouseDownIdx=null, paceDragMoved=false, paceShiftHeld=false, paceAwaitingEnd=false;
+(function(){
+  const track=document.getElementById('paceTrack');
+  for(let i=1;i<=TASK_LABELS.length;i++){
+    const chip=document.createElement('div');
+    chip.className='pace-chip';
+    chip.textContent=i;
+    chip.title=TASK_LABELS[i-1].label;
+    chip.dataset.n=String(i);
+    chip.addEventListener('mousedown', (e)=>{
+      if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+      e.preventDefault();
+      paceDragging=true;
+      paceDragMoved=false;
+      paceMouseDownIdx=i;
+      paceShiftHeld=e.shiftKey;
+    });
+    chip.addEventListener('mouseenter', ()=>{
+      if(paceDragging && paceMouseDownIdx!=null && i!==paceMouseDownIdx){
+        paceDragMoved=true;
+        setPaceRange(Math.min(paceMouseDownIdx,i), Math.max(paceMouseDownIdx,i));
+      }
+    });
+    track.appendChild(chip);
+  }
+  document.addEventListener('mouseup', ()=>{
+    if(!paceDragging) return;
+    paceDragging=false;
+    const i=paceMouseDownIdx;
+    if(i==null){ return; }
+    if(paceDragMoved){
+      paceAnchor=Math.min(paceMouseDownIdx, paceEnd!=null?paceEnd:paceMouseDownIdx);
+      commitPacing();
+      paceAwaitingEnd=false;
+    }else if(paceShiftHeld && paceAnchor!=null){
+      setPaceRange(Math.min(paceAnchor,i), Math.max(paceAnchor,i));
+      commitPacing();
+      paceAwaitingEnd=false;
+    }else if(paceAwaitingEnd && paceAnchor!=null){
+      setPaceRange(Math.min(paceAnchor,i), Math.max(paceAnchor,i));
+      commitPacing();
+      paceAwaitingEnd=false;
+    }else{
+      paceAnchor=i;
+      setPaceRange(i,i);
+      commitPacing();
+      paceAwaitingEnd=true;
+    }
+    paceMouseDownIdx=null;
+  });
+})();
+function setPaceRange(s, e, fromRemote){
+  paceStart=s; paceEnd=e;
+  document.querySelectorAll('#paceTrack .pace-chip').forEach(c=>{
+    const n=parseInt(c.dataset.n,10);
+    const inRange = s!=null && e!=null && n>=s && n<=e;
+    c.classList.toggle('selected', inRange);
+    c.classList.toggle('range-edge', inRange && (n===s || n===e));
+  });
+  updatePaceBadge();
+  if(!fromRemote) renderGrid();
+}
+function updatePaceBadge(){
+  const badge=document.getElementById('paceBadge');
+  if(paceStart!=null && paceEnd!=null){
+    badge.style.display='inline-block';
+    badge.textContent = paceStart===paceEnd
+      ? `현재 학생들은 [ ${paceStart} ]번 화면만 볼 수 있습니다`
+      : `현재 학생들은 [ ${paceStart} ~ ${paceEnd} ]번 화면만 볼 수 있습니다`;
+  }else{
+    badge.style.display='none';
+  }
+}
+function commitPacing(){
+  if(!controlRef) return;
+  controlRef.update({ minTaskId: paceStart, maxTaskId: paceEnd });
+  renderGrid();
+}
+document.getElementById('paceClearBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  paceAnchor=null;
+  paceAwaitingEnd=false;
+  setPaceRange(null, null);
+  controlRef.update({ minTaskId: null, maxTaskId: null });
+});
+
 function renderGrid(){
   const body = document.getElementById('gridBody');
   body.textContent='';
   Array.from(checkedKeys).forEach(k=>{ if(!allStudents[k]) checkedKeys.delete(k); });
   const keys = Object.keys(allStudents);
+  const locked1 = paceStart!=null && paceEnd!=null && (1<paceStart || 1>paceEnd);
+  const locked2 = paceStart!=null && paceEnd!=null && (2<paceStart || 2>paceEnd);
   if(keys.length===0){
     body.innerHTML = '<tr><td class="empty" colspan="8">아직 접속한 학생이 없어요.</td></tr>';
     document.getElementById('sumCount').textContent='0';
@@ -538,6 +710,8 @@ function renderGrid(){
     if(checkAllEmpty) checkAllEmpty.checked=false;
     updateDeleteBtn();
     updateSurveyBtn();
+    if(selectedKey) resetDetailPanel();
+    renderTeacherView();
     return;
   }
   const list = keys.map(k=>{
@@ -586,11 +760,12 @@ function renderGrid(){
       badge.className='clear-badge'; badge.textContent='🏆 클리어'; badge.style.marginLeft='6px';
       tdName.appendChild(badge);
     }
-    tdName.addEventListener('click', ()=>{ selectedKey = item.key; renderGrid(); renderDetail(item); });
+    tdName.addEventListener('click', ()=>{ selectedKey = item.key; renderGrid(); });
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
 
     const tdIcons = document.createElement('td');
+    if(locked1) tdIcons.classList.add('locked-col');
     const icon6 = document.createElement('div'); icon6.className='icon6';
     CANONICAL_MINIMAL.forEach(m=>{
       const key = recordKeyOf(m.ids);
@@ -604,6 +779,7 @@ function renderGrid(){
     const tdScore = document.createElement('td'); tdScore.className='score-cell'; tdScore.textContent = item.score+' / 6';
     const p2Done = !!(s.progress && s.progress.p2 && s.progress.p2.done);
     const tdPage2 = document.createElement('td'); tdPage2.textContent = p2Done ? '✅' : '-';
+    if(locked2) tdPage2.classList.add('locked-col');
     const tdTotal = document.createElement('td'); tdTotal.textContent = (s.records||[]).length;
     const tdTime = document.createElement('td'); tdTime.textContent = fmtTime(s.lastActive);
 
@@ -619,13 +795,116 @@ function renderGrid(){
   const checkAll = document.getElementById('checkAll');
   if(checkAll) checkAll.checked = list.length>0 && list.every(i=>checkedKeys.has(i.key));
   updateDeleteBtn();
+  updateSurveyBtn();
 
   if(selectedKey){
     const sel = list.find(i=>i.key===selectedKey);
-    if(sel) renderDetail(sel);
+    if(sel) renderDetail(sel); else resetDetailPanel();
+  } else {
+    resetDetailPanel();
   }
   renderTeacherView();
 }
+
+/* ---------- ① 요약뷰 상세 패널: 과제 행을 클릭하면 모달로 자세히 보기 ---------- */
+const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>과제 행을 클릭하면<br>기록(또는 문장)을 자세히 볼 수 있어요.</div>`;
+function resetDetailPanel(){
+  document.getElementById('detail').innerHTML = DEFAULT_DETAIL_HTML;
+}
+
+function renderDetail(item){
+  const wrap = document.getElementById('detail');
+  wrap.textContent='';
+  const s = item.student;
+  const h3 = document.createElement('h3');
+  h3.textContent = displayName(item.key, s.name, s.number);
+  wrap.appendChild(h3);
+
+  const meta=document.createElement('div');
+  meta.style.cssText='font-size:12.5px;color:#888;margin-bottom:10px;';
+  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 제출: ${s.submitted?'✅ 완료':'미제출'}`;
+  wrap.appendChild(meta);
+
+  TASK_LABELS.forEach(t=>{
+    const done = t.id===1 ? item.score>0 : !!(s.progress && s.progress.p2 && s.progress.p2.done);
+    const row=document.createElement('div'); row.className='drow';
+    row.title='클릭하면 이 학생의 기록(또는 문장)을 볼 수 있어요';
+    row.addEventListener('click', ()=> openTaskDetail(item, t));
+    const left=document.createElement('span'); left.textContent = `과제 ${t.id}. ${t.label}`;
+    const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = done ? '✅ 완료' : '⬜ 미완료';
+    row.appendChild(left); row.appendChild(right);
+    wrap.appendChild(row);
+  });
+}
+
+function openTaskDetail(item, t){
+  const s = item.student;
+  const key = item.key;
+  document.getElementById('tdmTitle').textContent = `과제 ${t.id}. ${t.label}`;
+  const doneLabel = t.id===1 ? (item.score>0?'✅ 완료':'⬜ 미완료') : ((s.progress&&s.progress.p2&&s.progress.p2.done)?'✅ 완료':'⬜ 미완료');
+  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${doneLabel}`;
+
+  const canvasWrap = document.getElementById('tdmCanvasWrap');
+  canvasWrap.textContent='';
+  const textWrap = document.getElementById('tdmTextWrap');
+  textWrap.textContent='';
+
+  if(t.id===1){
+    const iconWrap=document.createElement('div'); iconWrap.className='sc-canvas';
+    const icon6=document.createElement('div'); icon6.className='icon6';
+    CANONICAL_MINIMAL.forEach(m=>{
+      const k=recordKeyOf(m.ids);
+      const sp=document.createElement('span');
+      if(item.foundSet.has(k)) sp.classList.add('got');
+      sp.title = m.name;
+      icon6.appendChild(sp);
+    });
+    iconWrap.appendChild(icon6);
+    canvasWrap.appendChild(iconWrap);
+
+    const recs = s.records || [];
+    if(recs.length===0){
+      const e=document.createElement('div'); e.style.cssText='color:#999;font-size:13px;padding:20px;text-align:center;'; e.textContent='아직 발견한 기록이 없어요.';
+      textWrap.appendChild(e);
+    } else {
+      [...recs].sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(r=>{
+        const box=document.createElement('div'); box.className='drec'+(r.isMinimal?' minimal':'');
+        const b=document.createElement('b'); b.innerHTML = (r.conditionLabels||r.conditionIds||[]).join('&nbsp;&nbsp;+&nbsp;&nbsp;');
+        const d=document.createElement('div'); d.className='dname';
+        d.textContent = r.isMinimal ? ('⭐ 최소조건 — '+r.minimalName) : ('조건 '+(r.conditionIds||[]).length+'개 (최소조건 아님)');
+        box.appendChild(b); box.appendChild(d);
+        textWrap.appendChild(box);
+      });
+    }
+  } else {
+    const p2 = s.progress && s.progress.p2;
+    if(!p2 || !Array.isArray(p2.answers) || p2.answers.every(a=>!a)){
+      const e=document.createElement('div'); e.style.cssText='color:#999;font-size:13px;padding:20px;text-align:center;'; e.textContent='아직 작성한 문장이 없어요.';
+      textWrap.appendChild(e);
+    } else {
+      CANONICAL_MINIMAL.forEach((m,i)=>{
+        const box=document.createElement('div'); box.className='drec';
+        const b=document.createElement('b'); b.innerHTML = m.sym;
+        const d=document.createElement('div'); d.className='dname'; d.textContent = p2.answers[i] || '(작성중)';
+        box.appendChild(b); box.appendChild(d);
+        textWrap.appendChild(box);
+      });
+    }
+  }
+  document.getElementById('taskDetailOverlay').style.display='flex';
+}
+document.getElementById('taskDetailCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('taskDetailOverlay').style.display='none';
+});
+document.getElementById('taskDetailOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='taskDetailOverlay') document.getElementById('taskDetailOverlay').style.display='none';
+});
+
+function gotoTeacherTab(){
+  document.querySelector('.tab-btn[data-tab="teacher"]').click();
+}
+document.getElementById('th-task1').addEventListener('click', gotoTeacherTab);
+document.getElementById('th-task2').addEventListener('click', gotoTeacherTab);
 
 /* ---------- ② 교사용 뷰: 학생 전체가 발견한 조건 / 작성한 문장을 한눈에 보기 ---------- */
 function renderTeacherView(){
@@ -699,55 +978,45 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='teacher') renderTeacherView();
+    if(btn.dataset.tab==='student') ensurePreviewLoaded();
   });
 });
 
-function renderDetail(item){
-  const wrap = document.getElementById('detail');
-  wrap.textContent='';
-  const h3 = document.createElement('h3');
-  h3.textContent = displayName(item.key, item.student.name, item.student.number);
-  wrap.appendChild(h3);
-  const recs = item.student.records || [];
-  if(recs.length===0){
-    const e=document.createElement('div'); e.className='empty'; e.textContent='아직 발견한 기록이 없어요.';
-    wrap.appendChild(e);
-  } else {
-    [...recs].sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(r=>{
-      const box=document.createElement('div');
-      box.className='drec'+(r.isMinimal?' minimal':'');
-      const b=document.createElement('b');
-      b.innerHTML = (r.conditionLabels||r.conditionIds||[]).join('&nbsp;&nbsp;+&nbsp;&nbsp;');
-      const d=document.createElement('div');
-      d.className='dname';
-      d.textContent = r.isMinimal ? ('⭐ 최소조건 — '+r.minimalName) : ('조건 '+(r.conditionIds||[]).length+'개 (최소조건 아님)');
-      box.appendChild(b); box.appendChild(d);
-      wrap.appendChild(box);
-    });
+/* ---------- ③ 학생용 뷰: 실제 학생 파일을 미리보기 모드(iframe)로 띄워서 보여줌 (taskId 기반) ----------
+   student13.html이 ?preview=1&task=N으로 열리면 반/번호/이름 입력 없이 바로 그 과제 페이지를
+   보여준다(읽기 전용, 실제 학생 데이터에는 영향 없음). "이전/다음" 버튼은 taskId를 직접
+   postMessage로 보내고, 학생쪽은 taskIdToPageIdx로 그 페이지를 찾아 보여준다(0~7·11·12번
+   단원과 동일한 프로토콜 — 예전의 상대적 ggbPreviewNav/State 프로토콜을 대체). */
+let previewLoaded=false;
+let previewTaskId=1;
+function ensurePreviewLoaded(){
+  const frame=document.getElementById('previewFrame');
+  if(!previewLoaded){
+    frame.src = 'student13.html?preview=1&task='+previewTaskId;
+    previewLoaded=true;
   }
-
-  const p2 = item.student.progress && item.student.progress.p2;
-  const h4 = document.createElement('div');
-  h4.style.cssText = 'font-size:13px;font-weight:bold;color:#1a237e;margin:14px 0 8px;border-top:1px solid #eee;padding-top:12px;';
-  h4.textContent = `2페이지 — 말로 표현하기 ${p2&&p2.done?'✅':'(미제출)'}`;
-  wrap.appendChild(h4);
-  if(!p2 || !Array.isArray(p2.answers) || p2.answers.every(a=>!a)){
-    const e=document.createElement('div'); e.className='empty'; e.textContent='아직 작성한 문장이 없어요.';
-    wrap.appendChild(e);
-  } else {
-    CANONICAL_MINIMAL.forEach((m,i)=>{
-      const box=document.createElement('div');
-      box.className='drec';
-      const b=document.createElement('b');
-      b.innerHTML = m.sym;
-      const d=document.createElement('div');
-      d.className='dname';
-      d.textContent = p2.answers[i] || '(작성중)';
-      box.appendChild(b); box.appendChild(d);
-      wrap.appendChild(box);
-    });
-  }
+  document.getElementById('previewLabel').textContent = previewTaskId+' / '+TASK_LABELS.length;
 }
+function sendPreviewGoto(){
+  document.getElementById('previewLabel').textContent = previewTaskId+' / '+TASK_LABELS.length;
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow) frame.contentWindow.postMessage({type:'ggbPreviewGoto', taskId:previewTaskId}, window.location.origin);
+}
+document.getElementById('previewPrevBtn').addEventListener('click', ()=>{
+  previewTaskId=Math.max(1, previewTaskId-1);
+  sendPreviewGoto();
+});
+document.getElementById('previewNextBtn').addEventListener('click', ()=>{
+  previewTaskId=Math.min(TASK_LABELS.length, previewTaskId+1);
+  sendPreviewGoto();
+});
+window.addEventListener('message', (e)=>{
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type==='ggbPreviewHeight' && typeof e.data.height==='number'){
+    const frame=document.getElementById('previewFrame');
+    if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
+  }
+});
 </script>
 </body>
 </html>
