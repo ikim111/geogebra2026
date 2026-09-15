@@ -228,6 +228,7 @@
       <div id="paceBadge" class="pace-badge"></div>
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
+        <div>평균 진행률: <b id="sumPct">0%</b></div>
         <div>미션 클리어: <b class="gold" id="sumClear">0</b></div>
         <div>평균 발견 개수: <b id="sumAvg">0</b> / 6</div>
       </div>
@@ -731,6 +732,7 @@ function renderGrid(){
   if(keys.length===0){
     body.innerHTML = '<tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr>';
     document.getElementById('sumCount').textContent='0';
+    document.getElementById('sumPct').textContent='0%';
     document.getElementById('sumClear').textContent='0';
     document.getElementById('sumAvg').textContent='0';
     const checkAllEmpty=document.getElementById('checkAll');
@@ -748,7 +750,7 @@ function renderGrid(){
   });
   list.sort((a,b)=> byNumber(a.student,b.student));
 
-  let clearCount=0, scoreSum=0;
+  let clearCount=0, scoreSum=0, totalPct=0;
   list.forEach(item=>{
     if(item.score>=6) clearCount++;
     scoreSum += item.score;
@@ -791,6 +793,7 @@ function renderGrid(){
 
     const p2DoneForPct = !!(s.progress && s.progress.p2 && s.progress.p2.done);
     const pct = Math.round(((item.score/6) + (p2DoneForPct?1:0)) / 2 * 100);
+    totalPct += pct;
     const tdPct=document.createElement('td');
     const pbarWrap=document.createElement('span'); pbarWrap.className='pbar-wrap';
     const pbarFill=document.createElement('span'); pbarFill.className='pbar-fill'; pbarFill.style.width=pct+'%';
@@ -844,6 +847,7 @@ function renderGrid(){
   });
 
   document.getElementById('sumCount').textContent = list.length;
+  document.getElementById('sumPct').textContent = list.length ? Math.round(totalPct/list.length)+'%' : '0%';
   document.getElementById('sumClear').textContent = clearCount;
   document.getElementById('sumAvg').textContent = (scoreSum/list.length).toFixed(1);
 

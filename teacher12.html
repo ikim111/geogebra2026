@@ -203,6 +203,7 @@
       <div id="paceBadge" class="pace-badge"></div>
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
+        <div>평균 진행률: <b id="sumAvg">0%</b></div>
         <div>4개 과제 모두 완료: <b id="sumDone">0</b></div>
       </div>
     </div>
@@ -680,6 +681,7 @@ function renderGrid(){
   if(keys.length===0){
     body.innerHTML = '<tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr>';
     document.getElementById('sumCount').textContent='0';
+    document.getElementById('sumAvg').textContent='0%';
     document.getElementById('sumDone').textContent='0';
     const checkAllEmpty=document.getElementById('checkAll');
     if(checkAllEmpty) checkAllEmpty.checked=false;
@@ -691,10 +693,11 @@ function renderGrid(){
   const list = keys.map(k=>({ key:k, student: allStudents[k]||{} }));
   list.sort((a,b)=> byNumber(a.student,b.student));
 
-  let allDoneCount=0;
+  let allDoneCount=0, totalPct=0;
   list.forEach(item=>{
     const s = item.student;
     if(isAllDone(s)) allDoneCount++;
+    totalPct += TASK_LABELS.length ? Math.round(doneCountOf(s)/TASK_LABELS.length*100) : 0;
     const tr = document.createElement('tr');
     tr.className = [(item.key===selectedKey?'selected':''), (s.online===false?'idle':'')].filter(Boolean).join(' ');
 
@@ -760,6 +763,7 @@ function renderGrid(){
   });
 
   document.getElementById('sumCount').textContent = list.length;
+  document.getElementById('sumAvg').textContent = list.length ? Math.round(totalPct/list.length)+'%' : '0%';
   document.getElementById('sumDone').textContent = allDoneCount;
 
   const checkAll = document.getElementById('checkAll');

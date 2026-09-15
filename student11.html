@@ -321,7 +321,12 @@ const RT = {
     this.heartbeatTimer = setInterval(()=>{
       if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
     }, 15000);
-    this.pushProgress();
+    // 주의: 여기서 pushProgress()를 곧바로 부르면 안 된다 — 위쪽의
+    // studentRef.once('value').then(...) 복원이 아직 비동기로 끝나기 전이라 results가
+    // 빈 상태이고, 그 상태로 즉시 덮어쓰면 학생이 재접속할 때마다 저장된 진행상황이
+    // 사라지는 버그가 된다(실제 재현됨). 복원이 끝난 뒤 학생이 뭔가를 하면 자연히
+    // pushProgress가 호출되므로 여기서는 호출하지 않는다. (quads는 progress와 무관한
+    // 화면 상태일 뿐이라 pushState()는 그대로 유지한다.)
     this.pushState();
   },
   pushProgress(){
