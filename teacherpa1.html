@@ -75,17 +75,17 @@ if (typeof firebase === 'undefined') {
   .grid-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
   .detail{flex:1;min-width:320px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;}
   .detail h3{margin:0 0 4px;font-size:16px;}
-  .detail .dmeta{font-size:12px;color:#888;margin-bottom:12px;}
-  .detail .dtask{border:1px solid #eee;border-radius:8px;padding:10px 12px;margin-bottom:12px;}
-  .detail .dtask h4{margin:0 0 6px;font-size:13.5px;}
-  .detail .dtask .stat{font-size:12px;font-weight:bold;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;}
-  .detail .dtask .stat.correct{background:#e8f5e9;color:var(--green);}
-  .detail .dtask .stat.partial{background:#fff3e0;color:var(--orange);}
-  .detail .dtask .stat.wrong{background:#ffebee;color:var(--red);}
-  .detail .dtask .stat.none{background:#eee;color:#999;}
-  .detail .dtask .stat.done-only{background:#e3f2fd;color:var(--blue);}
-  .detail .dtext{background:#f7f8fa;border:1px solid #eee;border-radius:6px;padding:8px 10px;font-size:12.5px;white-space:pre-wrap;margin-top:4px;}
-  .detail svg{width:100%;max-width:340px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;margin-top:6px;}
+  .detail .dmeta, .task-overview-grid .dmeta{font-size:12px;color:#888;margin-bottom:12px;}
+  .detail .dtask, .task-overview-grid .dtask{border:1px solid #eee;border-radius:8px;padding:10px 12px;margin-bottom:12px;}
+  .detail .dtask h4, .task-overview-grid .dtask h4{margin:0 0 6px;font-size:13.5px;}
+  .detail .dtask .stat, .task-overview-grid .dtask .stat{font-size:12px;font-weight:bold;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;}
+  .detail .dtask .stat.correct, .task-overview-grid .dtask .stat.correct{background:#e8f5e9;color:var(--green);}
+  .detail .dtask .stat.partial, .task-overview-grid .dtask .stat.partial{background:#fff3e0;color:var(--orange);}
+  .detail .dtask .stat.wrong, .task-overview-grid .dtask .stat.wrong{background:#ffebee;color:var(--red);}
+  .detail .dtask .stat.none, .task-overview-grid .dtask .stat.none{background:#eee;color:#999;}
+  .detail .dtask .stat.done-only, .task-overview-grid .dtask .stat.done-only{background:#e3f2fd;color:var(--blue);}
+  .detail .dtext, .task-overview-grid .dtext{background:#f7f8fa;border:1px solid #eee;border-radius:6px;padding:8px 10px;font-size:12.5px;white-space:pre-wrap;margin-top:4px;}
+  .detail svg, .task-overview-grid svg{width:100%;max-width:340px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;margin-top:6px;}
   .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
   .criteria-box{margin:4px 0 8px;background:#f7f8fa;border:1px solid #e5e5e5;border-radius:8px;padding:8px 10px;}
   .criteria-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#777;padding:2px 0;}
@@ -95,6 +95,25 @@ if (typeof firebase === 'undefined') {
   .criteria-item .cpts{font-size:11px;color:#999;}
   .criteria-item.done .cpts{color:var(--green);}
   .criteria-item.bad .cpts{color:var(--red);}
+
+  .tab-bar{display:flex;gap:4px;margin:18px 0 0;border-bottom:2px solid #e0e0e0;}
+  .tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .tab-btn:hover{color:var(--blue);}
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab-panel{display:none;padding-top:16px;}
+  .tab-panel.active{display:block;}
+
+  .pace-track{display:flex;gap:4px;user-select:none;}
+  .pace-chip{width:30px;height:30px;border-radius:6px;border:1px solid #ccc;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:bold;cursor:pointer;color:#555;transition:background .1s,color .1s;}
+  .pace-chip:hover{border-color:var(--blue);}
+  .pace-chip.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  .task-overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+  .task-overview-grid .dtask{margin-bottom:0;background:#fff;}
+  .task-overview-head{font-weight:bold;font-size:13px;color:#222;margin-bottom:4px;}
+
+  .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
 </style>
 </head>
 <body>
@@ -202,35 +221,69 @@ if (typeof firebase === 'undefined') {
       </div>
     </div>
 
-    <div class="layout">
-      <div class="grid-wrap">
-        <div class="grid-legend">
-          <span><i style="background:#e8f5e9;border:1px solid var(--green);"></i>정답</span>
-          <span><i style="background:#fff3e0;border:1px solid var(--orange);"></i>부분(위치는 맞으나 작도 근거 부족 등)</span>
-          <span><i style="background:#ffebee;border:1px solid var(--red);"></i>오답</span>
-          <span><i style="background:#eee;border:1px solid #ccc;"></i>미작성</span>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
+      <button class="tab-btn" data-tab="teacher">② 교사용</button>
+      <button class="tab-btn" data-tab="student">③ 학생용</button>
+    </div>
+
+    <div id="tab-summary" class="tab-panel active">
+      <div class="layout">
+        <div class="grid-wrap">
+          <div class="grid-legend">
+            <span><i style="background:#e8f5e9;border:1px solid var(--green);"></i>정답</span>
+            <span><i style="background:#fff3e0;border:1px solid var(--orange);"></i>부분(위치는 맞으나 작도 근거 부족 등)</span>
+            <span><i style="background:#ffebee;border:1px solid var(--red);"></i>오답</span>
+            <span><i style="background:#eee;border:1px solid #ccc;"></i>미작성</span>
+          </div>
+          <table id="grid">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="checkAll"></th>
+                <th style="text-align:left;">학생</th>
+                <th style="text-align:left;">배정된 문제</th>
+                <th>1. 외심<br><span style="font-weight:normal;">점찍기</span></th>
+                <th>2. 외심<br><span style="font-weight:normal;">선택</span></th>
+                <th>3. 내심<br><span style="font-weight:normal;">점찍기</span></th>
+                <th>4. 내심<br><span style="font-weight:normal;">선택</span></th>
+                <th>총점<br><span style="font-weight:normal;">(20점)</span></th>
+                <th>진행률</th>
+                <th>마지막활동</th>
+              </tr>
+            </thead>
+            <tbody id="gridBody"><tr><td class="empty" colspan="10">아직 접속한 학생이 없어요.</td></tr></tbody>
+          </table>
         </div>
-        <table id="grid">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="checkAll"></th>
-              <th style="text-align:left;">학생</th>
-              <th style="text-align:left;">배정된 문제</th>
-              <th>1. 외심<br><span style="font-weight:normal;">점찍기</span></th>
-              <th>2. 외심<br><span style="font-weight:normal;">선택</span></th>
-              <th>3. 내심<br><span style="font-weight:normal;">점찍기</span></th>
-              <th>4. 내심<br><span style="font-weight:normal;">선택</span></th>
-              <th>총점<br><span style="font-weight:normal;">(20점)</span></th>
-              <th>진행률</th>
-              <th>마지막활동</th>
-            </tr>
-          </thead>
-          <tbody id="gridBody"><tr><td class="empty" colspan="10">아직 접속한 학생이 없어요.</td></tr></tbody>
-        </table>
+        <div class="detail" id="detail">
+          <h3>학생 선택</h3>
+          <div class="empty">표에서 학생 이름이나 과제 칸을 클릭하면<br>상세 답안이 여기 나와요.</div>
+        </div>
       </div>
-      <div class="detail" id="detail">
-        <h3>학생 선택</h3>
-        <div class="empty">표에서 학생 이름이나 과제 칸을 클릭하면<br>상세 답안이 여기 나와요.</div>
+    </div>
+
+    <div id="tab-teacher" class="tab-panel">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;">
+          <div id="teacherTaskTrack" class="pace-track"></div>
+        </div>
+        <div id="teacherCount" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
+      </div>
+      <div id="teacherTaskWrap" class="task-overview-grid"></div>
+    </div>
+
+    <div id="tab-student" class="tab-panel">
+      <div class="panel">
+        <div class="preview-topbar">
+          <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
+          <div class="row">
+            <button id="previewPrevBtn">◀ 이전</button>
+            <span id="previewLabel">1 / 4</span>
+            <button id="previewNextBtn">다음 ▶</button>
+          </div>
+        </div>
+      </div>
+      <div style="border:1px solid #ddd;border-radius:10px;overflow:visible;background:#fff;">
+        <iframe id="previewFrame" title="학생 화면 미리보기" scrolling="auto" style="width:100%;height:900px;border:none;display:block;"></iframe>
       </div>
     </div>
 
@@ -853,6 +906,104 @@ function renderTaskOverview(taskId){
   });
 }
 
+/* ---------- ② 교사용 뷰: 과제(1~4)를 고르면, 그 과제에 대한 반 전체 학생의 답안을
+   한 화면에 모아서 보여준다(①요약뷰의 "문제별로 한번에 보기"와 같은 데이터를 쓰지만,
+   좁은 사이드바가 아니라 화면 전체 너비를 쓰는 전용 탭이라 더 보기 편하다).
+   과제 id는 buildTasks()에서 항상 1·3=점찍기, 2·4=서술형으로 고정되어 있지만,
+   그 문제가 외심인지 내심인지(centerType)는 학생마다 배정이 달라, 칩 라벨에는
+   "외심/내심"을 붙이지 않고 학생별 박스 안에서만 실제 배정을 보여준다. */
+let teacherSelectedTask=1;
+(function(){
+  const track=document.getElementById('teacherTaskTrack');
+  [1,2,3,4].forEach(id=>{
+    const chip=document.createElement('div');
+    chip.className='pace-chip';
+    chip.textContent=id;
+    chip.title='과제 '+id;
+    chip.dataset.n=String(id);
+    chip.addEventListener('click', ()=>{
+      teacherSelectedTask=id;
+      document.querySelectorAll('#teacherTaskTrack .pace-chip').forEach(c=>c.classList.toggle('selected', parseInt(c.dataset.n,10)===id));
+      renderTeacherTaskTab();
+    });
+    track.appendChild(chip);
+  });
+  track.firstChild && track.firstChild.classList.add('selected');
+})();
+
+function renderTeacherTaskTab(){
+  const wrap=document.getElementById('teacherTaskWrap');
+  const countEl=document.getElementById('teacherCount');
+  wrap.textContent='';
+  const list = Object.keys(students).map(k=>({key:k, ...students[k]}));
+  list.sort(byNumber);
+
+  if(list.length===0){
+    countEl.textContent='아직 접속한 학생이 없어요.';
+    const d=document.createElement('div'); d.className='empty'; d.textContent='아직 접속한 학생이 없어요.'; wrap.appendChild(d);
+    return;
+  }
+  let count=0;
+  list.forEach(s=>{
+    const tasks = buildTasks(s.assignment);
+    const t = tasks.find(x=>x.id===teacherSelectedTask);
+    if(!t) return;
+    const doneFlag = t.kind==='pointplot'
+      ? !!(s.objectSnapshots && s.objectSnapshots[t.id])
+      : !!(s.progress && s.progress[t.id] && s.progress[t.id].done);
+    if(doneFlag) count++;
+    const header = `${s.number?s.number+'번 ':''}${s.name||'(이름없음)'} — ${t.centerType} · ${t.scenario.title}`;
+    const box = buildTaskBox(s, t, header, s.key);
+    wrap.appendChild(box);
+  });
+  countEl.textContent = `${count}명의 학생이 ${teacherSelectedTask}번 과제를 시작했어요. (반 전체 ${list.length}명)`;
+}
+
+/* ---------- ③ 학생용 뷰: studentpa1.html을 미리보기 모드(iframe)로 띄워서 실제 학생 화면을
+   그대로 보여준다. student1.html 등과 같은 taskId 기준 postMessage 프로토콜을 쓴다. */
+let previewLoaded=false;
+let previewTaskId=1;
+function ensurePreviewLoaded(){
+  const frame=document.getElementById('previewFrame');
+  if(!previewLoaded){
+    frame.src = 'studentpa1.html?preview=1&task='+previewTaskId;
+    previewLoaded=true;
+  }
+  document.getElementById('previewLabel').textContent = previewTaskId+' / 4';
+}
+function sendPreviewGoto(){
+  document.getElementById('previewLabel').textContent = previewTaskId+' / 4';
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow) frame.contentWindow.postMessage({type:'ggbPreviewGoto', taskId:previewTaskId}, window.location.origin);
+}
+document.getElementById('previewPrevBtn').addEventListener('click', ()=>{
+  previewTaskId=Math.max(1, previewTaskId-1);
+  sendPreviewGoto();
+});
+document.getElementById('previewNextBtn').addEventListener('click', ()=>{
+  previewTaskId=Math.min(4, previewTaskId+1);
+  sendPreviewGoto();
+});
+window.addEventListener('message', (e)=>{
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type==='ggbPreviewHeight' && typeof e.data.height==='number'){
+    const frame=document.getElementById('previewFrame');
+    if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
+  }
+});
+
+/* ---------- 탭 전환 ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='teacher') renderTeacherTaskTab();
+    if(btn.dataset.tab==='student') ensurePreviewLoaded();
+  });
+});
+
 function submitStudentAnswersToGoogleForm(s){
   if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
   const tasks = buildTasks(s.assignment);
@@ -940,7 +1091,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     selectedKey=null; checkedKeys=new Set(); students={};
     render();
 
-    studentsRef.on('value', snap=>{ students = snap.val() || {}; render(); });
+    studentsRef.on('value', snap=>{ students = snap.val() || {}; render(); renderTeacherTaskTab(); });
     controlRef.on('value', snap=>{
       const c=snap.val()||{};
       paused=!!c.paused; updatePauseBtn();
