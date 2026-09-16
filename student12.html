@@ -440,6 +440,23 @@ class GeoCanvas{
     }
     return best;
   }
+  // '수선'/'평행선' 도구의 기준선 클릭에서, 미리 그려진 사각형(polygon)의 "변"도 기준으로
+  // 쓸 수 있게 해준다. polygon은 INTERSECTABLE(선분/직선류)에 포함되지 않아 findObjectNear가
+  // 찾지 못하므로(변을 눌러도 반응이 없던 버그의 원인), 각 변을 개별 선분처럼 따로 검사한다.
+  findPolygonEdgeNear(pt,tol){
+    let best=null,bd=tol;
+    for(const o of this.objects){
+      if(o.type!=='polygon') continue;
+      const ids=o.ids;
+      for(let i=0;i<ids.length;i++){
+        const a=this.resolvePoint(ids[i]), b=this.resolvePoint(ids[(i+1)%ids.length]);
+        if(!a||!b) continue;
+        const d=distToSegment(pt,a,b);
+        if(d<bd){ bd=d; best={p1:ids[i], p2:ids[(i+1)%ids.length]}; }
+      }
+    }
+    return best;
+  }
   computeIntersections(o1,o2){
     const l1=this.asLine(o1), c1=this.asCircle(o1), l2=this.asLine(o2), c2=this.asCircle(o2);
     if(l1&&l2){ const p=lineLineIntersection(l1[0],l1[1],l2[0],l2[1]); return p?[p]:[]; }
@@ -657,6 +674,9 @@ class GeoCanvas{
         const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')){
           this.addObject({type:'perp', p:pId, refP1:o.p1, refP2:o.p2});
+        } else {
+          const edge=this.findPolygonEdgeNear(pt,TOUCH_TOL);
+          if(edge) this.addObject({type:'perp', p:pId, refP1:edge.p1, refP2:edge.p2});
         }
         break;
       }
@@ -672,6 +692,12 @@ class GeoCanvas{
         const o=this.findObjectNear(pt,TOUCH_TOL);
         if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')){
           this.addObject({type:'parallel', p:pId, refP1:o.p1, refP2:o.p2});
+        } else {
+          // findObjectNear는 미리 그려진 사각형(polygon)을 기준선 후보로 보지 않으므로
+          // (polygon이 INTERSECTABLE 목록에 없음), 변을 직접 눌렀을 때를 별도로 검사한다.
+          // 이게 없으면 "변을 클릭해서 평행선 긋기"가 항상 아무 반응 없이 실패했었다.
+          const edge=this.findPolygonEdgeNear(pt,TOUCH_TOL);
+          if(edge) this.addObject({type:'parallel', p:pId, refP1:edge.p1, refP2:edge.p2});
         }
         break;
       }
