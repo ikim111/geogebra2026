@@ -244,6 +244,7 @@ const ACTIVITY_SUFFIX = '__assess_pa1'; // teacherpa1.html과 반드시 동일�
 
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
 
 const GRID = 40;
 const TOUCH_TOL = 30;
@@ -1672,6 +1673,30 @@ if(PREVIEW_MODE){
     circumFirst: pp.get('order') !== 'incenter'
   };
   renderTasks(a);
+  // teacherpa1.html의 "③ 학생용" 탭(iframe)이 taskId 기준으로 화면을 넘기고, iframe 높이를
+  // 자동으로 맞출 수 있도록 다른 단원(student1.html 등)과 동일한 postMessage 프로토콜을 쓴다.
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(reportPreviewHeight).observe(document.body);
+  }
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
 } else {
   const profile = loadProfile();
   if(!profile){

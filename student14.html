@@ -277,15 +277,22 @@ function circleCircleIntersect(c1,r1,c2,r2){
 }
 const QUAD_A = {x:70,y:150}, QUAD_B = {x:190,y:150}; // 3,4페이지 공통 기준변(고정)
 const quadState = {
-  3: { D:{x:100,y:60}, init:{x:100,y:60} },
+  3: { D:{x:100,y:60}, init:{x:100,y:60}, shSign:-1 },
   4: { D:{x:100,y:60}, init:{x:100,y:60}, prevC:null }
 };
 const QUAD_REDRAW = {}; // taskId -> redraw(), 재접속 시 저장된 D점 위치를 복원하고 다시 그리는 데 쓴다.
 // 수현(3): AB∥DC 이고 DC의 길이는 자유, BC=AD(다른 한 쌍은 길이만 항상 같음).
+// 이 두 조건만으로는 C의 위치가 하나로 정해지지 않는다 — D를 지나고 AB에 평행한 직선과,
+// B를 중심으로 반지름 AD인 원이 만나는 두 점 중 하나이기 때문이다. 그 두 교점은
+//   ① B.x - dxLocal (A,B의 수직이등분선에 대해 D와 대칭 → 등변사다리꼴, AD∥BC가 아님)
+//   ② B.x + dxLocal (D를 AB만큼 평행이동한 것과 같음 → AD∥BC까지 성립 → 평행사변형)
+// 둘 다 실제로 "수현의 조건"을 만족하는 정답이므로, 하나만 보여주면(예전 버전처럼 항상
+// ①번만 그리면) "이 조건으로는 평행사변형이 아닐 수도 있다(=등변사다리꼴도 가능하다)"는
+// 이 활동의 핵심을 학생이 제대로 확인할 수 없다. 아래 토글 버튼으로 두 경우를 다 보여준다.
 function quad5Compute(){
   const A=QUAD_A, B=QUAD_B, D=quadState[3].D;
   const dxLocal = D.x - A.x;
-  const C = { x: B.x - dxLocal, y: D.y };
+  const C = { x: B.x + quadState[3].shSign*dxLocal, y: D.y };
   return [A,B,C,D];
 }
 // 정우(4): AB=DC 이고 BC=AD (두 쌍 모두 길이만 항상 같음) → 두 원의 교점으로 C를 구한다.
@@ -357,7 +364,7 @@ function setupQuadDragTask(taskId, computeFn, dPoint, opts){
   function pushSnap(){
     RT.pushObjectSnapshot(taskId, taskId===4
       ? { D:{x:dPoint.x,y:dPoint.y}, prevC: quadState[4].prevC }
-      : { D:{x:dPoint.x,y:dPoint.y} });
+      : { D:{x:dPoint.x,y:dPoint.y}, shSign: quadState[3].shSign });
   }
   let dragging=false;
   function getPt(e){
@@ -395,9 +402,20 @@ function setupQuadDragTask(taskId, computeFn, dPoint, opts){
   if(resetBtn) resetBtn.addEventListener('click', ()=>{
     dPoint.x = quadState[taskId].init.x; dPoint.y = quadState[taskId].init.y;
     if(taskId===4) quadState[4].prevC = null;
+    if(taskId===3) quadState[3].shSign = -1;
     redraw();
     pushSnap();
   });
+  if(taskId===3){
+    const shapeBtn = document.getElementById('quadShapeToggle-3');
+    if(shapeBtn) shapeBtn.addEventListener('click', ()=>{
+      if(locked()) return;
+      quadState[3].shSign *= -1;
+      shapeBtn.textContent = quadState[3].shSign===1 ? '🔄 등변사다리꼴로 보기' : '🔄 평행사변형으로 보기';
+      redraw();
+      pushSnap();
+    });
+  }
 }
 
 /* ---------- 과제5·6용 "모눈종이 그리기" 캔버스 ----------
@@ -559,6 +577,11 @@ function restoreCustomSnapshots(snapshots){
     if(!snap || !snap.D) return;
     quadState[id].D.x = snap.D.x; quadState[id].D.y = snap.D.y;
     if(id===4) quadState[4].prevC = snap.prevC || null;
+    if(id===3){
+      quadState[3].shSign = snap.shSign===1 ? 1 : -1; // 이전 저장분(필드 없음)은 기본값(-1, 등변사다리꼴)로 처리
+      const shapeBtn = document.getElementById('quadShapeToggle-3');
+      if(shapeBtn) shapeBtn.textContent = quadState[3].shSign===1 ? '🔄 등변사다리꼴로 보기' : '🔄 평행사변형으로 보기';
+    }
     if(QUAD_REDRAW[id]) QUAD_REDRAW[id]();
   });
   [5,6].forEach(id=>{
@@ -578,7 +601,7 @@ const TASKS = [
       {who:'정우', text:'나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.', alt:true}
     ],
     numLabel:'[활동1]', title:'수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?',
-    hint:'주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요.',
+    hint:'주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요. 아래 "평행사변형으로 보기" 버튼을 누르면 같은 조건에서 나올 수 있는 또 다른 모양도 볼 수 있어요.',
     placeholder:'그렇게 판단한 이유를 설명해보자 (10자 이상)' },
   { id:4, kind:'ox', quad:'jw', minLen:10,
     sectionTitle:'생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)',
@@ -640,6 +663,12 @@ function buildPageEl(task){
     const svg = document.createElementNS(GC_NS,'svg'); svg.id='gcSvg-'+task.id; svg.setAttribute('viewBox','0 0 260 190');
     gcWrap.appendChild(svg);
     const tools = document.createElement('div'); tools.className='gc-tools';
+    if(task.quad==='sh'){
+      // 수현의 조건만으로는 등변사다리꼴/평행사변형 둘 다 가능하므로, D를 그대로 둔 채
+      // 두 경우를 오가며 비교해볼 수 있는 토글 버튼을 추가한다.
+      const shapeBtn = document.createElement('button'); shapeBtn.id='quadShapeToggle-'+task.id; shapeBtn.textContent='🔄 평행사변형으로 보기';
+      tools.appendChild(shapeBtn);
+    }
     const resetBtn = document.createElement('button'); resetBtn.className='reset'; resetBtn.id='quadReset-'+task.id; resetBtn.textContent='🔄 처음 모양으로';
     tools.appendChild(resetBtn);
     gcWrap.appendChild(tools);
