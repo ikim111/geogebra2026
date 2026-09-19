@@ -212,6 +212,7 @@ if (typeof firebase === 'undefined') {
         <button class="pause" id="revealAnswersBtn">🔍 정답보기</button>
         <button class="pause" id="aiGradeAllBtn">🤖 전체 AI 채점</button>
         <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
+        <button class="pause" id="printJustifyBtn">🖨️ 서술형 답안 인쇄</button>
         <span style="font-size:12px;color:#888;">끄면 학생별로 완료/미완료만 보이고, 켜면 정답 여부·이유·작도까지 보여요.</span>
       </div>
       <div class="row" style="margin-top:6px;">
@@ -755,12 +756,24 @@ function buildCriteriaBox(items){
   return box;
 }
 // 선생님이 AI 채점(②이유/③방법 각 항목) 결과가 틀렸다고 판단할 때 직접 뒤집는다.
-// aiGrading/{taskId}의 해당 필드 하나만 patch하고(update, set이 아님) AI가 남긴 피드백
-// 문구·다른 항목들은 그대로 둔다. teacherOverride/overrideTs는 나중에 "선생님이 손댄 채점"을
-// 구분하고 싶을 때를 대비해 같이 남겨둔다(현재 화면 표시 로직에서는 아직 쓰지 않음).
+// aiGrading/{taskId}의 해당 필드를 patch한다(update, set이 아님). teacherOverride/overrideTs는
+// "선생님이 손댄 채점"을 구분하고 싶을 때를 대비해 같이 남겨둔다.
+// (2026-09-20 수정) 예전에는 판정(true/false)만 바꾸고 AI가 남긴 피드백 문구는 그대로 둬서,
+// 정답으로 정정했는데 화면엔 옛 AI 피드백("...오답입니다")이 그대로 보여 학생이 혼란스러운
+// 경우가 있었다(선생님 지적으로 발견). 이제 정정 시 해당 피드백 문구 끝에 "선생님이 직접
+// 정정했다"는 안내를 덧붙여 판정과 문구가 모순되지 않게 한다.
 function toggleAiField(key, taskId, field, newVal){
-  studentsRef.child(key+'/aiGrading/'+taskId).update({
-    [field]: newVal, teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
+  const feedbackField = field==='reasonCorrect' ? 'reasonFeedback' : 'methodFeedback';
+  const ref = studentsRef.child(key+'/aiGrading/'+taskId);
+  ref.once('value').then(function(snap){
+    const cur = snap.val() || {};
+    const note = '(선생님이 이 항목을 '+(newVal?'정답':'오답')+'으로 직접 정정했습니다.)';
+    const oldFb = (cur[feedbackField]||'').replace(/\s*\(선생님이 이 항목을 (정답|오답)으로 직접 정정했습니다\.\)\s*$/,'').trim();
+    const newFb = (oldFb ? oldFb+' ' : '') + note;
+    ref.update({
+      [field]: newVal, [feedbackField]: newFb,
+      teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
+    });
   });
 }
 
@@ -1365,6 +1378,87 @@ function exportScoresToExcel(){
   XLSX.writeFile(wb, `수행평가_외심내심_${currentRoomName||''}반_${ymd}.xlsx`);
 }
 document.getElementById('exportExcelBtn').addEventListener('click', exportScoresToExcel);
+
+/* ---------- 서술형(②이유·③방법) 답안 인쇄용 보기 ---------- */
+// 화면 그대로 인쇄하면 표가 잘리고 답안 텍스트가 다 안 보여서 검토하기 어렵다는 선생님 피드백으로
+// 추가(2026-09-20). 새 창에 학생별로 이유·방법 원문 + AI 채점 결과·피드백을 종이에 보기 좋게
+// 배치한 문서를 만들고, 그 창에서 브라우저 인쇄 대화상자를 띄운다(인쇄 대상으로 "PDF로 저장"을
+// 고르면 파일로도 남길 수 있다).
+function escHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function printJustifyReport(){
+  if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const list = Object.keys(students).map(k=>({key:k, ...students[k]}));
+  if(list.length===0){ alert('아직 접속한 학생이 없어요.'); return; }
+  list.sort(byNumber);
+
+  const mark = (v)=> v===true ? '<span class="ok">✓ 정답</span>' : v===false ? '<span class="bad">✗ 오답</span>' : '<span class="pending">미채점</span>';
+
+  const blocks = list.map(s=>{
+    const tasks = buildTasks(s.assignment).filter(t=>t.kind==='justify'); // 과제2·4만
+    const taskHtml = tasks.map(t=>{
+      const progressEntry = s.progress && s.progress[t.id];
+      const aiEntry = s.aiGrading && s.aiGrading[t.id];
+      const g = gradeJustify(progressEntry, t, aiEntry);
+      if(g.status==='none'){
+        return `<div class="task-block"><div class="task-title">${t.id===2?'②':'④'} 과제${t.id} — ${t.centerType} (${escHtml(t.scenario.title)})</div><div class="empty-note">(작성 안 함)</div></div>`;
+      }
+      const choiceOk = g.choiceOk;
+      const scoreTxt = g.aiGraded ? `${g.score} / 6점` : '(AI 채점 전 — ①선택 ' + (choiceOk?1:0) + '/1점만 반영)';
+      return `
+      <div class="task-block">
+        <div class="task-title">${t.id===2?'②':'④'} 과제${t.id} — ${t.centerType} (${escHtml(t.scenario.title)}) <span class="score">${scoreTxt}</span></div>
+        <div class="field-line">① 선택: <b>${escHtml(g.choice||'(안 함)')}</b> (정답: ${escHtml(g.expected)}) ${choiceOk?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}</div>
+        <div class="field-line">② 이유 ${mark(g.reasonOk)}</div>
+        <div class="answer-box">${escHtml(g.reason) || '<i>(작성 안 함)</i>'}</div>
+        ${aiEntry && aiEntry.reasonFeedback ? `<div class="feedback">AI 피드백: ${escHtml(aiEntry.reasonFeedback)}</div>` : ''}
+        <div class="field-line">③ 방법 — 1번 ${mark(g.methodParts?g.methodParts.p1:null)} · 2번 ${mark(g.methodParts?g.methodParts.p2:null)} · 3번 ${mark(g.methodParts?g.methodParts.p3:null)}</div>
+        <div class="answer-box">${escHtml(g.method) || '<i>(작성 안 함)</i>'}</div>
+        ${aiEntry && aiEntry.methodFeedback ? `<div class="feedback">AI 피드백: ${escHtml(aiEntry.methodFeedback)}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<section class="student-block">
+      <div class="student-header">${escHtml(s.number||'')}번 ${escHtml(s.name||'(이름없음)')}</div>
+      ${taskHtml}
+    </section>`;
+  }).join('');
+
+  const today = new Date();
+  const ymd = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+  const doc = `<!doctype html>
+<html><head><meta charset="utf-8"><title>서술형 답안 검토 - ${escHtml(currentRoomName||'')}반</title>
+<style>
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#111;margin:24px;font-size:13px;line-height:1.5;}
+  h1{font-size:18px;margin:0 0 4px;}
+  .meta{color:#555;font-size:12px;margin-bottom:18px;}
+  .student-block{border:1.5px solid #333;border-radius:6px;padding:12px 14px;margin-bottom:16px;page-break-inside:avoid;}
+  .student-header{font-size:15px;font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:6px;margin-bottom:8px;}
+  .task-block{margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed #ddd;}
+  .task-block:last-child{border-bottom:none;margin-bottom:0;}
+  .task-title{font-weight:bold;margin-bottom:4px;}
+  .task-title .score{font-weight:normal;color:#555;font-size:12px;}
+  .field-line{margin:4px 0 2px;}
+  .answer-box{border:1px solid #ccc;background:#fafafa;border-radius:4px;padding:6px 8px;margin:2px 0 4px;white-space:pre-wrap;}
+  .feedback{color:#555;font-size:12px;font-style:italic;margin-bottom:6px;}
+  .empty-note{color:#999;font-size:12px;}
+  .ok{color:#1b7a1b;font-weight:bold;}
+  .bad{color:#c62828;font-weight:bold;}
+  .pending{color:#999;}
+  @media print{ body{margin:10mm;} .student-block{break-inside:avoid;} }
+</style></head>
+<body>
+  <h1>삼각형의 외심과 내심 수행평가 — 서술형(②이유·③방법) 답안 검토</h1>
+  <div class="meta">${escHtml(currentRoomName||'')}반 · 학생 ${list.length}명 · 인쇄일 ${ymd}</div>
+  ${blocks}
+  <script>window.onload=function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){ alert('팝업이 차단됐어요. 브라우저 팝업 차단을 해제하고 다시 눌러주세요.'); return; }
+  win.document.open(); win.document.write(doc); win.document.close();
+}
+document.getElementById('printJustifyBtn').addEventListener('click', printJustifyReport);
 document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   if(!studentsRef || checkedKeys.size===0) return;
   const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
