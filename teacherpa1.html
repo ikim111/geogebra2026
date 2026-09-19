@@ -867,13 +867,8 @@ function buildTaskBox(s, t, headerText, key){
         // 별도로 틀린 것으로 채점됨). 학생이 선택하지 않았거나 값이 이상하면 문제의 원래
         // 정답(t.centerType)으로 채점한다.
         const gradeCenterType = (grade.choice==='내심'||grade.choice==='외심') ? grade.choice : t.centerType;
-        fetch('/api/grade-justify', {
-          method:'POST', headers:{'content-type':'application/json'},
-          body: JSON.stringify({ centerType: gradeCenterType, reason: grade.reason||'', method: grade.method||'' })
-        })
-        .then(r=>r.json().then(data=>({ok:r.ok, data})))
-        .then(({ok, data})=>{
-          if(!ok) throw new Error(data.error||'AI 채점에 실패했어요.');
+        aiGradeWithCache(currentRoomKey, gradeCenterType, grade.reason||'', grade.method||'')
+        .then((data)=>{
           studentsRef.child(key+'/aiGrading/'+t.id).set({
             reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
             methodPart1Correct: !!data.methodPart1Correct,
@@ -1212,6 +1207,46 @@ function collectUngradedJustifyItems(includeGraded){
 }
 function aiGradeSleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
+/* 이유/방법 답안 텍스트를 해시해서 채점 결과 캐시의 key로 쓴다(암호화용이 아니라 텍스트를 짧은
+   문자열로 바꾸는 용도라 간단한 해시면 충분하다). */
+function aiGradeHash(centerType, reason, method){
+  const str = centerType + '|' + (reason||'').trim() + '|' + (method||'').trim();
+  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;
+  for (let i=0; i<str.length; i++){
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);
+}
+
+/* (2026-09-20) Gemini는 temperature를 0으로 낮춰도 완전히 결정적이지 않아서, 같은 답안 텍스트를
+   여러 번 채점하면 가끔 결과가 달라지는 문제가 있었다 — 선생님이 "같은 답이면 같은 점수여야
+   한다"고 명확히 요청함(수행평가라 채점 일관성이 특히 중요). 그래서 답안 텍스트(+centerType)를
+   키로 하는 채점 결과 캐시를 반 단위(rooms/{roomKey}/aiGradeCache)로 둔다:
+   - 처음 보는 텍스트만 실제로 Gemini에 채점을 요청하고, 그 결과를 캐시에 저장한다.
+   - 이미 채점해본 적 있는 텍스트(같은 학생을 다시 채점하든, 다른 학생이 같은/비슷한 답을 썼든)는
+     캐시에 저장된 값을 그대로 재사용해서, 몇 번을 다시 채점해도 항상 같은 결과가 나오게 한다.
+   - 단, "이미 채점된 답안도 다시 채점하기"(전체 재채점)를 실행할 때는 opts.forceFresh로 캐시를
+     건너뛰고 항상 새로 채점한다 — 채점 기준(프롬프트)을 고친 뒤 재채점하면 새 기준이 반영되어야
+     하기 때문이다. 이때도 새 결과로 캐시는 갱신되므로, 그 다음부터는 다시 일관성이 유지된다. */
+async function aiGradeWithCache(roomKey, centerType, reason, method, opts){
+  opts = opts || {};
+  const hash = aiGradeHash(centerType, reason, method);
+  const cacheRef = firebase.database().ref('rooms/'+roomKey+'/aiGradeCache/'+hash);
+  if(!opts.forceFresh){
+    try{
+      const snap = await cacheRef.once('value');
+      if(snap.exists()) return snap.val();
+    }catch(e){ /* 캐시 조회 실패해도 그냥 새로 채점하면 되니 무시 */ }
+  }
+  const data = await aiGradeOneWithRetry({ centerType, reason, method }, 3);
+  cacheRef.set(data).catch(()=>{});
+  return data;
+}
+
 /* 한 항목을 채점 API에 요청한다. (2026-09-20) 처음엔 Gemini 무료 티어의 분당 요청 제한(RPM 15)에
    걸려서 8반에서 55개 중 39개가 실패하는 일이 있었다 — 그래서 항목당 2.5초 텀 + 재시도를 넣었었다.
    이후 유료 결제(Tier 1)로 전환하면서 분당 한도가 4,000으로 크게 올라, 텀을 거의 없애도(0.3초)
@@ -1260,7 +1295,7 @@ async function gradeAllJustifyTasks(){
     const item=items[i];
     statusEl.textContent = `채점 중... (${i+1}/${items.length})` + (failed? ` · 실패 ${failed}건` : '');
     try{
-      const data = await aiGradeOneWithRetry(item, 3);
+      const data = await aiGradeWithCache(currentRoomKey, item.centerType, item.reason, item.method, { forceFresh: includeGraded });
       await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
         reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
         methodPart1Correct: !!data.methodPart1Correct,
