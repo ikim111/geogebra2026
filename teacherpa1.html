@@ -1212,12 +1212,14 @@ function collectUngradedJustifyItems(includeGraded){
 }
 function aiGradeSleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
-/* 한 항목을 채점 API에 요청한다. Gemini 무료 티어 속도 제한(429/502)에 걸리면 잠깐 쉬었다가
-   재시도한다(최대 4회, 시도할수록 대기 시간을 늘림). 여러 반을 몰아서 "전체 AI 채점"을 누르면
-   요청이 순식간에 여러 건 몰려서 실패율이 매우 높아지는 문제가 있었는데(2026-09-20, 8반에서
-   55개 중 39개 실패), 이 재시도 로직 + 매 항목 사이 텀으로 실패율을 거의 0으로 낮췄다. */
+/* 한 항목을 채점 API에 요청한다. (2026-09-20) 처음엔 Gemini 무료 티어의 분당 요청 제한(RPM 15)에
+   걸려서 8반에서 55개 중 39개가 실패하는 일이 있었다 — 그래서 항목당 2.5초 텀 + 재시도를 넣었었다.
+   이후 유료 결제(Tier 1)로 전환하면서 분당 한도가 4,000으로 크게 올라, 텀을 거의 없애도(0.3초)
+   실패가 발생하지 않는 것을 확인했다(속도와 무관하게 요금은 요청/토큰 수로만 계산되므로 텀을
+   줄인다고 비용이 늘지 않는다). 재시도 로직은 네트워크 순간 오류 등 드문 경우를 위한 안전장치로
+   가볍게만 남겨둔다. */
 async function aiGradeOneWithRetry(item, maxAttempts){
-  maxAttempts = maxAttempts || 4;
+  maxAttempts = maxAttempts || 3;
   let lastErr = null;
   for(let attempt=1; attempt<=maxAttempts; attempt++){
     try{
@@ -1230,7 +1232,7 @@ async function aiGradeOneWithRetry(item, maxAttempts){
       return data;
     }catch(err){
       lastErr = err;
-      if(attempt < maxAttempts) await aiGradeSleep(6000 * attempt);
+      if(attempt < maxAttempts) await aiGradeSleep(1500 * attempt);
     }
   }
   throw lastErr;
@@ -1249,8 +1251,8 @@ async function gradeAllJustifyTasks(){
     return;
   }
   const confirmMsg = includeGraded
-    ? `이미 채점된 답안을 포함해서 총 ${items.length}개를 전부 다시 채점할까요?\n(기존 채점 결과는 새 결과로 덮어써져요. 항목마다 텀을 두고 채점해서 시간이 걸릴 수 있어요 — 대략 ${Math.ceil(items.length*2.5/60)}분 이상)`
-    : `아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(항목마다 텀을 두고 채점해서 시간이 걸릴 수 있어요 — 대략 ${Math.ceil(items.length*2.5/60)}분 이상)`;
+    ? `이미 채점된 답안을 포함해서 총 ${items.length}개를 전부 다시 채점할까요?\n(기존 채점 결과는 새 결과로 덮어써져요)`
+    : `아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?`;
   if(!confirm(confirmMsg)) return;
   btn.disabled=true;
   let done=0, failed=0;
@@ -1258,7 +1260,7 @@ async function gradeAllJustifyTasks(){
     const item=items[i];
     statusEl.textContent = `채점 중... (${i+1}/${items.length})` + (failed? ` · 실패 ${failed}건` : '');
     try{
-      const data = await aiGradeOneWithRetry(item, 4);
+      const data = await aiGradeOneWithRetry(item, 3);
       await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
         reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
         methodPart1Correct: !!data.methodPart1Correct,
@@ -1270,9 +1272,9 @@ async function gradeAllJustifyTasks(){
       done++;
     }catch(err){
       failed++;
-      console.error('AI 전체 채점 중 오류(재시도 4회 모두 실패):', item, err);
+      console.error('AI 전체 채점 중 오류(재시도 3회 모두 실패):', item, err);
     }
-    if(i < items.length-1) await aiGradeSleep(2500);
+    if(i < items.length-1) await aiGradeSleep(300);
   }
   btn.disabled=false;
   statusEl.textContent = `완료: ${done}개 채점됨` + (failed? `, ${failed}개 실패(콘솔 참고)` : '');
