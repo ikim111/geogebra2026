@@ -1210,6 +1210,32 @@ function collectUngradedJustifyItems(includeGraded){
   });
   return items;
 }
+function aiGradeSleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+/* 한 항목을 채점 API에 요청한다. Gemini 무료 티어 속도 제한(429/502)에 걸리면 잠깐 쉬었다가
+   재시도한다(최대 4회, 시도할수록 대기 시간을 늘림). 여러 반을 몰아서 "전체 AI 채점"을 누르면
+   요청이 순식간에 여러 건 몰려서 실패율이 매우 높아지는 문제가 있었는데(2026-09-20, 8반에서
+   55개 중 39개 실패), 이 재시도 로직 + 매 항목 사이 텀으로 실패율을 거의 0으로 낮췄다. */
+async function aiGradeOneWithRetry(item, maxAttempts){
+  maxAttempts = maxAttempts || 4;
+  let lastErr = null;
+  for(let attempt=1; attempt<=maxAttempts; attempt++){
+    try{
+      const r = await fetch('/api/grade-justify', {
+        method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ centerType:item.centerType, reason:item.reason, method:item.method })
+      });
+      const data = await r.json();
+      if(!r.ok) throw new Error(data.error||'AI 채점 실패');
+      return data;
+    }catch(err){
+      lastErr = err;
+      if(attempt < maxAttempts) await aiGradeSleep(6000 * attempt);
+    }
+  }
+  throw lastErr;
+}
+
 async function gradeAllJustifyTasks(){
   const btn=document.getElementById('aiGradeAllBtn');
   const statusEl=document.getElementById('aiGradeAllStatus');
@@ -1223,21 +1249,16 @@ async function gradeAllJustifyTasks(){
     return;
   }
   const confirmMsg = includeGraded
-    ? `이미 채점된 답안을 포함해서 총 ${items.length}개를 전부 다시 채점할까요?\n(기존 채점 결과는 새 결과로 덮어써져요. 학생 수에 따라 시간이 걸릴 수 있어요)`
-    : `아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(학생 수에 따라 시간이 걸릴 수 있어요)`;
+    ? `이미 채점된 답안을 포함해서 총 ${items.length}개를 전부 다시 채점할까요?\n(기존 채점 결과는 새 결과로 덮어써져요. 항목마다 텀을 두고 채점해서 시간이 걸릴 수 있어요 — 대략 ${Math.ceil(items.length*2.5/60)}분 이상)`
+    : `아직 AI 채점하지 않은 답안 ${items.length}개를 한번에 채점할까요?\n(항목마다 텀을 두고 채점해서 시간이 걸릴 수 있어요 — 대략 ${Math.ceil(items.length*2.5/60)}분 이상)`;
   if(!confirm(confirmMsg)) return;
   btn.disabled=true;
   let done=0, failed=0;
   for(let i=0;i<items.length;i++){
     const item=items[i];
-    statusEl.textContent = `채점 중... (${i+1}/${items.length})`;
+    statusEl.textContent = `채점 중... (${i+1}/${items.length})` + (failed? ` · 실패 ${failed}건` : '');
     try{
-      const r = await fetch('/api/grade-justify', {
-        method:'POST', headers:{'content-type':'application/json'},
-        body: JSON.stringify({ centerType:item.centerType, reason:item.reason, method:item.method })
-      });
-      const data = await r.json();
-      if(!r.ok) throw new Error(data.error||'AI 채점 실패');
+      const data = await aiGradeOneWithRetry(item, 4);
       await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
         reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
         methodPart1Correct: !!data.methodPart1Correct,
@@ -1249,8 +1270,9 @@ async function gradeAllJustifyTasks(){
       done++;
     }catch(err){
       failed++;
-      console.error('AI 전체 채점 중 오류:', item, err);
+      console.error('AI 전체 채점 중 오류(재시도 4회 모두 실패):', item, err);
     }
+    if(i < items.length-1) await aiGradeSleep(2500);
   }
   btn.disabled=false;
   statusEl.textContent = `완료: ${done}개 채점됨` + (failed? `, ${failed}개 실패(콘솔 참고)` : '');
