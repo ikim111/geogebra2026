@@ -1422,7 +1422,13 @@ const RT = {
     this.studentRef = this.roomRef.child('students/'+key);
     this.controlRef = this.roomRef.child('control');
 
-    this.studentRef.once('value').then(snap=>{
+    /* rosterCodes: 선생님이 미리 반별로 등록해둔 "번호_이름 → 휴대전화 뒷 4자리" 표.
+       학생이 이 과제를 맨 처음 시작하는 순간, 학생 기록이 없거나 인증번호가 아직 없으면
+       여기서 값을 찾아 자동으로 채워준다(성적 확인 페이지 resultpa1.html의 인증번호로 쓰인다). */
+    Promise.all([
+      this.studentRef.once('value'),
+      this.roomRef.child('rosterCodes/'+key).once('value')
+    ]).then(([snap, codeSnap])=>{
       let existing = snap.val();
       let assignment = existing && existing.assignment;
       if(!assignment){
@@ -1449,13 +1455,18 @@ const RT = {
           submitted: (existing && existing.submitted) || !!localWork.submitted
         });
       }
-      this.studentRef.update({
+      const initUpd = {
         name: name,
         number: number || null,
         joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
         lastActive: firebase.database.ServerValue.TIMESTAMP,
         online: true
-      });
+      };
+      // 이미 인증번호가 있으면(학생이 직접 바꿨을 수도 있으니) 덮어쓰지 않는다.
+      if(!(existing && existing.verifyCode) && codeSnap.exists()){
+        initUpd.verifyCode = codeSnap.val();
+      }
+      this.studentRef.update(initUpd);
       this.connected = true;
       statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
       statusEl.className = 'on';
