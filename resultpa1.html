@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 성적 확인 — 삼각형의 외심과 내심 수행평가</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<style>
+  :root{
+    --blue:#1976d2; --green:#2e7d32; --orange:#e65100; --red:#c62828; --bg:#f4f6f8;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);margin:0;color:#222;}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 14px 60px;}
+  .titlebar{background:#fff;padding:14px 16px;border-bottom:1px solid #e0e0e0;position:sticky;top:0;z-index:5;}
+  .titlebar h1{font-size:16px;margin:0;color:var(--blue);}
+  .card{background:#fff;border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .gate input{width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font-size:15px;margin-top:4px;margin-bottom:12px;}
+  .gate label{font-size:13px;color:#555;font-weight:bold;}
+  .gate button, .primary-btn{width:100%;padding:12px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:15px;font-weight:bold;cursor:pointer;}
+  .gate button:disabled{background:#aaa;}
+  .status{font-size:13px;color:#c62828;margin-top:6px;min-height:16px;}
+  .total-score{text-align:center;padding:10px 0 4px;}
+  .total-score .num{font-size:36px;font-weight:bold;color:var(--blue);}
+  .total-score .label{font-size:13px;color:#777;}
+  .task-card{margin-top:14px;}
+  .task-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .task-head .name{font-weight:bold;font-size:15px;}
+  .task-head .pts{font-size:14px;color:#555;}
+  .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:bold;margin-left:6px;}
+  .badge.correct{background:#e8f5e9;color:var(--green);}
+  .badge.partial{background:#fff3e0;color:var(--orange);}
+  .badge.wrong{background:#ffebee;color:var(--red);}
+  .badge.none{background:#eee;color:#888;}
+  .row-line{display:flex;align-items:flex-start;gap:6px;margin:6px 0;font-size:13.5px;}
+  .row-line .ico{flex:none;font-weight:bold;}
+  .ico.ok{color:var(--green);}
+  .ico.bad{color:var(--red);}
+  .ico.na{color:#999;}
+  .answer-box{border:1px solid #e2e2e2;background:#fafafa;border-radius:8px;padding:8px 10px;margin:4px 0 8px;white-space:pre-wrap;font-size:13.5px;color:#333;}
+  .feedback{font-size:12.5px;color:#666;font-style:italic;margin:2px 0 10px;padding-left:2px;}
+  .switch-link{display:block;text-align:center;font-size:12.5px;color:#888;margin-top:18px;}
+  .empty-note{color:#999;font-size:13px;}
+  .refresh-btn{background:none;border:1px solid var(--blue);color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:bold;cursor:pointer;}
+  .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle;animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .snapshot-wrap{border:1px solid #e2e2e2;border-radius:8px;overflow:hidden;margin:8px 0 10px;background:#fff;}
+  .snapshot-wrap svg{width:100%;height:auto;display:block;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><h1>📐 삼각형의 외심과 내심 — 내 성적 확인</h1></div>
+
+<div class="wrap">
+
+  <div id="gateCard" class="card gate">
+    <p style="margin-top:0;font-size:13.5px;color:#666;">반·번호·이름·인증번호를 입력하면 본인 채점 결과만 보여요.</p>
+    <label>반</label>
+    <input id="gateRoom" placeholder="예: 5">
+    <label>번호</label>
+    <input id="gateNumber" placeholder="예: 12" inputmode="numeric">
+    <label>이름</label>
+    <input id="gateName" placeholder="예: 홍길동">
+    <label>인증번호 (휴대전화 뒷 4자리)</label>
+    <input id="gateCode" placeholder="예: 1234" inputmode="numeric" maxlength="4">
+    <button id="gateBtn">내 성적 보기</button>
+    <div id="gateStatus" class="status"></div>
+    <a href="#" id="openEditLink" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:10px;">휴대전화 번호가 바뀌었나요? 인증번호 변경하기</a>
+  </div>
+
+  <div id="editGateCard" class="card gate" style="display:none;">
+    <p style="margin-top:0;font-size:13.5px;color:#666;">인증번호 변경은 선생님 안내에 따라 진행해주세요.</p>
+    <label>접속 비밀번호</label>
+    <input id="editPw" type="password" placeholder="비밀번호">
+    <button id="editPwBtn">확인</button>
+    <div id="editPwStatus" class="status"></div>
+    <a href="#" id="backFromEditGate" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:10px;">← 돌아가기</a>
+  </div>
+
+  <div id="editPanelCard" class="card" style="display:none;">
+    <p style="margin-top:0;font-size:13.5px;color:#666;">반·번호·이름을 입력해 본인 정보를 찾은 뒤, 새 인증번호(휴대전화 뒷 4자리)로 바꿔주세요.</p>
+    <label>반</label>
+    <input id="editRoom" placeholder="예: 5">
+    <label>번호</label>
+    <input id="editNumber" placeholder="예: 12" inputmode="numeric">
+    <label>이름</label>
+    <input id="editName" placeholder="예: 홍길동">
+    <label>새 인증번호 (휴대전화 뒷 4자리)</label>
+    <input id="editNewCode" placeholder="예: 1234" inputmode="numeric" maxlength="4">
+    <button id="editSaveBtn">인증번호 저장</button>
+    <div id="editStatus" class="status"></div>
+    <a href="#" id="backFromEditPanel" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:10px;">← 돌아가기</a>
+  </div>
+
+  <div id="resultArea" style="display:none;">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:14px;color:#555;"><b id="resultName"></b>님의 채점 결과</div>
+        <span style="font-size:11.5px;color:#2e7d32;"><span class="live-dot"></span>실시간 연동중</span>
+      </div>
+      <div class="total-score">
+        <div class="num" id="totalScoreNum">-</div>
+        <div class="label">총점 (20점 만점)</div>
+      </div>
+    </div>
+    <div id="tasksContainer"></div>
+    <a href="#" class="switch-link" id="switchLink">다른 사람으로 확인하기</a>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+/* teacherpa1.html / studentpa1.html과 반드시 동일해야 하는 값들 */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__assess_pa1';
+
+const CIRCUM_SCENARIOS = [
+  { key:'quake', title:'지진 관측', trueCenter:{x:273.5,y:206.9} },
+  { key:'flag', title:'체육대회 깃발', trueCenter:{x:273.5,y:206.9} },
+  { key:'tower', title:'무선 송신탑', trueCenter:{x:273.5,y:206.9} },
+  { key:'lighthouse', title:'등대 설치', trueCenter:{x:273.5,y:206.9} }
+];
+const INCENTER_SCENARIOS = [
+  { key:'firestation', title:'소방서', trueCenter:{x:326.7,y:222.2} },
+  { key:'shelter', title:'안전체험관', trueCenter:{x:283.6,y:205.1} },
+  { key:'fountain', title:'공원 분수대', trueCenter:{x:259.0,y:216.2} },
+  { key:'warehouse', title:'물류창고', trueCenter:{x:308.2,y:224.0} }
+];
+function buildTasks(a){
+  a = a || {circumIdx:0, incenterIdx:0, circumFirst:true};
+  const circumS = CIRCUM_SCENARIOS[a.circumIdx] || CIRCUM_SCENARIOS[0];
+  const incenterS = INCENTER_SCENARIOS[a.incenterIdx] || INCENTER_SCENARIOS[0];
+  const firstIsCircum = !!a.circumFirst;
+  const first = firstIsCircum ? {centerType:'외심', scenario:circumS} : {centerType:'내심', scenario:incenterS};
+  const second = firstIsCircum ? {centerType:'내심', scenario:incenterS} : {centerType:'외심', scenario:circumS};
+  return [
+    {id:1, kind:'pointplot', centerType:first.centerType, scenario:first.scenario},
+    {id:2, kind:'justify', centerType:first.centerType, scenario:first.scenario},
+    {id:3, kind:'pointplot', centerType:second.centerType, scenario:second.scenario},
+    {id:4, kind:'justify', centerType:second.centerType, scenario:second.scenario}
+  ];
+}
+
+/* ---------- 기하 유틸 + 과제1·3 채점(teacherpa1.html과 동일 로직) ---------- */
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+const norm=a=>{ const m=Math.hypot(a.x,a.y)||1; return {x:a.x/m,y:a.y/m}; };
+const perp=a=>({x:-a.y,y:a.x});
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function bisectorDir(a,b,c){
+  const u=norm(sub(a,b)), v=norm(sub(c,b));
+  let d=norm(add(u,v));
+  if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
+  return d;
+}
+function byLabelSnap(lo, label){ return lo && (lo.points||[]).find(p=>p.label===label); }
+function pointToSegment(p, a, b){
+  const abx=b.x-a.x, aby=b.y-a.y;
+  const len2 = abx*abx+aby*aby || 1;
+  const t = ((p.x-a.x)*abx + (p.y-a.y)*aby)/len2;
+  const projx=a.x+t*abx, projy=a.y+t*aby;
+  return {t, dist: Math.hypot(p.x-projx, p.y-projy)};
+}
+function findCircleNear(lo, ptById, target, tolCenter, r, tolR){
+  return (lo.objects||[]).some(o=>{
+    if(o.type!=='circleCP' && o.type!=='circleCR') return false;
+    let c, rad;
+    if(o.type==='circleCP'){ c=ptById[o.center]; const th=ptById[o.through]; if(!c||!th) return false; rad=dist(c,th); }
+    else { c=ptById[o.center]; const r1=ptById[o.r1], r2=ptById[o.r2]; if(!c||!r1||!r2) return false; rad=dist(r1,r2); }
+    return dist(c,target) < tolCenter && Math.abs(rad-r) < tolR;
+  });
+}
+function gradePointTask(lo, task){
+  const maxScore = 4;
+  if(!lo || !lo.points || !lo.points.length) return {status:'none', score:0, maxScore};
+  const A=byLabelSnap(lo,'A'), B=byLabelSnap(lo,'B'), C=byLabelSnap(lo,'C');
+  if(!A||!B||!C) return {status:'none', score:0, maxScore};
+  const ptById={}; (lo.points||[]).forEach(p=>{ ptById[p.id]=p; });
+  const tc = task.scenario.trueCenter;
+  const nearPt=(lo.points||[]).find(p=> !['A','B','C'].includes(p.label) && dist(p,tc) < 22);
+  const hasPointOk = !!nearPt;
+
+  if(task.centerType==='외심'){
+    let bisCount=0;
+    [[A,B],[B,C],[C,A]].forEach(([X,Y])=>{
+      const has=(lo.objects||[]).some(o=>o.type==='perpBisector' && ((o.p1===X.id&&o.p2===Y.id)||(o.p1===Y.id&&o.p2===X.id)));
+      if(has) bisCount++;
+    });
+    const bisScore = Math.min(bisCount, 2);
+    const circumR = dist(tc, A);
+    const circleOk = findCircleNear(lo, ptById, tc, 22, circumR, 20);
+    const score = bisScore + (hasPointOk?1:0) + (circleOk?1:0);
+    let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
+    return {status, bisCount, bisScore, hasPoint:hasPointOk, circleOk, score, maxScore};
+  }
+
+  let bisCount=0;
+  [[B,A,C],[A,B,C],[A,C,B]].forEach(([a,b,c])=>{
+    const has=(lo.objects||[]).some(o=>o.type==='angleBisector' && o.b===b.id && ((o.a===a.id&&o.c===c.id)||(o.a===c.id&&o.c===a.id)));
+    if(has) bisCount++;
+  });
+  const constructOk = bisCount>=2;
+  const inradius = pointToSegment(tc, A, B).dist;
+  const footOk = (lo.points||[]).some(p=>{
+    if(['A','B','C'].includes(p.label)) return false;
+    if(dist(p,tc) < 15) return false;
+    return [[A,B],[B,C],[C,A]].some(([X,Y])=>{
+      const r = pointToSegment(p, X, Y);
+      return r.t>0.08 && r.t<0.92 && r.dist<12;
+    });
+  });
+  const circleOk = findCircleNear(lo, ptById, tc, 22, inradius, 15);
+  const score = (constructOk?1:0) + (hasPointOk?1:0) + (footOk?1:0) + (circleOk?1:0);
+  let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
+  return {status, bisCount, constructOk, hasPoint:hasPointOk, footOk, circleOk, score, maxScore};
+}
+
+/* ---------- 학생이 그린 도형 시각화(teacherpa1.html의 drawSnapshotSvg와 동일 로직) ---------- */
+function drawSnapshotSvg(svg, lo, trueCenter, highlightLabel){
+  const NS='http://www.w3.org/2000/svg';
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const g0=document.createElementNS(NS,'g');
+  for(let x=0;x<=600;x+=40){ const l=document.createElementNS(NS,'line'); l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',400); l.setAttribute('stroke','#f2f2f2'); g0.appendChild(l); }
+  for(let y=0;y<=400;y+=40){ const l=document.createElementNS(NS,'line'); l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',600);l.setAttribute('y2',y); l.setAttribute('stroke','#f2f2f2'); g0.appendChild(l); }
+  svg.appendChild(g0);
+  if(!lo){ return; }
+  const ptById={}; (lo.points||[]).forEach(p=>{ ptById[p.id]=p; });
+  const ext=1000;
+  const mkLine=(x1,y1,x2,y2,color,dash)=>{ const l=document.createElementNS(NS,'line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2); l.setAttribute('stroke',color); l.setAttribute('stroke-width','2'); if(dash) l.setAttribute('stroke-dasharray',dash); svg.appendChild(l); };
+  (lo.objects||[]).forEach(o=>{
+    if(o.type==='segment'||o.type==='line'){
+      const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
+      if(o.type==='line'){ const d=norm(sub(p2,p1)); mkLine(p1.x-d.x*ext,p1.y-d.y*ext,p2.x+d.x*ext,p2.y+d.y*ext,'#1565c0'); }
+      else mkLine(p1.x,p1.y,p2.x,p2.y,'#1565c0');
+    } else if(o.type==='perpBisector'){
+      const p1=ptById[o.p1], p2=ptById[o.p2]; if(!p1||!p2) return;
+      const M=mid(p1,p2), d=perp(norm(sub(p2,p1)));
+      mkLine(M.x-d.x*ext,M.y-d.y*ext,M.x+d.x*ext,M.y+d.y*ext,'#6a1b9a');
+    } else if(o.type==='angleBisector'){
+      const a=ptById[o.a], b=ptById[o.b], c=ptById[o.c]; if(!a||!b||!c) return;
+      const d=bisectorDir(a,b,c);
+      mkLine(b.x,b.y,b.x+d.x*500,b.y+d.y*500,'#e65100');
+    } else if(o.type==='circleCP'||o.type==='circleCR'){
+      let center,r;
+      if(o.type==='circleCP'){ center=ptById[o.center]; const through=ptById[o.through]; if(!center||!through) return; r=dist(center,through); }
+      else{ center=ptById[o.center]; const r1=ptById[o.r1], r2=ptById[o.r2]; if(!center||!r1||!r2) return; r=dist(r1,r2); }
+      const el=document.createElementNS(NS,'circle'); el.setAttribute('cx',center.x); el.setAttribute('cy',center.y); el.setAttribute('r',Math.max(r,0.1));
+      el.setAttribute('stroke','#2e7d32'); el.setAttribute('fill','none'); el.setAttribute('stroke-width','2'); svg.appendChild(el);
+    }
+  });
+  (lo.points||[]).forEach(p=>{
+    const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','5');
+    c.setAttribute('fill', p.locked?'#212121':'#0277bd'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5'); svg.appendChild(c);
+    const t=document.createElementNS(NS,'text'); t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8); t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222'); t.textContent=p.label; svg.appendChild(t);
+  });
+  if(trueCenter){
+    const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',trueCenter.x); c.setAttribute('cy',trueCenter.y); c.setAttribute('r','9');
+    c.setAttribute('fill','none'); c.setAttribute('stroke','#c62828'); c.setAttribute('stroke-width','2'); c.setAttribute('stroke-dasharray','3,2'); svg.appendChild(c);
+    const t=document.createElementNS(NS,'text'); t.setAttribute('x',trueCenter.x+11); t.setAttribute('y',trueCenter.y+16); t.setAttribute('font-size','11'); t.setAttribute('fill','#c62828'); t.setAttribute('font-weight','bold'); t.textContent=(highlightLabel||'정답')+' 위치'; svg.appendChild(t);
+  }
+}
+
+/* ---------- 과제2·4(이유·방법) 채점: teacherpa1.html의 gradeJustify와 동일 로직 ---------- */
+function gradeJustify(progressEntry, task, aiEntry){
+  if(!progressEntry || !progressEntry.done) return {status:'none'};
+  const v = progressEntry.value || {};
+  const expected = v.expectedType || task.centerType;
+  const choiceOk = v.choice === expected;
+  const aiGraded = !!aiEntry;
+  const reasonOk = aiGraded ? !!aiEntry.reasonCorrect : null;
+  const methodParts = aiGraded ? {
+    p1: !!aiEntry.methodPart1Correct,
+    p2: !!aiEntry.methodPart2Correct,
+    p3: !!aiEntry.methodPart3Correct
+  } : null;
+  const methodScore = methodParts ? (methodParts.p1?1:0)+(methodParts.p2?1:0)+(methodParts.p3?1:0) : 0;
+  const score = (choiceOk?1:0) + (reasonOk?2:0) + methodScore;
+  const maxScore = 6;
+  let status;
+  if(!aiGraded) status = choiceOk ? 'partial' : 'wrong';
+  else if(score===maxScore) status = 'correct';
+  else if(score===0) status = 'wrong';
+  else status = 'partial';
+  return {status, choice:v.choice, reason:v.reason, method:v.method, expected,
+    choiceOk, reasonOk, methodParts, methodScore, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
+}
+function computeStudentTotalScore(s){
+  const tasks = buildTasks(s.assignment);
+  let score = 0, maxScore = 0;
+  tasks.forEach(t=>{
+    let grade;
+    if(t.kind==='pointplot'){
+      const lo = s.objectSnapshots && s.objectSnapshots[t.id];
+      grade = gradePointTask(lo, t);
+    } else {
+      const aiEntry = s.aiGrading && s.aiGrading[t.id];
+      grade = gradeJustify(s.progress && s.progress[t.id], t, aiEntry);
+    }
+    score += grade.score || 0;
+    maxScore += grade.maxScore || (t.kind==='pointplot' ? 4 : 6);
+  });
+  return {score, maxScore};
+}
+
+/* ---------- 반/번호/이름: student.html이 남긴 공용 프로필을 최우선으로 쓴다 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.classNo && obj.name) ? obj : null;
+  }catch(e){ return null; }
+}
+function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
+
+let app=null, db=null;
+function ensureFirebaseApp(){
+  if(!app){ app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); }
+  return app;
+}
+
+let liveRef = null, liveCallback = null;
+function detachLiveListener(){
+  if(liveRef && liveCallback){ liveRef.off('value', liveCallback); }
+  liveRef = null; liveCallback = null;
+}
+
+function showGateError(msg){
+  detachLiveListener();
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('gateCard').style.display = 'block';
+  const gateBtn = document.getElementById('gateBtn');
+  gateBtn.disabled = false; gateBtn.textContent = '내 성적 보기';
+  document.getElementById('gateStatus').textContent = msg;
+}
+
+function fetchAndRender(room, number, name, code){
+  const statusEl = document.getElementById('gateStatus');
+  statusEl.textContent = '';
+  const gateBtn = document.getElementById('gateBtn');
+  gateBtn.disabled = true; gateBtn.textContent = '불러오는 중...';
+  ensureFirebaseApp();
+  detachLiveListener();
+  const doFetch = ()=>{
+    const roomKey = sanitize(room) + ACTIVITY_SUFFIX;
+    const key = sanitize(number) + '_' + sanitize(name);
+    const ref = db.ref('rooms/'+roomKey+'/students/'+key);
+    let first = true;
+    liveRef = ref;
+    liveCallback = snap => {
+      gateBtn.disabled = false; gateBtn.textContent = '내 성적 보기';
+      const s = snap.val();
+      if(!s){
+        if(first) statusEl.textContent = '해당 반·번호·이름의 기록을 찾을 수 없어요. 다시 확인해주세요.';
+        first = false;
+        return;
+      }
+      if(!s.verifyCode){
+        showGateError('인증번호가 아직 등록되지 않았어요. 선생님께 문의해주세요.');
+        return;
+      }
+      if(String(code||'').trim() !== String(s.verifyCode).trim()){
+        showGateError('인증번호가 일치하지 않습니다. 다시 확인해주세요.');
+        return;
+      }
+      if(first) try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({classNo:room, number, name, ts:Date.now()})); }catch(e){}
+      first = false;
+      // 채점이 갱신되면(선생님이 다시채점/정정) Firebase가 바로 알려줘서 새로고침 없이도 반영된다.
+      renderResult(s, name);
+    };
+    ref.on('value', liveCallback, err=>{
+      gateBtn.disabled = false; gateBtn.textContent = '내 성적 보기';
+      statusEl.textContent = '불러오기 실패: '+err.message;
+    });
+  };
+  if(firebase.auth && !firebase.auth().currentUser){
+    firebase.auth().signInAnonymously().then(doFetch).catch(doFetch);
+  } else {
+    doFetch();
+  }
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function badge(status){
+  const map = {correct:['정답','correct'], partial:['부분점수','partial'], wrong:['오답','wrong'], none:['미작성','none']};
+  const [label, cls] = map[status] || map.none;
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function okIcon(v){ return v===true ? '<span class="ico ok">✓</span>' : v===false ? '<span class="ico bad">✗</span>' : '<span class="ico na">-</span>'; }
+
+function renderResult(s, displayName){
+  document.getElementById('gateCard').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('resultName').textContent = s.name || displayName;
+
+  const total = computeStudentTotalScore(s);
+  document.getElementById('totalScoreNum').textContent = total.score + ' / ' + total.maxScore;
+
+  const tasks = buildTasks(s.assignment);
+  const container = document.getElementById('tasksContainer');
+  container.innerHTML = '';
+
+  tasks.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'card task-card';
+    const num = t.id;
+    const kindLabel = t.kind==='pointplot' ? '점 찍기' : '선택·서술';
+    const maxScore = t.kind==='pointplot' ? 4 : 6;
+
+    if(t.kind==='pointplot'){
+      const lo = s.objectSnapshots && s.objectSnapshots[t.id];
+      const g = gradePointTask(lo, t);
+      let body = '';
+      if(g.status==='none'){
+        body = '<div class="empty-note">아직 작성하지 않았어요.</div>';
+      } else if(t.centerType==='외심'){
+        body = `
+          <div class="row-line">${okIcon(g.bisScore>=1)} 수직이등분선 작도 (${g.bisCount||0}/3개, ${g.bisScore||0}/2점)</div>
+          <div class="row-line">${okIcon(g.hasPoint)} 외심 위치 표시</div>
+          <div class="row-line">${okIcon(g.circleOk)} 외접원 그리기</div>`;
+      } else {
+        body = `
+          <div class="row-line">${okIcon(g.constructOk)} 각의 이등분선 2개 이상 작도</div>
+          <div class="row-line">${okIcon(g.hasPoint)} 내심 위치 표시</div>
+          <div class="row-line">${okIcon(g.footOk)} 변까지 수선의 발 표시</div>
+          <div class="row-line">${okIcon(g.circleOk)} 내접원 그리기</div>`;
+      }
+      card.innerHTML = `
+        <div class="task-head">
+          <div class="name">과제${num} — ${t.centerType} (${esc(t.scenario.title)}) · ${kindLabel} ${badge(g.status)}</div>
+          <div class="pts">${g.status==='none' ? '0' : g.score} / ${maxScore}점</div>
+        </div>
+        <div class="snapshot-wrap"><svg viewBox="0 0 600 400"></svg></div>
+        ${body}`;
+      if(lo){
+        const svgEl = card.querySelector('svg');
+        drawSnapshotSvg(svgEl, lo, t.scenario.trueCenter, t.centerType);
+      }
+    } else {
+      const progressEntry = s.progress && s.progress[t.id];
+      const aiEntry = s.aiGrading && s.aiGrading[t.id];
+      const g = gradeJustify(progressEntry, t, aiEntry);
+      let body = '';
+      if(g.status==='none'){
+        body = '<div class="empty-note">아직 작성하지 않았어요.</div>';
+      } else {
+        body = `
+          <div class="row-line">${okIcon(g.choiceOk)} ① 선택: <b>${esc(g.choice||'(안 함)')}</b> (정답: ${esc(g.expected)})</div>
+          <div class="row-line">${okIcon(g.reasonOk)} ② 이유 ${!g.aiGraded ? '<span class="ico na">(AI 채점 전)</span>' : ''}</div>
+          <div class="answer-box">${esc(g.reason) || '<i>(작성 안 함)</i>'}</div>
+          ${aiEntry && aiEntry.reasonFeedback ? `<div class="feedback">💬 ${esc(aiEntry.reasonFeedback)}</div>` : ''}
+          <div class="row-line">
+            ${okIcon(g.methodParts?g.methodParts.p1:null)} ③ 방법 1번
+            &nbsp;${okIcon(g.methodParts?g.methodParts.p2:null)} 2번
+            &nbsp;${okIcon(g.methodParts?g.methodParts.p3:null)} 3번
+          </div>
+          <div class="answer-box">${esc(g.method) || '<i>(작성 안 함)</i>'}</div>
+          ${aiEntry && aiEntry.methodFeedback ? `<div class="feedback">💬 ${esc(aiEntry.methodFeedback)}</div>` : ''}`;
+      }
+      card.innerHTML = `
+        <div class="task-head">
+          <div class="name">과제${num} — ${t.centerType} (${esc(t.scenario.title)}) · ${kindLabel} ${badge(g.status)}</div>
+          <div class="pts">${g.status==='none' ? '0' : g.score} / ${maxScore}점</div>
+        </div>
+        ${body}`;
+    }
+    container.appendChild(card);
+  });
+
+  window.__lastLoaded = {room: s.__room, number: s.number, name: s.name};
+}
+
+document.getElementById('gateBtn').addEventListener('click', ()=>{
+  const room = document.getElementById('gateRoom').value.trim();
+  const number = document.getElementById('gateNumber').value.trim();
+  const name = document.getElementById('gateName').value.trim();
+  const code = document.getElementById('gateCode').value.trim();
+  if(!room || !name){ document.getElementById('gateStatus').textContent = '반과 이름은 꼭 입력해주세요.'; return; }
+  if(!/^\d{4}$/.test(code)){ document.getElementById('gateStatus').textContent = '인증번호(휴대전화 뒷 4자리)를 숫자 4자리로 입력해주세요.'; return; }
+  fetchAndRender(room, number, name, code);
+});
+document.getElementById('gateCode').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('gateBtn').click(); });
+
+/* ---------- 인증번호 변경 탭 (비밀번호로 보호) ---------- */
+const EDIT_PASSWORD = '314159';
+document.getElementById('openEditLink').addEventListener('click', e=>{
+  e.preventDefault();
+  detachLiveListener();
+  document.getElementById('gateCard').style.display = 'none';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('editGateCard').style.display = 'block';
+  document.getElementById('editPw').value = '';
+  document.getElementById('editPwStatus').textContent = '';
+});
+document.getElementById('backFromEditGate').addEventListener('click', e=>{
+  e.preventDefault();
+  document.getElementById('editGateCard').style.display = 'none';
+  document.getElementById('gateCard').style.display = 'block';
+});
+document.getElementById('editPwBtn').addEventListener('click', ()=>{
+  const pw = document.getElementById('editPw').value.trim();
+  const st = document.getElementById('editPwStatus');
+  if(pw !== EDIT_PASSWORD){ st.textContent = '비밀번호가 올바르지 않습니다.'; return; }
+  document.getElementById('editGateCard').style.display = 'none';
+  document.getElementById('editPanelCard').style.display = 'block';
+  document.getElementById('editRoom').value = '';
+  document.getElementById('editNumber').value = '';
+  document.getElementById('editName').value = '';
+  document.getElementById('editNewCode').value = '';
+  document.getElementById('editStatus').textContent = '';
+});
+document.getElementById('editPw').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('editPwBtn').click(); });
+document.getElementById('backFromEditPanel').addEventListener('click', e=>{
+  e.preventDefault();
+  document.getElementById('editPanelCard').style.display = 'none';
+  document.getElementById('gateCard').style.display = 'block';
+});
+document.getElementById('editSaveBtn').addEventListener('click', ()=>{
+  const room = document.getElementById('editRoom').value.trim();
+  const number = document.getElementById('editNumber').value.trim();
+  const name = document.getElementById('editName').value.trim();
+  const newCode = document.getElementById('editNewCode').value.trim();
+  const statusEl = document.getElementById('editStatus');
+  statusEl.style.color = '#c62828';
+  if(!room || !name){ statusEl.textContent = '반과 이름은 꼭 입력해주세요.'; return; }
+  if(!/^\d{4}$/.test(newCode)){ statusEl.textContent = '인증번호는 숫자 4자리로 입력해주세요.'; return; }
+  statusEl.textContent = '저장 중...';
+  ensureFirebaseApp();
+  const roomKey = sanitize(room) + ACTIVITY_SUFFIX;
+  const key = sanitize(number) + '_' + sanitize(name);
+  const ref = db.ref('rooms/'+roomKey+'/students/'+key);
+  const doSave = ()=>{
+    ref.once('value').then(snap=>{
+      if(!snap.exists()){
+        statusEl.style.color = '#c62828';
+        statusEl.textContent = '해당 반·번호·이름의 기록을 찾을 수 없어요.';
+        return;
+      }
+      ref.update({verifyCode: newCode}).then(()=>{
+        statusEl.style.color = '#2e7d32';
+        statusEl.textContent = '인증번호가 변경되었습니다. 새 인증번호로 성적을 확인해보세요.';
+      }).catch(err=>{
+        statusEl.style.color = '#c62828';
+        statusEl.textContent = '저장 실패: '+err.message;
+      });
+    });
+  };
+  if(firebase.auth && !firebase.auth().currentUser){
+    firebase.auth().signInAnonymously().then(doSave).catch(doSave);
+  } else { doSave(); }
+});
+
+document.getElementById('switchLink').addEventListener('click', (e)=>{
+  e.preventDefault();
+  detachLiveListener();
+  try{ localStorage.removeItem(PROFILE_KEY); }catch(err){}
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('gateCard').style.display = 'block';
+  document.getElementById('gateRoom').value = '';
+  document.getElementById('gateNumber').value = '';
+  document.getElementById('gateName').value = '';
+  document.getElementById('gateCode').value = '';
+});
+
+/* 자동 입력: student.html에서 이미 반/번호/이름을 입력해둔 기기라면 반·번호·이름만 채워준다.
+   인증번호(휴대전화 뒷자리)는 본인만 알아야 하므로 저장해두지 않고, 볼 때마다 직접 입력하게 한다. */
+(function autoStart(){
+  const p = loadProfile();
+  if(p){
+    document.getElementById('gateRoom').value = p.classNo || '';
+    document.getElementById('gateNumber').value = p.number || '';
+    document.getElementById('gateName').value = p.name || '';
+    document.getElementById('gateCode').focus();
+  }
+})();
+</script>
+</body>
+</html>
