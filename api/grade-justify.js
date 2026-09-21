@@ -150,7 +150,9 @@ ${centerType!=='내심' ? `  (2026-09-20, 선생님 정정 반영) 외심 문제
           responseSchema: {
             type: 'object',
             properties: {
-              reasonScore: { type: 'integer', enum: [0, 1, 2] },
+              reasonScore: { type: 'integer' }, // 0, 1, 2 중 하나(프롬프트로 지시). Gemini 구조화 출력 스키마는
+              // enum을 STRING 타입에만 허용해서(INTEGER+enum 조합은 400 에러 발생, 2026-09-21 발견),
+              // 여기서는 제약을 걸지 않고 서버 쪽에서 파싱 후 방어적으로 0/1/2 범위를 검증한다(아래 참고).
               reasonFeedback: { type: 'string' },
               methodPart1Correct: { type: 'boolean' },
               methodPart2Correct: { type: 'boolean' },
