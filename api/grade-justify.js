@@ -9,9 +9,11 @@
 // 를 등록하고 다시 배포(재배포)하면 이 함수가 그 키를 쓸 수 있다.
 //
 // 요청 형식(POST, JSON): { centerType: '외심'|'내심', reason: string, method: string }
-// 응답 형식(JSON): { reasonCorrect, reasonFeedback, methodPart1Correct, methodPart2Correct,
+// 응답 형식(JSON): { reasonScore, reasonCorrect, reasonFeedback, methodPart1Correct, methodPart2Correct,
 //                    methodPart3Correct, methodFeedback }
-// - reasonCorrect: ②이유 문항 정답 여부(2점, 전부-아니면-0점)
+// - reasonScore: ②이유 문항 점수(0, 1, 2점 중 하나). 기본은 전부-아니면-0점(2 또는 0)이지만,
+//   외심 문제에서 기준 단어로 "각"을 쓴 특수한 경우만 예외적으로 1점(부분점수)을 준다(아래 프롬프트 참고).
+// - reasonCorrect: reasonScore===2와 같은 값(하위 호환용, 구 코드가 boolean만 읽어도 되게).
 // - methodPart1/2/3Correct: ③방법 문항을 세 요소로 나눠 채점(각 1점, 부분점수 가능).
 //   외심이면 [변]/[수직이등분선]/[교점], 내심이면 [각]/[이등분선]/[교점] 순서.
 
@@ -90,7 +92,7 @@ module.exports = async (req, res) => {
   const prompt = `당신은 중학교 수학(삼각형의 외심과 내심) 수행평가 서술형 답안을 채점하는 선생님입니다.
 학생이 이번 문제에서 찾아야 하는 점: ${centerType}
 
-[이유 문항] 모범 답안: "${expectedReason}" — 표현이 다르더라도 핵심 개념(무엇으로부터 거리가 같은지)이 통하면 정답(true)으로 판정하세요.
+[이유 문항] 모범 답안: "${expectedReason}" — 표현이 다르더라도 핵심 개념(무엇으로부터 거리가 같은지)이 통하면 정답(reasonScore=2)으로 판정하세요. 이유 문항은 아래 설명대로 2점/1점/0점 중 하나(reasonScore)로 채점합니다.
 
 [이유 채점 시 특히 주의] "거리가 같다"는 표현이 있다고 무조건 정답으로 인정하지 말고, 그 거리가 "무엇으로부터"인지(기준)를 반드시 확인하세요.
   - 외심(circumcenter)의 기준은 "세 점"(꼭짓점) — 문제 시나리오에 따라 "관측소", "지점" 등으로 표현될 수 있습니다.
@@ -102,6 +104,11 @@ module.exports = async (req, res) => {
   - 이유 문항은 "왜 그 점(거리가 같다는 조건)이 성립하는지"를 답해야 합니다. "세 이등분선은 ○○에서 만난다"처럼 무엇이 어디서 만나는지(=방법/구성 사실)만 쓰고 "거리가 같다"는 조건 자체를 전혀 언급하지 않은 답은, 주제가 비슷해 보여도 이유 문항의 정답으로 인정하지 마세요(방법 문항에서 다룰 내용을 이유 문항 자리에 쓴 것입니다) — 오답(false)으로 처리하세요.
   - 단, 학생이 "세 점(또는 변)으로부터 거리가 같다"는 결론에 실제로 도달하기만 했다면, 그 결론에 이르는 설명 방식(예: "모든 점이 같은 원 위에 있으므로 반지름이 같다", "외접원/내접원을 그려보면 세 점을 모두 지나므로 거리가 같음이 증명된다" 등 원을 이용한 증명)은 정답으로 인정하세요. 교과서 문장을 토씨 하나 안 틀리고 써야만 정답인 것이 아닙니다 — 핵심 결론(거리가 같다 + 그 기준이 무엇인지)이 답안 어딘가에 명확히 드러나 있다면, 설명이 다소 길거나 증명 방식을 덧붙였다고 해서 감점하지 마세요. "거리가 같다"는 결론에 아예 도달하지 못했거나(예: 그냥 문제 조건을 되풀이하기만 함), 그 결론의 기준(점/변)이 틀리거나 불명확한 경우에만 오답으로 처리하세요.
   - "~해야 ~할 수 있다", "~하려면 ~해야 한다"처럼 목적/조건을 나타내는 문장 구조라도, 그 안에 정확한 기준(${centerType==='내심'?'변':'점'})과 "거리가 같다"는 결론이 함께 명확히 들어있다면, 이는 ${centerType}의 정의적 성질을 정확히 설명한 것이므로 정답(true)으로 인정하세요. 예를 들어 "외심을 찾아야 세 점(위치)으로부터 그 점까지의 거리를 같게 할 수 있다"는 기준(세 점)과 결론(거리가 같다)이 모두 정확히 짝지어 있으므로 정답입니다. 이런 문장을 단지 조건문 형태라는 이유만으로 "문제 조건을 되풀이했을 뿐"이라거나 "순환 논리"라고 판단해 오답 처리하지 마세요 — 기준과 결론이 정확히 짝지어 서술되어 있다면 그 자체로 충분한 설명입니다. (반대로 기준이나 결론 중 하나라도 빠지거나 틀린 채로 막연히 "찾아야 한다"고만 쓴 경우는 여전히 오답입니다.)
+
+[이유 문항 점수(reasonScore) 산정 방법] 이유 문항은 기본적으로 2점(만점) 아니면 0점이지만, 딱 한 가지 예외 상황에서만 1점(부분점수)을 줍니다:
+  - (2026-09-21 정정 반영, 선생님 명시적 기준) 지금 채점 대상이 "외심"인데, 학생이 기준 단어로 "각"이라는 단어를 사용한 경우(예: "세 각으로부터 거리가 같다", "세 각에서의 거리가 같기 때문이다")는 완전한 오답이 아니라 reasonScore를 1점으로 채점하세요. "거리가 같다"는 결론 자체는 맞게 썼지만 기준을 "점(꼭짓점)"이 아니라 엉뚱하게 "각"이라고 쓴 경우에 해당하는, 이 문항에서만 적용되는 특별 예외입니다.
+  - 이 예외는 반드시 지금 채점 대상이 "외심"이고, 답안에 "각"이라는 단어가 기준으로 실제 등장할 때만 적용하세요. 내심 문제이거나, "각"이라는 단어가 전혀 없거나, 기준이 "변"(또는 "변"과 동일 취급되는 "선분")인 경우에는 이 예외를 적용하지 말고 기존 규칙대로 2점 또는 0점으로만 채점하세요.
+  - 기준 단어가 올바르게 "점"(또는 꼭짓점/지점/관측소/도시/무인도/섬 계열)이고 "거리가 같다"도 있으면 reasonScore=2. 기준 단어가 아예 없거나("거리가 같다"는 결론 자체가 없거나 모호함), 기준이 "변/선분"이면 reasonScore=0. 기준이 "각"이면(외심 문제에 한해) reasonScore=1. 그 외의 경우는 위에서 설명한 기존 전부-아니면-0점 규칙을 그대로 적용해 2 또는 0으로 채점하세요.
 
 [방법 문항] 모범 답안: "${expectedMethod}" — 이 문항은 아래 세 가지 요소가 각각 들어있는지 따로따로 채점합니다(부분점수 가능). 표현이 다르더라도 의미가 통하면 정답으로 인정하세요.
   1번 요소(part1): ${methodParts[0]}
@@ -143,14 +150,14 @@ ${centerType!=='내심' ? `  (2026-09-20, 선생님 정정 반영) 외심 문제
           responseSchema: {
             type: 'object',
             properties: {
-              reasonCorrect: { type: 'boolean' },
+              reasonScore: { type: 'integer', enum: [0, 1, 2] },
               reasonFeedback: { type: 'string' },
               methodPart1Correct: { type: 'boolean' },
               methodPart2Correct: { type: 'boolean' },
               methodPart3Correct: { type: 'boolean' },
               methodFeedback: { type: 'string' }
             },
-            required: ['reasonCorrect', 'reasonFeedback', 'methodPart1Correct', 'methodPart2Correct', 'methodPart3Correct', 'methodFeedback']
+            required: ['reasonScore', 'reasonFeedback', 'methodPart1Correct', 'methodPart2Correct', 'methodPart3Correct', 'methodFeedback']
           }
         }
       })
@@ -180,8 +187,12 @@ ${centerType!=='내심' ? `  (2026-09-20, 선생님 정정 반영) 외심 문제
       return;
     }
 
+    let reasonScore = parseInt(parsed.reasonScore, 10);
+    if (![0, 1, 2].includes(reasonScore)) reasonScore = parsed.reasonCorrect ? 2 : 0; // 방어적 폴백
+
     res.status(200).json({
-      reasonCorrect: !!parsed.reasonCorrect,
+      reasonScore: reasonScore,
+      reasonCorrect: reasonScore === 2, // 하위 호환용(구 코드가 boolean만 읽어도 동작하게)
       reasonFeedback: parsed.reasonFeedback || '',
       methodPart1Correct: !!parsed.methodPart1Correct,
       methodPart2Correct: !!parsed.methodPart2Correct,

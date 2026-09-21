@@ -91,10 +91,12 @@ if (typeof firebase === 'undefined') {
   .criteria-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#777;padding:2px 0;}
   .criteria-item.done{color:var(--green);font-weight:bold;}
   .criteria-item.bad{color:var(--red);}
+  .criteria-item.partial{color:#b8860b;font-weight:bold;}
   .criteria-item .clabel{flex:1;}
   .criteria-item .cpts{font-size:11px;color:#999;}
   .criteria-item.done .cpts{color:var(--green);}
   .criteria-item.bad .cpts{color:var(--red);}
+  .criteria-item.partial .cpts{color:#b8860b;}
   .criteria-item.editable{cursor:pointer;border-radius:5px;}
   .criteria-item.editable:hover{background:#fff3cd;}
   .criteria-item.editable .clabel::after{content:' ✏️';opacity:.5;font-size:10px;}
@@ -451,11 +453,15 @@ function gradePointTask(lo, task){
   let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
   return {status, bisCount, constructOk, hasPoint:hasPointOk, footOk, circleOk, score, maxScore};
 }
-// ①선택(1점) + ②이유(2점, AI 채점) + ③방법([변/각]·[이등분선]·[교점] 각 1점, AI 채점) = 총 6점.
+// ①선택(1점) + ②이유(2점, AI 채점, 0/1/2 부분점수 가능) + ③방법([변/각]·[이등분선]·[교점] 각 1점, AI 채점) = 총 6점.
 // aiEntry는 rooms/{room}/students/{key}/aiGrading/{taskId}에 저장된 AI 채점 결과
-// {reasonCorrect, reasonFeedback, methodPart1Correct, methodPart2Correct, methodPart3Correct,
-// methodFeedback}이다. 아직 AI 채점을 하지 않았으면 aiEntry가 없고, 이때 ②③은
-// "미채점"(null)으로 표시하고 점수에도 넣지 않는다(①선택 점수만 반영).
+// {reasonScore(0/1/2), reasonCorrect(구버전 호환용 boolean), reasonFeedback, methodPart1Correct,
+// methodPart2Correct, methodPart3Correct, methodFeedback}이다. 아직 AI 채점을 하지 않았으면
+// aiEntry가 없고, 이때 ②③은 "미채점"(null)으로 표시하고 점수에도 넣지 않는다(①선택 점수만 반영).
+// (2026-09-21) 이유 문항은 원래 2점/0점(전부-아니면-0점)이었는데, 외심 문제에서 "각"을 기준
+// 단어로 쓴 경우만 1점 부분점수를 인정하기로 해서 reasonScore(0/1/2)를 새로 둔다. 예전에
+// reasonCorrect(boolean)만 있고 reasonScore가 없는 옛 채점 데이터도 있을 수 있어서, 그런 경우는
+// reasonCorrect를 2점/0점으로 환산해서 읽는다(폴백).
 function gradeJustify(progressEntry, task, aiEntry){
   if(!progressEntry || !progressEntry.done) return {status:'none'};
   const v = progressEntry.value || {};
@@ -465,14 +471,19 @@ function gradeJustify(progressEntry, task, aiEntry){
   // (아래 AI 채점 버튼들과 동일한 규칙 — gradeCenterType이 그때 넘긴 값과 같다).
   const gradeCenterType = (v.choice==='내심'||v.choice==='외심') ? v.choice : task.centerType;
   const aiGraded = !!aiEntry;
-  const reasonOk = aiGraded ? !!aiEntry.reasonCorrect : null;
+  let reasonScore = null;
+  if(aiGraded){
+    reasonScore = (aiEntry.reasonScore!=null) ? Number(aiEntry.reasonScore) : (aiEntry.reasonCorrect ? 2 : 0);
+    if(!(reasonScore>=0 && reasonScore<=2)) reasonScore = aiEntry.reasonCorrect ? 2 : 0;
+  }
+  const reasonOk = aiGraded ? (reasonScore===2) : null; // 기존 코드 호환용(2점 만점이어야 true)
   const methodParts = aiGraded ? {
     p1: !!aiEntry.methodPart1Correct,
     p2: !!aiEntry.methodPart2Correct,
     p3: !!aiEntry.methodPart3Correct
   } : null;
   const methodScore = methodParts ? (methodParts.p1?1:0)+(methodParts.p2?1:0)+(methodParts.p3?1:0) : 0;
-  const score = (choiceOk?1:0) + (reasonOk?2:0) + methodScore;
+  const score = (choiceOk?1:0) + (reasonScore||0) + methodScore;
   const maxScore = 6;
   let status;
   if(!aiGraded) status = choiceOk ? 'partial' : 'wrong'; // AI 채점 전에는 선택 여부만 반영
@@ -480,7 +491,7 @@ function gradeJustify(progressEntry, task, aiEntry){
   else if(score===0) status = 'wrong';
   else status = 'partial';
   return {status, choice:v.choice, reason:v.reason, method:v.method, expected, gradeCenterType,
-    choiceOk, reasonOk, methodParts, methodScore, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
+    choiceOk, reasonOk, reasonScore, methodParts, methodScore, aiGraded, aiFeedback:aiEntry||null, score, maxScore};
 }
 
 /* 학생 1명의 4개 과제 점수를 모두 더한 총점을 계산한다(외심 점찍기 4점 + 외심 서술형 6점 +
@@ -529,6 +540,10 @@ function drawSnapshotSvg(svg, lo, trueCenter, highlightLabel){
       const a=ptById[o.a], b=ptById[o.b], c=ptById[o.c]; if(!a||!b||!c) return;
       const d=bisectorDir(a,b,c);
       mkLine(b.x,b.y,b.x+d.x*500,b.y+d.y*500,'#e65100');
+    } else if(o.type==='perp'){
+      const p=ptById[o.p], rp1=ptById[o.refP1], rp2=ptById[o.refP2]; if(!p||!rp1||!rp2) return;
+      const d=perp(norm(sub(rp2,rp1)));
+      mkLine(p.x-d.x*ext,p.y-d.y*ext,p.x+d.x*ext,p.y+d.y*ext,'#00838f');
     } else if(o.type==='circleCP'||o.type==='circleCR'){
       let center,r;
       if(o.type==='circleCP'){ center=ptById[o.center]; const through=ptById[o.through]; if(!center||!through) return; r=dist(center,through); }
@@ -734,21 +749,24 @@ function selectStudent(key){
 }
 
 /* 채점 요소 체크리스트 UI(항목별 ✅/❌/❔ + 배점)를 만든다. done이 true/false면 체크,
-   null이면 "아직 채점 안 함"(❔)으로 표시한다. student7.html의 채점 요소 표시와 같은 스타일.
+   null이면 "아직 채점 안 함"(❔)으로 표시한다. 'partial'이면 절반 점수(🟡)로 표시한다(예:
+   과제2 이유 문항이 2점 만점에 1점인 경우). student7.html의 채점 요소 표시와 같은 스타일.
    it.onToggle이 있으면(=AI가 채점한 항목이고 선생님이 직접 뒤집을 수 있는 경우) 그 줄을
-   클릭 가능하게 만들어 눌렀을 때 onToggle()을 호출한다(✅↔❌ 반전, ❔는 onToggle을 안 넘겨서
-   클릭 불가 — 아직 AI 채점을 하지 않았으면 뒤집을 대상 자체가 없다). */
+   클릭 가능하게 만들어 눌렀을 때 onToggle()을 호출한다(✅↔❌ 반전, 또는 이유 문항처럼
+   3단계를 순환하는 경우도 있다. ❔는 onToggle을 안 넘겨서 클릭 불가 — 아직 AI 채점을 하지
+   않았으면 뒤집을 대상 자체가 없다). */
 function buildCriteriaBox(items){
   const box=document.createElement('div'); box.className='criteria-box';
   items.forEach(it=>{
     const row=document.createElement('div');
-    row.className = 'criteria-item' + (it.done===true?' done':it.done===false?' bad':'') + (it.onToggle?' editable':'');
-    const mark = it.done===true ? '✅' : it.done===false ? '❌' : '❔';
+    const stateClass = it.done===true?' done':it.done===false?' bad':it.done==='partial'?' partial':'';
+    row.className = 'criteria-item' + stateClass + (it.onToggle?' editable':'');
+    const mark = it.done===true ? '✅' : it.done===false ? '❌' : it.done==='partial' ? '🟡' : '❔';
     // scoreLabel이 있으면(예: 부분점수 "1/2점") 그것을 쓰고, 없으면 "N점"으로 보여준다.
     const ptsText = it.scoreLabel!=null ? it.scoreLabel : `${it.points}점`;
     row.innerHTML = `<span class="check">${mark}</span><span class="clabel">${it.label}</span><span class="cpts">${ptsText}</span>`;
     if(it.onToggle){
-      row.title = 'AI 채점이 틀렸다면 클릭해서 직접 정답/오답을 바꿀 수 있어요';
+      row.title = it.toggleHint || 'AI 채점이 틀렸다면 클릭해서 직접 정답/오답을 바꿀 수 있어요';
       row.addEventListener('click', (ev)=>{ ev.stopPropagation(); it.onToggle(); });
     }
     box.appendChild(row);
@@ -772,6 +790,27 @@ function toggleAiField(key, taskId, field, newVal){
     const newFb = (oldFb ? oldFb+' ' : '') + note;
     ref.update({
       [field]: newVal, [feedbackField]: newFb,
+      teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
+    });
+  });
+}
+
+// (2026-09-21 추가) ②이유 문항은 2점/0점 둘 중 하나만 있었는데, 이제 1점(부분점수)도 있을 수
+// 있어서 단순 true/false 반전으로는 표현이 안 된다. 그래서 이유 문항 전용으로 클릭할 때마다
+// 2점 → 1점 → 0점 → 2점 순서로 돌아가며 바뀌는 함수를 따로 둔다(toggleAiField는 ③방법의
+// 세 요소처럼 여전히 boolean 2단계인 항목에 계속 쓴다).
+function cycleReasonScore(key, taskId, currentScore){
+  const order = [2, 1, 0];
+  const idx = order.indexOf(currentScore);
+  const newScore = order[(idx>=0 ? idx+1 : 0) % order.length];
+  const ref = studentsRef.child(key+'/aiGrading/'+taskId);
+  ref.once('value').then(function(snap){
+    const cur = snap.val() || {};
+    const note = '(선생님이 이 항목을 '+newScore+'점으로 직접 정정했습니다.)';
+    const oldFb = (cur.reasonFeedback||'').replace(/\s*\(선생님이 이 항목을 \d점으로 직접 정정했습니다\.\)\s*$/,'').trim();
+    const newFb = (oldFb ? oldFb+' ' : '') + note;
+    ref.update({
+      reasonScore: newScore, reasonCorrect: newScore===2, reasonFeedback: newFb,
       teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
     });
   });
@@ -839,10 +878,13 @@ function buildTaskBox(s, t, headerText, key){
       // grade.aiGraded && key일 때만 클릭으로 뒤집을 수 있게 한다 — key가 있어야 Firebase 경로를
       // 알 수 있고, AI 채점 전(mp===null)에는 뒤집을 값 자체가 없다.
       const canOverride = grade.aiGraded && !!key;
+      const reasonDone = grade.reasonScore==null ? null : (grade.reasonScore===2 ? true : grade.reasonScore===0 ? false : 'partial');
       box.appendChild(buildCriteriaBox([
         {label:`①선택 정답 (선택: ${grade.choice||'-'} / 정답: ${grade.expected})`, points:1, done:grade.choiceOk},
-        {label:'②이유 — AI 채점'+notGraded, points:2, done:grade.reasonOk,
-          onToggle: canOverride ? ()=>toggleAiField(key, t.id, 'reasonCorrect', !grade.reasonOk) : null},
+        {label:'②이유 — AI 채점'+notGraded, points:2, done:reasonDone,
+          scoreLabel: grade.reasonScore!=null ? `${grade.reasonScore}/2점` : null,
+          toggleHint: '클릭할 때마다 2점 → 1점 → 0점 순으로 바뀌어요(다시 클릭하면 2점으로 돌아와요).',
+          onToggle: canOverride ? ()=>cycleReasonScore(key, t.id, grade.reasonScore) : null},
         {label:`③-1 [${partNames[0]}] 언급 정확 — AI 채점`+notGraded, points:1, done: mp?mp.p1:null,
           onToggle: canOverride ? ()=>toggleAiField(key, t.id, 'methodPart1Correct', !mp.p1) : null},
         {label:`③-2 [${partNames[1]}] 언급 정확 — AI 채점`+notGraded, points:1, done: mp?mp.p2:null,
@@ -882,8 +924,9 @@ function buildTaskBox(s, t, headerText, key){
         const gradeCenterType = (grade.choice==='내심'||grade.choice==='외심') ? grade.choice : t.centerType;
         aiGradeWithCache(currentRoomKey, gradeCenterType, grade.reason||'', grade.method||'')
         .then((data)=>{
+          const rScore = (data.reasonScore!=null && [0,1,2].includes(Number(data.reasonScore))) ? Number(data.reasonScore) : (data.reasonCorrect?2:0);
           studentsRef.child(key+'/aiGrading/'+t.id).set({
-            reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
+            reasonScore: rScore, reasonCorrect: rScore===2, reasonFeedback: data.reasonFeedback||'',
             methodPart1Correct: !!data.methodPart1Correct,
             methodPart2Correct: !!data.methodPart2Correct,
             methodPart3Correct: !!data.methodPart3Correct,
@@ -1065,7 +1108,7 @@ function submitStudentAnswersToGoogleForm(s){
       const grade = gradeJustify(p, t, aiEntry);
       if(grade.status==='none') return;
       success = `${grade.score}/${grade.maxScore}점`;
-      const reasonMark = grade.reasonOk==null ? '?' : (grade.reasonOk?'O':'X');
+      const reasonMark = grade.reasonScore==null ? '?' : (grade.reasonScore+'/2');
       const mp = grade.methodParts;
       const methodMark = !mp ? '?' : `${(mp.p1?1:0)+(mp.p2?1:0)+(mp.p3?1:0)}/3`;
       answer = `①선택:${grade.choice||'(없음)'} (정답:${grade.expected}) ${grade.choiceOk?'O':'X'} | ②이유(AI,2점): ${reasonMark} - "${grade.reason||'(작성 안 함)'}" | ③방법(AI,${methodMark}점): "${grade.method||'(작성 안 함)'}"`;
@@ -1309,8 +1352,9 @@ async function gradeAllJustifyTasks(){
     statusEl.textContent = `채점 중... (${i+1}/${items.length})` + (failed? ` · 실패 ${failed}건` : '');
     try{
       const data = await aiGradeWithCache(currentRoomKey, item.centerType, item.reason, item.method, { forceFresh: includeGraded });
+      const rScore = (data.reasonScore!=null && [0,1,2].includes(Number(data.reasonScore))) ? Number(data.reasonScore) : (data.reasonCorrect?2:0);
       await studentsRef.child(item.key+'/aiGrading/'+item.taskId).set({
-        reasonCorrect: !!data.reasonCorrect, reasonFeedback: data.reasonFeedback||'',
+        reasonScore: rScore, reasonCorrect: rScore===2, reasonFeedback: data.reasonFeedback||'',
         methodPart1Correct: !!data.methodPart1Correct,
         methodPart2Correct: !!data.methodPart2Correct,
         methodPart3Correct: !!data.methodPart3Correct,
@@ -1393,7 +1437,8 @@ function printJustifyReport(){
   if(list.length===0){ alert('아직 접속한 학생이 없어요.'); return; }
   list.sort(byNumber);
 
-  const mark = (v)=> v===true ? '<span class="ok">✓ 정답</span>' : v===false ? '<span class="bad">✗ 오답</span>' : '<span class="pending">미채점</span>';
+  const mark = (v)=> v===true ? '<span class="ok">✓ 정답</span>' : v===false ? '<span class="bad">✗ 오답</span>' : v==='partial' ? '<span class="partial">△ 부분점수</span>' : '<span class="pending">미채점</span>';
+  const reasonMarkState = (g)=> g.reasonScore==null ? null : (g.reasonScore===2 ? true : g.reasonScore===0 ? false : 'partial');
 
   const blocks = list.map(s=>{
     const tasks = buildTasks(s.assignment).filter(t=>t.kind==='justify'); // 과제2·4만
@@ -1410,7 +1455,7 @@ function printJustifyReport(){
       <div class="task-block">
         <div class="task-title">${t.id===2?'②':'④'} 과제${t.id} — ${t.centerType} (${escHtml(t.scenario.title)}) <span class="score">${scoreTxt}</span></div>
         <div class="field-line">① 선택: <b>${escHtml(g.choice||'(안 함)')}</b> (정답: ${escHtml(g.expected)}) ${choiceOk?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}</div>
-        <div class="field-line">② 이유 ${mark(g.reasonOk)}</div>
+        <div class="field-line">② 이유 ${mark(reasonMarkState(g))}${g.reasonScore!=null?` (${g.reasonScore}/2점)`:''}</div>
         <div class="answer-box">${escHtml(g.reason) || '<i>(작성 안 함)</i>'}</div>
         ${aiEntry && aiEntry.reasonFeedback ? `<div class="feedback">AI 피드백: ${escHtml(aiEntry.reasonFeedback)}</div>` : ''}
         <div class="field-line">③ 방법 — 1번 ${mark(g.methodParts?g.methodParts.p1:null)} · 2번 ${mark(g.methodParts?g.methodParts.p2:null)} · 3번 ${mark(g.methodParts?g.methodParts.p3:null)}</div>
@@ -1444,6 +1489,7 @@ function printJustifyReport(){
   .empty-note{color:#999;font-size:12px;}
   .ok{color:#1b7a1b;font-weight:bold;}
   .bad{color:#c62828;font-weight:bold;}
+  .partial{color:#b8860b;font-weight:bold;}
   .pending{color:#999;}
   @media print{ body{margin:10mm;} .student-block{break-inside:avoid;} }
 </style></head>
