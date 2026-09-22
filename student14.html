@@ -256,167 +256,11 @@ function distToSegmentPts(p,a,b){
   return gcDist(p, {x:a.x+t*(b.x-a.x), y:a.y+t*(b.y-a.y)});
 }
 
-/* ---------- 과제3·4용 "빨대(변) 드래그" 캔버스 ----------
-   [그림1]의 빨대 활동을 인터랙티브 사각형으로 구현한 것. 사각형 ABCD를 주고 학생이
-   꼭짓점 D를 드래그하면, 정해진 조건(수현: 한 쌍은 평행 유지 + 다른 한 쌍은 길이 항상
-   같음 / 정우: 두 쌍 모두 길이 항상 같음)을 만족하도록 C가 자동으로 계산되어 따라온다.
-   이렇게 하면 "빨대로 이동+회전시켜 배치"한 것과 같은 효과를 내면서도, 주어진 조건은
-   항상 정확히 유지된 채로 다양한 모양을 만들어볼 수 있다.
-   viewBox는 260x190을 그대로 유지했다 — 드래그 인식 반경(30px)·경계 clamp 등 픽셀
-   단위로 손으로 맞춰둔 상호작용 수치가 많아, 600x400으로 억지로 키우면 그 수치들을
-   전부 다시 조정해야 해서 회귀 위험만 커진다고 판단했다(모눈종이 26px 격자와 같은 이유). */
-function circleCircleIntersect(c1,r1,c2,r2){
-  const dx=c2.x-c1.x, dy=c2.y-c1.y;
-  const d=Math.hypot(dx,dy);
-  if(d<1e-6 || d>r1+r2 || d<Math.abs(r1-r2)) return null;
-  const a=(r1*r1 - r2*r2 + d*d)/(2*d);
-  const h=Math.sqrt(Math.max(0, r1*r1-a*a));
-  const px=c1.x+a*dx/d, py=c1.y+a*dy/d;
-  const ox=-dy/d*h, oy=dx/d*h;
-  return [ {x:px+ox,y:py+oy}, {x:px-ox,y:py-oy} ];
-}
-const QUAD_A = {x:70,y:150}, QUAD_B = {x:190,y:150}; // 3,4페이지 공통 기준변(고정)
-const quadState = {
-  3: { D:{x:100,y:60}, init:{x:100,y:60}, shSign:-1 },
-  4: { D:{x:100,y:60}, init:{x:100,y:60}, prevC:null }
-};
-const QUAD_REDRAW = {}; // taskId -> redraw(), 재접속 시 저장된 D점 위치를 복원하고 다시 그리는 데 쓴다.
-// 수현(3): AB∥DC 이고 DC의 길이는 자유, BC=AD(다른 한 쌍은 길이만 항상 같음).
-// 이 두 조건만으로는 C의 위치가 하나로 정해지지 않는다 — D를 지나고 AB에 평행한 직선과,
-// B를 중심으로 반지름 AD인 원이 만나는 두 점 중 하나이기 때문이다. 그 두 교점은
-//   ① B.x - dxLocal (A,B의 수직이등분선에 대해 D와 대칭 → 등변사다리꼴, AD∥BC가 아님)
-//   ② B.x + dxLocal (D를 AB만큼 평행이동한 것과 같음 → AD∥BC까지 성립 → 평행사변형)
-// 둘 다 실제로 "수현의 조건"을 만족하는 정답이므로, 하나만 보여주면(예전 버전처럼 항상
-// ①번만 그리면) "이 조건으로는 평행사변형이 아닐 수도 있다(=등변사다리꼴도 가능하다)"는
-// 이 활동의 핵심을 학생이 제대로 확인할 수 없다. 아래 토글 버튼으로 두 경우를 다 보여준다.
-function quad5Compute(){
-  const A=QUAD_A, B=QUAD_B, D=quadState[3].D;
-  const dxLocal = D.x - A.x;
-  const C = { x: B.x + quadState[3].shSign*dxLocal, y: D.y };
-  return [A,B,C,D];
-}
-// 정우(4): AB=DC 이고 BC=AD (두 쌍 모두 길이만 항상 같음) → 두 원의 교점으로 C를 구한다.
-function quad6Compute(){
-  const st = quadState[4];
-  const A=QUAD_A, B=QUAD_B, D=st.D;
-  const r1=gcDist(A,B), r2=gcDist(A,D);
-  const cands = circleCircleIntersect(D,r1,B,r2);
-  let C;
-  if(!cands){ C = st.prevC || {x:B.x, y:D.y}; }
-  else if(!st.prevC){ C = cands[0].y<=cands[1].y ? cands[0] : cands[1]; }
-  else { C = gcDist(cands[0],st.prevC)<=gcDist(cands[1],st.prevC) ? cands[0] : cands[1]; }
-  st.prevC = C;
-  return [A,B,C,D];
-}
-// tickPairs: [{pair:[i,j], count:1|2, color}] — 길이가 같은 변에 눈금(tick) 표시.
-// parallelPairs: [[i,j],...] — 평행한 변에 화살표(chevron) 표시.
-function renderQuadSvg(svg, pts, opts){
-  while(svg.firstChild) svg.removeChild(svg.firstChild);
-  const mk=(tag)=>document.createElementNS(GC_NS,tag);
-  const poly=mk('polygon');
-  poly.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('fill','#fff8e1'); poly.setAttribute('stroke','#333'); poly.setAttribute('stroke-width','2');
-  svg.appendChild(poly);
-  const mid=(p1,p2)=>({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2});
-  const mkLine=(a,b,color,w)=>{
-    const l=mk('line');
-    l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
-    l.setAttribute('stroke',color); l.setAttribute('stroke-width',w||2.5); l.setAttribute('stroke-linecap','round');
-    svg.appendChild(l);
-  };
-  function drawTicks(p1,p2,color,count){
-    const m=mid(p1,p2); const u=gcNorm(gcSub(p2,p1)); const perp={x:-u.y,y:u.x};
-    const offs = count===2 ? [-3,3] : [0];
-    offs.forEach(o=>{
-      const c={x:m.x+u.x*o, y:m.y+u.y*o};
-      mkLine({x:c.x-perp.x*5,y:c.y-perp.y*5}, {x:c.x+perp.x*5,y:c.y+perp.y*5}, color, 2.5);
-    });
-  }
-  function drawArrow(p1,p2,color){
-    const m=mid(p1,p2); const u=gcNorm(gcSub(p2,p1)); const perp={x:-u.y,y:u.x};
-    const tip={x:m.x+u.x*5,y:m.y+u.y*5};
-    mkLine({x:m.x-u.x*4+perp.x*4,y:m.y-u.y*4+perp.y*4}, tip, color, 2.5);
-    mkLine({x:m.x-u.x*4-perp.x*4,y:m.y-u.y*4-perp.y*4}, tip, color, 2.5);
-  }
-  (opts.parallelPairs||[]).forEach(([i,j])=> drawArrow(pts[i],pts[j], opts.parallelColor||'#00838f'));
-  (opts.tickPairs||[]).forEach(tp=> tp.pair.forEach(([i,j])=> drawTicks(pts[i],pts[j], tp.color, tp.count)));
-  const labels=['A','B','C','D'];
-  pts.forEach((p,i)=>{
-    const isDrag = i===opts.dragIndex;
-    const c=mk('circle');
-    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r', isDrag?7:4);
-    c.setAttribute('fill', isDrag?'#e65100':'#1565c0');
-    svg.appendChild(c);
-    const t=mk('text');
-    t.setAttribute('x', p.x + (i===2?8:(i===3?-14:8)));
-    t.setAttribute('y', p.y - 8);
-    t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('fill', isDrag?'#e65100':'#1565c0');
-    t.textContent = labels[i];
-    svg.appendChild(t);
-  });
-}
-function setupQuadDragTask(taskId, computeFn, dPoint, opts){
-  const svg = document.getElementById('gcSvg-'+taskId);
-  if(!svg) return;
-  function redraw(){ renderQuadSvg(svg, computeFn(), opts); }
-  redraw();
-  QUAD_REDRAW[taskId] = redraw;
-  function pushSnap(){
-    RT.pushObjectSnapshot(taskId, taskId===4
-      ? { D:{x:dPoint.x,y:dPoint.y}, prevC: quadState[4].prevC }
-      : { D:{x:dPoint.x,y:dPoint.y}, shSign: quadState[3].shSign });
-  }
-  let dragging=false;
-  function getPt(e){
-    const rect=svg.getBoundingClientRect();
-    const t=e.touches && e.touches[0] ? e.touches[0] : e;
-    return { x:(t.clientX-rect.left)*(260/rect.width), y:(t.clientY-rect.top)*(190/rect.height) };
-  }
-  function clamp(p){ return { x:Math.max(15,Math.min(245,p.x)), y:Math.max(15,Math.min(135,p.y)) }; }
-  function locked(){
-    const wrap = svg.closest('.gc-wrap');
-    return document.body.classList.contains('app-paused') || document.body.classList.contains('final-locked') || (wrap && wrap.classList.contains('gc-locked'));
-  }
-  const onDown = e=>{
-    if(locked()) return;
-    const p=getPt(e);
-    if(gcDist(p,dPoint) > 30) return; // 주황 점 근처를 눌러야 드래그 시작
-    dragging=true; e.preventDefault();
-  };
-  const onMove = e=>{
-    if(!dragging || locked()) return;
-    e.preventDefault();
-    const p=clamp(getPt(e));
-    dPoint.x=p.x; dPoint.y=p.y;
-    redraw();
-    pushSnap();
-  };
-  const onUp = ()=>{ dragging=false; };
-  svg.addEventListener('mousedown', onDown);
-  svg.addEventListener('touchstart', onDown, {passive:false});
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('touchmove', onMove, {passive:false});
-  window.addEventListener('mouseup', onUp);
-  window.addEventListener('touchend', onUp);
-  const resetBtn = document.getElementById('quadReset-'+taskId);
-  if(resetBtn) resetBtn.addEventListener('click', ()=>{
-    dPoint.x = quadState[taskId].init.x; dPoint.y = quadState[taskId].init.y;
-    if(taskId===4) quadState[4].prevC = null;
-    if(taskId===3) quadState[3].shSign = -1;
-    redraw();
-    pushSnap();
-  });
-  if(taskId===3){
-    const shapeBtn = document.getElementById('quadShapeToggle-3');
-    if(shapeBtn) shapeBtn.addEventListener('click', ()=>{
-      if(locked()) return;
-      quadState[3].shSign *= -1;
-      shapeBtn.textContent = quadState[3].shSign===1 ? '🔄 등변사다리꼴로 보기' : '🔄 평행사변형으로 보기';
-      redraw();
-      pushSnap();
-    });
-  }
-}
+// (2026-09-22) 과제1·2(수현·정우)는 원래 여기서 "빨대(변) 드래그" 캔버스(조건을 만족하도록
+// C가 자동 계산되어 따라오는 인터랙티브 사각형)로 구현되어 있었는데, 선생님 요청으로 그림으로
+// 반례를 직접 그려서 설명하는 방식(과제3·4와 같은 모눈종이 자유 그리기, 아래 setupDrawTask)으로
+// 바뀌면서 이 블록(quadState/quad5Compute/quad6Compute/renderQuadSvg/setupQuadDragTask 등)은
+// 통째로 제거했다. 과거 코드가 필요하면 이 커밋 이전 버전을 참고할 것.
 
 /* ---------- 과제5·6용 "모눈종이 그리기" 캔버스 ----------
    학생이 직접 펜으로 그림을 그리거나("펜"), 자기가 생각하는 네 번째(또는 나머지) 꼭짓점의
@@ -431,6 +275,16 @@ const DRAW_GRID_SIZE = 26;
 const DRAW_GRID_ROWS = 8;
 function gridToSvg(gx, gy){ return { x: gx*DRAW_GRID_SIZE, y: (DRAW_GRID_ROWS-gy)*DRAW_GRID_SIZE }; }
 const DRAW_REFS = {
+  // 과제1·2(수현·정우)는 밑변의 두 꼭짓점 A, B만 고정으로 주고, 나머지 C, D는 학생이 직접
+  // 그려서(펜 또는 점찍기) 조건을 만족하는 반례 사각형을 스스로 찾아보게 한다.
+  3: [
+    Object.assign(gridToSvg(2,2), {color:'#1565c0', label:'A'}),
+    Object.assign(gridToSvg(7,2), {color:'#1565c0', label:'B'})
+  ],
+  4: [
+    Object.assign(gridToSvg(2,2), {color:'#1565c0', label:'A'}),
+    Object.assign(gridToSvg(7,2), {color:'#1565c0', label:'B'})
+  ],
   5: [
     Object.assign(gridToSvg(3,3), {color:'#c62828'}),
     Object.assign(gridToSvg(7,4), {color:'#c62828'}),
@@ -568,23 +422,13 @@ function setupDrawTask(taskId, onChange){
   const resetBtn = document.getElementById('drawReset-'+taskId);
   if(resetBtn) resetBtn.addEventListener('click', ()=>{ if(locked()) return; dc.strokes=[]; dc.points=[]; setTool('pen'); dc.render(); notify(); });
 }
-// 재접속 시 저장된 빨대 D점 위치 / 모눈종이 스트로크·점을 복원한다(GeoCanvas 기반 단원의
-// restoreObjectSnapshot과 같은 역할을 이 단원의 커스텀 엔진에 맞게 수행한다).
+// 재접속 시 저장된 모눈종이 스트로크·점을 복원한다(GeoCanvas 기반 단원의 restoreObjectSnapshot과
+// 같은 역할을 이 단원의 커스텀 엔진에 맞게 수행한다). 과제1·2(수현·정우)도 이제 과제3·4(모눈종이)와
+// 같은 자유 그리기 방식이라 함께 복원한다. (2026-09-22, 빨대 드래그 방식 → 그림으로 반례 방식으로
+// 변경하면서 D/prevC 기반 복원은 더 이상 쓰지 않는다.)
 function restoreCustomSnapshots(snapshots){
   if(!snapshots) return;
-  [3,4].forEach(id=>{
-    const snap = snapshots[id];
-    if(!snap || !snap.D) return;
-    quadState[id].D.x = snap.D.x; quadState[id].D.y = snap.D.y;
-    if(id===4) quadState[4].prevC = snap.prevC || null;
-    if(id===3){
-      quadState[3].shSign = snap.shSign===1 ? 1 : -1; // 이전 저장분(필드 없음)은 기본값(-1, 등변사다리꼴)로 처리
-      const shapeBtn = document.getElementById('quadShapeToggle-3');
-      if(shapeBtn) shapeBtn.textContent = quadState[3].shSign===1 ? '🔄 등변사다리꼴로 보기' : '🔄 평행사변형으로 보기';
-    }
-    if(QUAD_REDRAW[id]) QUAD_REDRAW[id]();
-  });
-  [5,6].forEach(id=>{
+  [3,4,5,6].forEach(id=>{
     const snap = snapshots[id];
     const dc = DRAW_CANVASES[id];
     if(snap && dc){ dc.strokes = snap.strokes||[]; dc.points = snap.points||[]; dc.render(); }
@@ -593,21 +437,21 @@ function restoreCustomSnapshots(snapshots){
 
 /* ---------- 과제 정의 (0~7과 동일한 방식: TASKS 데이터 → buildPageEl로 HTML 생성) ---------- */
 const TASKS = [
-  { id:3, kind:'ox', quad:'sh', minLen:10,
+  { id:3, kind:'ox', draw:true, minLen:10,
     sectionTitle:'생각을 나누는 의사소통 — 빨대로 평행사변형 만들기',
-    sectionDesc:'다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 그 이유를 설명해 보자.',
+    sectionDesc:'다음은 수현이와 정우가 빨대를 이용하여 평행사변형을 만드는 방법에 대하여 나누는 대화이다. 두 사람이 만든 사각형이 항상 평행사변형이 되는지 판단하고, 항상 평행사변형이 되지는 않는다면 반례가 되는 사각형을 그림으로 그려서 이유와 함께 설명해 보자.',
     quotes:[
       {who:'수현', text:'나는 한 쌍의 대변이 평행하고, 다른 한 쌍의 대변의 길이가 각각 같도록 만들 거야.'},
-      {who:'정우', text:'나는 두 쌍의 대변의 길이가 각각 같도록 만들 거야.', alt:true}
+      {who:'정우', text:'나는 두 쌍의 변의 길이가 각각 같도록 만들 거야.', alt:true}
     ],
     numLabel:'[활동1]', title:'수현의 방법 — 수현이 만든 사각형은 항상 평행사변형이 될까?',
-    hint:'주황색 점 D를 드래그해 보세요. 초록 화살표 쪽은 항상 평행, 빨간 눈금 쪽은 항상 길이가 같아요. 아래 "평행사변형으로 보기" 버튼을 누르면 같은 조건에서 나올 수 있는 또 다른 모양도 볼 수 있어요.',
-    placeholder:'그렇게 판단한 이유를 설명해보자 (10자 이상)' },
-  { id:4, kind:'ox', quad:'jw', minLen:10,
+    hint:'점 A, B는 밑변의 두 꼭짓점이에요. 한 쌍의 변은 서로 평행하면서 다른 한 쌍의 변의 길이는 같도록, 나머지 두 꼭짓점 C, D를 정해 사각형을 그려보세요(펜 또는 점찍기). 이 조건을 만족하면서도 평행사변형이 아닌 모양이 있다면, 그 모양을 그려서 반례로 보여주세요.',
+    placeholder:'그린 사각형이 왜 평행사변형이 아닌 반례가 되는지 설명해보자 (10자 이상)' },
+  { id:4, kind:'ox', draw:true, minLen:10,
     sectionTitle:'생각을 나누는 의사소통 — 빨대로 평행사변형 만들기 (계속)',
     numLabel:'[활동2]', title:'정우의 방법 — 정우가 만든 사각형은 항상 평행사변형이 될까?',
-    hint:'주황색 점 D를 드래그해 보세요. 빨간 눈금(1개) 한 쌍, 파란 눈금(2개) 한 쌍이 각각 항상 길이가 같아요.',
-    placeholder:'그렇게 판단한 이유를 설명해보자 (10자 이상)' },
+    hint:'점 A, B는 한 변의 두 꼭짓점이에요. 두 쌍의 변의 길이가 각각 같도록(마주보는 변이 아니어도 돼요) 나머지 두 꼭짓점 C, D를 정해 사각형을 그려보세요(펜 또는 점찍기). 이 조건을 만족하면서도 평행사변형이 아닌 모양이 있다면, 그 모양을 그려서 반례로 보여주세요.',
+    placeholder:'그린 사각형이 왜 평행사변형이 아닌 반례가 되는지 설명해보자 (10자 이상)' },
   { id:5, kind:'text', draw:true, minLen:15,
     sectionTitle:'생각을 나누는 의사소통 — 모눈종이 위에 평행사변형 그리기',
     sectionDesc:'다음 그림과 같은 모눈종이 위에 꼭짓점을 추가하여 네 점을 꼭짓점으로 하는 평행사변형을 모두 그리고, 평행사변형인 이유를 설명해 보자.',
@@ -663,12 +507,6 @@ function buildPageEl(task){
     const svg = document.createElementNS(GC_NS,'svg'); svg.id='gcSvg-'+task.id; svg.setAttribute('viewBox','0 0 260 190');
     gcWrap.appendChild(svg);
     const tools = document.createElement('div'); tools.className='gc-tools';
-    if(task.quad==='sh'){
-      // 수현의 조건만으로는 등변사다리꼴/평행사변형 둘 다 가능하므로, D를 그대로 둔 채
-      // 두 경우를 오가며 비교해볼 수 있는 토글 버튼을 추가한다.
-      const shapeBtn = document.createElement('button'); shapeBtn.id='quadShapeToggle-'+task.id; shapeBtn.textContent='🔄 평행사변형으로 보기';
-      tools.appendChild(shapeBtn);
-    }
     const resetBtn = document.createElement('button'); resetBtn.className='reset'; resetBtn.id='quadReset-'+task.id; resetBtn.textContent='🔄 처음 모양으로';
     tools.appendChild(resetBtn);
     gcWrap.appendChild(tools);
@@ -760,8 +598,6 @@ function initTask(task){
     }
     return okFlag;
   }
-  if(task.quad==='sh') setupQuadDragTask(3, quad5Compute, quadState[3].D, { dragIndex:3, parallelPairs:[[0,1],[3,2]], tickPairs:[{pair:[[1,2],[3,0]], count:1, color:'#c62828'}], parallelColor:'#00838f' });
-  if(task.quad==='jw') setupQuadDragTask(4, quad6Compute, quadState[4].D, { dragIndex:3, tickPairs:[{pair:[[0,1],[3,2]], count:1, color:'#c62828'},{pair:[[1,2],[3,0]], count:2, color:'#1565c0'}] });
   if(task.draw) setupDrawTask(task.id, refreshFeedback);
   function setOxLocked(disabled){
     if(!oxWrap) return;
