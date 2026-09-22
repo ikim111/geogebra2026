@@ -408,15 +408,22 @@ function findCircleNear(lo, ptById, target, tolCenter, r, tolR){
    [내심, 4점] ①각의 이등분선 2개 이상 작도(1점) + ②내심 위치 표시(1점) +
               ③내심에서 변까지 수선의 발 표시(1점) + ④내접원 그리기(1점).
    학생 화면에는 이 결과를 보여주지 않는다(선생님 채점 화면 전용). */
-function gradePointTask(lo, task){
+// (2026-09-22 추가) override는 rooms/.../students/{key}/manualGrading/{taskId}에 저장된, 선생님이
+// 연필 아이콘으로 직접 뒤집은 값이다({bisScore, hasPoint, constructOk, footOk, circleOk} 중 있는
+// 것만). 있으면 자동 채점(geometry 계산) 값보다 우선한다 — 과제2·4의 AI 채점 수동 정정과 같은
+// 개념을, 자동 계산되는 과제1·3(점찍기)에도 동일하게 적용한 것.
+function gradePointTask(lo, task, override){
   const maxScore = 4;
+  const ov = override || {};
   if(!lo || !lo.points || !lo.points.length) return {status:'none', score:0, maxScore};
   const A=byLabelSnap(lo,'A'), B=byLabelSnap(lo,'B'), C=byLabelSnap(lo,'C');
   if(!A||!B||!C) return {status:'none', score:0, maxScore};
   const ptById={}; (lo.points||[]).forEach(p=>{ ptById[p.id]=p; });
   const tc = task.scenario.trueCenter;
   const nearPt=(lo.points||[]).find(p=> !['A','B','C'].includes(p.label) && dist(p,tc) < 22);
-  const hasPointOk = !!nearPt;
+  const autoHasPointOk = !!nearPt;
+  const hasPointOk = ov.hasPoint!=null ? !!ov.hasPoint : autoHasPointOk;
+  const hasPointOverridden = ov.hasPoint!=null;
 
   if(task.centerType==='외심'){
     let bisCount=0;
@@ -424,12 +431,16 @@ function gradePointTask(lo, task){
       const has=(lo.objects||[]).some(o=>o.type==='perpBisector' && ((o.p1===X.id&&o.p2===Y.id)||(o.p1===Y.id&&o.p2===X.id)));
       if(has) bisCount++;
     });
-    const bisScore = Math.min(bisCount, 2); // 변 1개당 1점, 최대 2점
+    const autoBisScore = Math.min(bisCount, 2); // 변 1개당 1점, 최대 2점
+    const bisScore = ov.bisScore!=null ? ov.bisScore : autoBisScore;
+    const bisScoreOverridden = ov.bisScore!=null;
     const circumR = dist(tc, A);
-    const circleOk = findCircleNear(lo, ptById, tc, 22, circumR, 20);
+    const autoCircleOk = findCircleNear(lo, ptById, tc, 22, circumR, 20);
+    const circleOk = ov.circleOk!=null ? !!ov.circleOk : autoCircleOk;
+    const circleOkOverridden = ov.circleOk!=null;
     const score = bisScore + (hasPointOk?1:0) + (circleOk?1:0);
     let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
-    return {status, bisCount, bisScore, hasPoint:hasPointOk, circleOk, score, maxScore};
+    return {status, bisCount, bisScore, bisScoreOverridden, hasPoint:hasPointOk, hasPointOverridden, circleOk, circleOkOverridden, score, maxScore};
   }
 
   // 내심
@@ -438,7 +449,9 @@ function gradePointTask(lo, task){
     const has=(lo.objects||[]).some(o=>o.type==='angleBisector' && o.b===b.id && ((o.a===a.id&&o.c===c.id)||(o.a===c.id&&o.c===a.id)));
     if(has) bisCount++;
   });
-  const constructOk = bisCount>=2;
+  const autoConstructOk = bisCount>=2;
+  const constructOk = ov.constructOk!=null ? !!ov.constructOk : autoConstructOk;
+  const constructOkOverridden = ov.constructOk!=null;
   const inradius = pointToSegment(tc, A, B).dist; // 참 내심에서 한 변까지의 거리 = 내접원 반지름
   // 수선의 발 표시(③)는 다음 두 조건을 모두 만족해야 인정한다(2026-09-22, 선생님 요청):
   //  (1) 수선(perp) 도구를 실제로 이용할 것 — 내심 표시점에서 그 변에 내린 수선이 있어야 한다.
@@ -446,7 +459,7 @@ function gradePointTask(lo, task){
   //      변과 만나는 정확한 위치에 점이 있어야 한다.
   // 눈대중으로 변 근처에 점만 찍거나, 수선은 그었지만 그 발과 동떨어진 곳에 점을 찍은 경우는
   // 감점한다.
-  const footOk = (lo.points||[]).some(p=>{
+  const autoFootOk = (lo.points||[]).some(p=>{
     if(['A','B','C'].includes(p.label)) return false;
     if(dist(p,tc) < 15) return false; // 내심 표시점 자체는 제외
     return [[A,B],[B,C],[C,A]].some(([X,Y])=>{
@@ -463,14 +476,20 @@ function gradePointTask(lo, task){
         // 있는지 확인한다 — 변 위 다른 위치에 점을 찍은 것은 인정하지 않는다.
         const footProj = pointToSegment(base, X, Y);
         const footPt = { x: X.x + (Y.x-X.x)*footProj.t, y: X.y + (Y.y-X.y)*footProj.t };
-        return dist(p, footPt) < 12;
+        return dist(p, footPt) < 8; // (2026-09-22) 12→8로 강화 — 경계 케이스(예: 1반 18번, 오차 11.4)가
+        // 애매하게 통과되는 것을 막기 위해 선생님 요청으로 더 엄격하게 좁힘.
       });
     });
   });
-  const circleOk = findCircleNear(lo, ptById, tc, 22, inradius, 15);
+  const footOk = ov.footOk!=null ? !!ov.footOk : autoFootOk;
+  const footOkOverridden = ov.footOk!=null;
+  const autoCircleOk = findCircleNear(lo, ptById, tc, 22, inradius, 15);
+  const circleOk = ov.circleOk!=null ? !!ov.circleOk : autoCircleOk;
+  const circleOkOverridden = ov.circleOk!=null;
   const score = (constructOk?1:0) + (hasPointOk?1:0) + (footOk?1:0) + (circleOk?1:0);
   let status = score===maxScore ? 'correct' : (score>0 ? 'partial' : 'none');
-  return {status, bisCount, constructOk, hasPoint:hasPointOk, footOk, circleOk, score, maxScore};
+  return {status, bisCount, constructOk, constructOkOverridden, hasPoint:hasPointOk, hasPointOverridden,
+    footOk, footOkOverridden, circleOk, circleOkOverridden, score, maxScore};
 }
 // ①선택(1점) + ②이유(2점, AI 채점, 0/1/2 부분점수 가능) + ③방법([변/각]·[이등분선]·[교점] 각 1점, AI 채점) = 총 6점.
 // aiEntry는 rooms/{room}/students/{key}/aiGrading/{taskId}에 저장된 AI 채점 결과
@@ -523,7 +542,7 @@ function computeStudentTotalScore(s){
     let grade;
     if(t.kind==='pointplot'){
       const lo = s.objectSnapshots && s.objectSnapshots[t.id];
-      grade = gradePointTask(lo, t);
+      grade = gradePointTask(lo, t, s.manualGrading && s.manualGrading[t.id]);
     } else {
       const aiEntry = s.aiGrading && s.aiGrading[t.id];
       grade = gradeJustify(s.progress && s.progress[t.id], t, aiEntry);
@@ -686,7 +705,7 @@ function render(){
           let grade;
           if(task.kind==='pointplot'){
             const lo = s.objectSnapshots && s.objectSnapshots[tid];
-            grade = gradePointTask(lo, task);
+            grade = gradePointTask(lo, task, s.manualGrading && s.manualGrading[tid]);
           } else {
             const aiEntry = s.aiGrading && s.aiGrading[tid];
             grade = gradeJustify(s.progress && s.progress[tid], task, aiEntry);
@@ -835,6 +854,27 @@ function cycleReasonScore(key, taskId, currentScore){
   });
 }
 
+// (2026-09-22 추가) 과제1(외심)·과제3(내심) 점찍기 채점은 자동(geometry 계산)이지만, 선생님이
+// 그림을 직접 보고 "이건 아니다/이건 맞다"고 판단해 뒤집고 싶을 때가 있다(예: footOk 판정이
+// 애매한 경계 케이스). rooms/.../students/{key}/manualGrading/{taskId}에 뒤집은 값을 저장하고,
+// gradePointTask가 이 값을 자동 계산값보다 우선해서 쓴다. toggleAiField와 같은 boolean 반전용.
+function toggleManualPointField(key, taskId, field, newVal){
+  const ref = studentsRef.child(key+'/manualGrading/'+taskId);
+  ref.update({
+    [field]: newVal, teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+// 외심 ①수직이등분선 점수는 0/1/2 세 단계라서 cycleReasonScore와 같은 방식(2→1→0→2)으로 순환.
+function cycleManualBisScore(key, taskId, currentScore){
+  const order = [2, 1, 0];
+  const idx = order.indexOf(currentScore);
+  const newScore = order[(idx>=0 ? idx+1 : 0) % order.length];
+  const ref = studentsRef.child(key+'/manualGrading/'+taskId);
+  ref.update({
+    bisScore: newScore, teacherOverride: true, overrideTs: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
 /* 학생 1명 + 과제 1개에 대한 답안 박스를 만든다. renderDetail(학생별 보기)과
    renderTaskOverview(과제별 보기) 양쪽에서 재사용한다. key는 Firebase students/{key} 경로에
    AI 채점 결과를 써 넣을 때 필요하다. */
@@ -857,24 +897,42 @@ function buildTaskBox(s, t, headerText, key){
 
   if(t.kind==='pointplot'){
     const lo = s.objectSnapshots && s.objectSnapshots[t.id];
-    const grade = gradePointTask(lo, t);
+    const manualOv = s.manualGrading && s.manualGrading[t.id];
+    const grade = gradePointTask(lo, t, manualOv);
     const stat=document.createElement('span'); stat.className='stat '+grade.status;
     stat.textContent = grade.status==='none' ? '⬜ 미작성' : `점수: ${grade.score} / ${grade.maxScore}점`;
     box.appendChild(stat);
     if(lo){
+      // 선생님이 자동 채점(geometry 계산) 결과가 틀렸다고 판단하면 연필 아이콘을 눌러 직접
+      // 뒤집을 수 있다(과제2·4의 AI 채점 수동 정정과 같은 방식). key가 있어야 뒤집을 수 있음.
+      const canOverride = !!key;
+      const bisDone = grade.bisScore===2?true:(grade.bisScore===1?'partial':false);
       if(t.centerType==='외심'){
         box.appendChild(buildCriteriaBox([
-          {label:`①수직이등분선 작도 (변 1개당 1점, ${grade.bisCount}/3개)`, points:2, scoreLabel:`${grade.bisScore}/2점`, done: grade.bisScore===2?true:(grade.bisScore>0?null:false)},
-          {label:'②외심 위치 정확', points:1, done:grade.hasPoint},
-          {label:'③외접원 그리기', points:1, done:grade.circleOk}
+          {label:`①수직이등분선 작도 (변 1개당 1점, ${grade.bisCount}/3개)`+(grade.bisScoreOverridden?' (선생님 정정)':''), points:2, scoreLabel:`${grade.bisScore}/2점`, done: bisDone,
+            toggleHint:'클릭할 때마다 2점 → 1점 → 0점 순으로 바뀌어요(다시 클릭하면 2점으로 돌아와요).',
+            onToggle: canOverride ? ()=>cycleManualBisScore(key, t.id, grade.bisScore) : null},
+          {label:'②외심 위치 정확'+(grade.hasPointOverridden?' (선생님 정정)':''), points:1, done:grade.hasPoint,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'hasPoint', !grade.hasPoint) : null},
+          {label:'③외접원 그리기'+(grade.circleOkOverridden?' (선생님 정정)':''), points:1, done:grade.circleOk,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'circleOk', !grade.circleOk) : null}
         ]));
       } else {
         box.appendChild(buildCriteriaBox([
-          {label:`①각의 이등분선 2개 이상 작도 (${grade.bisCount}/3개)`, points:1, done:grade.constructOk},
-          {label:'②내심 위치 정확', points:1, done:grade.hasPoint},
-          {label:'③내심에서 변까지 수선의 발 표시', points:1, done:grade.footOk},
-          {label:'④내접원 그리기', points:1, done:grade.circleOk}
+          {label:`①각의 이등분선 2개 이상 작도 (${grade.bisCount}/3개)`+(grade.constructOkOverridden?' (선생님 정정)':''), points:1, done:grade.constructOk,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'constructOk', !grade.constructOk) : null},
+          {label:'②내심 위치 정확'+(grade.hasPointOverridden?' (선생님 정정)':''), points:1, done:grade.hasPoint,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'hasPoint', !grade.hasPoint) : null},
+          {label:'③내심에서 변까지 수선의 발 표시'+(grade.footOkOverridden?' (선생님 정정)':''), points:1, done:grade.footOk,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'footOk', !grade.footOk) : null},
+          {label:'④내접원 그리기'+(grade.circleOkOverridden?' (선생님 정정)':''), points:1, done:grade.circleOk,
+            onToggle: canOverride ? ()=>toggleManualPointField(key, t.id, 'circleOk', !grade.circleOk) : null}
         ]));
+      }
+      if(canOverride){
+        const hint=document.createElement('div'); hint.className='dtext'; hint.style.color='#b8860b'; hint.style.fontSize='11px';
+        hint.textContent = '※ 자동 채점이 틀렸다고 생각되면 위 ✅/❌ 항목을 클릭해서 직접 바꿀 수 있어요.';
+        box.appendChild(hint);
       }
       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 600 400');
       box.appendChild(svg);
@@ -1113,7 +1171,7 @@ function submitStudentAnswersToGoogleForm(s){
     let success, answer;
     if(t.kind==='pointplot'){
       const lo = s.objectSnapshots && s.objectSnapshots[t.id];
-      const grade = gradePointTask(lo, t);
+      const grade = gradePointTask(lo, t, s.manualGrading && s.manualGrading[t.id]);
       if(grade.status==='none') return;
       success = `${grade.score}/${grade.maxScore}점`;
       if(t.centerType==='외심'){
@@ -1417,7 +1475,7 @@ function exportScoresToExcel(){
       let grade;
       if(t.kind==='pointplot'){
         const lo = s.objectSnapshots && s.objectSnapshots[tid];
-        grade = gradePointTask(lo, t);
+        grade = gradePointTask(lo, t, s.manualGrading && s.manualGrading[tid]);
       } else {
         const aiEntry = s.aiGrading && s.aiGrading[tid];
         grade = gradeJustify(s.progress && s.progress[tid], t, aiEntry);
