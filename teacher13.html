@@ -428,7 +428,9 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       controlRef = roomRef.child('control');
       selectedKey = null; checkedKeys = new Set();
       setPaceRange(null, null, /*fromRemote*/true);
+      let __ggbThrottleTs = 0;
       studentsRef.on('value', snap=>{
+        if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now();
         allStudents = snap.val() || {};
         renderGrid();
       });

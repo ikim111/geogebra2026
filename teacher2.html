@@ -712,7 +712,9 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     render();
     renderTeacherView();
 
+    let __ggbThrottleTs = 0;
     studentsRef.on('value', snap=>{
+      if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now();
       students = snap.val() || {};
       render();
       renderTeacherView();

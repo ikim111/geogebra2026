@@ -819,7 +819,8 @@ const RT = {
     });
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
-    this.studentsRef.on('value', snap=>{ this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+    let __ggbThrottleTs = 0;
+    this.studentsRef.on('value', snap=>{ if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now(); this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};

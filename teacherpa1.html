@@ -440,12 +440,23 @@ function gradePointTask(lo, task){
   });
   const constructOk = bisCount>=2;
   const inradius = pointToSegment(tc, A, B).dist; // 참 내심에서 한 변까지의 거리 = 내접원 반지름
+  // 수선의 발 표시(③)는 "변 근처에 점이 하나 찍혀 있는가"만으로는 인정하지 않는다 — 수선(perp)
+  // 도구를 실제로 써서(내심 표시점에서 그 변에 내린 수선) 찾은 발이어야 한다. 눈대중으로 점만
+  // 찍고 수선을 전혀 그리지 않은 경우는 감점한다. (2026-09-22, 선생님 요청으로 추가)
   const footOk = (lo.points||[]).some(p=>{
     if(['A','B','C'].includes(p.label)) return false;
     if(dist(p,tc) < 15) return false; // 내심 표시점 자체는 제외
     return [[A,B],[B,C],[C,A]].some(([X,Y])=>{
       const r = pointToSegment(p, X, Y);
-      return r.t>0.08 && r.t<0.92 && r.dist<12;
+      if(!(r.t>0.08 && r.t<0.92 && r.dist<12)) return false;
+      // 이 변에 대해, 학생이 표시한 내심 근처의 점에서 내린 수선(perp 오브젝트)이 실제로 있는지 확인.
+      return (lo.objects||[]).some(o=>{
+        if(o.type!=='perp') return false;
+        const refMatch = (o.refP1===X.id && o.refP2===Y.id) || (o.refP1===Y.id && o.refP2===X.id);
+        if(!refMatch) return false;
+        const base = ptById[o.p];
+        return !!base && dist(base, tc) < 22;
+      });
     });
   });
   const circleOk = findCircleNear(lo, ptById, tc, 22, inradius, 15);
@@ -1173,7 +1184,8 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
     selectedKey=null; checkedKeys=new Set(); students={};
     render();
 
-    studentsRef.on('value', snap=>{ students = snap.val() || {}; render(); renderTeacherTaskTab(); });
+    let __ggbThrottleTs = 0;
+    studentsRef.on('value', snap=>{ if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now(); students = snap.val() || {}; render(); renderTeacherTaskTab(); });
     controlRef.on('value', snap=>{
       const c=snap.val()||{};
       paused=!!c.paused; updatePauseBtn();

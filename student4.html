@@ -1827,7 +1827,9 @@ const RT = {
        같은 방의 학생 전체 목록을 구독한다. 보안 규칙이 "이 방에 로그인한 사람은 모두 읽고
        쓸 수 있음"이라 이미 다른 학생 데이터를 읽을 권한은 있다(teacher.html과 동일한 트레이드오프). */
     this.studentsRef = this.roomRef.child('students');
+    let __ggbThrottleTs = 0;
     this.studentsRef.on('value', snap=>{
+      if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now();
       this.allStudents = snap.val() || {};
       if(typeof renderAllClassAnswers==='function') renderAllClassAnswers();
     });
