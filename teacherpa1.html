@@ -1612,14 +1612,19 @@ document.getElementById('announceClearBtn').addEventListener('click', ()=>{
   controlRef.update({ announcement: '', announcementTs: Date.now() });
 });
 
-/* teacher.html에서 반을 먼저 고른 뒤 이 단원으로 넘어온 경우, 자동으로 그 반에 접속한다. */
+/* 관리 페이지(mgmt-9x3k7f2p.html)에서 반을 먼저 고른 뒤 이 단원으로 넘어온 경우, 자동으로 그 반에 접속한다.
+   예전에는 반 버튼만 선택해 두고 "시작하기"는 누르지 않아서, 다른 teacherN.html과 달리
+   선생님이 "시작하기"를 한 번 더 눌러야 했다. 이제 다른 단원들과 똑같이 바로 접속한다. */
 (function autoConnectFromUrl(){
   const params = new URLSearchParams(location.search);
   const classNo = (params.get('classNo')||'').trim();
   if(!classNo) return;
   const grid = document.getElementById('roomGrid');
   const btn = [...grid.querySelectorAll('button')].find(b=> b.dataset.room===classNo);
-  if(btn) btn.click();
+  if(btn){
+    btn.click();
+    setTimeout(()=> document.getElementById('connectBtn').click(), 0);
+  }
 })();
 </script>
 </body>
