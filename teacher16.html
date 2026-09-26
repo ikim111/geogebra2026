@@ -944,6 +944,11 @@ function drawOverlayObject(svg, o, ptById, color, opacity){
     el.setAttribute('d',`M ${q1.x} ${q1.y} L ${q2.x} ${q2.y} L ${q3.x} ${q3.y}`);
     el.setAttribute('stroke',color); el.setAttribute('fill','none'); el.setAttribute('stroke-width','2'); el.setAttribute('opacity',String(opacity));
     svg.appendChild(el);
+  }else if(o.type==='parallel'){
+    // 평행선: 점 p를 지나고 refP1→refP2와 같은 방향인 직선 (student16.html의 평행선 도구)
+    const p=ptById[o.p], refP1=ptById[o.refP1], refP2=ptById[o.refP2]; if(!p||!refP1||!refP2) return;
+    const d=norm(sub(refP2,refP1));
+    drawOverlayLine(svg, p.x-d.x*ext, p.y-d.y*ext, p.x+d.x*ext, p.y+d.y*ext, color, opacity);
   }else if(o.type==='perp'){
     const p=ptById[o.p], refP1=ptById[o.refP1], refP2=ptById[o.refP2]; if(!p||!refP1||!refP2) return;
     const d=perp(norm(sub(refP2,refP1)));

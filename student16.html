@@ -401,12 +401,14 @@ function isIsoscelesTriangle(c){
 const TOOL_META = {
   move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
   circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
-  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'}, parallel:{label:'평행선'},
   intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
   angleInput:{label:'각도 입력 작도'}
 };
-const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
-const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp'];
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','parallel','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp','parallel'];
+// 수선·평행선 도구의 기준으로 고를 수 있는 "직선류" (원 제외)
+const LINE_LIKE = ['line','segment','ray','perpBisector','perp','parallel'];
 
 /* ---------- GeoCanvas 클래스 ----------
    "0. 지오지브라 연습"의 엔진과 같지만, 이 활동에서는 "주어진 대로 이미 움직일 수 있는 점"
@@ -517,7 +519,7 @@ class GeoCanvas{
       case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
       case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
       case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
-      case 'perp': case 'rightMark': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
+      case 'perp': case 'parallel': case 'rightMark': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
     }
   }
   asLine(o){
@@ -526,6 +528,7 @@ class GeoCanvas{
     if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
     if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
     if(o.type==='perp'){ const d=perp(norm(sub(g.refP2,g.refP1))); return [g.p, add(g.p,d)]; }
+    if(o.type==='parallel'){ const d=norm(sub(g.refP2,g.refP1)); return [g.p, add(g.p,d)]; }
     return null;
   }
   asCircle(o){
@@ -545,6 +548,26 @@ class GeoCanvas{
     if(l){ return o.type==='segment' ? distToSegment(pt,l[0],l[1]) : distToLine(pt,l[0],l[1]); }
     if(c){ return Math.abs(dist(c.center,pt)-c.r); }
     return Infinity;
+  }
+  // 수선·평행선의 기준으로 쓸 수 있는 직선류만 골라서 가장 가까운 것을 찾는다(원은 제외).
+  _findLineLikeNear(pt,tol){
+    let best=null,bd=tol;
+    for(const o of this.objects){
+      if(!LINE_LIKE.includes(o.type)) continue;
+      const g=this.getObjGeom(o);
+      if(!g || Object.values(g).some(v=>!v)) continue;
+      const d=this.objDistToPoint(o,pt);
+      if(d<bd){bd=d;best=o;}
+    }
+    return best;
+  }
+  // 직선류 도형의 방향을 "두 점 a,b"와 "a→b 방향 그대로인지(rotated=false) 수직인지(true)"로 나타낸다.
+  _lineBase(o){
+    if(o.type==='line'||o.type==='segment'||o.type==='ray') return {a:o.p1, b:o.p2, rotated:false};
+    if(o.type==='perpBisector') return {a:o.p1, b:o.p2, rotated:true};
+    if(o.type==='perp') return {a:o.refP1, b:o.refP2, rotated:true};
+    if(o.type==='parallel') return {a:o.refP1, b:o.refP2, rotated:false};
+    return null;
   }
   findObjectNear(pt,tol){
     let best=null,bd=tol;
@@ -777,21 +800,31 @@ class GeoCanvas{
         }
         break;
       }
-      case 'perp': {
-        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+      case 'perp': case 'parallel': {
+        // 1단계: 수선/평행선이 지나갈 점을 클릭한다. 기존 점이 없고 직선·원 위를 눌렀으면
+        // "점" 도구처럼 그 도형 위에 붙은 점을 새로 만든다(직선 위의 점을 찍는 경우).
         if(this.pending.length===0){
-          const p2=this.pickPoint(pt);
-          this.pending.push(p2.id);
+          let p0=this.findPointNear(pt,TOUCH_TOL);
+          if(!p0){
+            const on=this.findObjectNear(pt,TOUCH_TOL);
+            if(on){ const proj=this._projectOntoObject(on,pt); p0=this.addPoint(proj.x,proj.y,{constraint:{objId:on.id}}); }
+            else p0=this.addPoint(pt.x,pt.y);
+          }
+          this.pending.push(p0.id);
           break;
         }
-        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
-        // 주의: 그 점이 클릭한 직선/선분의 끝점(꼭짓점)이어도 수선을 그릴 수 있어야 한다
-        // (예: 선분 AB에서 점 A를 지나는 수선). 예전에는 pId!==refObj.p1 && pId!==refObj.p2
-        // 조건 때문에 이 경우가 막혀 있었다.
+        // 2단계: 기준이 될 직선류를 클릭한다. 1단계의 점이 그 직선 위에 있어도(끝점이어도) 된다.
+        // 예전에는 기준이 "직선/선분"일 때만 됐고, 수선으로 그린 직선(과제2의 세로 직선 포함)·
+        // 수직이등분선·평행선을 누르면 아무것도 그려지지 않았다.
         const pId=this.pending[0]; this.pending=[];
-        const refObj=this.findObjectNear(pt,TOUCH_TOL);
-        if(refObj && (refObj.type==='line'||refObj.type==='segment'||refObj.type==='ray')){
-          this.addObject({type:'perp', p:pId, refP1:refObj.p1, refP2:refObj.p2});
+        const refObj=this._findLineLikeNear(pt,TOUCH_TOL);
+        const base=refObj && this._lineBase(refObj);
+        if(base){
+          // base.rotated: 기준 직선이 두 점(a→b) 방향인지(false), 그에 수직인 방향인지(true).
+          // 수선은 그 방향을 한 번 더 돌리고, 평행선은 그대로 둔다. 결과가 "a→b에 수직"이면 perp,
+          // "a→b와 평행"이면 parallel 도형으로 저장한다(두 점만 기억하므로 점을 움직이면 따라온다).
+          const rotated = this.tool==='perp' ? !base.rotated : base.rotated;
+          this.addObject({type: rotated ? 'perp' : 'parallel', p:pId, refP1:base.a, refP2:base.b});
         }
         break;
       }
@@ -883,6 +916,10 @@ class GeoCanvas{
         path.setAttribute('d',`M ${q1.x} ${q1.y} L ${q2.x} ${q2.y} L ${q3.x} ${q3.y}`);
         path.setAttribute('stroke','#c62828'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
         this.svg.appendChild(path);
+      }
+      else if(o.type==='parallel'){
+        const d=norm(sub(g.refP2,g.refP1)); const e=extend(g.p,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#6d4c41');
       }
       else if(o.type==='perp'){
         const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
@@ -1028,6 +1065,26 @@ function quadPolygons(c){
 function checkDrewQuad16(c){
   return { ok: quadPolygons(c).length > 0, msg: '' };
 }
+/* [도전과제] 등변사다리꼴 판정(교과서 정의): 한 쌍의 대변이 평행한 사각형(사다리꼴)이면서,
+   평행한 한 변(아랫변)의 양 끝 각의 크기가 같아야 한다. 두 대각선의 길이가 같다는 것만으로는
+   인정하지 않는다(대각선 길이가 같아도 사다리꼴이 아닌 사각형이 많다). 직사각형은 교과서의
+   사각형 관계도처럼 등변사다리꼴에 포함되므로 인정된다. 허용오차는 각도 2도. */
+function dirAngleDiff16(u, v){
+  let d = Math.abs(Math.atan2(u.y,u.x) - Math.atan2(v.y,v.x))*180/Math.PI % 180;
+  return d>90 ? 180-d : d;
+}
+function isIsoTrapQuad16(q){
+  const TOL=2;
+  const par=(p1,p2,p3,p4)=> dirAngleDiff16(sub(p2,p1), sub(p4,p3)) < TOL;
+  // 변 q0q1 ∥ 변 q3q2 이면, 아랫변 q0q1의 양 끝 각(∠q3q0q1, ∠q0q1q2)이 같아야 한다.
+  if(par(q[0],q[1],q[3],q[2]) && Math.abs(angleDeg(q[3],q[0],q[1]) - angleDeg(q[0],q[1],q[2])) < TOL) return true;
+  // 변 q1q2 ∥ 변 q0q3 이면, 아랫변 q1q2의 양 끝 각(∠q0q1q2, ∠q1q2q3)이 같아야 한다.
+  if(par(q[1],q[2],q[0],q[3]) && Math.abs(angleDeg(q[0],q[1],q[2]) - angleDeg(q[1],q[2],q[3])) < TOL) return true;
+  return false;
+}
+function checkIsoTrap16(c){
+  return { ok: quadPolygons(c).some(isIsoTrapQuad16), msg: '' };
+}
 
 const TASKS = [
   { id:1, title:'[과제 1] 대각선을 이용하여 직사각형을 그려보자.', plain:true,
@@ -1037,7 +1094,7 @@ const TASKS = [
   { id:3, title:'[과제 3] 대각선을 이용하여 정사각형을 그려보자.', plain:true,
     points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkDrewQuad16 },
   { id:4, title:'[도전과제] 등변사다리꼴을 그려보자.', plain:true,
-    points: [], presetObjects: [], check: checkDrewQuad16 },
+    points: [], presetObjects: [], check: checkIsoTrap16 },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
