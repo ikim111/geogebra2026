@@ -304,7 +304,12 @@ const RT = {
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
     let __ggbThrottleTs = 0;
-    this.studentsRef.on('value', snap=>{ if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now(); this.allStudents = snap.val() || {}; TASKS.forEach(t=>renderClassAnswers(t.key)); });
+    // (2026-09-26) 상시 실시간 구독(on) 대신, 최초 접속 시 1번 + 이후 45초마다 1번씩만(once)
+    // 친구들 답변을 가져온다 — 자세한 이유는 fetchClassAnswers 정의부 주석 참고.
+    if(typeof fetchClassAnswers==='function'){
+      fetchClassAnswers();
+      setInterval(fetchClassAnswers, 45000);
+    }
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
@@ -718,13 +723,22 @@ function buildTaskCard(task){
         <div class="text-min-note">✏️ ${MIN_LEN}자 이상 적어야 완료로 인정돼요.</div>
         <div class="feedback" id="fb-${task.key}"></div>
         <div class="class-answers" id="classAnswers-${task.key}" style="display:none;">
-          <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)</div>
+          <div class="ca-title">👥 친구들의 답변 (내 답변을 먼저 적으면 볼 수 있어요)
+            <button type="button" class="ca-refresh-btn" id="caRefresh-${task.key}" style="margin-left:8px;font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid #ccc;background:#fff;color:#555;cursor:pointer;">🔄 새로고침</button>
+          </div>
           <div class="ca-list" id="classAnswersList-${task.key}"></div>
         </div>
       </div>
     </div>
   `;
   container.appendChild(el);
+  const caRefreshBtn = el.querySelector(`#caRefresh-${task.key}`);
+  if(caRefreshBtn){
+    caRefreshBtn.addEventListener('click', ()=>{
+      caRefreshBtn.disabled = true; caRefreshBtn.textContent='⏳ 불러오는 중...';
+      fetchClassAnswers().finally(()=>{ caRefreshBtn.disabled=false; caRefreshBtn.textContent='🔄 새로고침'; });
+    });
+  }
   return el;
 }
 TASKS.forEach(buildTaskCard);
@@ -799,14 +813,14 @@ TASKS.forEach(task=>{
     lockUI();
     fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
     fb.className = 'feedback ok';
-    renderClassAnswers(page);
+    fetchClassAnswers();
     RT.pushProgress();
   }
   function forceSubmit(){
     lockUI();
     fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
     fb.className = 'feedback ok';
-    renderClassAnswers(page);
+    fetchClassAnswers();
     RT.pushProgress();
   }
   function doCancel(){
@@ -898,6 +912,20 @@ function renderClassAnswers(page){
     item.appendChild(name); item.appendChild(text);
     list.appendChild(item);
   });
+}
+
+// 친구들의 답변을 상시 구독(on) 대신 필요할 때만(once) 가져온다 — 최초 접속 시,
+// 내가 답을 제출한 직후, 새로고침 버튼 클릭 시, 그리고 45초마다 자동으로 호출된다.
+// (반 전체 학생 데이터를 실시간 구독하면 트래픽이 커져 접속이 느려지는 문제가 있었음)
+let __caFetchInFlight = null;
+function fetchClassAnswers(){
+  if(!RT.studentsRef) return Promise.resolve();
+  if(__caFetchInFlight) return __caFetchInFlight;
+  __caFetchInFlight = RT.studentsRef.once('value').then(snap=>{
+    RT.allStudents = snap.val() || {};
+    TASKS.forEach(t=>renderClassAnswers(t.key));
+  }).catch(()=>{}).finally(()=>{ __caFetchInFlight = null; });
+  return __caFetchInFlight;
 }
 
 /* ---------- 재접속 복원 ----------

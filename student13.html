@@ -773,9 +773,18 @@ function buildCond2List(){
     ca.className = 'class-answers';
     ca.id = 'classAnswers-p2-'+i;
     ca.style.display = 'none';
-    ca.innerHTML = '<div class="ca-title">👀 친구들은 이렇게 표현했어요</div><div class="ca-list" id="classAnswersList-p2-'+i+'"></div>';
+    ca.innerHTML = '<div class="ca-title">👀 친구들은 이렇게 표현했어요'
+      + ' <button type="button" class="ca-refresh-btn" id="caRefresh-p2-'+i+'" style="margin-left:8px;font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid #ccc;background:#fff;color:#555;cursor:pointer;">🔄 새로고침</button>'
+      + '</div><div class="ca-list" id="classAnswersList-p2-'+i+'"></div>';
     card.appendChild(head); card.appendChild(ta); card.appendChild(fb); card.appendChild(actions); card.appendChild(ca);
     wrap.appendChild(card);
+    const caRefreshBtn = ca.querySelector('#caRefresh-p2-'+i);
+    if(caRefreshBtn){
+      caRefreshBtn.addEventListener('click', ()=>{
+        caRefreshBtn.disabled = true; caRefreshBtn.textContent='⏳ 불러오는 중...';
+        fetchClassAnswers().finally(()=>{ caRefreshBtn.disabled=false; caRefreshBtn.textContent='🔄 새로고침'; });
+      });
+    }
   });
 }
 
@@ -828,7 +837,7 @@ function initTextTask2(){
       fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
       fb.className = 'cond2-fb ok';
       syncOverall();
-      renderClassAnswers2(i);
+      fetchClassAnswers();
       RT.pushProgress2();
     }
     // 선생님이 [수업 종료]를 눌렀을 때 쓰는 강제 제출 — 다 안 채웠어도 무조건 잠근다.
@@ -837,7 +846,7 @@ function initTextTask2(){
       fb.textContent = '⏹ 선생님이 수업을 종료해서 자동으로 제출됐어요.';
       fb.className = 'cond2-fb ok';
       syncOverall();
-      renderClassAnswers2(i);
+      fetchClassAnswers();
       RT.pushProgress2();
     }
     function doCancel(){
@@ -915,6 +924,20 @@ function renderClassAnswers2(i){
     item.appendChild(name); item.appendChild(text);
     list.appendChild(item);
   });
+}
+
+// 친구들의 답변을 상시 구독(on) 대신 필요할 때만(once) 가져온다 — 최초 접속 시,
+// 내가 답을 제출한 직후, 새로고침 버튼 클릭 시, 그리고 45초마다 자동으로 호출된다.
+// (반 전체 학생 데이터를 실시간 구독하면 트래픽이 커져 접속이 느려지는 문제가 있었음)
+let __caFetchInFlight = null;
+function fetchClassAnswers(){
+  if(!RT.studentsRef) return Promise.resolve();
+  if(__caFetchInFlight) return __caFetchInFlight;
+  __caFetchInFlight = RT.studentsRef.once('value').then(snap=>{
+    RT.allStudents = snap.val() || {};
+    CANONICAL_MINIMAL.forEach((_,i)=>renderClassAnswers2(i));
+  }).catch(()=>{}).finally(()=>{ __caFetchInFlight = null; });
+  return __caFetchInFlight;
 }
 
 /* ---------- 실시간 확인 (Firebase) ----------
@@ -1011,7 +1034,12 @@ const RT = {
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
     let __ggbThrottleTs = 0;
-    this.studentsRef.on('value', snap=>{ if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now(); this.allStudents = snap.val() || {}; CANONICAL_MINIMAL.forEach((_,i)=>renderClassAnswers2(i)); });
+    // (2026-09-26) 상시 실시간 구독(on) 대신, 최초 접속 시 1번 + 이후 45초마다 1번씩만(once)
+    // 친구들 답변을 가져온다 — 자세한 이유는 fetchClassAnswers 정의부 주석 참고.
+    if(typeof fetchClassAnswers==='function'){
+      fetchClassAnswers();
+      setInterval(fetchClassAnswers, 45000);
+    }
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};

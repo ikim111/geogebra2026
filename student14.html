@@ -551,8 +551,17 @@ function buildPageEl(task){
   body.appendChild(fb);
 
   const ca = document.createElement('div'); ca.className='class-answers'; ca.id='classAnswers-'+task.id; ca.style.display='none';
-  ca.innerHTML = `<div class="ca-title">👀 친구들은 이렇게 생각했어요</div><div class="ca-list" id="classAnswersList-${task.id}"></div>`;
+  ca.innerHTML = `<div class="ca-title">👀 친구들은 이렇게 생각했어요
+    <button type="button" class="ca-refresh-btn" id="caRefresh-${task.id}" style="margin-left:8px;font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid #ccc;background:#fff;color:#555;cursor:pointer;">🔄 새로고침</button>
+  </div><div class="ca-list" id="classAnswersList-${task.id}"></div>`;
   body.appendChild(ca);
+  const caRefreshBtn = ca.querySelector(`#caRefresh-${task.id}`);
+  if(caRefreshBtn){
+    caRefreshBtn.addEventListener('click', ()=>{
+      caRefreshBtn.disabled = true; caRefreshBtn.textContent='⏳ 불러오는 중...';
+      fetchClassAnswers().finally(()=>{ caRefreshBtn.disabled=false; caRefreshBtn.textContent='🔄 새로고침'; });
+    });
+  }
 
   taskEl.appendChild(body);
   page.appendChild(taskEl);
@@ -621,7 +630,7 @@ function initTask(task){
     badge.textContent='완료'; badge.className='badge done';
     fb.textContent = '답변을 저장했어요! "취소"를 누르면 다시 고칠 수 있어요.';
     fb.className = 'feedback ok';
-    renderClassAnswersFor(task);
+    fetchClassAnswers();
     updateProgress();
     // 구글 설문지 자동 전송 제거 — 선생님이 대시보드에서 "설문 제출"로 직접 전송한다.
   }
@@ -706,6 +715,20 @@ function renderClassAnswersFor(task){
   });
 }
 function renderAllClassAnswers(){ TASKS.forEach(t=>renderClassAnswersFor(t)); }
+
+// 친구들의 답변을 상시 구독(on) 대신 필요할 때만(once) 가져온다 — 최초 접속 시,
+// 내가 답을 제출한 직후, 새로고침 버튼 클릭 시, 그리고 45초마다 자동으로 호출된다.
+// (반 전체 학생 데이터를 실시간 구독하면 트래픽이 커져 접속이 느려지는 문제가 있었음)
+let __caFetchInFlight = null;
+function fetchClassAnswers(){
+  if(!RT.studentsRef) return Promise.resolve();
+  if(__caFetchInFlight) return __caFetchInFlight;
+  __caFetchInFlight = RT.studentsRef.once('value').then(snap=>{
+    RT.allStudents = snap.val() || {};
+    renderAllClassAnswers();
+  }).catch(()=>{}).finally(()=>{ __caFetchInFlight = null; });
+  return __caFetchInFlight;
+}
 
 function updateProgress(){
   const total = TASKS.length;
@@ -820,7 +843,12 @@ const RT = {
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
 
     let __ggbThrottleTs = 0;
-    this.studentsRef.on('value', snap=>{ if(Date.now()-__ggbThrottleTs<1000) return; __ggbThrottleTs=Date.now(); this.allStudents = snap.val() || {}; renderAllClassAnswers(); });
+    // (2026-09-26) 상시 실시간 구독(on) 대신, 최초 접속 시 1번 + 이후 45초마다 1번씩만(once)
+    // 친구들 답변을 가져온다 — 자세한 이유는 fetchClassAnswers 정의부 주석 참고.
+    if(typeof fetchClassAnswers==='function'){
+      fetchClassAnswers();
+      setInterval(fetchClassAnswers, 45000);
+    }
 
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
