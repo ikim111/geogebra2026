@@ -517,7 +517,7 @@ class GeoCanvas{
       case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
       case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
       case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
-      case 'perp': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
+      case 'perp': case 'rightMark': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
     }
   }
   asLine(o){
@@ -875,6 +875,15 @@ class GeoCanvas{
         const d=bisectorDir(g.a,g.b,g.c);
         mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
       }
+      else if(o.type==='rightMark'){
+        // 직각 표시: 꼭짓점 p에서 직선(refP1→refP2) 방향과 그 수직 방향으로 작은 정사각형을 그린다.
+        const u=norm(sub(g.refP1,g.refP2)), v=perp(u), s=20;
+        const q1=add(g.p,scl(u,s)), q2=add(add(g.p,scl(u,s)),scl(v,s)), q3=add(g.p,scl(v,s));
+        const path=document.createElementNS(NS,'path');
+        path.setAttribute('d',`M ${q1.x} ${q1.y} L ${q2.x} ${q2.y} L ${q3.x} ${q3.y}`);
+        path.setAttribute('stroke','#c62828'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+        this.svg.appendChild(path);
+      }
       else if(o.type==='perp'){
         const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
         mkLine(e.x1,e.y1,e.x2,e.y2,'#00838f');
@@ -997,7 +1006,8 @@ const CIRCLE_PRESET = [ {type:'circleCP', center:'O', through:'A'} ];
 const RHOMB_POINTS = [ {label:'A', x:150, y:200}, {label:'O', x:O16.x, y:O16.y} ];
 const RHOMB_PRESET = [
   {type:'line', p1:'A', p2:'O'},
-  {type:'perp', p:'O', refP1:'A', refP2:'O'}
+  {type:'perp', p:'O', refP1:'A', refP2:'O'},
+  {type:'rightMark', p:'O', refP1:'A', refP2:'O'} // 두 직선이 O에서 수직임을 나타내는 직각 표시
 ];
 
 /* ---- 사각형 판정 도우미 ---- */
