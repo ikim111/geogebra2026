@@ -233,7 +233,9 @@ function buildUnitRow(u){
     a.rel = 'noopener';
     arrow.textContent = '↗';
   } else {
-    a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom);
+    // from=mgmt: 학생과 함께 쓰는 페이지(resultpa1.html 등)가 "관리 페이지에서 열렸다"는 걸 알고
+    // 홈 버튼을 이 관리 페이지로 돌려보내는 데 쓴다(teacherN.html은 이 값을 무시한다).
+    a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom) + '&from=mgmt';
     arrow.textContent = '›';
   }
 

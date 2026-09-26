@@ -115,6 +115,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+/* 홈 버튼 목적지: 교사용 관리 페이지(mgmt-9x3k7f2p.html) 목차에서 열었으면(?from=mgmt) 관리 페이지로,
+   학생 과제 목록(student.html)에서 열었으면 기존처럼 student.html로 돌아간다.
+   학생 화면에는 관리 페이지 주소가 드러나지 않도록 from=mgmt일 때만 링크를 바꾼다. */
+(function setHomeTarget(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('from')!=='mgmt') return;
+  const classNo = (params.get('classNo')||'').trim();
+  const home = document.querySelector('.titlebar .homeBtn');
+  if(!home) return;
+  home.href = 'mgmt-9x3k7f2p.html' + (classNo ? '?classNo=' + encodeURIComponent(classNo) : '');
+  home.title = '단원 목록으로';
+})();
+
 /* teacherpa1.html / studentpa1.html과 반드시 동일해야 하는 값들 */
 const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
