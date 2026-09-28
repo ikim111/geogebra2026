@@ -347,10 +347,11 @@ function activityDetailHTML(s, id){
       + (d.predReason ? `<div class="kv" style="margin-top:6px;">예상한 이유:</div>${textBox(d.predReason)}` : '');
   }
   if(id===4){
-    if(!d.sim10 && !d.sim100 && !d.sim1000 && !d.sim10000 && !d.finalAnswer) return '';
+    if(!d.sim10 && !d.sim100 && !d.sim1000 && !d.sim10000 && !(d.custom && d.custom.length) && !d.finalAnswer) return '';
     return kv('10번 · 100번 실험', `${d.sim10 ? relDec(d.sim10.heads,10) : '-'} · ${d.sim100 ? relDec(d.sim100.heads,100) : '-'}`)
       + kv('1,000번 실험', d.sim1000 ? `앞면 ${fmtInt(d.sim1000.heads)}회 → ${relDec(d.sim1000.heads,1000)} (예상 ${esc(d.pred1000Text||'-')})` : '-')
       + kv('10,000번 실험', d.sim10000 ? `앞면 ${fmtInt(d.sim10000.heads)}회 → ${relDec(d.sim10000.heads,10000)} (예상 ${esc(d.pred10000Text||'-')})` : '-')
+      + (Array.isArray(d.custom) && d.custom.length ? kv('직접 입력 실험', d.custom.map(c=>`${fmtInt(c.n)}번 → ${relDec(c.heads,c.n)}`).join(' · ')) : '')
       + kv('개념 확인', d.conceptShown ? '✅ 확인함' : '아직')
       + textBox(d.finalAnswer);
   }

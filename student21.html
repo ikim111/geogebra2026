@@ -13,7 +13,7 @@
     --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
     --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
     --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
-    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6; --scustom:#1f2328;
   }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
@@ -166,6 +166,11 @@
   .run-strip .h{background:#f3d27a;border:1.5px solid #a77b12;color:#5c4209;}
   .run-strip .t{background:#dfe3e8;border:1.5px solid #7d8591;color:#39404a;}
   .run-skip{border:1px solid #c5cad1;background:#fff;border-radius:16px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .custom-box{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#f3f0ff;border:1px dashed #b3a8e6;border-radius:10px;padding:10px 14px;}
+  .custom-box.locked{background:#f4f6f8;border-color:#d5d9de;color:var(--muted);}
+  .activity .custom-box input{width:130px;text-align:right;font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:8px 10px;}
+  .custom-box .btn{padding:9px 16px;font-size:15px;background:var(--scustom);}
+  table.simtable tr.custom td.n{color:var(--ink);}
   table.simtable{width:100%;border-collapse:collapse;font-size:15px;text-align:center;}
   table.simtable th, table.simtable td{border-bottom:1px solid var(--line);padding:8px 6px;}
   table.simtable th{font-size:13px;color:var(--ink2);background:#f7f9fb;}
@@ -389,6 +394,16 @@
       <button class="btn" id="sim1000" data-n="1000"><span class="dotc" style="background:var(--s1000)"></span>1,000번 던지기</button>
       <button class="btn" id="sim10000" data-n="10000"><span class="dotc" style="background:var(--s10000)"></span>10,000번 던지기</button>
     </div>
+    <div class="custom-box locked" id="customBox">
+      <span id="customLockMsg">🔒 위의 네 버튼을 모두 해 보면, 원하는 횟수를 직접 입력해서 계속 실험할 수 있어요.</span>
+      <span id="customOpen" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+        <b>✏️ 원하는 횟수로 직접 던져 보기</b>
+        <input type="text" id="customN" inputmode="numeric" autocomplete="off" placeholder="예: 5000"> 번
+        <button class="btn" id="simCustom"><span class="dotc" style="background:#fff"></span>던지기</button>
+        <span class="note">(1번 ~ 100,000번)</span>
+      </span>
+    </div>
+    <div class="error" id="errCustom"></div>
 
     <div class="run-panel" id="runPanel">
       <div class="run-coin idle" id="runCoin">?</div>
@@ -413,6 +428,7 @@
         <button data-range="100">100번</button>
         <button data-range="1000">1,000번</button>
         <button data-range="10000" class="on">10,000번</button>
+        <button data-range="0" id="rangeCustom" style="display:none;"></button>
       </div>
     </div>
     <div class="legend">
@@ -420,6 +436,7 @@
       <span id="lg100"><span class="swatch" style="background:var(--s100)"></span>100번 실험</span>
       <span id="lg1000"><span class="swatch" style="background:var(--s1000)"></span>1,000번 실험</span>
       <span id="lg10000"><span class="swatch" style="background:var(--s10000)"></span>10,000번 실험</span>
+      <span id="lgCustom" style="display:none;"><span class="swatch" style="background:var(--scustom);height:4px;"></span><span id="lgCustomText">직접 입력</span></span>
       <span id="lgRef" style="display:none;"><span class="swatch" style="height:0;border-top:2px dashed #52514e;"></span>기준선 0.5</span>
     </div>
     <div class="chart-wrap">
@@ -517,6 +534,8 @@ const UNIT_LABEL = '21. 동전을 계속 던지면 어떻게 될까?';
 const UNIT_NO = 21;
 const MIN_TEXT = 5; // 서술형 최소 글자 수
 const SIM_NS = [10, 100, 1000, 10000]; // 활동 4 시뮬레이션 횟수
+const CUSTOM_MAX = 100000;             // 직접 입력 최대 횟수(너무 크면 오래 걸리므로 제한)
+const CUSTOM_KEEP = 8;                 // 결과표에 남겨 둘 직접 실험 개수
 
 const TASKS = [
   {id:1, key:'a1', title:'활동 1. 동전을 10번 던지면 앞면은 반드시 5번 나올까?'},
@@ -533,6 +552,8 @@ const state = {
   pred1000Text: '', pred10000Text: '', pred1000: null, pred10000: null, predReason: '',
   sims: {10: null, 100: null, 1000: null, 10000: null},   // 끝난 실험: {n, heads, seed, cum:Int32Array}
   running: null,                     // 진행 중인 실험(애니메이션)
+  customRuns: [],                    // 직접 입력한 횟수로 한 실험(최근 것이 맨 뒤, 최대 8개) {n, heads, seed}
+  customLast: null,                  // 가장 최근 직접 실험(그래프용 cum 포함)
   finalAnswer: '', conceptShown: false, range: 10000
 };
 const $ = id => document.getElementById(id);
@@ -562,7 +583,8 @@ function valueOf(id){
     return `1,000번 예상: ${state.pred1000Text||'-'} · 10,000번 예상: ${state.pred10000Text||'-'}` + (state.predReason.trim()?`\n이유: ${state.predReason.trim()}`:'');
   }
   if(id===4){
-    const parts = SIM_NS.filter(n=>state.sims[n]).map(n=>`${fmtInt(n)}번: ${relDec(state.sims[n].heads,n)}`);
+    const parts = SIM_NS.filter(n=>state.sims[n]).map(n=>`${fmtInt(n)}번: ${relDec(state.sims[n].heads,n)}`)
+      .concat(state.customRuns.map(c=>`직접 ${fmtInt(c.n)}번: ${relDec(c.heads,c.n)}`));
     const sims = parts.length ? `[${parts.join(' · ')}]` : '';
     return state.finalAnswer.trim() ? (sims?sims+'\n':'') + state.finalAnswer.trim() : '';
   }
@@ -581,6 +603,7 @@ function collectData(){
     sim100: state.sims[100] ? {seed: state.sims[100].seed, heads: state.sims[100].heads} : null,
     sim1000: state.sims[1000] ? {seed: state.sims[1000].seed, heads: state.sims[1000].heads} : null,
     sim10000: state.sims[10000] ? {seed: state.sims[10000].seed, heads: state.sims[10000].heads} : null,
+    custom: state.customRuns.map(c=>({n:c.n, seed:c.seed, heads:c.heads})),
     finalAnswer: state.finalAnswer,
     conceptShown: state.conceptShown
   };
@@ -967,16 +990,20 @@ function simulate(n, seed){
    1,000번 5초, 10,000번 6초 정도. 같은 seed를 쓰므로 "바로 결과 보기"를 눌러도 결과는 같다. */
 const RUN_MS = {10: 3000, 100: 4200, 1000: 5200, 10000: 6200};
 const RUN_POW = {10: 1, 100: 1.6, 1000: 2.2, 10000: 2.6};
+// 직접 입력한 횟수는 크기에 맞춰 시간을 정한다(최대 약 8초 — 100,000번도 크롬북에서 가볍다).
+const runMs = n => RUN_MS[n] || Math.min(8000, Math.max(2500, 2000 + 1100 * Math.log10(n)));
+const runPow = n => RUN_POW[n] || (n <= 12 ? 1 : Math.min(3, 1 + 0.42 * Math.log10(n)));
 let runRaf = null;
-function runSim(n){
+function runSim(n, custom){
   if(state.running) return;
   const seed = newSeed();
-  state.running = { n, seed, rnd: mulberry32(seed), cum: new Int32Array(n), i: 0, heads: 0, t0: performance.now(), strip: [] };
+  state.running = { n, custom: !!custom, seed, rnd: mulberry32(seed), cum: new Int32Array(n), i: 0, heads: 0, t0: performance.now(), strip: [] };
+  if(custom) showCustomRange(n);
   setRange(n);
   setSimButtonsDisabled(true);
   $('runSkip').style.visibility = 'visible';
   $('runCoin').classList.remove('idle'); $('runCoin').classList.add('spin');
-  $('runTitle').textContent = `🪙 동전을 ${fmtInt(n)}번 던지는 중…`;
+  $('runTitle').textContent = `🪙 동전을 ${fmtInt(n)}번 던지는 중…${custom ? ' (직접 입력)' : ''}`;
   updateNavButtons();
   runRaf = requestAnimationFrame(runStep);
 }
@@ -993,8 +1020,8 @@ function advanceRun(target){
 }
 function runStep(now){
   const r = state.running; if(!r) return;
-  const x = Math.min(1, (now - r.t0) / RUN_MS[r.n]);
-  const target = Math.max(r.i === 0 ? 1 : r.i, Math.min(r.n, Math.ceil(r.n * Math.pow(x, RUN_POW[r.n]))));
+  const x = Math.min(1, (now - r.t0) / runMs(r.n));
+  const target = Math.max(r.i === 0 ? 1 : r.i, Math.min(r.n, Math.ceil(r.n * Math.pow(x, runPow(r.n)))));
   advanceRun(target);
   paintRun();
   drawChart();
@@ -1015,7 +1042,13 @@ function finishRun(){
   cancelAnimationFrame(runRaf); runRaf = null;
   advanceRun(r.n);
   paintRun();
-  state.sims[r.n] = { n: r.n, heads: r.heads, seed: r.seed, cum: r.cum };
+  if(r.custom){
+    state.customLast = { n: r.n, heads: r.heads, seed: r.seed, cum: r.cum };
+    state.customRuns.push({ n: r.n, heads: r.heads, seed: r.seed });
+    if(state.customRuns.length > CUSTOM_KEEP) state.customRuns.shift();
+  } else {
+    state.sims[r.n] = { n: r.n, heads: r.heads, seed: r.seed, cum: r.cum };
+  }
   state.running = null;
   $('runCoin').classList.remove('spin');
   $('runTitle').textContent = `✅ ${fmtInt(r.n)}번 던지기 끝! 앞면 ${fmtInt(r.heads)}번 → 상대도수 ${relText(r.heads, r.n)}`;
@@ -1028,7 +1061,36 @@ function finishRun(){
 }
 $('runSkip').addEventListener('click', finishRun);
 SIM_NS.forEach(n => $('sim'+n).addEventListener('click', () => runSim(n)));
-function setSimButtonsDisabled(on){ SIM_NS.forEach(n => $('sim'+n).disabled = on); }
+function setSimButtonsDisabled(on){ SIM_NS.forEach(n => $('sim'+n).disabled = on); $('simCustom').disabled = on; }
+
+/* ---- 직접 입력한 횟수로 실험하기 (네 버튼을 모두 한 뒤에 열림) ---- */
+function allBaseDone(){ return SIM_NS.every(n => state.sims[n]); }
+function updateCustomBox(){
+  const open = allBaseDone();
+  $('customBox').classList.toggle('locked', !open);
+  $('customLockMsg').style.display = open ? 'none' : '';
+  $('customOpen').style.display = open ? 'inline-flex' : 'none';
+}
+function startCustom(){
+  const raw = $('customN').value.trim().replace(/,/g,'').replace(/번$/,'').trim();
+  let msg = '';
+  if(raw === '') msg = '몇 번 던질지 숫자를 입력해 주세요.';
+  else if(!/^\d+$/.test(raw)) msg = '소수점이나 글자 없이 자연수로 입력해 주세요. (예: 5000)';
+  else if(parseInt(raw,10) < 1) msg = '1번 이상 입력해 주세요.';
+  else if(parseInt(raw,10) > CUSTOM_MAX) msg = `너무 많으면 오래 걸려요. ${fmtInt(CUSTOM_MAX)}번까지만 입력할 수 있어요.`;
+  showErr('errCustom', msg);
+  if(msg) return;
+  runSim(parseInt(raw,10), true);
+}
+$('simCustom').addEventListener('click', startCustom);
+$('customN').addEventListener('keydown', e => { if(e.key === 'Enter') startCustom(); });
+$('customN').addEventListener('input', () => showErr('errCustom', ''));
+/* 가로축 탭에 "직접 입력한 횟수" 탭을 보여준다 */
+function showCustomRange(n){
+  const b = $('rangeCustom');
+  b.style.display = ''; b.dataset.range = String(n); b.textContent = `${fmtInt(n)}번 (직접)`;
+  $('lgCustom').style.display = ''; $('lgCustomText').textContent = `직접 입력한 ${fmtInt(n)}번 실험`;
+}
 
 function predOf(n){ return n===1000 ? predLabel(state.pred1000Text, state.pred1000) : (n===10000 ? predLabel(state.pred10000Text, state.pred10000) : ''); }
 function predLabel(text, value){
@@ -1046,7 +1108,10 @@ function renderSimCards(){
       <td class="rel">${s ? relText(s.heads, s.n) : '<span class="note">아직 안 함</span>'}</td>
       <td>${pred || '<span class="note">—</span>'}</td></tr>`;
   }).join('');
-  $('simTable').innerHTML = `<tr><th style="text-align:left;">던진 횟수</th><th>앞면이 나온 횟수</th><th>앞면이 나온 상대도수</th><th>내 예상 (활동 3)</th></tr>${rows}`;
+  const customRows = state.customRuns.slice().reverse().map((c,i)=>`<tr class="custom"><td class="n"><span class="swatch" style="background:var(--scustom);margin-right:6px;vertical-align:middle;${i?'opacity:.35;':''}"></span>✏️ ${fmtInt(c.n)}번 <span class="note">(직접${i===0?', 최근':''})</span></td>
+      <td>${fmtInt(c.heads)}회</td><td class="rel">${relText(c.heads, c.n)}</td><td><span class="note">—</span></td></tr>`).join('');
+  $('simTable').innerHTML = `<tr><th style="text-align:left;">던진 횟수</th><th>앞면이 나온 횟수</th><th>앞면이 나온 상대도수</th><th>내 예상 (활동 3)</th></tr>${rows}${customRows}`;
+  updateCustomBox();
   SIM_NS.forEach(n=>{
     const b=$('sim'+n); const done=!!state.sims[n];
     b.classList.toggle('done-run', done);
@@ -1064,15 +1129,17 @@ function updateSummary(){
 
 /* ------------------------- 그래프 (Canvas로 직접 그림) ------------------------- */
 const canvas = $('chart'), ctx = canvas.getContext('2d');
-const COLORS = { 10:'#4a3aa7', 100:'#1baf7a', 1000:'#eb6834', 10000:'#2a78d6', ref:'#52514e', grid:'#eceef1', axis:'#9aa0a6', text:'#52514e' };
+const COLORS = { 10:'#4a3aa7', 100:'#1baf7a', 1000:'#eb6834', 10000:'#2a78d6', custom:'#1f2328', ref:'#52514e', grid:'#eceef1', axis:'#9aa0a6', text:'#52514e' };
 const PAD = { l: 52, r: 30, t: 14, b: 40 };
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
 let hoverX = null;
+// 가로축 눈금: 최댓값을 대략 5칸으로 나누는 "보기 좋은" 간격(1·2·5 × 10의 거듭제곱)
 function niceXTicks(max){
-  if(max <= 10) return [0, 2, 4, 6, 8, 10];
-  if(max <= 100) return [0, 20, 40, 60, 80, 100];
-  if(max <= 1000) return [0, 200, 400, 600, 800, 1000];
-  return [0, 2000, 4000, 6000, 8000, 10000];
+  const raw = max / 5, p = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+  const step = [1, 2, 5, 10].map(m => m * p).find(v => v >= raw) || p * 10;
+  const ticks = [];
+  for(let v = 0; v <= max + 1e-9; v += Math.max(1, step)) ticks.push(Math.round(v));
+  return ticks;
 }
 function setRange(n){
   state.range = n;
@@ -1081,10 +1148,14 @@ function setRange(n){
 /* 그릴 선 목록: 끝난 실험 + 지금 진행 중인 실험(진행된 곳까지만) */
 function seriesList(){
   const out = [];
+  const R = state.running;
   SIM_NS.forEach(n => {
-    if(state.running && state.running.n === n) out.push({n, cum: state.running.cum, len: state.running.i, live: true});
-    else if(state.sims[n]) out.push({n, cum: state.sims[n].cum, len: n});
+    if(R && !R.custom && R.n === n) out.push({n, color: COLORS[n], label: `${fmtInt(n)}번 실험`, cum: R.cum, len: R.i, live: true});
+    else if(state.sims[n]) out.push({n, color: COLORS[n], label: `${fmtInt(n)}번 실험`, cum: state.sims[n].cum, len: n});
   });
+  // 직접 입력한 실험은 가장 최근 것 하나만 검은 선으로 그린다(선이 너무 많아지지 않도록).
+  if(R && R.custom) out.push({n: R.n, color: COLORS.custom, label: `직접 ${fmtInt(R.n)}번 실험`, cum: R.cum, len: R.i, live: true, custom: true});
+  else if(state.customLast) out.push({n: state.customLast.n, color: COLORS.custom, label: `직접 ${fmtInt(state.customLast.n)}번 실험`, cum: state.customLast.cum, len: state.customLast.n, custom: true});
   return out;
 }
 function drawChart(){
@@ -1102,7 +1173,7 @@ function drawChart(){
   ctx.clearRect(0, 0, W, H);
   const series = seriesList();
   $('chartEmpty').style.display = series.length ? 'none' : 'flex';
-  SIM_NS.forEach(n => $('lg'+n).style.opacity = (state.sims[n] || (state.running && state.running.n===n)) ? 1 : .4);
+  SIM_NS.forEach(n => $('lg'+n).style.opacity = (state.sims[n] || (state.running && !state.running.custom && state.running.n===n)) ? 1 : .4);
 
   // 세로축 눈금은 0.2 간격 — 특정 값을 강조하지 않도록 0.5 눈금은 두지 않는다.
   ctx.font = '12px ' + FONT; ctx.fillStyle = COLORS.text; ctx.lineWidth = 1;
@@ -1132,7 +1203,7 @@ function drawChart(){
   series.forEach(sr => {
     const last = Math.min(sr.len, maxX);
     if(last < 1) return;
-    ctx.strokeStyle = COLORS[sr.n]; ctx.lineWidth = sr.n <= 100 ? 2.2 : 2; ctx.lineJoin = 'round';
+    ctx.strokeStyle = sr.color; ctx.lineWidth = sr.custom ? 2.6 : (sr.n <= 100 ? 2.2 : 2); ctx.lineJoin = 'round';
     ctx.beginPath();
     const step = Math.max(1, Math.floor(last / (pw * 2))); // 가로 1픽셀에 점이 몰리면 솎아 그린다
     for(let i = 1; i <= last; i += (i < 50 ? 1 : step)){
@@ -1143,7 +1214,7 @@ function drawChart(){
     ctx.stroke();
     // 점이 적을 때(10번 실험, 가로축이 좁을 때)는 각 점을 동그라미로도 찍는다.
     if(last <= 100 && maxX <= 100){
-      ctx.fillStyle = COLORS[sr.n];
+      ctx.fillStyle = sr.color;
       for(let i = 1; i <= last; i++){ ctx.beginPath(); ctx.arc(X(i), Y(sr.cum[i-1]/i), maxX<=10?4.5:2.2, 0, Math.PI*2); ctx.fill(); }
     }
     // 진행 중인 실험은 선 끝에 동전 모양 점을 달아 "지금 여기까지 던졌다"를 보여준다.
@@ -1164,9 +1235,9 @@ function drawChart(){
     series.slice().reverse().forEach(sr => {
       if(n > sr.len) return;
       const v = sr.cum[n - 1] / n;
-      ctx.fillStyle = COLORS[sr.n]; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.fillStyle = sr.color; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(X(n), Y(v), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      lines.push(`<span style="display:inline-block;width:10px;height:3px;background:${COLORS[sr.n]};vertical-align:middle;margin-right:5px;"></span>${fmtInt(sr.n)}번 실험: 앞면 ${fmtInt(sr.cum[n - 1])}번 → ${relDec(sr.cum[n - 1], n)}`);
+      lines.push(`<span style="display:inline-block;width:10px;height:3px;background:${sr.color};vertical-align:middle;margin-right:5px;"></span>${sr.label}: 앞면 ${fmtInt(sr.cum[n - 1])}번 → ${relDec(sr.cum[n - 1], n)}`);
     });
     if(lines.length){
       tip.innerHTML = `<b>${fmtInt(n)}번 던졌을 때</b><br>` + lines.join('<br>');
@@ -1254,6 +1325,11 @@ function restoreData(d){
   updateLive(); checkActivity2({noSave:true});
   $('pred1000').value = d.pred1000Text || ''; $('pred10000').value = d.pred10000Text || ''; $('predReason').value = d.predReason || '';
   checkActivity3({noSave:true});
+  if(Array.isArray(d.custom) && d.custom.length){
+    state.customRuns = d.custom.filter(c=>c && c.n>0 && c.n<=CUSTOM_MAX && c.seed!=null).slice(-CUSTOM_KEEP);
+    const last = state.customRuns[state.customRuns.length-1];
+    if(last){ state.customLast = simulate(last.n, last.seed >>> 0); showCustomRange(last.n); }
+  }
   [[10,d.sim10],[100,d.sim100],[1000,d.sim1000],[10000,d.sim10000]].forEach(([n,s])=>{
     if(s && s.seed!=null) state.sims[n] = simulate(n, s.seed >>> 0); // 같은 씨앗 → 같은 결과와 그래프
   });
