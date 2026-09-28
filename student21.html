@@ -13,7 +13,7 @@
     --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
     --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
     --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
-    --s1000:#eb6834; --s10000:#2a78d6;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6;
   }
   *{box-sizing:border-box;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
@@ -143,7 +143,36 @@
   .compare .stat{text-align:center;}
   .compare .stat .v{font-size:26px;}
 
-  .sim-buttons{display:flex;gap:12px;flex-wrap:wrap;}
+  .sim-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .sim-buttons .btn{padding:10px 16px;font-size:15.5px;display:inline-flex;align-items:center;gap:8px;}
+  .sim-buttons .btn .dotc{width:10px;height:10px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 2px rgba(255,255,255,.4);}
+  .sim-buttons .btn.done-run{background:#fff;color:var(--ink2);border:2px solid #c5cad1;}
+  .run-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:14px 0 10px;}
+  .run-coin{width:74px;height:74px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;
+    background:radial-gradient(circle at 35% 30%,#f7dc8a,var(--gold) 60%,var(--gold-dark));color:#5c4209;border:3px solid var(--gold-dark);}
+  .run-coin.t{background:radial-gradient(circle at 35% 30%,#f1f3f6,var(--silver) 60%,var(--silver-dark));color:#39404a;border-color:var(--silver-dark);}
+  .run-coin.idle{background:#eef0f3;border-color:#cfd4da;color:#9aa1ab;}
+  .run-coin.spin{animation:coinspin .32s linear infinite;}
+  @keyframes coinspin{0%{transform:scaleX(1);}50%{transform:scaleX(.08);}100%{transform:scaleX(1);}}
+  .run-main{flex:1;min-width:260px;}
+  .run-title{font-weight:bold;font-size:15px;margin-bottom:6px;}
+  .run-nums{display:flex;gap:18px;flex-wrap:wrap;font-variant-numeric:tabular-nums;}
+  .run-nums div{font-size:13px;color:var(--ink2);}
+  .run-nums b{display:block;font-size:22px;color:var(--ink);}
+  .run-bar{height:8px;background:#e3e6ea;border-radius:5px;overflow:hidden;margin:8px 0 6px;}
+  .run-bar i{display:block;height:100%;width:0;background:var(--blue);}
+  .run-strip{display:flex;gap:3px;flex-wrap:nowrap;overflow:hidden;height:22px;}
+  .run-strip span{flex:0 0 auto;width:20px;height:20px;border-radius:50%;font-size:10.5px;font-weight:bold;display:inline-flex;align-items:center;justify-content:center;}
+  .run-strip .h{background:#f3d27a;border:1.5px solid #a77b12;color:#5c4209;}
+  .run-strip .t{background:#dfe3e8;border:1.5px solid #7d8591;color:#39404a;}
+  .run-skip{border:1px solid #c5cad1;background:#fff;border-radius:16px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  table.simtable{width:100%;border-collapse:collapse;font-size:15px;text-align:center;}
+  table.simtable th, table.simtable td{border-bottom:1px solid var(--line);padding:8px 6px;}
+  table.simtable th{font-size:13px;color:var(--ink2);background:#f7f9fb;}
+  table.simtable td{font-variant-numeric:tabular-nums;}
+  table.simtable td.n{font-weight:bold;text-align:left;white-space:nowrap;}
+  table.simtable td.rel{font-weight:bold;}
+  table.simtable tr.req td.n::after{content:' *';color:var(--orange);}
   .sim-cards{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;}
   .sim-card{flex:1;min-width:260px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff;}
   .sim-card h4{margin:0 0 8px;font-size:16px;display:flex;align-items:center;gap:8px;}
@@ -160,7 +189,7 @@
   .legend{display:flex;gap:16px;font-size:13.5px;color:var(--ink2);margin:6px 0 4px;flex-wrap:wrap;}
   .legend span{display:inline-flex;align-items:center;gap:6px;}
   .chart-wrap{position:relative;}
-  #chart{width:100%;height:340px;display:block;}
+  #chart{width:100%;height:290px;display:block;}
   #tooltip{position:absolute;pointer-events:none;background:#fff;border:1px solid #cfd4da;border-radius:6px;padding:6px 9px;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.12);display:none;white-space:nowrap;}
   #chartEmpty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;}
   table.summary{width:100%;border-collapse:collapse;font-size:15.5px;text-align:center;}
@@ -353,33 +382,42 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">활동 4</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>예상한 결과를 확인해 보자</h2>
-    <p class="hint">컴퓨터로 동전을 아주 많이 던지는 실험을 해 보세요. 버튼을 다시 누르면 새로 실험해요.</p>
+    <p class="hint">컴퓨터가 동전을 계속 던져요. 버튼을 눌러 10번부터 10,000번까지 차례로 실험해 보세요. 같은 버튼을 다시 누르면 새로 실험해요.</p>
     <div class="sim-buttons">
-      <button class="btn" id="sim1000">🪙 1,000번 던지기</button>
-      <button class="btn" id="sim10000">🪙 10,000번 던지기</button>
+      <button class="btn" id="sim10" data-n="10"><span class="dotc" style="background:var(--s10)"></span>10번 던지기</button>
+      <button class="btn" id="sim100" data-n="100"><span class="dotc" style="background:var(--s100)"></span>100번 던지기</button>
+      <button class="btn" id="sim1000" data-n="1000"><span class="dotc" style="background:var(--s1000)"></span>1,000번 던지기</button>
+      <button class="btn" id="sim10000" data-n="10000"><span class="dotc" style="background:var(--s10000)"></span>10,000번 던지기</button>
     </div>
-    <div class="sim-cards">
-      <div class="sim-card">
-        <h4><span class="swatch" style="background:var(--s1000)"></span>1,000번 던진 결과</h4>
-        <div id="card1000"><div class="sim-empty">아직 실험하지 않았어요.</div></div>
-      </div>
-      <div class="sim-card">
-        <h4><span class="swatch" style="background:var(--s10000)"></span>10,000번 던진 결과</h4>
-        <div id="card10000"><div class="sim-empty">아직 실험하지 않았어요.</div></div>
-      </div>
-    </div>
-  </div>
 
-  <div class="card">
+    <div class="run-panel" id="runPanel">
+      <div class="run-coin idle" id="runCoin">?</div>
+      <div class="run-main">
+        <div class="run-title" id="runTitle">버튼을 누르면 동전 던지기가 시작돼요.</div>
+        <div class="run-nums">
+          <div>던진 횟수<b id="runCount">0</b></div>
+          <div>앞면이 나온 횟수<b id="runHeads">0</b></div>
+          <div>지금까지 앞면의 상대도수<b id="runRel">—</b></div>
+        </div>
+        <div class="run-bar"><i id="runBar"></i></div>
+        <div class="run-strip" id="runStrip"></div>
+      </div>
+      <button class="run-skip" id="runSkip" style="visibility:hidden;">⏩ 바로 결과 보기</button>
+    </div>
+
     <div class="chart-head">
       <h3 style="margin:0;">던진 횟수에 따른 앞면의 상대도수</h3>
       <div class="range-tabs" id="rangeTabs">
-        <button data-range="10000" class="on">전체 (10,000번까지)</button>
-        <button data-range="1000">처음 1,000번</button>
-        <button data-range="100">처음 100번</button>
+        <span class="note" style="align-self:center;">가로축:</span>
+        <button data-range="10">10번</button>
+        <button data-range="100">100번</button>
+        <button data-range="1000">1,000번</button>
+        <button data-range="10000" class="on">10,000번</button>
       </div>
     </div>
     <div class="legend">
+      <span id="lg10"><span class="swatch" style="background:var(--s10)"></span>10번 실험</span>
+      <span id="lg100"><span class="swatch" style="background:var(--s100)"></span>100번 실험</span>
       <span id="lg1000"><span class="swatch" style="background:var(--s1000)"></span>1,000번 실험</span>
       <span id="lg10000"><span class="swatch" style="background:var(--s10000)"></span>10,000번 실험</span>
       <span id="lgRef" style="display:none;"><span class="swatch" style="height:0;border-top:2px dashed #52514e;"></span>기준선 0.5</span>
@@ -393,10 +431,16 @@
   </div>
 
   <div class="card">
+    <h3>시뮬레이션 결과</h3>
+    <table class="simtable" id="simTable"></table>
+    <p class="note" style="margin:6px 0 0;"><span style="color:var(--orange);">*</span> 표시한 1,000번과 10,000번은 꼭 실험해 보세요. 내 예상은 활동 3에서 적은 값이에요.</p>
+  </div>
+
+  <div class="card">
     <h3>활동 1~4 결과 한눈에 보기</h3>
     <table class="summary">
-      <tr><th>동전을 던진 횟수</th><th>10회</th><th id="sumClassHead">학급 전체</th><th>1,000회</th><th>10,000회</th></tr>
-      <tr><td class="rowhead">앞면이 나온 상대도수</td><td id="sum10"></td><td id="sumClass"></td><td id="sum1000"></td><td id="sum10000"></td></tr>
+      <tr><th>동전을 던진 횟수</th><th>10회 (나)</th><th>100회</th><th id="sumClassHead">학급 전체</th><th>1,000회</th><th>10,000회</th></tr>
+      <tr><td class="rowhead">앞면이 나온 상대도수</td><td id="sum10"></td><td id="sum100"></td><td id="sumClass"></td><td id="sum1000"></td><td id="sum10000"></td></tr>
     </table>
   </div>
 
@@ -472,6 +516,7 @@ const ACTIVITY_SUFFIX = '__prob21'; // teacher21.html과 반드시 동일해야 
 const UNIT_LABEL = '21. 동전을 계속 던지면 어떻게 될까?';
 const UNIT_NO = 21;
 const MIN_TEXT = 5; // 서술형 최소 글자 수
+const SIM_NS = [10, 100, 1000, 10000]; // 활동 4 시뮬레이션 횟수
 
 const TASKS = [
   {id:1, key:'a1', title:'활동 1. 동전을 10번 던지면 앞면은 반드시 5번 나올까?'},
@@ -486,7 +531,8 @@ const state = {
   classTotalText: '', classHeadsText: '', classTotal: null, classHeads: null, a2Answer: '',
   liveMode: true, liveSummary: {},   // 활동 2: 반 친구들의 활동 1 결과(실시간). liveMode=false면 직접 입력
   pred1000Text: '', pred10000Text: '', pred1000: null, pred10000: null, predReason: '',
-  sims: {1000: null, 10000: null},   // {n, heads, seed, cum:Int32Array}
+  sims: {10: null, 100: null, 1000: null, 10000: null},   // 끝난 실험: {n, heads, seed, cum:Int32Array}
+  running: null,                     // 진행 중인 실험(애니메이션)
   finalAnswer: '', conceptShown: false, range: 10000
 };
 const $ = id => document.getElementById(id);
@@ -516,8 +562,8 @@ function valueOf(id){
     return `1,000번 예상: ${state.pred1000Text||'-'} · 10,000번 예상: ${state.pred10000Text||'-'}` + (state.predReason.trim()?`\n이유: ${state.predReason.trim()}`:'');
   }
   if(id===4){
-    const s1=state.sims[1000], s2=state.sims[10000];
-    const sims = (s1||s2) ? `[1,000번: ${s1?relDec(s1.heads,1000):'-'} · 10,000번: ${s2?relDec(s2.heads,10000):'-'}]` : '';
+    const parts = SIM_NS.filter(n=>state.sims[n]).map(n=>`${fmtInt(n)}번: ${relDec(state.sims[n].heads,n)}`);
+    const sims = parts.length ? `[${parts.join(' · ')}]` : '';
     return state.finalAnswer.trim() ? (sims?sims+'\n':'') + state.finalAnswer.trim() : '';
   }
   return '';
@@ -531,6 +577,8 @@ function collectData(){
     classTotal: state.classTotal, classHeads: state.classHeads,
     a2Answer: state.a2Answer,
     pred1000Text: state.pred1000Text, pred10000Text: state.pred10000Text, predReason: state.predReason,
+    sim10: state.sims[10] ? {seed: state.sims[10].seed, heads: state.sims[10].heads} : null,
+    sim100: state.sims[100] ? {seed: state.sims[100].seed, heads: state.sims[100].heads} : null,
     sim1000: state.sims[1000] ? {seed: state.sims[1000].seed, heads: state.sims[1000].heads} : null,
     sim10000: state.sims[10000] ? {seed: state.sims[10000].seed, heads: state.sims[10000].heads} : null,
     finalAnswer: state.finalAnswer,
@@ -903,7 +951,7 @@ function mulberry32(a){
   };
 }
 function newSeed(){ const u=new Uint32Array(1); crypto.getRandomValues(u); return u[0]; }
-// n번 던지며 "k번째까지 앞면이 나온 횟수(누적)"를 기록한다. 10,000번도 1ms 안팎이라 크롬북에서도 가볍다.
+// 결과만 한 번에 계산(재접속 복원·"바로 결과 보기"용). 10,000번도 1ms 안팎이다.
 function simulate(n, seed){
   const rnd = mulberry32(seed);
   const cum = new Int32Array(n);
@@ -911,38 +959,103 @@ function simulate(n, seed){
   for(let i = 0; i < n; i++){ if(rnd() < 0.5) h++; cum[i] = h; }
   return {n, heads: h, seed, cum};
 }
+
+/* ---- 애니메이션으로 "계속 던지는" 실험 ----
+   결과를 한 번에 보여주지 않고, 매 화면 갱신(requestAnimationFrame)마다 몇 번씩 던지면서
+   동전·숫자·그래프를 함께 움직인다. 처음에는 한 번씩 천천히, 갈수록 빨라진다
+   (던진 횟수 = n × (경과시간/전체시간)^지수). 전체 시간은 10번 3초, 100번 4초,
+   1,000번 5초, 10,000번 6초 정도. 같은 seed를 쓰므로 "바로 결과 보기"를 눌러도 결과는 같다. */
+const RUN_MS = {10: 3000, 100: 4200, 1000: 5200, 10000: 6200};
+const RUN_POW = {10: 1, 100: 1.6, 1000: 2.2, 10000: 2.6};
+let runRaf = null;
 function runSim(n){
-  state.sims[n] = simulate(n, newSeed());
+  if(state.running) return;
+  const seed = newSeed();
+  state.running = { n, seed, rnd: mulberry32(seed), cum: new Int32Array(n), i: 0, heads: 0, t0: performance.now(), strip: [] };
+  setRange(n);
+  setSimButtonsDisabled(true);
+  $('runSkip').style.visibility = 'visible';
+  $('runCoin').classList.remove('idle'); $('runCoin').classList.add('spin');
+  $('runTitle').textContent = `🪙 동전을 ${fmtInt(n)}번 던지는 중…`;
+  updateNavButtons();
+  runRaf = requestAnimationFrame(runStep);
+}
+function advanceRun(target){
+  const r = state.running;
+  while(r.i < target){
+    const h = r.rnd() < 0.5;
+    if(h) r.heads++;
+    r.cum[r.i] = r.heads;
+    r.i++;
+    r.last = h;
+    r.strip.push(h); if(r.strip.length > 24) r.strip.shift();
+  }
+}
+function runStep(now){
+  const r = state.running; if(!r) return;
+  const x = Math.min(1, (now - r.t0) / RUN_MS[r.n]);
+  const target = Math.max(r.i === 0 ? 1 : r.i, Math.min(r.n, Math.ceil(r.n * Math.pow(x, RUN_POW[r.n]))));
+  advanceRun(target);
+  paintRun();
+  drawChart();
+  if(r.i >= r.n) finishRun(); else runRaf = requestAnimationFrame(runStep);
+}
+function paintRun(){
+  const r = state.running; if(!r) return;
+  $('runCount').textContent = `${fmtInt(r.i)} / ${fmtInt(r.n)}`;
+  $('runHeads').textContent = fmtInt(r.heads);
+  $('runRel').textContent = r.i ? relDec(r.heads, r.i) : '—';
+  $('runBar').style.width = (r.i / r.n * 100) + '%';
+  const coin = $('runCoin');
+  coin.textContent = r.last ? '앞' : '뒤'; coin.classList.toggle('t', !r.last);
+  $('runStrip').innerHTML = r.strip.map(h=>`<span class="${h?'h':'t'}">${h?'앞':'뒤'}</span>`).join('');
+}
+function finishRun(){
+  const r = state.running; if(!r) return;
+  cancelAnimationFrame(runRaf); runRaf = null;
+  advanceRun(r.n);
+  paintRun();
+  state.sims[r.n] = { n: r.n, heads: r.heads, seed: r.seed, cum: r.cum };
+  state.running = null;
+  $('runCoin').classList.remove('spin');
+  $('runTitle').textContent = `✅ ${fmtInt(r.n)}번 던지기 끝! 앞면 ${fmtInt(r.heads)}번 → 상대도수 ${relText(r.heads, r.n)}`;
+  $('runSkip').style.visibility = 'hidden';
+  setSimButtonsDisabled(false);
   renderSimCards();
   drawChart();
   if(state.conceptShown) renderConceptCheck();
   refreshAll({now:true});
 }
-$('sim1000').addEventListener('click', () => runSim(1000));
-$('sim10000').addEventListener('click', () => runSim(10000));
+$('runSkip').addEventListener('click', finishRun);
+SIM_NS.forEach(n => $('sim'+n).addEventListener('click', () => runSim(n)));
+function setSimButtonsDisabled(on){ SIM_NS.forEach(n => $('sim'+n).disabled = on); }
 
+function predOf(n){ return n===1000 ? predLabel(state.pred1000Text, state.pred1000) : (n===10000 ? predLabel(state.pred10000Text, state.pred10000) : ''); }
 function predLabel(text, value){
   if(value === null) return '—';
   const shown = text || String(value);
   return /\//.test(shown) || /%$/.test(shown) ? `${shown} (≈ ${Math.round(value*1000)/1000})` : shown;
 }
+/* 시뮬레이션 결과표(횟수별 한 줄) + 버튼 글자("다시 던지기") */
 function renderSimCards(){
-  [1000, 10000].forEach(n => {
+  const rows = SIM_NS.map(n=>{
     const s = state.sims[n];
-    const box = $('card' + n);
-    const pred = n === 1000 ? predLabel(state.pred1000Text, state.pred1000) : predLabel(state.pred10000Text, state.pred10000);
-    if(!s){ box.innerHTML = `<div class="sim-empty">아직 실험하지 않았어요. (내 예상: ${pred})</div>`; $('sim'+n).textContent = `🪙 ${fmtInt(n)}번 던지기`; return; }
-    box.innerHTML = `<table>
-      <tr><td>동전을 던진 횟수</td><td>${fmtInt(s.n)}회</td></tr>
-      <tr><td>앞면이 나온 횟수</td><td>${fmtInt(s.heads)}회</td></tr>
-      <tr><td>앞면이 나온 상대도수</td><td class="frac">${relText(s.heads, s.n)}</td></tr>
-      <tr class="pred"><td>활동 3에서 내가 예상한 값</td><td>${pred}</td></tr>
-    </table>`;
-    $('sim' + n).textContent = `🔄 ${fmtInt(n)}번 다시 던지기`;
+    const pred = predOf(n);
+    return `<tr class="${n>=1000?'req':''}"><td class="n"><span class="swatch" style="background:var(--s${n});margin-right:6px;vertical-align:middle;"></span>${fmtInt(n)}번</td>
+      <td>${s ? fmtInt(s.heads)+'회' : '—'}</td>
+      <td class="rel">${s ? relText(s.heads, s.n) : '<span class="note">아직 안 함</span>'}</td>
+      <td>${pred || '<span class="note">—</span>'}</td></tr>`;
+  }).join('');
+  $('simTable').innerHTML = `<tr><th style="text-align:left;">던진 횟수</th><th>앞면이 나온 횟수</th><th>앞면이 나온 상대도수</th><th>내 예상 (활동 3)</th></tr>${rows}`;
+  SIM_NS.forEach(n=>{
+    const b=$('sim'+n); const done=!!state.sims[n];
+    b.classList.toggle('done-run', done);
+    b.lastChild.textContent = done ? `${fmtInt(n)}번 다시 던지기` : `${fmtInt(n)}번 던지기`;
   });
 }
 function updateSummary(){
   $('sum10').textContent = state.flips.length === 10 ? relDec(headsOf(), 10) : '—';
+  $('sum100').textContent = state.sims[100] ? relDec(state.sims[100].heads, 100) : '—';
   $('sumClassHead').textContent = state.classTotal !== null ? `학급 전체(${fmtInt(state.classTotal)}회)` : '학급 전체';
   $('sumClass').textContent = state.classTotal !== null ? relDec(state.classHeads, state.classTotal) : '—';
   $('sum1000').textContent = state.sims[1000] ? relDec(state.sims[1000].heads, 1000) : '—';
@@ -951,30 +1064,45 @@ function updateSummary(){
 
 /* ------------------------- 그래프 (Canvas로 직접 그림) ------------------------- */
 const canvas = $('chart'), ctx = canvas.getContext('2d');
-const COLORS = { 1000: '#eb6834', 10000: '#2a78d6', ref: '#52514e', grid: '#eceef1', axis: '#9aa0a6', text: '#52514e' };
+const COLORS = { 10:'#4a3aa7', 100:'#1baf7a', 1000:'#eb6834', 10000:'#2a78d6', ref:'#52514e', grid:'#eceef1', axis:'#9aa0a6', text:'#52514e' };
 const PAD = { l: 52, r: 30, t: 14, b: 40 };
 const FONT = '"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
 let hoverX = null;
 function niceXTicks(max){
+  if(max <= 10) return [0, 2, 4, 6, 8, 10];
   if(max <= 100) return [0, 20, 40, 60, 80, 100];
   if(max <= 1000) return [0, 200, 400, 600, 800, 1000];
   return [0, 2000, 4000, 6000, 8000, 10000];
+}
+function setRange(n){
+  state.range = n;
+  document.querySelectorAll('#rangeTabs button').forEach(x => x.classList.toggle('on', +x.dataset.range === n));
+}
+/* 그릴 선 목록: 끝난 실험 + 지금 진행 중인 실험(진행된 곳까지만) */
+function seriesList(){
+  const out = [];
+  SIM_NS.forEach(n => {
+    if(state.running && state.running.n === n) out.push({n, cum: state.running.cum, len: state.running.i, live: true});
+    else if(state.sims[n]) out.push({n, cum: state.sims[n].cum, len: n});
+  });
+  return out;
 }
 function drawChart(){
   const rect = canvas.getBoundingClientRect();
   if(rect.width === 0) return; // 활동 4 화면이 숨겨져 있을 때
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
+  if(canvas.width !== Math.round(rect.width*dpr) || canvas.height !== Math.round(rect.height*dpr)){
+    canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
+  }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const W = rect.width, H = rect.height, pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
   const maxX = state.range;
   const X = n => PAD.l + (n / maxX) * pw;
   const Y = v => PAD.t + (1 - v) * ph;
   ctx.clearRect(0, 0, W, H);
-  const hasData = !!(state.sims[1000] || state.sims[10000]);
-  $('chartEmpty').style.display = hasData ? 'none' : 'flex';
-  $('lg1000').style.opacity = state.sims[1000] ? 1 : .4;
-  $('lg10000').style.opacity = state.sims[10000] ? 1 : .4;
+  const series = seriesList();
+  $('chartEmpty').style.display = series.length ? 'none' : 'flex';
+  SIM_NS.forEach(n => $('lg'+n).style.opacity = (state.sims[n] || (state.running && state.running.n===n)) ? 1 : .4);
 
   // 세로축 눈금은 0.2 간격 — 특정 값을 강조하지 않도록 0.5 눈금은 두지 않는다.
   ctx.font = '12px ' + FONT; ctx.fillStyle = COLORS.text; ctx.lineWidth = 1;
@@ -1000,34 +1128,45 @@ function drawChart(){
     ctx.fillStyle = COLORS.ref; ctx.fillText('0.5', PAD.l + 8, Y(0.5) + 5);
   }
 
-  ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, PAD.t - 2, pw, ph + 4); ctx.clip();
-  [1000, 10000].forEach(key => {
-    const s = state.sims[key]; if(!s) return;
-    const last = Math.min(s.n, maxX);
-    ctx.strokeStyle = COLORS[key]; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, PAD.t - 2, pw + 2, ph + 4); ctx.clip();
+  series.forEach(sr => {
+    const last = Math.min(sr.len, maxX);
+    if(last < 1) return;
+    ctx.strokeStyle = COLORS[sr.n]; ctx.lineWidth = sr.n <= 100 ? 2.2 : 2; ctx.lineJoin = 'round';
     ctx.beginPath();
     const step = Math.max(1, Math.floor(last / (pw * 2))); // 가로 1픽셀에 점이 몰리면 솎아 그린다
     for(let i = 1; i <= last; i += (i < 50 ? 1 : step)){
-      const x = X(i), y = Y(s.cum[i - 1] / i);
+      const x = X(i), y = Y(sr.cum[i - 1] / i);
       if(i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
-    ctx.lineTo(X(last), Y(s.cum[last - 1] / last));
+    ctx.lineTo(X(last), Y(sr.cum[last - 1] / last));
     ctx.stroke();
+    // 점이 적을 때(10번 실험, 가로축이 좁을 때)는 각 점을 동그라미로도 찍는다.
+    if(last <= 100 && maxX <= 100){
+      ctx.fillStyle = COLORS[sr.n];
+      for(let i = 1; i <= last; i++){ ctx.beginPath(); ctx.arc(X(i), Y(sr.cum[i-1]/i), maxX<=10?4.5:2.2, 0, Math.PI*2); ctx.fill(); }
+    }
+    // 진행 중인 실험은 선 끝에 동전 모양 점을 달아 "지금 여기까지 던졌다"를 보여준다.
+    if(sr.live){
+      const x = X(last), y = Y(sr.cum[last-1]/last);
+      ctx.fillStyle = '#e3b23c'; ctx.strokeStyle = '#a77b12'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    }
   });
   ctx.restore();
 
   const tip = $('tooltip');
-  if(hoverX !== null && hasData){
+  if(hoverX !== null && series.length && !state.running){
     const n = Math.max(1, Math.min(maxX, Math.round(hoverX)));
     const lines = [];
     ctx.strokeStyle = '#9aa0a6'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(X(n), PAD.t); ctx.lineTo(X(n), PAD.t + ph); ctx.stroke();
-    [10000, 1000].forEach(key => {
-      const s = state.sims[key]; if(!s || n > s.n) return;
-      const v = s.cum[n - 1] / n;
-      ctx.fillStyle = COLORS[key]; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    series.slice().reverse().forEach(sr => {
+      if(n > sr.len) return;
+      const v = sr.cum[n - 1] / n;
+      ctx.fillStyle = COLORS[sr.n]; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(X(n), Y(v), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      lines.push(`<span style="display:inline-block;width:10px;height:3px;background:${COLORS[key]};vertical-align:middle;margin-right:5px;"></span>${fmtInt(key)}번 실험: 앞면 ${fmtInt(s.cum[n - 1])}번 → ${relDec(s.cum[n - 1], n)}`);
+      lines.push(`<span style="display:inline-block;width:10px;height:3px;background:${COLORS[sr.n]};vertical-align:middle;margin-right:5px;"></span>${fmtInt(sr.n)}번 실험: 앞면 ${fmtInt(sr.cum[n - 1])}번 → ${relDec(sr.cum[n - 1], n)}`);
     });
     if(lines.length){
       tip.innerHTML = `<b>${fmtInt(n)}번 던졌을 때</b><br>` + lines.join('<br>');
@@ -1045,15 +1184,14 @@ function pointerToN(e){
   return (x - PAD.l) / (r.width - PAD.l - PAD.r) * state.range;
 }
 let rafPending = false;
-function requestDraw(){ if(rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; drawChart(); }); }
+function requestDraw(){ if(rafPending || state.running) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; drawChart(); }); }
 canvas.addEventListener('mousemove', e => { hoverX = pointerToN(e); requestDraw(); });
 canvas.addEventListener('mouseleave', () => { hoverX = null; requestDraw(); });
 canvas.addEventListener('touchstart', e => { hoverX = pointerToN(e); requestDraw(); }, {passive:true});
 canvas.addEventListener('touchmove', e => { hoverX = pointerToN(e); requestDraw(); }, {passive:true});
 window.addEventListener('resize', requestDraw);
 document.querySelectorAll('#rangeTabs button').forEach(b => b.addEventListener('click', () => {
-  state.range = +b.dataset.range;
-  document.querySelectorAll('#rangeTabs button').forEach(x => x.classList.toggle('on', x === b));
+  setRange(+b.dataset.range);
   drawChart();
 }));
 
@@ -1070,6 +1208,7 @@ function renderConceptCheck(){
   const rows = [];
   if(state.flips.length === 10) rows.push(['10회 (활동 1)', relDec(headsOf(), 10)]);
   if(state.classTotal !== null) rows.push([`학급 전체 ${fmtInt(state.classTotal)}회 (활동 2)`, relDec(state.classHeads, state.classTotal)]);
+  if(state.sims[100]) rows.push(['100회 (활동 4)', relDec(state.sims[100].heads, 100)]);
   if(state.sims[1000]) rows.push(['1,000회 (활동 4)', relDec(state.sims[1000].heads, 1000)]);
   if(state.sims[10000]) rows.push(['10,000회 (활동 4)', relDec(state.sims[10000].heads, 10000)]);
   $('conceptCheck').innerHTML = `
@@ -1115,7 +1254,7 @@ function restoreData(d){
   updateLive(); checkActivity2({noSave:true});
   $('pred1000').value = d.pred1000Text || ''; $('pred10000').value = d.pred10000Text || ''; $('predReason').value = d.predReason || '';
   checkActivity3({noSave:true});
-  [[1000,d.sim1000],[10000,d.sim10000]].forEach(([n,s])=>{
+  [[10,d.sim10],[100,d.sim100],[1000,d.sim1000],[10000,d.sim10000]].forEach(([n,s])=>{
     if(s && s.seed!=null) state.sims[n] = simulate(n, s.seed >>> 0); // 같은 씨앗 → 같은 결과와 그래프
   });
   renderSimCards();
@@ -1168,8 +1307,8 @@ function updateNavButtons(){
   const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
   const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
   const notFinished = !PREVIEW_MODE && curNum!=null && curNum<4 && !isDone(curNum);
-  prevBtn.disabled = isFirst || blockedPrev || RT.paused;
-  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused;
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused || !!state.running;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused || !!state.running;
   if(pacingMsg){
     if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
     else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
