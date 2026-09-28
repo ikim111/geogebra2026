@@ -132,6 +132,13 @@
   .activity .field input{width:150px;text-align:right;}
   .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
   .error.show{display:block;}
+  .live-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px;}
+  .live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  .live-stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;}
+  .live-stats .stat .v{font-size:24px;}
+  .friends span.me{background:#e8f1fc;border-color:#90b8ea;color:#1565c0;}
   .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
   .compare .stat{text-align:center;}
   .compare .stat .v{font-size:26px;}
@@ -283,14 +290,28 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">활동 2</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>학급 전체로 합쳐 보면 어떻게 될까?</h2>
-    <p class="hint">선생님이 디벗으로 알려 준 학급 전체의 결과를 입력해 보세요.</p>
-    <div class="field">
-      <label for="classTotal">학급 전체가 동전을 던진 횟수</label>
-      <input type="text" id="classTotal" inputmode="numeric" autocomplete="off"> 회
+    <p class="hint">우리 반 친구들이 활동 1에서 던진 결과가 <b>실시간으로</b> 모여요. 친구들이 10번을 다 던질 때마다 숫자가 바뀌어요.</p>
+    <div class="live-box" id="liveBox">
+      <div class="live-head"><span><span class="live-dot"></span>우리 반 전체 결과 (실시간)</span><span class="note" id="liveNote"></span></div>
+      <div class="live-stats">
+        <div class="stat"><div class="k">활동 1을 마친 학생</div><div class="v" id="liveCount">0명</div></div>
+        <div class="stat"><div class="k">학급 전체가 동전을 던진 횟수</div><div class="v" id="liveTotal">0회</div></div>
+        <div class="stat"><div class="k">그중 앞면이 나온 횟수</div><div class="v" id="liveHeads">0회</div></div>
+      </div>
+      <div class="note">한 명 한 명의 결과 (앞면이 나온 횟수/10) — 파란색이 나</div>
+      <div class="friends" id="liveList"></div>
     </div>
-    <div class="field">
-      <label for="classHeads">그중 앞면이 나온 횟수</label>
-      <input type="text" id="classHeads" inputmode="numeric" autocomplete="off"> 회
+    <!-- 서버에 연결되지 않을 때만 보이는 직접 입력 칸(선생님이 알려 준 값을 입력) -->
+    <div id="manualBox" style="display:none;">
+      <p class="hint" style="color:var(--orange);">⚠️ 지금은 반 친구들의 결과를 불러올 수 없어요. 선생님이 알려 준 학급 전체의 결과를 직접 입력해 주세요.</p>
+      <div class="field">
+        <label for="classTotal">학급 전체가 동전을 던진 횟수</label>
+        <input type="text" id="classTotal" inputmode="numeric" autocomplete="off"> 회
+      </div>
+      <div class="field">
+        <label for="classHeads">그중 앞면이 나온 횟수</label>
+        <input type="text" id="classHeads" inputmode="numeric" autocomplete="off"> 회
+      </div>
     </div>
     <div class="error" id="err2"></div>
     <div class="compare" id="compare2" style="display:none;">
@@ -302,7 +323,7 @@
     <div class="question">나의 결과와 학급 전체의 결과에서 앞면이 나온 상대도수를 비교하면 어떤 차이가 있는가?</div>
     <textarea id="act2Answer" placeholder="두 상대도수를 비교해서 알게 된 점을 적어 보세요."></textarea>
   </div>
-  <div class="why" id="why2">학급 결과를 입력하고 내 생각을 적으면 다음 활동으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">학급 결과와 내 결과를 비교한 생각을 적으면 다음 활동으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 3 ===================== -->
@@ -428,6 +449,10 @@
    같은 씨앗으로 다시 돌려서 그래프를 똑같이 복원한다(10,000개 값을 저장하지 않기 위함).
    progress/{a1..a4}는 {done, value, visited} 형식으로 teacher21.html이 읽는다.
 
+   활동 2(실시간 학급 결과): 활동 1을 마친 학생은 rooms/{반}/a1summary/{key} = {h: 앞면 횟수}를
+   한 번 기록하고, 활동 2는 이 작은 노드만 실시간 구독(on)한다. 반 전체 학생 데이터를 통째로
+   구독하지 않으므로 접속이 무거워지지 않는다. 서버 연결에 실패하면 예전처럼 직접 입력 칸을 보여준다.
+
    ACTIVITY_SUFFIX는 teacher21.html과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
@@ -459,6 +484,7 @@ const TASKS = [
 const state = {
   choice: null, flips: [], flipping: false, a1Note: '',
   classTotalText: '', classHeadsText: '', classTotal: null, classHeads: null, a2Answer: '',
+  liveMode: true, liveSummary: {},   // 활동 2: 반 친구들의 활동 1 결과(실시간). liveMode=false면 직접 입력
   pred1000Text: '', pred10000Text: '', pred1000: null, pred10000: null, predReason: '',
   sims: {1000: null, 10000: null},   // {n, heads, seed, cum:Int32Array}
   finalAnswer: '', conceptShown: false, range: 10000
@@ -521,7 +547,7 @@ const RT = {
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
     const statusEl=$('syncStatus');
-    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; setLiveMode(false); return; }
     try{
       if(!this.app){
         this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
@@ -530,8 +556,8 @@ const RT = {
       statusEl.textContent = '🔄 연결 중...';
       firebase.auth().signInAnonymously()
         .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
-        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
-    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; setLiveMode(false); });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; setLiveMode(false); }
   },
   _afterAuth(uid, name, room, number, statusEl){
     const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
@@ -540,7 +566,10 @@ const RT = {
     this.studentRef = this.roomRef.child('students/'+this.studentKey);
     this.studentsRef = this.roomRef.child('students');
     this.controlRef = this.roomRef.child('control');
+    this.summaryRef = this.roomRef.child('a1summary');
     this.connected = true;
+    setLiveMode(true);
+    this.summaryRef.on('value', snap=>{ state.liveSummary = snap.val() || {}; updateLive(); });
 
     this.studentRef.once('value').then(snap=>{
       const existing = snap.val();
@@ -608,6 +637,13 @@ const RT = {
     const progress = {};
     TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
     const done = TASKS.filter(t=>isDone(t.id)).length;
+    // 활동 1을 마쳤으면 반 전체 요약 노드에 내 결과를 기록한다(값이 바뀔 때만).
+    if(state.flips.length===10 && this.summaryRef){
+      const h = headsOf();
+      if(!state.liveSummary[this.studentKey] || state.liveSummary[this.studentKey].h !== h){
+        this.summaryRef.child(this.studentKey).set({h});
+      }
+    }
     this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
       data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
   },
@@ -698,7 +734,7 @@ $('flipBtn').addEventListener('click', () => {
     $('flipLast').textContent = `방금 나온 면: ${heads ? '앞면' : '뒷면'}`;
     state.flipping = false;
     if(i < 10){ $('flipBtn').disabled = false; refreshAll(); }
-    else { showActivity1Result(); refreshAll({now:true}); fetchFriends(); }
+    else { showActivity1Result(); refreshAll({now:true}); fetchFriends(); updateLive(); }
   }, 820);
 });
 function showActivity1Result(){
@@ -754,17 +790,60 @@ function parseCount(str){
   return {value: parseInt(s, 10)};
 }
 function showErr(id, msg){ const e = $(id); e.textContent = msg ? '⚠️ ' + msg : ''; e.classList.toggle('show', !!msg); }
+/* 활동 2 실시간 모드: 요약 노드(+ 아직 기록 전인 나)를 더해 학급 전체 결과를 만든다. */
+function liveTotals(){
+  const map = Object.assign({}, state.liveSummary||{});
+  if(state.flips.length===10 && RT.studentKey) map[RT.studentKey] = {h: headsOf()};
+  const keys = Object.keys(map).filter(k=> map[k] && typeof map[k].h==='number');
+  const heads = keys.reduce((a,k)=>a+map[k].h, 0);
+  return {keys, map, count: keys.length, total: keys.length*10, heads};
+}
+function setLiveMode(on){
+  state.liveMode = on;
+  $('liveBox').style.display = on ? '' : 'none';
+  $('manualBox').style.display = on ? 'none' : '';
+  checkActivity2({noSave:true});
+}
+function updateLive(){
+  if(!state.liveMode) return;
+  const L = liveTotals();
+  $('liveCount').textContent = L.count + '명';
+  $('liveTotal').textContent = fmtInt(L.total) + '회';
+  $('liveHeads').textContent = fmtInt(L.heads) + '회';
+  const list = $('liveList'); list.textContent = '';
+  // 나를 맨 앞에, 나머지는 앞면 횟수 순으로 보여준다(이름은 보여주지 않는다).
+  const others = L.keys.filter(k=>k!==RT.studentKey).map(k=>L.map[k].h).sort((a,b)=>a-b);
+  if(L.map[RT.studentKey] && state.flips.length===10){ const me=document.createElement('span'); me.className='me'; me.textContent=`나 ${L.map[RT.studentKey].h}/10`; list.appendChild(me); }
+  others.forEach(h=>{ const s=document.createElement('span'); s.textContent=`${h}/10`; list.appendChild(s); });
+  if(L.count===0) list.innerHTML = '<span style="background:none;border:none;font-weight:normal;color:#999;">아직 활동 1을 마친 친구가 없어요.</span>';
+  $('liveNote').textContent = PREVIEW_MODE ? '(미리보기: 실제 학생 화면에서는 반 친구들의 결과가 실시간으로 나타나요)'
+                            : (L.count<=1 ? '친구들이 끝낼 때마다 숫자가 바뀌어요' : '');
+  checkActivity2({noSave:true});
+}
 function checkActivity2(opts){
-  state.classTotalText = $('classTotal').value; state.classHeadsText = $('classHeads').value; state.a2Answer = $('act2Answer').value;
+  state.a2Answer = $('act2Answer').value;
+  let msg = '';
+  if(state.liveMode){
+    const L = liveTotals();
+    state.classTotal = L.count ? L.total : null;
+    state.classHeads = L.count ? L.heads : null;
+    state.classTotalText = L.count ? String(L.total) : ''; state.classHeadsText = L.count ? String(L.heads) : '';
+    showErr('err2', '');
+    finishActivity2UI(opts);
+    return;
+  }
+  state.classTotalText = $('classTotal').value; state.classHeadsText = $('classHeads').value;
   const t = parseCount(state.classTotalText), h = parseCount(state.classHeadsText);
   state.classTotal = null; state.classHeads = null;
-  let msg = '';
   if(t.empty || h.empty){ msg = (t.empty && h.empty) ? '' : '두 칸을 모두 입력해 주세요.'; }
   else if(t.bad || h.bad){ msg = '횟수는 0, 1, 2, …처럼 소수점 없는 수로 입력해 주세요.'; }
   else if(t.value === 0){ msg = '동전을 던진 횟수는 1회 이상이어야 해요.'; }
   else if(h.value > t.value){ msg = `앞면이 나온 횟수(${fmtInt(h.value)}회)는 동전을 던진 전체 횟수(${fmtInt(t.value)}회)보다 클 수 없어요. 다시 확인해 주세요.`; }
   else { state.classTotal = t.value; state.classHeads = h.value; }
   showErr('err2', msg);
+  finishActivity2UI(opts);
+}
+function finishActivity2UI(opts){
   const ok = state.classTotal !== null;
   $('compare2').style.display = ok ? '' : 'none';
   $('act2Think').style.display = ok ? '' : 'none';
@@ -774,7 +853,7 @@ function checkActivity2(opts){
     $('cmpClass').textContent = relText(state.classHeads, state.classTotal);
   }
   const done = isDone(2);
-  $('why2').textContent = !ok ? '학급 결과를 입력하면 상대도수를 비교할 수 있어요.'
+  $('why2').textContent = !ok ? (state.liveMode ? '학급 결과가 모이면 상대도수를 비교할 수 있어요.' : '학급 결과를 입력하면 상대도수를 비교할 수 있어요.')
                         : (!done ? `두 결과를 비교한 내 생각을 적어 주세요. (${MIN_TEXT}자 이상)` : '✅ 활동 2 완료! 위쪽의 「다음 ▶」을 눌러 활동 3으로 넘어가세요.');
   $('why2').className = 'why' + (done?' ok':'');
   refreshAll(opts);
@@ -1031,8 +1110,9 @@ function restoreData(d){
     if(state.flips.length === 10) showActivity1Result();
   }
   if(d.a1Note){ state.a1Note = d.a1Note; $('act1Note').value = d.a1Note; }
-  $('classTotal').value = d.classTotalText || ''; $('classHeads').value = d.classHeadsText || ''; $('act2Answer').value = d.a2Answer || '';
-  checkActivity2({noSave:true});
+  if(!state.liveMode){ $('classTotal').value = d.classTotalText || ''; $('classHeads').value = d.classHeadsText || ''; }
+  $('act2Answer').value = d.a2Answer || '';
+  updateLive(); checkActivity2({noSave:true});
   $('pred1000').value = d.pred1000Text || ''; $('pred10000').value = d.pred10000Text || ''; $('predReason').value = d.predReason || '';
   checkActivity3({noSave:true});
   [[1000,d.sim1000],[10000,d.sim10000]].forEach(([n,s])=>{
@@ -1206,6 +1286,7 @@ refreshAll({noSave:true});
    교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
 if(PREVIEW_MODE){
   $('previewBanner').style.display = 'block';
+  updateLive();
   $('gateScreen').style.display = 'none';
   $('appScreen').style.display = 'block';
   const idx = taskIdToPageIdx(PREVIEW_TASK);

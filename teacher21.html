@@ -210,7 +210,7 @@
       <div class="agg" id="aggPanel" style="display:none;">
         <span>🪙 <b>활동 1 학급 합계</b> — 10번 다 던진 학생 <b id="aggCount">0</b>명 · 동전을 던진 횟수 <b id="aggTotal">0</b>회 · 앞면 <b id="aggHeads">0</b>회 <span id="aggRel" style="color:#8a6d00;"></span></span>
         <button class="send" id="aggAnnounceBtn">📢 이 합계를 학생들에게 공지</button>
-        <span style="font-size:12px;color:#8a6d00;">(활동 2에서 학생들이 입력할 값이에요. 상대도수는 공지에 넣지 않아요.)</span>
+        <span style="font-size:12px;color:#8a6d00;">(학생 화면 활동 2에도 이 합계가 실시간으로 보여요. 공지는 필요할 때만 쓰세요.)</span>
       </div>
     </div>
 
@@ -337,7 +337,7 @@ function activityDetailHTML(s, id){
   }
   if(id===2){
     if(!d.classTotalText && !d.classHeadsText && !d.a2Answer) return '';
-    return kv('입력한 학급 결과', `${esc(d.classTotalText||'-')}회 중 앞면 ${esc(d.classHeadsText||'-')}회`
+    return kv('비교한 학급 결과', `${esc(d.classTotalText||'-')}회 중 앞면 ${esc(d.classHeadsText||'-')}회`
         + (d.classTotal!=null && d.classHeads!=null ? ` → ${relDec(d.classHeads,d.classTotal)}` : ' (아직 올바른 값이 아님)'))
       + textBox(d.a2Answer);
   }
@@ -529,6 +529,7 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
   if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
   if(!confirm(`${currentRoomKey}반의 학생 접속 기록을 모두 지울까요? (이전 시간대 학생 목록을 정리할 때 사용하세요)`)) return;
   studentsRef.set(null);
+  db.ref('rooms/'+currentRoomKey+'/a1summary').set(null); // 학생 화면 활동 2의 실시간 합계도 함께 비운다
   selectedKey = null; checkedKeys = new Set();
 });
 
@@ -545,7 +546,7 @@ document.getElementById('aggAnnounceBtn').addEventListener('click', ()=>{
   const p=document.getElementById('aggPanel');
   const total=+p.dataset.total||0, heads=+p.dataset.heads||0;
   if(!total) return;
-  const msg=`📊 우리 반 전체 결과: 동전을 던진 횟수 ${fmtInt(total)}회, 그중 앞면이 나온 횟수 ${fmtInt(heads)}회 (활동 2에 입력하세요)`;
+  const msg=`📊 우리 반 전체 결과: 동전을 던진 횟수 ${fmtInt(total)}회, 그중 앞면이 나온 횟수 ${fmtInt(heads)}회`;
   if(!confirm(`학생 화면에 다음 공지를 보낼까요?\n\n${msg}`)) return;
   controlRef.update({ announcement: msg, announcementTs: Date.now() });
 });
@@ -630,6 +631,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   const updates = {};
   checkedKeys.forEach(k=>{ updates[k] = null; });
   studentsRef.update(updates);
+  db.ref('rooms/'+currentRoomKey+'/a1summary').update(updates); // 활동 2 실시간 합계에서도 뺀다
   if(selectedKey && checkedKeys.has(selectedKey)) selectedKey = null;
   checkedKeys = new Set();
 });
