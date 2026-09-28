@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>21. 동전을 계속 던지면 어떻게 될까?</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
+    --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
+    --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
+    --s1000:#eb6834; --s10000:#2a78d6;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #gateMsg{display:none;text-align:center;font-size:12.5px;color:#0052a3;background:#e8f0fe;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .activity, body.app-paused #pagerNav button, body.app-paused .submit-panel button{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .activity .card{ pointer-events:none !important; opacity:.65; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+
+  /* ---- 동전 활동 ---- */
+  .card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .act-tag{display:inline-block;font-size:12px;font-weight:bold;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .activity h2{margin:0 0 4px;font-size:20px;}
+  .activity h3{margin:0 0 10px;font-size:17px;}
+  .question{font-size:17.5px;font-weight:bold;background:var(--blue-soft);border-left:5px solid var(--blue);padding:10px 14px;border-radius:6px;margin:10px 0 14px;}
+  .hint{font-size:14px;color:var(--ink2);margin:4px 0 10px;}
+  .note{font-size:13px;color:var(--muted);}
+  .why{font-size:13.5px;color:var(--muted);text-align:right;margin:2px 4px 14px;}
+  .why.ok{color:var(--green);font-weight:bold;}
+
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.concept-btn{background:var(--green);}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-size:17px;font-weight:bold;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .choice.selected{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .choice:disabled{cursor:default;}
+
+  .flip-area{display:flex;align-items:center;gap:26px;flex-wrap:wrap;}
+  .coin-stage{width:130px;height:130px;perspective:600px;}
+  .coin{width:130px;height:130px;position:relative;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,.7,.35,1);}
+  .coin .face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;backface-visibility:hidden;font-weight:bold;}
+  .face.heads{background:radial-gradient(circle at 35% 30%,#f7dc8a,var(--gold) 60%,var(--gold-dark));color:#5c4209;border:4px solid var(--gold-dark);}
+  .face.tails{background:radial-gradient(circle at 35% 30%,#f1f3f6,var(--silver) 60%,var(--silver-dark));color:#39404a;border:4px solid var(--silver-dark);transform:rotateY(180deg);}
+  .face .big{font-size:40px;line-height:1;}
+  .face .small{font-size:13px;margin-top:4px;}
+  .coin.blank .face.heads{background:#eef0f3;border-color:#cfd4da;color:#9aa1ab;}
+  .flip-side{flex:1;min-width:220px;}
+  .count-line{font-size:15px;color:var(--ink2);margin-top:8px;}
+
+  .record-grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #cfd4da;border-radius:8px;overflow:hidden;margin-top:16px;}
+  .rec{border-right:1px solid #cfd4da;border-bottom:1px solid #cfd4da;text-align:center;}
+  .rec:nth-child(5n){border-right:none;}
+  .rec:nth-last-child(-n+5){border-bottom:none;}
+  .rec .rh{background:#eceef1;font-size:14px;font-weight:bold;padding:4px 0;border-bottom:1px solid #cfd4da;}
+  .rec .rv{height:62px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:bold;}
+  .mini{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;}
+  .mini.h{background:radial-gradient(circle at 35% 30%,#f7dc8a,var(--gold));border:2px solid var(--gold-dark);color:#5c4209;}
+  .mini.t{background:radial-gradient(circle at 35% 30%,#f1f3f6,var(--silver));border:2px solid var(--silver-dark);color:#39404a;}
+  .rec.latest .rv{background:#fffbe6;}
+
+  .result-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .result-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .stat .k{font-size:13px;color:var(--ink2);}
+  .stat .v{font-size:22px;font-weight:bold;}
+  .frac{font-variant-numeric:tabular-nums;}
+  .friends{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .friends span{background:#f1f3f6;border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:14px;font-weight:bold;font-variant-numeric:tabular-nums;}
+
+  .activity textarea, .activity input[type=text]{font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;width:100%;}
+  .activity textarea{resize:vertical;min-height:84px;}
+  .activity textarea:focus, .activity input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .field label{min-width:250px;font-weight:bold;}
+  .activity .field input{width:150px;text-align:right;}
+  .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
+  .error.show{display:block;}
+  .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .compare .stat{text-align:center;}
+  .compare .stat .v{font-size:26px;}
+
+  .sim-buttons{display:flex;gap:12px;flex-wrap:wrap;}
+  .sim-cards{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;}
+  .sim-card{flex:1;min-width:260px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff;}
+  .sim-card h4{margin:0 0 8px;font-size:16px;display:flex;align-items:center;gap:8px;}
+  .swatch{display:inline-block;width:18px;height:3px;border-radius:2px;}
+  .sim-card table{width:100%;border-collapse:collapse;font-size:15px;}
+  .sim-card td{padding:4px 0;}
+  .sim-card td:last-child{text-align:right;font-weight:bold;font-variant-numeric:tabular-nums;}
+  .sim-card tr.pred td{color:var(--ink2);border-top:1px dashed var(--line);}
+  .sim-empty{color:var(--muted);font-size:14px;}
+  .chart-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .range-tabs{display:flex;gap:6px;}
+  .range-tabs button{border:1px solid #c5cad1;background:#fff;border-radius:16px;padding:5px 12px;font-size:13.5px;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .range-tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .legend{display:flex;gap:16px;font-size:13.5px;color:var(--ink2);margin:6px 0 4px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .chart-wrap{position:relative;}
+  #chart{width:100%;height:340px;display:block;}
+  #tooltip{position:absolute;pointer-events:none;background:#fff;border:1px solid #cfd4da;border-radius:6px;padding:6px 9px;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.12);display:none;white-space:nowrap;}
+  #chartEmpty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;}
+  table.summary{width:100%;border-collapse:collapse;font-size:15.5px;text-align:center;}
+  table.summary th, table.summary td{border:1px solid #cfd4da;padding:9px 6px;}
+  table.summary th{background:#eceef1;}
+  table.summary td{font-variant-numeric:tabular-nums;font-weight:bold;}
+  table.summary .rowhead{background:#eceef1;font-weight:bold;}
+  .big-question{font-size:19px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
+  .concept{display:none;border:2px solid var(--green);background:var(--green-soft);border-radius:12px;padding:16px 18px;margin-top:14px;}
+  .concept.show{display:block;}
+  .concept .def{font-size:18px;font-weight:bold;line-height:1.7;}
+  .concept .def b{color:var(--green);}
+  @media (max-width:640px){ .field label{min-width:0;} }
+</style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>21. 동전을 계속 던지면 어떻게 될까?</h1>
+    <p class="gate-sub">동전을 직접 던지고, 친구들과 합치고, 컴퓨터로 아주 많이 던져 보며 무엇이 달라지는지 살펴봅시다 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">21. 동전을 계속 던지면 어떻게 될까?</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+  <div id="gateMsg"></div>
+
+  <div class="wrap" id="pageWrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+
+<!-- ===================== 활동 1 ===================== -->
+<section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 1</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>동전을 10번 던지면 앞면은 반드시 5번 나올까?</h2>
+    <div class="question">동전을 10번 던지면 앞면은 반드시 5번 나올까?</div>
+    <p class="hint">먼저 내 생각을 골라 보세요.</p>
+    <div class="choice-row">
+      <button class="choice" data-choice="그렇다">⭕ 그렇다</button>
+      <button class="choice" data-choice="그렇지 않다">❌ 그렇지 않다</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>직접 동전을 던져 보자</h3>
+    <p class="hint" id="flipHint">위에서 내 생각을 먼저 고르면 동전을 던질 수 있어요.</p>
+    <div class="flip-area">
+      <div class="coin-stage">
+        <div class="coin blank" id="coin">
+          <div class="face heads"><span class="big">?</span><span class="small">던져 보세요</span></div>
+          <div class="face tails"><span class="big">뒤</span><span class="small">뒷면</span></div>
+        </div>
+      </div>
+      <div class="flip-side">
+        <button class="btn" id="flipBtn" disabled>🪙 동전 던지기</button>
+        <div class="count-line" id="flipCount">던진 횟수: 0 / 10회</div>
+        <div class="count-line" id="flipLast"></div>
+      </div>
+    </div>
+    <div class="record-grid" id="recordGrid"></div>
+    <div class="result-box" id="act1Result" style="display:none;">
+      <div class="result-row">
+        <div class="stat"><div class="k">동전을 던진 횟수</div><div class="v">10회</div></div>
+        <div class="stat"><div class="k">앞면이 나온 횟수</div><div class="v" id="r1Heads"></div></div>
+        <div class="stat"><div class="k">앞면이 나온 상대도수</div><div class="v frac" id="r1Rel"></div></div>
+      </div>
+      <p class="note" style="margin:10px 0 0;">상대도수 = (앞면이 나온 횟수) ÷ (동전을 던진 횟수)</p>
+    </div>
+  </div>
+
+  <div class="card" id="act1Reflect" style="display:none;">
+    <h3>친구들의 결과와 비교해 보자</h3>
+    <div id="friendsBox" style="display:none;margin-bottom:12px;">
+      <div class="hint" style="margin:0;">👥 먼저 10번을 다 던진 친구들의 상대도수 <span class="note" id="friendsCount"></span>
+        <button type="button" id="friendsRefresh" style="margin-left:6px;font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid #ccc;background:#fff;color:#555;cursor:pointer;">🔄 새로고침</button>
+      </div>
+      <div class="friends" id="friendsList"></div>
+    </div>
+    <p class="hint">친구들의 상대도수는 나와 같았나요, 달랐나요? <span class="note">(선택)</span></p>
+    <textarea id="act1Note" placeholder="친구들의 결과와 비교해 본 내용을 자유롭게 적어 보세요."></textarea>
+  </div>
+  <div class="why" id="why1">동전을 10번 모두 던지면 다음 활동으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 2 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 2</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>학급 전체로 합쳐 보면 어떻게 될까?</h2>
+    <p class="hint">선생님이 디벗으로 알려 준 학급 전체의 결과를 입력해 보세요.</p>
+    <div class="field">
+      <label for="classTotal">학급 전체가 동전을 던진 횟수</label>
+      <input type="text" id="classTotal" inputmode="numeric" autocomplete="off"> 회
+    </div>
+    <div class="field">
+      <label for="classHeads">그중 앞면이 나온 횟수</label>
+      <input type="text" id="classHeads" inputmode="numeric" autocomplete="off"> 회
+    </div>
+    <div class="error" id="err2"></div>
+    <div class="compare" id="compare2" style="display:none;">
+      <div class="stat"><div class="k">나의 결과 (10회)</div><div class="v frac" id="cmpMine"></div></div>
+      <div class="stat"><div class="k" id="cmpClassLabel">학급 전체</div><div class="v frac" id="cmpClass"></div></div>
+    </div>
+  </div>
+  <div class="card" id="act2Think" style="display:none;">
+    <div class="question">나의 결과와 학급 전체의 결과에서 앞면이 나온 상대도수를 비교하면 어떤 차이가 있는가?</div>
+    <textarea id="act2Answer" placeholder="두 상대도수를 비교해서 알게 된 점을 적어 보세요."></textarea>
+  </div>
+  <div class="why" id="why2">학급 결과를 입력하고 내 생각을 적으면 다음 활동으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 3 ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 3</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>더 많이 던진다면 어떻게 될까?</h2>
+    <div class="question">동전을 1,000번, 10,000번 던진다면 앞면이 나온 상대도수는 어떻게 될지 예상해 보자.</div>
+    <p class="hint">활동 1, 2의 결과를 떠올리며 예상해 보세요. 소수(예: 0.○○)나 분수(예: ○/○)로 입력할 수 있어요.</p>
+    <div class="field">
+      <label for="pred1000">1,000번 던졌을 때 예상 상대도수</label>
+      <input type="text" id="pred1000" inputmode="decimal" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pred10000">10,000번 던졌을 때 예상 상대도수</label>
+      <input type="text" id="pred10000" inputmode="decimal" autocomplete="off">
+    </div>
+    <div class="error" id="err3"></div>
+    <h3 style="margin-top:14px;">이렇게 예상한 이유 <span class="note">(자유롭게)</span></h3>
+    <textarea id="predReason" placeholder="왜 그렇게 예상했는지 적어 보세요."></textarea>
+  </div>
+  <div class="why" id="why3">두 예상값을 모두 입력해야 활동 4로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 4 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 4</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>예상한 결과를 확인해 보자</h2>
+    <p class="hint">컴퓨터로 동전을 아주 많이 던지는 실험을 해 보세요. 버튼을 다시 누르면 새로 실험해요.</p>
+    <div class="sim-buttons">
+      <button class="btn" id="sim1000">🪙 1,000번 던지기</button>
+      <button class="btn" id="sim10000">🪙 10,000번 던지기</button>
+    </div>
+    <div class="sim-cards">
+      <div class="sim-card">
+        <h4><span class="swatch" style="background:var(--s1000)"></span>1,000번 던진 결과</h4>
+        <div id="card1000"><div class="sim-empty">아직 실험하지 않았어요.</div></div>
+      </div>
+      <div class="sim-card">
+        <h4><span class="swatch" style="background:var(--s10000)"></span>10,000번 던진 결과</h4>
+        <div id="card10000"><div class="sim-empty">아직 실험하지 않았어요.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chart-head">
+      <h3 style="margin:0;">던진 횟수에 따른 앞면의 상대도수</h3>
+      <div class="range-tabs" id="rangeTabs">
+        <button data-range="10000" class="on">전체 (10,000번까지)</button>
+        <button data-range="1000">처음 1,000번</button>
+        <button data-range="100">처음 100번</button>
+      </div>
+    </div>
+    <div class="legend">
+      <span id="lg1000"><span class="swatch" style="background:var(--s1000)"></span>1,000번 실험</span>
+      <span id="lg10000"><span class="swatch" style="background:var(--s10000)"></span>10,000번 실험</span>
+      <span id="lgRef" style="display:none;"><span class="swatch" style="height:0;border-top:2px dashed #52514e;"></span>기준선 0.5</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chart" aria-label="동전을 던진 횟수에 따른 앞면의 누적 상대도수 꺾은선그래프"></canvas>
+      <div id="chartEmpty">위의 버튼을 눌러 실험하면 그래프가 그려져요.</div>
+      <div id="tooltip"></div>
+    </div>
+    <p class="note" style="margin:6px 0 0;">가로: 동전을 던진 횟수 · 세로: 그때까지 앞면이 나온 상대도수. 그래프 위에 마우스를 올리면 값을 볼 수 있어요.</p>
+  </div>
+
+  <div class="card">
+    <h3>활동 1~4 결과 한눈에 보기</h3>
+    <table class="summary">
+      <tr><th>동전을 던진 횟수</th><th>10회</th><th id="sumClassHead">학급 전체</th><th>1,000회</th><th>10,000회</th></tr>
+      <tr><td class="rowhead">앞면이 나온 상대도수</td><td id="sum10"></td><td id="sumClass"></td><td id="sum1000"></td><td id="sum10000"></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="big-question">동전을 던지는 횟수가 많아질수록 앞면이 나온 상대도수에는 어떤 변화가 나타나는가?</div>
+    <textarea id="finalAnswer" placeholder="표와 그래프를 보고 내 생각을 적어 보세요."></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
+      <span class="note" id="why4">1,000번과 10,000번 실험을 모두 하고 내 생각을 적으면 개념을 확인할 수 있어요.</span>
+      <button class="btn concept-btn" id="conceptBtn" disabled>💡 개념 확인하기</button>
+    </div>
+    <div class="concept" id="concept">
+      <div class="def">많은 횟수의 실험이나 관찰에 의해 어떤 사건이 일어나는 횟수의 상대도수가 일정한 값에 가까워질 때, 그 일정한 값을 그 사건이 일어날 <b>확률</b>이라고 한다.</div>
+      <hr style="border:none;border-top:1px solid #b9dcc3;margin:14px 0;">
+      <div id="conceptCheck"></div>
+    </div>
+  </div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   21. 동전을 계속 던지면 어떻게 될까? (VIII. 경우의 수와 확률)
+   확률을 "상대도수가 가까워지는 값"으로 도입하는 활동. 11~16번 단원과 같은 틀
+   (반·번호·이름 게이트, 단원 잠금, Firebase 실시간 진행 공유, 일시정지·공지·속도조절·
+   수업 종료, 결과 제출/백업, 교사용 미리보기 iframe)을 그대로 쓰고, 과제 4개 자리에
+   활동 1~4를 넣었다.
+
+   수업 의도: 활동 4에서 학생이 자기 생각을 적고 「개념 확인하기」를 누르기 전까지는
+   "0.5", "1/2", "확률", "큰 수의 법칙" 같은 결론을 화면 어디에도(그래프 눈금·기준선 포함)
+   보여주지 않는다. 활동을 끝내야 다음 활동으로 넘어갈 수 있다(교사 속도조절과는 별개).
+
+   저장: 학생의 모든 입력·결과는 students/{key}/data에 저장하고, 재접속(새로고침) 시
+   restoreData()로 되살린다. 시뮬레이션은 결과 수열 대신 "난수 씨앗(seed)"만 저장하고,
+   같은 씨앗으로 다시 돌려서 그래프를 똑같이 복원한다(10,000개 값을 저장하지 않기 위함).
+   progress/{a1..a4}는 {done, value, visited} 형식으로 teacher21.html이 읽는다.
+
+   ACTIVITY_SUFFIX는 teacher21.html과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__prob21'; // teacher21.html과 반드시 동일해야 함
+const UNIT_LABEL = '21. 동전을 계속 던지면 어떻게 될까?';
+const UNIT_NO = 21;
+const MIN_TEXT = 5; // 서술형 최소 글자 수
+
+const TASKS = [
+  {id:1, key:'a1', title:'활동 1. 동전을 10번 던지면 앞면은 반드시 5번 나올까?'},
+  {id:2, key:'a2', title:'활동 2. 학급 전체로 합쳐 보면 어떻게 될까?'},
+  {id:3, key:'a3', title:'활동 3. 더 많이 던진다면 어떻게 될까?'},
+  {id:4, key:'a4', title:'활동 4. 예상한 결과를 확인해 보자'}
+];
+
+/* 학생 한 명의 활동 상태(메모리). Firebase에는 collectData()로 저장한다. */
+const state = {
+  choice: null, flips: [], flipping: false, a1Note: '',
+  classTotalText: '', classHeadsText: '', classTotal: null, classHeads: null, a2Answer: '',
+  pred1000Text: '', pred10000Text: '', pred1000: null, pred10000: null, predReason: '',
+  sims: {1000: null, 10000: null},   // {n, heads, seed, cum:Int32Array}
+  finalAnswer: '', conceptShown: false, range: 10000
+};
+const $ = id => document.getElementById(id);
+const fmtInt = n => n.toLocaleString('ko-KR');
+const headsOf = () => state.flips.filter(Boolean).length;
+
+/* 상대도수: "6/10 = 0.6"처럼 분수 계산과 소수를 함께. 소수 넷째 자리 안에서 딱 떨어지면 "=",
+   아니면 소수 셋째 자리까지 반올림해 "≈"로 표시한다. */
+function isExact4(v){ return Math.abs(v*10000 - Math.round(v*10000)) < 1e-9; }
+function relDec(h, n){ const v=h/n; return isExact4(v) ? String(Math.round(v*10000)/10000) : (Math.round(v*1000)/1000).toFixed(3); }
+function relText(h, n){ return `${fmtInt(h)}/${fmtInt(n)} ${isExact4(h/n)?'=':'≈'} ${relDec(h,n)}`; }
+
+/* ---------- 완료 판정 (활동별) ---------- */
+function isDone(id){
+  if(id===1) return state.flips.length===10;
+  if(id===2) return state.classTotal!==null && state.a2Answer.trim().length>=MIN_TEXT;
+  if(id===3) return state.pred1000!==null && state.pred10000!==null;
+  if(id===4) return !!(state.sims[1000] && state.sims[10000]) && state.finalAnswer.trim().length>=MIN_TEXT;
+  return false;
+}
+/* 교사 화면 요약에 쓰는 한 줄 값 */
+function valueOf(id){
+  if(id===1) return state.flips.length===10 ? `앞면 ${headsOf()}회 / 10회 (${relDec(headsOf(),10)}) · 처음 예상: ${state.choice||'-'}` + (state.a1Note.trim()?`\n${state.a1Note.trim()}`:'') : '';
+  if(id===2) return state.a2Answer.trim() ? (state.classTotal!==null?`[학급 ${fmtInt(state.classHeads)}/${fmtInt(state.classTotal)} → ${relDec(state.classHeads,state.classTotal)}]\n`:'') + state.a2Answer.trim() : '';
+  if(id===3){
+    if(!state.pred1000Text && !state.pred10000Text && !state.predReason.trim()) return '';
+    return `1,000번 예상: ${state.pred1000Text||'-'} · 10,000번 예상: ${state.pred10000Text||'-'}` + (state.predReason.trim()?`\n이유: ${state.predReason.trim()}`:'');
+  }
+  if(id===4){
+    const s1=state.sims[1000], s2=state.sims[10000];
+    const sims = (s1||s2) ? `[1,000번: ${s1?relDec(s1.heads,1000):'-'} · 10,000번: ${s2?relDec(s2.heads,10000):'-'}]` : '';
+    return state.finalAnswer.trim() ? (sims?sims+'\n':'') + state.finalAnswer.trim() : '';
+  }
+  return '';
+}
+function collectData(){
+  return {
+    choice: state.choice || null,
+    flips: state.flips.map(h=>h?'H':'T').join(''),
+    a1Note: state.a1Note,
+    classTotalText: state.classTotalText, classHeadsText: state.classHeadsText,
+    classTotal: state.classTotal, classHeads: state.classHeads,
+    a2Answer: state.a2Answer,
+    pred1000Text: state.pred1000Text, pred10000Text: state.pred10000Text, predReason: state.predReason,
+    sim1000: state.sims[1000] ? {seed: state.sims[1000].seed, heads: state.sims[1000].heads} : null,
+    sim10000: state.sims[10000] ? {seed: state.sims[10000].seed, heads: state.sims[10000].heads} : null,
+    finalAnswer: state.finalAnswer,
+    conceptShown: state.conceptShown
+  };
+}
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.connected = true;
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
+      }
+      // 이전에 저장된 활동 기록을 먼저 되살린 "뒤에"만 저장을 시작한다(빈 상태로 덮어쓰지 않도록).
+      if(existing && existing.data) restoreData(existing.data);
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+      this.pushProgress();
+      refreshAll();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+    // 친구들의 활동 1 결과는 상시 구독 대신 최초 1번 + 45초마다 1번씩만 가져온다.
+    fetchFriends();
+    setInterval(fetchFriends, 45000);
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement;
+        $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        $('announceBanner').style.display = 'none';
+      }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing();
+      updateNavButtons();
+      // 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만 전체 제출/취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded){ applyFinalLock(true); this.markSubmitted(true); }
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyFinalLock(classEnded); this.markSubmitted(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>isDone(t.id)).length;
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  flushPending(){
+    if(this._t){ clearTimeout(this._t); this._t=null; }
+    this.pushProgress();
+  }
+};
+
+/* 상태가 바뀔 때마다 부른다: 배지·진행률·다음 버튼·요약표를 새로 고치고 저장한다. */
+function refreshAll(opts){
+  TASKS.forEach(t=>{
+    const b=$('badge-'+t.key); const d=isDone(t.id);
+    b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  });
+  const done = TASKS.filter(t=>isDone(t.id)).length;
+  $('progressText').textContent = `완료 ${done} / ${TASKS.length}`;
+  $('progressFill').style.width = (done/TASKS.length*100)+'%';
+  updateSummary();
+  updateConceptBtn();
+  updateNavButtons();
+  if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+}
+
+/* ------------------------- 활동 1 ------------------------- */
+const coinEl = $('coin');
+let coinAngle = 0;
+(function buildRecordGrid(){
+  const g = $('recordGrid');
+  for(let i = 1; i <= 10; i++){
+    const c = document.createElement('div');
+    c.className = 'rec'; c.id = 'rec' + i;
+    c.innerHTML = `<div class="rh">${i}회</div><div class="rv"></div>`;
+    g.appendChild(c);
+  }
+})();
+function setChoice(choice){
+  state.choice = choice;
+  document.querySelectorAll('.choice').forEach(x => x.classList.toggle('selected', x.dataset.choice === choice));
+  if(state.flips.length < 10){
+    $('flipBtn').disabled = false;
+    $('flipHint').textContent = '「동전 던지기」 버튼을 한 번 누를 때마다 동전을 한 번 던져요. 10번 던져 보세요.';
+  }
+}
+document.querySelectorAll('.choice').forEach(b => b.addEventListener('click', () => {
+  if(state.flips.length > 0) return; // 던지기 시작한 뒤에는 처음 예상을 바꾸지 않는다
+  setChoice(b.dataset.choice);
+  refreshAll();
+}));
+function paintFlip(i, heads, latest){
+  const cell = $('rec' + i);
+  if(latest){ document.querySelectorAll('.rec').forEach(r => r.classList.remove('latest')); cell.classList.add('latest'); }
+  cell.querySelector('.rv').innerHTML = heads ? '<span class="mini h">앞</span>앞면' : '<span class="mini t">뒤</span>뒷면';
+}
+function showCoinFace(heads){
+  coinEl.classList.remove('blank');
+  coinEl.querySelector('.face.heads').innerHTML = '<span class="big">앞</span><span class="small">앞면</span>';
+  const base = Math.ceil((coinAngle + 1) / 360) * 360 + 360 * 3;
+  coinAngle = base + (heads ? 0 : 180);
+  coinEl.style.transform = `rotateY(${coinAngle}deg)`;
+}
+$('flipBtn').addEventListener('click', () => {
+  if(state.flipping || state.flips.length >= 10 || !state.choice) return;
+  state.flipping = true;
+  $('flipBtn').disabled = true;
+  document.querySelectorAll('.choice').forEach(x => x.disabled = true);
+  const heads = Math.random() < 0.5;
+  showCoinFace(heads);
+  setTimeout(() => {
+    state.flips.push(heads);
+    const i = state.flips.length;
+    paintFlip(i, heads, true);
+    $('flipCount').textContent = `던진 횟수: ${i} / 10회`;
+    $('flipLast').textContent = `방금 나온 면: ${heads ? '앞면' : '뒷면'}`;
+    state.flipping = false;
+    if(i < 10){ $('flipBtn').disabled = false; refreshAll(); }
+    else { showActivity1Result(); refreshAll({now:true}); fetchFriends(); }
+  }, 820);
+});
+function showActivity1Result(){
+  const h = headsOf();
+  $('flipBtn').disabled = true;
+  $('flipBtn').textContent = '10번 모두 던졌어요';
+  $('flipHint').textContent = `처음 나의 예상: 「${state.choice}」`;
+  $('flipCount').textContent = '던진 횟수: 10 / 10회';
+  $('r1Heads').textContent = h + '회';
+  $('r1Rel').textContent = relText(h, 10);
+  $('act1Result').style.display = '';
+  $('act1Reflect').style.display = '';
+  $('why1').textContent = '✅ 활동 1 완료! 위쪽의 「다음 ▶」을 눌러 활동 2로 넘어가세요.';
+  $('why1').className = 'why ok';
+  renderFriends();
+}
+$('act1Note').addEventListener('input', ()=>{ state.a1Note = $('act1Note').value; refreshAll(); });
+
+/* 친구들의 활동 1 결과(10번 중 앞면 상대도수)만 이름 없이 보여준다. */
+let __friendsInFlight = null;
+function fetchFriends(){
+  if(!RT.studentsRef) return Promise.resolve();
+  if(__friendsInFlight) return __friendsInFlight;
+  __friendsInFlight = RT.studentsRef.once('value').then(snap=>{
+    RT.allStudents = snap.val() || {};
+    renderFriends();
+  }).catch(()=>{}).finally(()=>{ __friendsInFlight = null; });
+  return __friendsInFlight;
+}
+function renderFriends(){
+  const box=$('friendsBox'), list=$('friendsList');
+  if(!RT.connected || state.flips.length<10){ box.style.display='none'; return; }
+  box.style.display='';
+  const vals = Object.keys(RT.allStudents||{}).filter(k=>k!==RT.studentKey)
+    .map(k=>RT.allStudents[k] && RT.allStudents[k].data)
+    .filter(d=>d && typeof d.flips==='string' && d.flips.length===10)
+    .map(d=>d.flips.split('').filter(c=>c==='H').length);
+  list.textContent='';
+  $('friendsCount').textContent = `(${vals.length}명)`;
+  if(vals.length===0){ list.innerHTML = '<span style="background:none;border:none;font-weight:normal;color:#999;">아직 10번을 다 던진 친구가 없어요. 잠시 후 새로고침해 보세요.</span>'; return; }
+  vals.forEach(h=>{ const s=document.createElement('span'); s.textContent = `${h}/10`; list.appendChild(s); });
+}
+$('friendsRefresh').addEventListener('click', ()=>{
+  const b=$('friendsRefresh'); b.disabled=true; b.textContent='⏳';
+  fetchFriends().finally(()=>{ b.disabled=false; b.textContent='🔄 새로고침'; });
+});
+
+/* ------------------------- 활동 2 ------------------------- */
+function parseCount(str){
+  const s = String(str).trim().replace(/,/g, '').replace(/회$/, '').trim();
+  if(s === '') return {empty:true};
+  if(!/^\d+$/.test(s)) return {bad:true};
+  return {value: parseInt(s, 10)};
+}
+function showErr(id, msg){ const e = $(id); e.textContent = msg ? '⚠️ ' + msg : ''; e.classList.toggle('show', !!msg); }
+function checkActivity2(opts){
+  state.classTotalText = $('classTotal').value; state.classHeadsText = $('classHeads').value; state.a2Answer = $('act2Answer').value;
+  const t = parseCount(state.classTotalText), h = parseCount(state.classHeadsText);
+  state.classTotal = null; state.classHeads = null;
+  let msg = '';
+  if(t.empty || h.empty){ msg = (t.empty && h.empty) ? '' : '두 칸을 모두 입력해 주세요.'; }
+  else if(t.bad || h.bad){ msg = '횟수는 0, 1, 2, …처럼 소수점 없는 수로 입력해 주세요.'; }
+  else if(t.value === 0){ msg = '동전을 던진 횟수는 1회 이상이어야 해요.'; }
+  else if(h.value > t.value){ msg = `앞면이 나온 횟수(${fmtInt(h.value)}회)는 동전을 던진 전체 횟수(${fmtInt(t.value)}회)보다 클 수 없어요. 다시 확인해 주세요.`; }
+  else { state.classTotal = t.value; state.classHeads = h.value; }
+  showErr('err2', msg);
+  const ok = state.classTotal !== null;
+  $('compare2').style.display = ok ? '' : 'none';
+  $('act2Think').style.display = ok ? '' : 'none';
+  if(ok){
+    $('cmpMine').textContent = state.flips.length===10 ? relText(headsOf(), 10) : '—';
+    $('cmpClassLabel').textContent = `학급 전체 (${fmtInt(state.classTotal)}회)`;
+    $('cmpClass').textContent = relText(state.classHeads, state.classTotal);
+  }
+  const done = isDone(2);
+  $('why2').textContent = !ok ? '학급 결과를 입력하면 상대도수를 비교할 수 있어요.'
+                        : (!done ? `두 결과를 비교한 내 생각을 적어 주세요. (${MIN_TEXT}자 이상)` : '✅ 활동 2 완료! 위쪽의 「다음 ▶」을 눌러 활동 3으로 넘어가세요.');
+  $('why2').className = 'why' + (done?' ok':'');
+  refreshAll(opts);
+}
+['classTotal','classHeads','act2Answer'].forEach(id => $(id).addEventListener('input', ()=>checkActivity2()));
+
+/* ------------------------- 활동 3 ------------------------- */
+function parseRel(str){ // 소수(0.47), 분수(47/100), 백분율(47%)
+  const s = String(str).trim().replace(/\s+/g, '');
+  if(s === '') return {empty:true};
+  let v = NaN;
+  if(/^\d+\/\d+$/.test(s)){ const [a, b] = s.split('/').map(Number); v = b === 0 ? NaN : a / b; }
+  else if(/^\d*\.?\d+%$/.test(s)){ v = parseFloat(s) / 100; }
+  else if(/^\d*\.?\d+$/.test(s)){ v = parseFloat(s); }
+  if(isNaN(v)) return {bad:true};
+  if(v < 0 || v > 1) return {range:true};
+  return {value: v};
+}
+function checkActivity3(opts){
+  state.pred1000Text = $('pred1000').value.trim(); state.pred10000Text = $('pred10000').value.trim(); state.predReason = $('predReason').value;
+  const a = parseRel(state.pred1000Text), b = parseRel(state.pred10000Text);
+  let msg = '';
+  [a, b].forEach(r => {
+    if(msg) return;
+    if(r.bad) msg = '숫자로 입력해 주세요. 소수(0.○○)나 분수(○/○)로 쓸 수 있어요.';
+    else if(r.range) msg = '상대도수는 0 이상 1 이하의 수예요. (앞면이 나온 횟수는 던진 횟수보다 많을 수 없으니까요!)';
+  });
+  showErr('err3', msg);
+  state.pred1000 = (a.value !== undefined) ? a.value : null;
+  state.pred10000 = (b.value !== undefined) ? b.value : null;
+  const done = isDone(3);
+  $('why3').textContent = done ? '✅ 활동 3 완료! 위쪽의 「다음 ▶」을 눌러 활동 4로 넘어가세요.' : '두 예상값을 모두 입력해야 활동 4로 넘어갈 수 있어요.';
+  $('why3').className = 'why' + (done?' ok':'');
+  renderSimCards();
+  refreshAll(opts);
+}
+['pred1000','pred10000','predReason'].forEach(id => $(id).addEventListener('input', ()=>checkActivity3()));
+
+/* ------------------------- 활동 4: 시뮬레이션 ------------------------- */
+// 씨앗(seed)이 같으면 항상 같은 결과가 나오는 난수 생성기(mulberry32). 재접속 때 그래프 복원용.
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function newSeed(){ const u=new Uint32Array(1); crypto.getRandomValues(u); return u[0]; }
+// n번 던지며 "k번째까지 앞면이 나온 횟수(누적)"를 기록한다. 10,000번도 1ms 안팎이라 크롬북에서도 가볍다.
+function simulate(n, seed){
+  const rnd = mulberry32(seed);
+  const cum = new Int32Array(n);
+  let h = 0;
+  for(let i = 0; i < n; i++){ if(rnd() < 0.5) h++; cum[i] = h; }
+  return {n, heads: h, seed, cum};
+}
+function runSim(n){
+  state.sims[n] = simulate(n, newSeed());
+  renderSimCards();
+  drawChart();
+  if(state.conceptShown) renderConceptCheck();
+  refreshAll({now:true});
+}
+$('sim1000').addEventListener('click', () => runSim(1000));
+$('sim10000').addEventListener('click', () => runSim(10000));
+
+function predLabel(text, value){
+  if(value === null) return '—';
+  const shown = text || String(value);
+  return /\//.test(shown) || /%$/.test(shown) ? `${shown} (≈ ${Math.round(value*1000)/1000})` : shown;
+}
+function renderSimCards(){
+  [1000, 10000].forEach(n => {
+    const s = state.sims[n];
+    const box = $('card' + n);
+    const pred = n === 1000 ? predLabel(state.pred1000Text, state.pred1000) : predLabel(state.pred10000Text, state.pred10000);
+    if(!s){ box.innerHTML = `<div class="sim-empty">아직 실험하지 않았어요. (내 예상: ${pred})</div>`; $('sim'+n).textContent = `🪙 ${fmtInt(n)}번 던지기`; return; }
+    box.innerHTML = `<table>
+      <tr><td>동전을 던진 횟수</td><td>${fmtInt(s.n)}회</td></tr>
+      <tr><td>앞면이 나온 횟수</td><td>${fmtInt(s.heads)}회</td></tr>
+      <tr><td>앞면이 나온 상대도수</td><td class="frac">${relText(s.heads, s.n)}</td></tr>
+      <tr class="pred"><td>활동 3에서 내가 예상한 값</td><td>${pred}</td></tr>
+    </table>`;
+    $('sim' + n).textContent = `🔄 ${fmtInt(n)}번 다시 던지기`;
+  });
+}
+function updateSummary(){
+  $('sum10').textContent = state.flips.length === 10 ? relDec(headsOf(), 10) : '—';
+  $('sumClassHead').textContent = state.classTotal !== null ? `학급 전체(${fmtInt(state.classTotal)}회)` : '학급 전체';
+  $('sumClass').textContent = state.classTotal !== null ? relDec(state.classHeads, state.classTotal) : '—';
+  $('sum1000').textContent = state.sims[1000] ? relDec(state.sims[1000].heads, 1000) : '—';
+  $('sum10000').textContent = state.sims[10000] ? relDec(state.sims[10000].heads, 10000) : '—';
+}
+
+/* ------------------------- 그래프 (Canvas로 직접 그림) ------------------------- */
+const canvas = $('chart'), ctx = canvas.getContext('2d');
+const COLORS = { 1000: '#eb6834', 10000: '#2a78d6', ref: '#52514e', grid: '#eceef1', axis: '#9aa0a6', text: '#52514e' };
+const PAD = { l: 52, r: 30, t: 14, b: 40 };
+const FONT = '"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+let hoverX = null;
+function niceXTicks(max){
+  if(max <= 100) return [0, 20, 40, 60, 80, 100];
+  if(max <= 1000) return [0, 200, 400, 600, 800, 1000];
+  return [0, 2000, 4000, 6000, 8000, 10000];
+}
+function drawChart(){
+  const rect = canvas.getBoundingClientRect();
+  if(rect.width === 0) return; // 활동 4 화면이 숨겨져 있을 때
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = rect.width, H = rect.height, pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
+  const maxX = state.range;
+  const X = n => PAD.l + (n / maxX) * pw;
+  const Y = v => PAD.t + (1 - v) * ph;
+  ctx.clearRect(0, 0, W, H);
+  const hasData = !!(state.sims[1000] || state.sims[10000]);
+  $('chartEmpty').style.display = hasData ? 'none' : 'flex';
+  $('lg1000').style.opacity = state.sims[1000] ? 1 : .4;
+  $('lg10000').style.opacity = state.sims[10000] ? 1 : .4;
+
+  // 세로축 눈금은 0.2 간격 — 특정 값을 강조하지 않도록 0.5 눈금은 두지 않는다.
+  ctx.font = '12px ' + FONT; ctx.fillStyle = COLORS.text; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  [0, 0.2, 0.4, 0.6, 0.8, 1].forEach(v => {
+    ctx.strokeStyle = COLORS.grid; ctx.beginPath(); ctx.moveTo(PAD.l, Y(v)); ctx.lineTo(W - PAD.r, Y(v)); ctx.stroke();
+    ctx.fillText(v === 0 || v === 1 ? String(v) : v.toFixed(1), PAD.l - 8, Y(v));
+  });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  niceXTicks(maxX).forEach(n => ctx.fillText(fmtInt(n), X(n), H - PAD.b + 6));
+  ctx.fillText('동전을 던진 횟수(번)', PAD.l + pw / 2, H - 17);
+  ctx.save(); ctx.translate(13, PAD.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle';
+  ctx.fillText('앞면의 상대도수', 0, 0); ctx.restore();
+  ctx.strokeStyle = COLORS.axis; ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, PAD.t + ph); ctx.lineTo(W - PAD.r, PAD.t + ph); ctx.stroke();
+
+  // 기준선 0.5 — 「개념 확인하기」를 누른 뒤에만 처음으로 나타난다.
+  if(state.conceptShown){
+    ctx.save(); ctx.strokeStyle = COLORS.ref; ctx.lineWidth = 2; ctx.setLineDash([7, 5]);
+    ctx.beginPath(); ctx.moveTo(PAD.l, Y(0.5)); ctx.lineTo(W - PAD.r, Y(0.5)); ctx.stroke(); ctx.restore();
+    ctx.font = 'bold 13px ' + FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    const lw = ctx.measureText('0.5').width;
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(PAD.l + 4, Y(0.5) + 3, lw + 8, 18);
+    ctx.fillStyle = COLORS.ref; ctx.fillText('0.5', PAD.l + 8, Y(0.5) + 5);
+  }
+
+  ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, PAD.t - 2, pw, ph + 4); ctx.clip();
+  [1000, 10000].forEach(key => {
+    const s = state.sims[key]; if(!s) return;
+    const last = Math.min(s.n, maxX);
+    ctx.strokeStyle = COLORS[key]; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const step = Math.max(1, Math.floor(last / (pw * 2))); // 가로 1픽셀에 점이 몰리면 솎아 그린다
+    for(let i = 1; i <= last; i += (i < 50 ? 1 : step)){
+      const x = X(i), y = Y(s.cum[i - 1] / i);
+      if(i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(X(last), Y(s.cum[last - 1] / last));
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  const tip = $('tooltip');
+  if(hoverX !== null && hasData){
+    const n = Math.max(1, Math.min(maxX, Math.round(hoverX)));
+    const lines = [];
+    ctx.strokeStyle = '#9aa0a6'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(n), PAD.t); ctx.lineTo(X(n), PAD.t + ph); ctx.stroke();
+    [10000, 1000].forEach(key => {
+      const s = state.sims[key]; if(!s || n > s.n) return;
+      const v = s.cum[n - 1] / n;
+      ctx.fillStyle = COLORS[key]; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(X(n), Y(v), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      lines.push(`<span style="display:inline-block;width:10px;height:3px;background:${COLORS[key]};vertical-align:middle;margin-right:5px;"></span>${fmtInt(key)}번 실험: 앞면 ${fmtInt(s.cum[n - 1])}번 → ${relDec(s.cum[n - 1], n)}`);
+    });
+    if(lines.length){
+      tip.innerHTML = `<b>${fmtInt(n)}번 던졌을 때</b><br>` + lines.join('<br>');
+      tip.style.display = 'block';
+      const tx = X(n) + 12, tw = tip.offsetWidth;
+      tip.style.left = (tx + tw > W ? X(n) - tw - 12 : tx) + 'px';
+      tip.style.top = (PAD.t + 6) + 'px';
+    } else tip.style.display = 'none';
+  } else tip.style.display = 'none';
+}
+function pointerToN(e){
+  const r = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  if(x < PAD.l || x > r.width - PAD.r) return null;
+  return (x - PAD.l) / (r.width - PAD.l - PAD.r) * state.range;
+}
+let rafPending = false;
+function requestDraw(){ if(rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; drawChart(); }); }
+canvas.addEventListener('mousemove', e => { hoverX = pointerToN(e); requestDraw(); });
+canvas.addEventListener('mouseleave', () => { hoverX = null; requestDraw(); });
+canvas.addEventListener('touchstart', e => { hoverX = pointerToN(e); requestDraw(); }, {passive:true});
+canvas.addEventListener('touchmove', e => { hoverX = pointerToN(e); requestDraw(); }, {passive:true});
+window.addEventListener('resize', requestDraw);
+document.querySelectorAll('#rangeTabs button').forEach(b => b.addEventListener('click', () => {
+  state.range = +b.dataset.range;
+  document.querySelectorAll('#rangeTabs button').forEach(x => x.classList.toggle('on', x === b));
+  drawChart();
+}));
+
+/* ------------------------- 마지막 질문과 개념 확인 ------------------------- */
+function updateConceptBtn(){
+  const bothRun = !!(state.sims[1000] && state.sims[10000]);
+  const answered = state.finalAnswer.trim().length >= MIN_TEXT;
+  $('conceptBtn').disabled = !(bothRun && answered);
+  $('why4').textContent = !bothRun ? '1,000번과 10,000번 실험을 모두 해 보세요.'
+                        : (!answered ? `위 질문에 대한 내 생각을 먼저 적어 주세요. (${MIN_TEXT}자 이상)` : '이제 개념을 확인해 보세요!');
+}
+$('finalAnswer').addEventListener('input', ()=>{ state.finalAnswer = $('finalAnswer').value; refreshAll(); });
+function renderConceptCheck(){
+  const rows = [];
+  if(state.flips.length === 10) rows.push(['10회 (활동 1)', relDec(headsOf(), 10)]);
+  if(state.classTotal !== null) rows.push([`학급 전체 ${fmtInt(state.classTotal)}회 (활동 2)`, relDec(state.classHeads, state.classTotal)]);
+  if(state.sims[1000]) rows.push(['1,000회 (활동 4)', relDec(state.sims[1000].heads, 1000)]);
+  if(state.sims[10000]) rows.push(['10,000회 (활동 4)', relDec(state.sims[10000].heads, 10000)]);
+  $('conceptCheck').innerHTML = `
+    <p style="margin:0 0 8px;font-weight:bold;">이번 실험에서 앞면이 나온 상대도수는 어떤 값에 가까워졌을까?</p>
+    <table class="summary" style="background:#fff;">
+      <tr><th>동전을 던진 횟수</th>${rows.map(r => `<th>${r[0]}</th>`).join('')}</tr>
+      <tr><td class="rowhead">앞면의 상대도수</td>${rows.map(r => `<td>${r[1]}</td>`).join('')}</tr>
+    </table>
+    <p style="margin:12px 0 0;">그래프에 <b>0.5 기준선</b>(점선)이 나타났어요. 던진 횟수가 많아질수록 꺾은선이 이 점선 가까이에서 움직이는지 확인해 보세요.
+    동전을 많이 던질수록 앞면이 나온 상대도수는 <b>0.5</b>에 가까워지므로, 동전을 한 번 던질 때 앞면이 나올 <b>확률은 0.5(= 1/2)</b>라고 할 수 있어요.</p>
+    <p class="note" style="margin:6px 0 0;">내가 활동 3에서 예상한 값: 1,000번 → ${predLabel(state.pred1000Text, state.pred1000)}, 10,000번 → ${predLabel(state.pred10000Text, state.pred10000)}</p>`;
+}
+function showConcept(){
+  state.conceptShown = true;
+  $('concept').classList.add('show');
+  $('lgRef').style.display = '';
+  renderConceptCheck();
+  drawChart();
+}
+$('conceptBtn').addEventListener('click', () => {
+  showConcept();
+  refreshAll({now:true});
+  $('concept').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+/* ---------- 재접속 복원: Firebase에 저장된 data로 화면을 그대로 되살린다 ---------- */
+function restoreData(d){
+  if(!d) return;
+  if(d.choice) setChoice(d.choice);
+  if(typeof d.flips === 'string' && d.flips.length){
+    state.flips = d.flips.slice(0,10).split('').map(c=>c==='H');
+    state.flips.forEach((h,i)=>paintFlip(i+1, h, i===state.flips.length-1));
+    document.querySelectorAll('.choice').forEach(x => x.disabled = true);
+    $('flipCount').textContent = `던진 횟수: ${state.flips.length} / 10회`;
+    const last = state.flips[state.flips.length-1];
+    showCoinFace(last);
+    $('flipLast').textContent = `방금 나온 면: ${last ? '앞면' : '뒷면'}`;
+    if(state.flips.length === 10) showActivity1Result();
+  }
+  if(d.a1Note){ state.a1Note = d.a1Note; $('act1Note').value = d.a1Note; }
+  $('classTotal').value = d.classTotalText || ''; $('classHeads').value = d.classHeadsText || ''; $('act2Answer').value = d.a2Answer || '';
+  checkActivity2({noSave:true});
+  $('pred1000').value = d.pred1000Text || ''; $('pred10000').value = d.pred10000Text || ''; $('predReason').value = d.predReason || '';
+  checkActivity3({noSave:true});
+  [[1000,d.sim1000],[10000,d.sim10000]].forEach(([n,s])=>{
+    if(s && s.seed!=null) state.sims[n] = simulate(n, s.seed >>> 0); // 같은 씨앗 → 같은 결과와 그래프
+  });
+  renderSimCards();
+  state.finalAnswer = d.finalAnswer || ''; $('finalAnswer').value = state.finalAnswer;
+  if(d.conceptShown) showConcept();
+  drawChart();
+  refreshAll({noSave:true});
+}
+
+/* ---------- 화면 잠금 / 공지 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (활동 4개 + 마지막 제출 페이지) ----------
+   다른 단원과 같은 속도조절(교사 min/max) 제한에 더해, 이 단원은 "지금 활동을 끝내야" 다음
+   활동으로 넘어갈 수 있다(탐구 순서를 지키기 위함). 이전 활동으로 돌아가는 것은 자유롭다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+  if(pageTaskNum(currentPage)===4) requestAnimationFrame(drawChart); // 숨겨져 있던 캔버스 크기를 다시 잡는다
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){ const i = taskIdToPageIdx(RT.maxTaskId); if(i>=0){ showPage(i); return; } }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){ const i = taskIdToPageIdx(RT.minTaskId); if(i>=0) showPage(i); }
+}
+function updateNavButtons(){
+  const prevBtn=$('prevBtn'), nextBtn=$('nextBtn'), pacingMsg=$('pacingMsg'), gateMsg=$('gateMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  const curNum = pageTaskNum(currentPage), nextNum = pageTaskNum(currentPage+1), prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  const notFinished = !PREVIEW_MODE && curNum!=null && curNum<4 && !isDone(curNum);
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
+    else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
+    else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+  if(gateMsg){
+    gateMsg.textContent = notFinished ? `✋ 활동 ${curNum}을 마치면 「다음 ▶」 버튼이 켜져요.` : '';
+    gateMsg.style.display = (notFinished && !blockedNext) ? 'block' : 'none';
+  }
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.classNo && obj.name) ? obj : null; }catch(e){ return null; }
+}
+const IDENTITY_KEY = 'ggb_identity_prob21_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.name) ? obj : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none';
+  $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+/* 선생님이 이 단원을 이 반에 열어줬는지 확인한 뒤 시작 화면을 보여준다(오류 시에는 그냥 열어준다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none';
+    $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name;
+      $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    $('profileMissingBox').style.display='none';
+    $('profileBox').style.display='none';
+    $('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length,
+    answers: TASKS.map(t=>({task:t.id, title:t.title, done:isDone(t.id), value:valueOf(t.id)})),
+    data: collectData(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `동전던지기_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* 처음 화면 */
+renderSimCards();
+refreshAll({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N이면 게이트 없이 그 활동 화면을 바로 보여준다(Firebase 연결 없음).
+   교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none';
+  $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+</body>
+</html>
