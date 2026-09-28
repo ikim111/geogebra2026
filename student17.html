@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17. 여러 가지 사각형의 성질 정리하기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; --line:#cfd4da; --ink2:#52514e; --muted:#8a8a86; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.55;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px 16px 8px;}
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{background:#9e9e9e;}
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .task, body.app-paused #pagerNav button, body.app-paused .submit-panel button{pointer-events:none !important;opacity:.5;}
+  body.final-locked .task .card{pointer-events:none !important;opacity:.7;}
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  #appScreen{display:none;}
+
+  /* ---- 성질 표 ---- */
+  .card{background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .task-head h2{font-size:17px;margin:0;line-height:1.5;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .hint{font-size:14px;color:var(--ink2);margin:6px 0 12px;}
+  .table-scroll{overflow-x:auto;}
+  table.props{width:100%;border-collapse:collapse;min-width:760px;font-size:14.5px;}
+  table.props th, table.props td{border:1px solid var(--line);padding:0;}
+  table.props thead th{background:#eceef1;font-size:14px;padding:8px 4px;text-align:center;}
+  table.props td.group{background:#f7f8fa;font-weight:bold;text-align:center;width:54px;font-size:15px;}
+  table.props td.prop{padding:8px 10px;text-align:left;white-space:nowrap;}
+  table.props tr.gap td{border:none;height:10px;background:transparent;}
+  table.props td.cell{width:88px;text-align:center;}
+  .ox{width:100%;height:42px;border:none;background:#fff;cursor:pointer;font-size:24px;font-weight:bold;font-family:inherit;color:#bbb;line-height:1;}
+  .ox:hover{background:#f3f7fd;}
+  .ox.o{color:var(--blue);}
+  .ox.x{color:var(--red);}
+  .ox:disabled{cursor:default;background:#fff;}
+  .check-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;}
+  .fill-count{font-size:14px;color:var(--ink2);}
+  .btn{border:none;border-radius:8px;padding:11px 22px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.ghost{background:#fff;color:var(--ink2);border:1px solid #c5cad1;font-size:14px;padding:9px 14px;}
+  .result{display:none;margin-top:12px;border-radius:10px;padding:12px 16px;font-size:16px;font-weight:bold;}
+  .result.show{display:block;}
+  .result.ok{background:#e8f5e9;color:var(--green);border:1px solid #a5d6a7;}
+  .result.no{background:#fff3e0;color:#b45309;border:1px solid #ffcc80;}
+  .result .sub{font-size:13.5px;font-weight:normal;margin-top:4px;color:#555;}
+</style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>17. 여러 가지 사각형의 성질 정리하기</h1>
+    <p class="gate-sub">사다리꼴부터 등변사다리꼴까지, 각 사각형의 성질을 표로 정리해 봅시다 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#e65100;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label><div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label><div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label><div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">17. 여러 가지 사각형의 성질 정리하기</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 1</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+      <section class="task" id="task-t1" data-task-id="1">
+        <div class="card">
+          <div class="task-head">
+            <h2>[문제 1] 다음 표에서 주어진 성질이 옳으면 ○, 옳지 않으면 ×를 빈칸에 쓰시오.</h2>
+            <span class="badge pending" id="badge-t1">미완료</span>
+          </div>
+          <p class="hint">빈칸을 누를 때마다 <b style="color:#1565c0;">○</b> → <b style="color:#c62828;">×</b> → 빈칸 순서로 바뀌어요. 60칸을 모두 채운 뒤 「확인하기」를 누르세요.</p>
+          <div class="table-scroll"><table class="props" id="propsTable"></table></div>
+          <div class="check-row">
+            <span class="fill-count" id="fillCount">채운 칸: 0 / 60</span>
+            <span style="display:flex;gap:8px;align-items:center;">
+              <button class="btn ghost" id="clearBtn">모두 지우기</button>
+              <button class="btn" id="checkBtn" disabled>확인하기</button>
+            </span>
+          </div>
+          <div class="result" id="resultBox"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg"></div>
+    <div class="pager-buttons"><span id="pageLabel">1 / 2</span></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   17. 여러 가지 사각형의 성질 정리하기
+   활동지 [문제 1]의 성질 표(성질 10개 × 사각형 6개 = 60칸)를 ○/×로 채운다.
+   「확인하기」를 누르면 "모두 맞았는지"만 알려준다 — 어느 칸이 틀렸는지, 몇 칸이 틀렸는지는
+   학생에게 보여주지 않는다(선생님 요청). 모두 맞으면 완료로 표시하고 표를 잠근다.
+   틀린 칸은 teacher17.html의 교사 화면에서만 확인할 수 있다.
+
+   저장: students/{key}/data = {cells: 60글자('O','X','_'), attempts: 확인 횟수, correct: 모두 맞았는지}
+         progress/t1 = {done, value, visited} — 11~16번 단원과 같은 형식(teacher17.html이 읽음).
+   정답표는 아래 KEY_HEX에 행마다 6비트(사다리꼴→등변사다리꼴, ○=1)로 적어 두었다.
+   ACTIVITY_SUFFIX는 teacher17.html과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__quad17'; // teacher17.html과 반드시 동일해야 함
+const UNIT_LABEL = '17. 여러 가지 사각형의 성질 정리하기';
+const UNIT_NO = 17;
+const TASKS = [{id:1, key:'t1', title:'[문제 1] 여러 가지 사각형의 성질 표 ○/× 채우기'}];
+
+const SHAPES = ['사다리꼴','평행사변형','직사각형','마름모','정사각형','등변사다리꼴'];
+const GROUPS = [
+  {name:'변', rows:['(1) 한 쌍의 대변이 평행하다.','(2) 두 쌍의 대변이 각각 평행하다.','(3) 두 쌍의 대변의 길이가 각각 같다.','(4) 네 변의 길이가 모두 같다.']},
+  {name:'각', rows:['(5) 밑변의 양 끝각이 같다.','(6) 두 쌍의 대각의 크기가 각각 같다.','(7) 네 각의 크기가 모두 같다.']},
+  {name:'대각선', rows:['(8) 두 대각선의 길이가 같다.','(9) 두 대각선이 서로 다른 것을 이등분한다.','(10) 두 대각선이 서로 수직이다.']}
+];
+const NROWS = 10, NCOLS = 6, NCELLS = NROWS * NCOLS;
+const KEY_HEX = '3f,1e,1e,06,0b,1e,0a,0b,1e,06';
+const KEY = KEY_HEX.split(',').map(h => parseInt(h,16).toString(2).padStart(NCOLS,'0').replace(/1/g,'O').replace(/0/g,'X')).join('');
+
+const state = { cells: Array(NCELLS).fill('_'), attempts: 0, correct: false, lastWrong: false };
+const $ = id => document.getElementById(id);
+const filledCount = () => state.cells.filter(c => c !== '_').length;
+const isDone = () => state.correct;
+function valueText(){
+  if(state.correct) return `✅ 모두 맞음 (확인 ${state.attempts}번째)`;
+  if(state.attempts) return `확인 ${state.attempts}번 · 아직 틀린 칸 있음 · 채운 칸 ${filledCount()}/${NCELLS}`;
+  return filledCount() ? `채운 칸 ${filledCount()}/${NCELLS}` : '';
+}
+function collectData(){ return { cells: state.cells.join(''), attempts: state.attempts, correct: state.correct }; }
+
+/* ---------- 표 만들기 ---------- */
+(function buildTable(){
+  const t = $('propsTable');
+  let html = `<thead><tr><th></th><th>성질</th>${SHAPES.map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>`;
+  let r = 0;
+  GROUPS.forEach((g, gi) => {
+    if(gi > 0) html += `<tr class="gap"><td colspan="${2+NCOLS}"></td></tr>`;
+    g.rows.forEach((text, i) => {
+      html += '<tr>';
+      if(i === 0) html += `<td class="group" rowspan="${g.rows.length}">${g.name}</td>`;
+      html += `<td class="prop">${text}</td>`;
+      for(let c = 0; c < NCOLS; c++){
+        const idx = r * NCOLS + c;
+        html += `<td class="cell"><button class="ox" data-i="${idx}" aria-label="${text} — ${SHAPES[c]}"></button></td>`;
+      }
+      html += '</tr>'; r++;
+    });
+  });
+  t.innerHTML = html + '</tbody>';
+})();
+const cellBtns = [...document.querySelectorAll('.ox')];
+function paintCells(){
+  cellBtns.forEach((b, i) => {
+    const v = state.cells[i];
+    b.textContent = v === 'O' ? '○' : (v === 'X' ? '×' : '');
+    b.className = 'ox' + (v === 'O' ? ' o' : (v === 'X' ? ' x' : ''));
+    b.disabled = state.correct;
+  });
+}
+cellBtns.forEach(b => b.addEventListener('click', () => {
+  if(state.correct) return;
+  const i = +b.dataset.i;
+  state.cells[i] = state.cells[i] === '_' ? 'O' : (state.cells[i] === 'O' ? 'X' : '_');
+  state.lastWrong = false;
+  paintCells(); refresh();
+}));
+$('clearBtn').addEventListener('click', () => {
+  if(state.correct || filledCount() === 0) return;
+  if(!confirm('표에 적은 ○/×를 모두 지울까요?')) return;
+  state.cells.fill('_'); state.lastWrong = false;
+  paintCells(); refresh();
+});
+$('checkBtn').addEventListener('click', () => {
+  if(state.correct || filledCount() < NCELLS) return;
+  state.attempts++;
+  state.correct = state.cells.join('') === KEY;
+  state.lastWrong = !state.correct;
+  paintCells(); refresh({now:true});
+});
+
+function refresh(opts){
+  const n = filledCount();
+  $('fillCount').textContent = `채운 칸: ${n} / ${NCELLS}`;
+  $('checkBtn').disabled = state.correct || n < NCELLS;
+  $('clearBtn').disabled = state.correct;
+  const box = $('resultBox');
+  if(state.correct){
+    box.className = 'result show ok';
+    box.innerHTML = `🎉 모두 맞았어요! 여러 가지 사각형의 성질을 완벽하게 정리했어요.<div class="sub">확인 ${state.attempts}번 만에 성공</div>`;
+  } else if(state.lastWrong){
+    box.className = 'result show no';
+    box.innerHTML = `🤔 아직 틀린 칸이 있어요. 표를 다시 살펴보고 고친 뒤 「확인하기」를 눌러 보세요.<div class="sub">지금까지 확인 ${state.attempts}번</div>`;
+  } else {
+    box.className = 'result';
+    box.textContent = '';
+  }
+  const d = isDone();
+  $('badge-t1').textContent = d ? '완료' : '미완료';
+  $('badge-t1').className = 'badge ' + (d ? 'done' : 'pending');
+  $('progressText').textContent = `완료 ${d?1:0} / 1`;
+  $('progressFill').style.width = (d?100:0) + '%';
+  if(!(opts && opts.noSave)) (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced();
+}
+
+/* ---------- 실시간 확인 (Firebase) — 11~16번 단원과 같은 구조 ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0,
+  classEnded:false, _lastKnownClassEnded:null, viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){ this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); this.db = firebase.database(); }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(() => this._afterAuth(name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(name, room, number, statusEl){
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/' + this.sanitize(room) + ACTIVITY_SUFFIX);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.controlRef = this.roomRef.child('control');
+    this.connected = true;
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress && existing.progress.t1 && existing.progress.t1.visited) this.visitedTasks.add(1);
+      if(existing && existing.data) restoreData(existing.data); // 저장된 표를 먼저 되살린 뒤에 저장을 시작한다
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({ name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+      this.pushProgress();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused; applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement; $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){ $('announceBanner').style.display = 'none'; }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      updateNavButtons();
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
+      else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
+      this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
+    });
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{ if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true }); }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    this.studentRef.update({
+      progress: { t1: { done: isDone(), value: valueText(), visited: this.visitedTasks.has(1) } },
+      completed: isDone()?1:0, total: 1, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP
+    });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t); this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){ this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP }); this.pushProgress(); }
+  },
+  flushPending(){ if(this._t){ clearTimeout(this._t); this._t=null; } this.pushProgress(); }
+};
+function restoreData(d){
+  if(!d) return;
+  if(typeof d.cells === 'string' && d.cells.length === NCELLS) state.cells = d.cells.split('').map(c => (c==='O'||c==='X') ? c : '_');
+  state.attempts = d.attempts || 0;
+  state.correct = !!d.correct && state.cells.join('') === KEY;
+  paintCells(); refresh({noSave:true});
+}
+
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (표 1개 + 제출 페이지) ---------- */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+}
+function updateNavButtons(){
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  $('prevBtn').disabled = isFirst || RT.paused;
+  $('nextBtn').disabled = isLast || RT.paused;
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){ try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const o = JSON.parse(raw); return (o && o.classNo && o.name) ? o : null; }catch(e){ return null; } }
+const IDENTITY_KEY = 'ggb_identity_quad17_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const o = JSON.parse(raw); return (o && o.name) ? o : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none'; $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none'; $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name; $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{ $('profileMissingBox').style.display='none'; $('profileBox').style.display='none'; $('unitLockedBox').style.display='block'; };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else { applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress(); }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = { classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: isDone()?1:0, total: 1, answers: [{task:1, title: TASKS[0].title, done: isDone(), value: valueText()}],
+    data: collectData(), exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `사각형성질정리_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+});
+
+paintCells(); refresh({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe) ---------- */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none'; $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK); showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){ if(window.parent && window.parent !== window) window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin); }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId); if(i >= 0) showPage(i);
+      reportPreviewHeight(); requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+</body>
+</html>
