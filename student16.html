@@ -190,7 +190,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 4</div>
+        <div class="progress-text" id="progressText">완료 0 / 5</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -224,7 +224,7 @@
    이 파일은 "0. 지오지브라 연습" (student.html)과 같은 엔진을 쓰는
    자매 파일입니다. 새 활동: "16. 여러 가지 사각형 그려보기"
    (student7.html의 작도 엔진(GeoCanvas)을 그대로 가져와, GeoGebra 자료 "3. 여러가지 사각형
-   그려보기"(geogebra.org/m/un6aaw9b)의 4개 과제를 웹 버전으로 옮겼다. 저자 김형준)
+   그려보기"(geogebra.org/m/un6aaw9b)의 4개 과제를 웹 버전으로 옮기고, 5번째로 "생각을 나누는 의사소통"(오각형과 넓이가 같은 삼각형)을 더했다. 저자 김형준)
 
    선생님 설정 안내 (Google 설문지 자동 저장을 쓰려면)
    student0~6이 모두 같은 설문지 1개를 공유한다("단원" 필드로 구분). 설문지에는 질문 7개가
@@ -939,8 +939,9 @@ class GeoCanvas{
       else if(o.type==='polygon'){
         const pts=g.pts.map(p=>`${p.x},${p.y}`).join(' ');
         const el=document.createElementNS(NS,'polygon');
-        el.setAttribute('points',pts); el.setAttribute('fill','#1565c0'); el.setAttribute('fill-opacity','0.12');
-        el.setAttribute('stroke','#1565c0'); el.setAttribute('stroke-width','2');
+        // fill/stroke가 지정된 도형(예: 과제5에서 주어진 오각형)은 그 색으로, 나머지는 기본 파란색으로 그린다.
+        el.setAttribute('points',pts); el.setAttribute('fill',o.fill||'#1565c0'); el.setAttribute('fill-opacity',o.fill?'0.45':'0.12');
+        el.setAttribute('stroke',o.stroke||'#1565c0'); el.setAttribute('stroke-width','2');
         this.svg.appendChild(el);
       }
       else if(o.type==='lengthLabel'){
@@ -1110,6 +1111,30 @@ const checkRhombus16 = shapeCheck16(isRhombus16, ['마름모를','마름모가']
 const checkSquare16  = shapeCheck16(q => isRect16(q) && isRhombus16(q), ['정사각형을','정사각형이']); // 과제 3: 정사각형
 const checkIsoTrap16 = shapeCheck16(isIsoTrap16, ['등변사다리꼴을','등변사다리꼴이']);                       // 도전과제: 등변사다리꼴
 
+/* [의사소통] 오각형 ABCDE와 넓이가 같은 삼각형 — 교과서 그림과 비슷한 모양의 오각형과 직선 CD를 준다.
+   (기대하는 작도: 대각선 AC, AD를 긋고, B를 지나 AC에 평행한 직선·E를 지나 AD에 평행한 직선이
+   직선 CD와 만나는 점 P, Q를 찾아 삼각형 APQ를 그린다. 판정은 방법과 상관없이 결과만 본다.) */
+const PENTA_POINTS = [ {label:'A',x:291,y:102}, {label:'B',x:190,y:207}, {label:'C',x:230,y:330}, {label:'D',x:370,y:330}, {label:'E',x:437,y:219} ];
+const PENTA_PRESET = [
+  {type:'line', p1:'C', p2:'D'},
+  {type:'polygon', ids:['A','B','C','D','E'], fill:'#f6b98a', stroke:'#8d5524'} // 교과서 그림처럼 살구색
+];
+function polyArea16(pts){ let s=0; for(let i=0;i<pts.length;i++){ const p=pts[i], q=pts[(i+1)%pts.length]; s+=p.x*q.y-q.x*p.y; } return Math.abs(s)/2; }
+const PENTA_AREA = polyArea16(PENTA_POINTS);
+/* 판정: 학생이 다각형 도구로 그린 삼각형 중 ① 두 꼭짓점이 직선 CD 위에 있고(= 한 변이 CD 위)
+   ② 넓이가 오각형과 같은(오차 3% 이내) 것이 있으면 맞음. 틀리면 어느 조건이 틀렸는지 알려준다. */
+function checkPentaTriangle16(c){
+  const C=c.byLabel('C'), D=c.byLabel('D');
+  const tris = c.objects.filter(o=>o.type==='polygon' && !o.locked && o.ids && o.ids.length===3)
+    .map(o=>o.ids.map(id=>c.resolvePoint(id))).filter(t=>t.every(Boolean) && polyArea16(t) > 300);
+  if(!tris.length) return { ok:false, bad:false, msg:'' };
+  const onCD = t => t.filter(p=>distToLine(p, C, D) < 5).length >= 2;
+  const sameArea = t => Math.abs(polyArea16(t) - PENTA_AREA) <= 0.03 * PENTA_AREA;
+  if(tris.some(t=>onCD(t) && sameArea(t))) return { ok:true, bad:false, msg:'⭕ 맞았어요! 오각형 ABCDE와 넓이가 같은 삼각형을 그렸어요.' };
+  if(!tris.some(onCD)) return { ok:false, bad:true, msg:'❌ 틀렸어요. 삼각형의 한 변이 직선 CD 위에 있지 않아요.' };
+  return { ok:false, bad:true, msg:'❌ 틀렸어요. 한 변은 직선 CD 위에 있지만, 넓이가 오각형 ABCDE와 같지 않아요.' };
+}
+
 const TASKS = [
   { id:1, title:'[과제 1] 대각선을 이용하여 직사각형을 그려보자.', plain:true,
     points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkRect16 },
@@ -1119,6 +1144,8 @@ const TASKS = [
     points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkSquare16 },
   { id:4, title:'[도전과제] 등변사다리꼴을 그려보자.', plain:true,
     points: [], presetObjects: [], check: checkIsoTrap16 },
+  { id:5, title:'[생각을 나누는 의사소통] 한 변이 직선 CD 위에 놓인 오각형 ABCDE가 있다. 오각형 ABCDE와 넓이가 같은 삼각형을 한 변이 직선 CD 위에 오도록 그려 보자.', plain:true,
+    points: PENTA_POINTS, presetObjects: PENTA_PRESET, check: checkPentaTriangle16 },
 ];
 
 const FREE_TOOLS = ALL_TOOLS;
