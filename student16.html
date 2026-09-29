@@ -1059,40 +1059,54 @@ function quadPolygons(c){
     return pts;
   }).filter(Boolean);
 }
-/* 이 단원은 점수를 매기지 않고 자유롭게 그려보는 활동이다. 채점 요소·힌트는 보여주지 않고,
-   다각형 도구로 꼭짓점 4개짜리 사각형을 하나라도 그리면 그 과제를 "완료"로 표시한다
-   (진행률·교사 대시보드의 완료 표시용). */
-function checkDrewQuad16(c){
-  return { ok: quadPolygons(c).length > 0, msg: '' };
-}
-/* [도전과제] 등변사다리꼴 판정(교과서 정의): 한 쌍의 대변이 평행한 사각형(사다리꼴)이면서,
-   평행한 한 변(아랫변)의 양 끝 각의 크기가 같아야 한다. 두 대각선의 길이가 같다는 것만으로는
-   인정하지 않는다(대각선 길이가 같아도 사다리꼴이 아닌 사각형이 많다). 직사각형은 교과서의
-   사각형 관계도처럼 등변사다리꼴에 포함되므로 인정된다. 허용오차는 각도 2도. */
+/* ---- 과제별 완료 판정 ----
+   점수·채점 요소는 화면에 보여주지 않고, "그 과제의 사각형을 정확히 그렸는지"만 배지(완료)로 표시한다.
+   모든 과제 공통으로, 볼록한 사각형만 인정한다 — 꼭짓점을 엇갈린 순서로 이어 만든 꼬인 모양
+   (예: 등변사다리꼴 꼭짓점을 A→B→D→C로 이은 나비 모양)은 제외한다.
+   허용오차: 각도 2도, 길이 3%(학생이 점을 손으로 옮겨 그리는 것을 감안). */
+const ANG_TOL16 = 2, LEN_TOL16 = 0.03;
 function dirAngleDiff16(u, v){
   let d = Math.abs(Math.atan2(u.y,u.x) - Math.atan2(v.y,v.x))*180/Math.PI % 180;
   return d>90 ? 180-d : d;
 }
-function isIsoTrapQuad16(q){
-  const TOL=2;
-  const par=(p1,p2,p3,p4)=> dirAngleDiff16(sub(p2,p1), sub(p4,p3)) < TOL;
-  // 변 q0q1 ∥ 변 q3q2 이면, 아랫변 q0q1의 양 끝 각(∠q3q0q1, ∠q0q1q2)이 같아야 한다.
-  if(par(q[0],q[1],q[3],q[2]) && Math.abs(angleDeg(q[3],q[0],q[1]) - angleDeg(q[0],q[1],q[2])) < TOL) return true;
-  // 변 q1q2 ∥ 변 q0q3 이면, 아랫변 q1q2의 양 끝 각(∠q0q1q2, ∠q1q2q3)이 같아야 한다.
-  if(par(q[1],q[2],q[0],q[3]) && Math.abs(angleDeg(q[0],q[1],q[2]) - angleDeg(q[1],q[2],q[3])) < TOL) return true;
+// 네 꼭짓점을 차례로 돌 때 꺾이는 방향(외적의 부호)이 모두 같으면 볼록 사각형이다.
+function isConvexQuad16(q){
+  let sign = 0;
+  for(let i=0;i<4;i++){
+    const a=q[i], b=q[(i+1)%4], c=q[(i+2)%4];
+    const cr = (b.x-a.x)*(c.y-b.y) - (b.y-a.y)*(c.x-b.x);
+    if(Math.abs(cr) < 1e-6) return false;
+    const sg = cr > 0 ? 1 : -1;
+    if(sign === 0) sign = sg; else if(sg !== sign) return false;
+  }
+  return true;
+}
+const sides16 = q => [0,1,2,3].map(i=>dist(q[i], q[(i+1)%4]));
+const angles16 = q => [0,1,2,3].map(i=>angleDeg(q[(i+3)%4], q[i], q[(i+1)%4]));
+const isRect16 = q => angles16(q).every(a=>Math.abs(a-90) < ANG_TOL16);           // 네 각이 모두 직각
+const isRhombus16 = q => { const s=sides16(q), m=Math.max(...s); return s.every(x=>Math.abs(x-s[0]) <= LEN_TOL16*m); }; // 네 변의 길이가 모두 같음
+/* 등변사다리꼴(교과서 정의): 한 쌍의 대변이 평행한 사각형(사다리꼴)이면서, 평행한 한 변(아랫변)의
+   양 끝 각의 크기가 같다. 두 대각선의 길이가 같다는 것만으로는 인정하지 않는다. 직사각형은
+   교과서의 사각형 관계도처럼 등변사다리꼴에 포함되므로 인정된다. */
+function isIsoTrap16(q){
+  const par=(p1,p2,p3,p4)=> dirAngleDiff16(sub(p2,p1), sub(p4,p3)) < ANG_TOL16;
+  if(par(q[0],q[1],q[3],q[2]) && Math.abs(angleDeg(q[3],q[0],q[1]) - angleDeg(q[0],q[1],q[2])) < ANG_TOL16) return true;
+  if(par(q[1],q[2],q[0],q[3]) && Math.abs(angleDeg(q[0],q[1],q[2]) - angleDeg(q[1],q[2],q[3])) < ANG_TOL16) return true;
   return false;
 }
-function checkIsoTrap16(c){
-  return { ok: quadPolygons(c).some(isIsoTrapQuad16), msg: '' };
-}
+const shapeCheck16 = test => c => ({ ok: quadPolygons(c).some(q => isConvexQuad16(q) && test(q)), msg: '' });
+const checkRect16    = shapeCheck16(isRect16);                          // 과제 1: 직사각형(정사각형 포함)
+const checkRhombus16 = shapeCheck16(isRhombus16);                       // 과제 2: 마름모(정사각형 포함)
+const checkSquare16  = shapeCheck16(q => isRect16(q) && isRhombus16(q)); // 과제 3: 정사각형
+const checkIsoTrap16 = shapeCheck16(isIsoTrap16);                       // 도전과제: 등변사다리꼴
 
 const TASKS = [
   { id:1, title:'[과제 1] 대각선을 이용하여 직사각형을 그려보자.', plain:true,
-    points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkDrewQuad16 },
+    points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkRect16 },
   { id:2, title:'[과제 2] 대각선을 이용하여 마름모를 그려보자.', plain:true,
-    points: RHOMB_POINTS, presetObjects: RHOMB_PRESET, check: checkDrewQuad16 },
+    points: RHOMB_POINTS, presetObjects: RHOMB_PRESET, check: checkRhombus16 },
   { id:3, title:'[과제 3] 대각선을 이용하여 정사각형을 그려보자.', plain:true,
-    points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkDrewQuad16 },
+    points: CIRCLE_POINTS, presetObjects: CIRCLE_PRESET, check: checkSquare16 },
   { id:4, title:'[도전과제] 등변사다리꼴을 그려보자.', plain:true,
     points: [], presetObjects: [], check: checkIsoTrap16 },
 ];
