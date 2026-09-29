@@ -43,6 +43,9 @@
   .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
   .toolbar button.undo,.toolbar button.redo{font-size:15px;padding:5px 12px;}
   .canvas-wrap{padding:0 16px 14px;}
+  svg.gcanvas *{vector-effect:non-scaling-stroke;}
+  .zoom-btns{display:inline-flex;gap:4px;margin-left:6px;}
+  .zoom-btns button{min-width:38px;}
   svg.gcanvas{width:100%;max-width:600px;height:auto;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
   .ref-figures{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 4px;justify-content:center;}
   .ref-figure{flex:1 1 260px;max-width:280px;min-width:200px;}
@@ -426,6 +429,9 @@ class GeoCanvas{
     this.svg = svgEl;
     this.width = cfg.width || 600;
     this.height = cfg.height || 400;
+    // 확대/축소·이동용 보기 영역(SVG viewBox). k = 보기 폭 / 기본 폭(600) — 1보다 크면 축소된 상태.
+    this.view = {x:0, y:0, w:this.width, h:this.height};
+    this.panning = null; this.pinch = null;
     this.points = [];
     this.objects = [];
     this.history = [];
@@ -508,7 +514,7 @@ class GeoCanvas{
   }
   resolvePoint(id){ return this.points.find(p=>p.id===id); }
   byLabel(label){ return this.points.find(p=>p.label===label); }
-  pickPoint(pt){ return this.findPointNear(pt,TOUCH_TOL) || this.addPoint(pt.x,pt.y); }
+  pickPoint(pt){ return this.findPointNear(pt,this._tol()) || this.addPoint(pt.x,pt.y); }
   findPointNear(pt,tol){
     let best=null,bd=tol;
     for(const p of this.points){ const d=dist(p,pt); if(d<bd){bd=d;best=p;} }
@@ -606,7 +612,7 @@ class GeoCanvas{
         if(Object.values(g1).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
         if(Object.values(g2).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
         this.computeIntersections(o1,o2).forEach(ip=>{
-          if(ip.x<0||ip.x>this.width||ip.y<0||ip.y>this.height) return;
+          const V=this.view; if(ip.x<V.x||ip.x>V.x+V.w||ip.y<V.y||ip.y>V.y+V.h) return;
           const d=dist(pt,ip);
           if(d<bd){ bd=d; best={o1,o2,point:ip}; }
         });
@@ -614,6 +620,19 @@ class GeoCanvas{
     }
     return best;
   }
+  // ---- 확대/축소·이동 ----
+  _k(){ return this.view.w / this.width; }
+  _tol(){ return TOUCH_TOL * this._k(); }
+  _applyView(){ const v=this.view; this.svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); }
+  // factor<1이면 확대, >1이면 축소. center(세계 좌표)를 기준으로 커지거나 작아진다.
+  zoomBy(factor, center){
+    const v=this.view, c=center || {x:v.x+v.w/2, y:v.y+v.h/2};
+    const w=Math.max(this.width/4, Math.min(this.width*4, v.w*factor)); // 4배 확대 ~ 4배 축소
+    const f=w/v.w, h=v.h*f;
+    this.view={x:c.x-(c.x-v.x)*f, y:c.y-(c.y-v.y)*f, w, h};
+    this._applyView(); this.render();
+  }
+  resetView(){ this.view={x:0, y:0, w:this.width, h:this.height}; this._applyView(); this.render(); }
   setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
   reset(){
     this.points = this.points.filter(p=>p.locked||p.keep);
@@ -667,15 +686,36 @@ class GeoCanvas{
   _wire(){
     const down = e=>{
       e.preventDefault();
+      if(e.touches && e.touches.length===2){ // 두 손가락: 확대/축소 시작
+        const [t1,t2]=e.touches; this.dragging=null; this.panning=null;
+        this.pinch={d:Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY), view:{...this.view}};
+        return;
+      }
       const pt=this.getSvgCoords(e);
       if(this.tool==='move'){
-        const p=this.findPointNear(pt,TOUCH_TOL);
+        const p=this.findPointNear(pt,this._tol());
         if(p && !p.locked) this.dragging=p;
+        else { const t=e.touches&&e.touches[0]?e.touches[0]:e; this.panning={cx:t.clientX, cy:t.clientY, view:{...this.view}}; this.svg.style.cursor='grabbing'; }
         return;
       }
       this.handleToolClick(pt);
     };
     const move = e=>{
+      if(this.pinch && e.touches && e.touches.length===2){
+        e.preventDefault();
+        const [t1,t2]=e.touches, d=Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY);
+        const v0=this.pinch.view; this.view={...v0}; // 시작 화면 기준으로 다시 계산
+        const r=this.svg.getBoundingClientRect(), mx=(t1.clientX+t2.clientX)/2-r.left, my=(t1.clientY+t2.clientY)/2-r.top;
+        this.zoomBy(this.pinch.d/Math.max(d,1), {x:v0.x+mx/r.width*v0.w, y:v0.y+my/r.height*v0.h});
+        return;
+      }
+      if(this.panning){
+        e.preventDefault();
+        const t=e.touches&&e.touches[0]?e.touches[0]:e, r=this.svg.getBoundingClientRect(), P=this.panning;
+        this.view={...P.view, x:P.view.x-(t.clientX-P.cx)*P.view.w/r.width, y:P.view.y-(t.clientY-P.cy)*P.view.h/r.height};
+        this._applyView(); this.render();
+        return;
+      }
       if(!this.dragging) return;
       e.preventDefault();
       const pt=this.getSvgCoords(e);
@@ -684,8 +724,9 @@ class GeoCanvas{
         const o=this.objects.find(ob=>ob.id===this.dragging.constraint.objId);
         if(o){ const proj=this._projectOntoObject(o,pt); nx=proj.x; ny=proj.y; }
       }
-      this.dragging.x = Math.max(0,Math.min(this.width,nx));
-      this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      const V=this.view;
+      this.dragging.x = Math.max(V.x,Math.min(V.x+V.w,nx));
+      this.dragging.y = Math.max(V.y,Math.min(V.y+V.h,ny));
       // 자취(trace) 기록: 너무 촘촘하게 쌓이지 않도록 마지막 기록점에서 일정 거리 이상
       // 떨어졌을 때만 새 자취점을 추가한다.
       if(this.dragging.trace){
@@ -695,19 +736,25 @@ class GeoCanvas{
       }
       this.render();
     };
-    const up = ()=>{ this.dragging=null; };
+    const up = ()=>{ this.dragging=null; if(this.panning){ this.panning=null; this.svg.style.cursor=''; } this.pinch=null; };
     this.svg.addEventListener('mousedown', down);
     this.svg.addEventListener('touchstart', down, {passive:false});
     window.addEventListener('mousemove', move);
     window.addEventListener('touchmove', move, {passive:false});
     window.addEventListener('mouseup', up);
     window.addEventListener('touchend', up);
+    // 크롬북 터치패드 두 손가락 벌리기/모으기(= Ctrl+휠)로 확대/축소. 그냥 스크롤은 페이지 스크롤로 둔다.
+    this.svg.addEventListener('wheel', e=>{
+      if(!e.ctrlKey) return;
+      e.preventDefault();
+      this.zoomBy(Math.exp(e.deltaY*0.005), this.getSvgCoords(e));
+    }, {passive:false});
   }
   handleToolClick(pt){
     switch(this.tool){
       case 'point': {
-        if(this.findPointNear(pt,TOUCH_TOL)) break;
-        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(this.findPointNear(pt,this._tol())) break;
+        const o=this.findObjectNear(pt,this._tol());
         if(o){ const proj=this._projectOntoObject(o,pt); this.addPoint(proj.x,proj.y,{constraint:{objId:o.id}}); }
         else { this.addPoint(pt.x,pt.y); }
         break;
@@ -727,7 +774,7 @@ class GeoCanvas{
           const p=this.pickPoint(pt); this.pending.push(p.id);
           break;
         }
-        const segObj=this.findObjectNear(pt,TOUCH_TOL);
+        const segObj=this.findObjectNear(pt,this._tol());
         if(segObj && segObj.type==='segment'){
           const cId=this.pending[0]; this.pending=[];
           this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
@@ -739,7 +786,7 @@ class GeoCanvas{
       }
       case 'perpBisector': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          const segObj=this.findObjectNear(pt,this._tol());
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
             break;
@@ -762,7 +809,7 @@ class GeoCanvas{
       }
       case 'intersect': {
         // 두 도형이 만나는 지점을 바로 터치한 경우: 어떤 두 도형인지 자동으로 찾아 바로 교점을 만든다.
-        const direct = this.findIntersectionNear(pt, TOUCH_TOL);
+        const direct = this.findIntersectionNear(pt, this._tol());
         if(direct){
           if(!this.findPointNear(direct.point,6)){
             this.addPoint(direct.point.x, direct.point.y, {locked:true, trackHistory:true, computed:{kind:'intersection', o1:direct.o1.id, o2:direct.o2.id}});
@@ -770,7 +817,7 @@ class GeoCanvas{
           this.pendingObjs=[];
           break;
         }
-        const o=this.findObjectNear(pt,TOUCH_TOL);
+        const o=this.findObjectNear(pt,this._tol());
         if(o){
           this.pendingObjs.push(o);
           if(this.pendingObjs.length>=2){
@@ -778,7 +825,7 @@ class GeoCanvas{
             if(o1!==o2){
               const pts=this.computeIntersections(o1,o2);
               pts.forEach(ip=>{
-                if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
+                const V=this.view; if(ip.x>=V.x&&ip.x<=V.x+V.w&&ip.y>=V.y&&ip.y<=V.y+V.h && !this.findPointNear(ip,6)){
                   // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
                   // 이 교점이 매 render()마다 새 위치로 따라온다.
                   this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
@@ -808,9 +855,9 @@ class GeoCanvas{
         // 1단계: 수선/평행선이 지나갈 점을 클릭한다. 기존 점이 없고 직선·원 위를 눌렀으면
         // "점" 도구처럼 그 도형 위에 붙은 점을 새로 만든다(직선 위의 점을 찍는 경우).
         if(this.pending.length===0){
-          let p0=this.findPointNear(pt,TOUCH_TOL);
+          let p0=this.findPointNear(pt,this._tol());
           if(!p0){
-            const on=this.findObjectNear(pt,TOUCH_TOL);
+            const on=this.findObjectNear(pt,this._tol());
             if(on){ const proj=this._projectOntoObject(on,pt); p0=this.addPoint(proj.x,proj.y,{constraint:{objId:on.id}}); }
             else p0=this.addPoint(pt.x,pt.y);
           }
@@ -821,7 +868,7 @@ class GeoCanvas{
         // 예전에는 기준이 "직선/선분"일 때만 됐고, 수선으로 그린 직선(과제2의 세로 직선 포함)·
         // 수직이등분선·평행선을 누르면 아무것도 그려지지 않았다.
         const pId=this.pending[0]; this.pending=[];
-        const refObj=this._findLineLikeNear(pt,TOUCH_TOL);
+        const refObj=this._findLineLikeNear(pt,this._tol());
         const base=refObj && this._lineBase(refObj);
         if(base){
           // base.rotated: 기준 직선이 두 점(a→b) 방향인지(false), 그에 수직인 방향인지(true).
@@ -834,7 +881,7 @@ class GeoCanvas{
       }
       case 'lengthTool': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          const segObj=this.findObjectNear(pt,this._tol());
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
             break;
@@ -877,19 +924,20 @@ class GeoCanvas{
     const NS='http://www.w3.org/2000/svg';
     while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
     const g0=document.createElementNS(NS,'g');
-    for(let x=0;x<=this.width;x+=GRID){
+    const V=this.view, K=this._k();
+    for(let x=Math.floor(V.x/GRID)*GRID;x<=V.x+V.w;x+=GRID){
       const l=document.createElementNS(NS,'line');
-      l.setAttribute('x1',x); l.setAttribute('y1',0); l.setAttribute('x2',x); l.setAttribute('y2',this.height);
+      l.setAttribute('x1',x); l.setAttribute('y1',V.y); l.setAttribute('x2',x); l.setAttribute('y2',V.y+V.h);
       l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
     }
-    for(let y=0;y<=this.height;y+=GRID){
+    for(let y=Math.floor(V.y/GRID)*GRID;y<=V.y+V.h;y+=GRID){
       const l=document.createElementNS(NS,'line');
-      l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',this.width); l.setAttribute('y2',y);
+      l.setAttribute('x1',V.x); l.setAttribute('y1',y); l.setAttribute('x2',V.x+V.w); l.setAttribute('y2',y);
       l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
     }
     this.svg.appendChild(g0);
 
-    const extend=(origin,dir,len=1000)=>({x1:origin.x-dir.x*len,y1:origin.y-dir.y*len,x2:origin.x+dir.x*len,y2:origin.y+dir.y*len});
+    const extend=(origin,dir,len=3000*Math.max(1,K))=>({x1:origin.x-dir.x*len,y1:origin.y-dir.y*len,x2:origin.x+dir.x*len,y2:origin.y+dir.y*len});
     const mkLine=(x1,y1,x2,y2,color,dash)=>{
       const l=document.createElementNS(NS,'line');
       l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
@@ -948,8 +996,8 @@ class GeoCanvas{
         mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#999','3,3');
         const m=mid(g.p1,g.p2);
         const t=document.createElementNS(NS,'text');
-        t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill','#c62828');
-        t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.setAttribute('x',m.x); t.setAttribute('y',m.y-8*K); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size',14*K); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
         t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(1);
         this.svg.appendChild(t);
       }
@@ -960,7 +1008,7 @@ class GeoCanvas{
         this.svg.appendChild(path);
         const t=document.createElementNS(NS,'text');
         t.setAttribute('x',info.mid.x); t.setAttribute('y',info.mid.y); t.setAttribute('fill','#c62828');
-        t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.setAttribute('font-size',13*K); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
         t.textContent=info.deg.toFixed(1)+'°';
         this.svg.appendChild(t);
       }
@@ -969,7 +1017,7 @@ class GeoCanvas{
     [...this.pending].forEach(id=>{
       const p=this.resolvePoint(id); if(!p) return;
       const c=document.createElementNS(NS,'circle');
-      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10);
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10*K);
       c.setAttribute('fill','none'); c.setAttribute('stroke','#fbc02d'); c.setAttribute('stroke-width','3');
       this.svg.appendChild(c);
     });
@@ -987,13 +1035,13 @@ class GeoCanvas{
 
     this.points.forEach(p=>{
       const c=document.createElementNS(NS,'circle');
-      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5*K);
       c.setAttribute('fill', p.locked ? '#212121' : '#0277bd');
       c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
       this.svg.appendChild(c);
       const t=document.createElementNS(NS,'text');
-      t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8);
-      t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
+      t.setAttribute('x',p.x+9*K); t.setAttribute('y',p.y-8*K);
+      t.setAttribute('font-size',14*K); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
       t.textContent=p.label;
       this.svg.appendChild(t);
     });
@@ -1194,6 +1242,7 @@ function buildTaskCard(task){
       </div>` : task.noFigure ? '' : `<div class="task-right">
         <div class="toolbar" id="tools-${task.id}"></div>
         <div class="canvas-wrap"><svg class="gcanvas" id="svg-${task.id}" viewBox="0 0 600 400"></svg></div>
+        <div style="font-size:12px;color:#888;margin:6px 2px 0;">🔍 ＋/－ 버튼(또는 터치패드 두 손가락 벌리기·모으기)으로 확대·축소, 「이동」 상태에서 빈 곳을 끌면 화면을 옮길 수 있어요.</div>
       </div>`}
       <div class="task-left">
         ${task.type==='blanks' ? `${hintHtml}${hiddenHintHtml}<div class="input-row" style="flex-direction:column;align-items:stretch;">
@@ -1264,7 +1313,13 @@ function buildToolbar(task, cv, toolsEl){
   const undoBtn=mkBtn(`undo-${task.id}`,'↩️','undo'); undoBtn.title='되돌리기'; undoBtn.setAttribute('aria-label','되돌리기'); undoBtn.addEventListener('click',()=>cv.undo());
   const redoBtn=mkBtn(`redo-${task.id}`,'↪️','redo'); redoBtn.title='다시하기'; redoBtn.setAttribute('aria-label','다시하기'); redoBtn.addEventListener('click',()=>cv.redo());
   const resetBtn=mkBtn(`reset-${task.id}`,'초기화','reset'); resetBtn.addEventListener('click',()=>cv.reset());
-  toolsEl.appendChild(undoBtn); toolsEl.appendChild(redoBtn); toolsEl.appendChild(resetBtn);
+  // 확대/축소: 버튼 또는 터치패드 두 손가락(Ctrl+휠), 이동 도구로 빈 곳을 끌면 화면 이동
+  const zoomWrap=document.createElement('span'); zoomWrap.className='zoom-btns';
+  const zIn=mkBtn(`zoomin-${task.id}`,'＋'); zIn.title='확대'; zIn.addEventListener('click',()=>cv.zoomBy(1/1.25));
+  const zOut=mkBtn(`zoomout-${task.id}`,'－'); zOut.title='축소'; zOut.addEventListener('click',()=>cv.zoomBy(1.25));
+  const zFit=mkBtn(`zoomfit-${task.id}`,'⟲ 원래 크기'); zFit.title='처음 화면으로'; zFit.addEventListener('click',()=>cv.resetView());
+  zoomWrap.append(zIn, zOut, zFit);
+  toolsEl.appendChild(undoBtn); toolsEl.appendChild(redoBtn); toolsEl.appendChild(resetBtn); toolsEl.appendChild(zoomWrap);
   return buttons;
 }
 
