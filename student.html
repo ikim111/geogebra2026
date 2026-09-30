@@ -119,6 +119,27 @@ function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice
 /* n = 실제 단원 번호(파일명·Firebase 잠금/완료 경로에 쓰이는 값, 절대 바꾸면 안 됨)
    label = 목차에 보여지는 번호(챕터가 바뀌면 1부터 다시 시작) */
 const SECTIONS = [
+  // 최근 단원이 위로 오도록 역순으로 배치한다(선생님 요청: VIII → VI 사각형 → VI 삼각형).
+  // n = 단원 잠금/완료 확인에 쓰는 고유 번호(바꾸면 기존 열림 설정이 초기화되므로 그대로 둔다).
+  //     Snorkl 같은 외부 링크는 파일 번호와 겹치지 않게 9, 91, 92처럼 따로 번호를 붙였다.
+  { chapter:'VIII. 확률', groups:[
+      { title:'', items:[
+        {n:21, label:1, title:'동전을 계속 던지면 어떻게 될까?', file:'student21.html'}
+      ]}
+  ]},
+  { chapter:'VI. 사각형의 성질', groups:[
+      { title:'', items:[
+        {n:11, label:1, title:'평행사변형의 성질', file:'student11.html'},
+        {n:12, label:2, title:'평행사변형의 성질 의사소통', file:'student12.html'},
+        {n:13, label:3, title:'평행사변형이 되는 조건 찾기', file:'student13.html'},
+        {n:14, label:4, title:'평행사변형의 조건 의사소통', file:'student14.html'},
+        {n:15, label:5, title:'여러 가지 사각형의 성질', file:'student15.html'},
+        {n:16, label:6, title:'여러 가지 사각형 그려보기', file:'student16.html'},
+        {n:17, label:7, title:'여러 가지 사각형의 성질 정리하기', file:'student17.html'},
+        {n:91, label:'🔗', title:'6. 사각형의 성질 (Snorkl)', external:true, url:'https://student.snorkl.app/cmenaz'},
+        {n:92, label:'🔗', title:'6단원 마무리하기 (Snorkl)', external:true, url:'https://student.snorkl.app/u8f4yb'}
+      ]}
+  ]},
   { chapter:'VI. 삼각형의 성질', groups:[
       { title:'', items:[
         {n:1, label:1, title:'이등변삼각형의 성질', file:'student1.html'},
@@ -131,22 +152,6 @@ const SECTIONS = [
         {n:8, label:8, title:'문제해결력 수행평가', file:'studentpa1.html'},
         {n:10, label:'📊', title:'문제해결평가 점수 확인', file:'resultpa1.html'},
         {n:9, label:'🔗', title:'문제풀이 (Snorkl)', external:true, url:'https://student.snorkl.app/zee6zw'}
-      ]}
-  ]},
-  { chapter:'VII. 사각형의 성질', groups:[
-      { title:'', items:[
-        {n:11, label:1, title:'평행사변형의 성질', file:'student11.html'},
-        {n:12, label:2, title:'평행사변형의 성질 의사소통', file:'student12.html'},
-        {n:13, label:3, title:'평행사변형이 되는 조건 찾기', file:'student13.html'},
-        {n:14, label:4, title:'평행사변형의 조건 의사소통', file:'student14.html'},
-        {n:15, label:5, title:'여러 가지 사각형의 성질', file:'student15.html'},
-        {n:16, label:6, title:'여러 가지 사각형 그려보기', file:'student16.html'},
-        {n:17, label:7, title:'여러 가지 사각형의 성질 정리하기', file:'student17.html'}
-      ]}
-  ]},
-  { chapter:'VIII. 경우의 수와 확률', groups:[
-      { title:'', items:[
-        {n:21, label:1, title:'동전을 계속 던지면 어떻게 될까?', file:'student21.html'}
       ]}
   ]}
 ];
