@@ -297,7 +297,7 @@ function toggleUnit(n, row, btn){
 
 /* ---------- 목차 대단원 접기/펼치기 상태 ---------- */
 const TOC_FOLD_KEY = 'ggb_mgmt_toc_fold_v1';
-const TOC_DEFAULT_CLOSED = ch => ch.includes('삼각형'); // 처음 기본값: 삼각형 단원만 접기
+const TOC_DEFAULT_CLOSED = ch => ch.includes('삼각형') || ch.includes('확률'); // 처음 기본값: 삼각형·확률 단원 접기
 let __tocFold = null;
 function loadFold(){ if(__tocFold) return __tocFold; try{ __tocFold = JSON.parse(localStorage.getItem(TOC_FOLD_KEY)||'{}') || {}; }catch(e){ __tocFold = {}; } return __tocFold; }
 function isChapterOpen(ch){ const f = loadFold(); return (ch in f) ? !!f[ch] : !TOC_DEFAULT_CLOSED(ch); }
@@ -308,7 +308,7 @@ function renderUnitList(){
   list.innerHTML = '';
   STANDALONE_UNITS.forEach(u=> list.appendChild(buildUnitRow(u)));
   SECTIONS.forEach(sec=>{
-    // 노션 토글처럼 대단원 제목을 누르면 접고 펼친다. 처음에는 삼각형 단원만 접혀 있고,
+    // 노션 토글처럼 대단원 제목을 누르면 접고 펼친다. 처음에는 삼각형·확률 단원이 접혀 있고,
     // 한 번 접거나 펼치면 이 기기에서 그 상태를 기억한다(TOC_FOLD_KEY).
     const open = isChapterOpen(sec.chapter);
     const chapterEl=document.createElement('div');
