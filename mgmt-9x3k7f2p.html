@@ -218,6 +218,7 @@ function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_') || 'x
 let currentRoom = null;
 let accessRef = null;
 let accessData = {}; // {unitNumber: true|false}
+let foldRef = null;   // rooms/{반}__access/fold (목차 접기/펼치기)
 
 function buildUnitRow(u){
   const row=document.createElement('div');
@@ -295,25 +296,37 @@ function toggleUnit(n, row, btn){
   });
 }
 
-/* ---------- 목차 대단원 접기/펼치기 상태 ---------- */
-const TOC_FOLD_KEY = 'ggb_mgmt_toc_fold_v1';
+/* ---------- 목차 대단원 접기/펼치기 (반별 실시간) ----------
+   반마다 Firebase rooms/{반}__access/fold/{대단원키} = true(펼침)/false(접힘)에 저장한다.
+   선생님(mgmt-9x3k7f2p.html)이 접고 펴면 그 반 학생 목차(student.html)도 실시간으로 똑같이 바뀐다.
+   저장된 값이 없는 대단원은 기본값(TOC_DEFAULT_CLOSED)을 따른다. */
 const TOC_DEFAULT_CLOSED = ch => ch.includes('삼각형') || ch.includes('확률'); // 처음 기본값: 삼각형·확률 단원 접기
-let __tocFold = null;
-function loadFold(){ if(__tocFold) return __tocFold; try{ __tocFold = JSON.parse(localStorage.getItem(TOC_FOLD_KEY)||'{}') || {}; }catch(e){ __tocFold = {}; } return __tocFold; }
-function isChapterOpen(ch){ const f = loadFold(); return (ch in f) ? !!f[ch] : !TOC_DEFAULT_CLOSED(ch); }
-function setChapterOpen(ch, open){ const f = loadFold(); f[ch] = open; try{ localStorage.setItem(TOC_FOLD_KEY, JSON.stringify(f)); }catch(e){} }
+let tocFoldRemote = {};
+const foldKey = ch => sanitize(ch);
+function isChapterOpen(ch){ const k = foldKey(ch); return (k in tocFoldRemote) ? !!tocFoldRemote[k] : !TOC_DEFAULT_CLOSED(ch); }
+function setChapterOpen(ch, open){
+  tocFoldRemote[foldKey(ch)] = open;
+  if(accessRef) accessRef.child('fold/'+foldKey(ch)).set(open).catch(()=>{});
+}
+function applyFoldToDom(){
+  document.querySelectorAll('.chapter-title.toggle').forEach(el=>{
+    const open = isChapterOpen(el.dataset.chapter);
+    el.classList.toggle('open', open);
+    if(el.nextElementSibling) el.nextElementSibling.classList.toggle('closed', !open);
+  });
+}
 
 function renderUnitList(){
   const list=document.getElementById('unitList');
   list.innerHTML = '';
   STANDALONE_UNITS.forEach(u=> list.appendChild(buildUnitRow(u)));
   SECTIONS.forEach(sec=>{
-    // 노션 토글처럼 대단원 제목을 누르면 접고 펼친다. 처음에는 삼각형·확률 단원이 접혀 있고,
-    // 한 번 접거나 펼치면 이 기기에서 그 상태를 기억한다(TOC_FOLD_KEY).
+    // 노션 토글처럼 대단원 제목을 누르면 접고 펼친다(반별 실시간 — 위 '목차 대단원 접기/펼치기' 참고).
     const open = isChapterOpen(sec.chapter);
     const chapterEl=document.createElement('div');
     chapterEl.className='chapter-title toggle' + (open ? ' open' : '');
     chapterEl.setAttribute('role','button'); chapterEl.tabIndex = 0;
+    chapterEl.dataset.chapter = sec.chapter;
     const caret=document.createElement('span'); caret.className='caret'; caret.textContent='▶';
     const label=document.createElement('span'); label.textContent=sec.chapter;
     const cnt=document.createElement('span'); cnt.className='cnt';
@@ -359,6 +372,11 @@ function goToUnitPage(room){
     firebase.auth().signInAnonymously().then(()=>{
       const roomKey = sanitize(room) + '__access';
       accessRef = firebase.database().ref('rooms/'+roomKey);
+      // 이 반의 목차 접기/펼치기 상태를 실시간으로 받는다(다른 기기에서 바꿔도 맞춰진다).
+      if(foldRef) foldRef.off();
+      tocFoldRemote = {};
+      foldRef = accessRef.child('fold');
+      foldRef.on('value', snap=>{ tocFoldRemote = snap.val() || {}; applyFoldToDom(); });
       accessRef.child('units').once('value').then(snap=>{
         accessData = snap.val() || {};
         renderUnitList();
