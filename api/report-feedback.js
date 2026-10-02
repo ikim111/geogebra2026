@@ -8,7 +8,7 @@
 // 을 등록하고 재배포(Redeploy)하면 적용된다. OpenAI API는 무료로 쓸 수 없어서 platform.openai.com
 // > Settings > Billing 에서 크레딧을 먼저 충전해야 한다.
 //
-// 요청 형식(POST, JSON): { title, intro, body, concl }
+// 요청 형식(POST, JSON): { title, intro, body, concl, sources:[{name, link}] }
 // 응답 형식(JSON): { text, counts:{title,intro,body,concl,total}, model }
 // - 글자 수는 띄어쓰기 포함, 연달아 친 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(student33.html과 같은 방식).
 //   AI는 글자 수를 정확히 세지 못하므로, 서버에서 센 글자 수를 보고서 끝에 함께 적어 보낸다
@@ -176,6 +176,9 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const sources = (Array.isArray(b.sources) ? b.sources : []).slice(0, 15)
+    .map(x => ({ name: String((x && x.name) || '').slice(0, 300).trim(), link: String((x && x.link) || '').slice(0, 500).trim() }))
+    .filter(x => x.name || x.link);
   const counts = { title: countChars(title), intro: countChars(intro), body: countChars(body), concl: countChars(concl) };
   counts.total = counts.intro + counts.body + counts.concl;
   const none = '(작성하지 않음)';
@@ -184,6 +187,7 @@ module.exports = async (req, res) => {
     `[서론]\n${intro || none}\n\n` +
     `[본론]\n${body || none}\n\n` +
     `[결론]\n${concl || none}\n\n` +
+    `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}`).join('\n') : none}\n\n` +
     `(참고 — 프로그램이 센 글자 수, 띄어쓰기 포함: 서론 ${counts.intro}자, 본론 ${counts.body}자, 결론 ${counts.concl}자, 서론+본론+결론 합계 ${counts.total}자)`;
   // replace에 함수를 넘겨서 학생 글 속의 $& 같은 특수 패턴이 해석되지 않게 한다.
   const prompt = PROMPT_TEMPLATE.replace('{{학생보고서}}', () => report);

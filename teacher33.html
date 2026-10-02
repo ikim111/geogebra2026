@@ -356,13 +356,14 @@ const str = x => (typeof x==='string' ? x : '');
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // student33.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
 const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:200}, {k:'body', name:'본론', min:500}, {k:'concl', name:'결론', min:200} ];
 const TOTAL_MIN = 1000;
-const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl) }; };
+const srcOf = s => { const d=(s&&s.data)||{}; return Array.isArray(d.sources) ? d.sources.filter(x=>x && (str(x.name).trim()||str(x.link).trim())).map(x=>({name:str(x.name).trim(), link:str(x.link).trim()})) : []; };
+const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl), sources: srcOf(s) }; };
 const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r.body)+countChars(r.concl); };
 const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
 const aiPending = new Set(); // 지금 AI 피드백을 받아오는 중인 학생 key
 
 /* 보고서 내용 지문(글이 바뀌었는지 비교용) */
-function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
 const fbOf = s => (s && s.aiFeedback && s.aiFeedback.text) ? s.aiFeedback : null;
 const changedSinceFb = s => { const fb=fbOf(s); return !!fb && fb.hash!==undefined && fb.hash!==repHash(s); };
 /* ---------- AI 피드백 글을 읽기 좋게 그리기 (student33·teacher33 공통 — 두 파일을 똑같이 유지) ----------
@@ -432,6 +433,10 @@ function activityDetailHTML(s, id, key){
     h += `<h4><span>[${x.name}]</span><span class="c${short?' short':''}">${n.toLocaleString()}자${x.min?` / ${x.min}자 이상`:''}</span></h4>` +
          `<div class="v${r[x.k].trim()?'':' none'}">${r[x.k].trim()?esc(r[x.k]):'(비어 있음)'}</div>`;
   });
+  const srcs = r.sources;
+  h += `<h4><span>[자료 출처]</span><span class="c${srcs.length<2?' short':''}">${srcs.length}개</span></h4>` + (srcs.length
+    ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
+    : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
   return h + (key ? aiBoxHTML(key, s) : '');
 }
