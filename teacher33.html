@@ -118,7 +118,6 @@
   .ai-box .ai-note{font-size:12px;color:#777;font-weight:normal;}
   button.ai{background:#5e35b1;color:#fff;font-weight:bold;}
   button.ai:disabled{background:#c5bce0;cursor:not-allowed;}
-  button.ai-reset{background:transparent;color:#888;border:1px solid #ccc;padding:4px 10px;font-size:12px;}
   .agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#fffbe6;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#5d4200;}
   .agg b{font-size:16px;color:#8d6e00;}
   .flipseq{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -173,7 +172,7 @@
 
 <header>
   <h1>📊 교사용 실시간 대시보드 — 33. 확률 탐구 글쓰기 ② 보고서 제출</h1>
-  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, 제출한 학생에게 AI 피드백을 1회 보내요</p>
+  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, 제출한 학생에게 AI 피드백을 보내요</p>
 </header>
 
 <div class="wrap">
@@ -263,7 +262,7 @@
         <div id="teacherTaskLabel" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
       </div>
       <div class="teacher-col">
-        <div class="teacher-col-title">✏️ 학생 보고서 전체 (제출한 학생은 🤖 AI 피드백을 1회 보낼 수 있어요 · ● 지금 보는 중)</div>
+        <div class="teacher-col-title">✏️ 학생 보고서 전체 (제출한 학생에게 🤖 AI 피드백을 보낼 수 있어요 · ● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
       </div>
     </div>
@@ -292,10 +291,10 @@
    student33.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
    teacher32.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
    - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 줄바꿈 제외)를 보여준다.
-   - 🤖 AI 피드백: 제출한 학생에게만, 학생당 1회. /api/report-feedback(Vercel 서버 함수, Gemini)을
-     호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total}에 저장하면
-     student33.html에 바로 나타난다. aiFeedback이 이미 있으면 버튼이 잠긴다(1회 제한).
-     "↺ 기회 되돌리기"는 실수로 보낸 경우를 위한 것(지우면 다시 보낼 수 있음).
+   - 🤖 AI 피드백: 제출한 학생에게 보낸다(횟수 제한 없음). /api/report-feedback(Vercel 서버 함수, OpenAI)을
+     호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total, n, hash}에 저장하면
+     student33.html에 바로 나타난다(가장 최근 피드백만 보관, n = 몇 번째 피드백인지).
+     hash는 피드백을 받을 때의 보고서 내용 지문 — 일괄 보내기는 "아직 못 받은 학생 + 받은 뒤 글을 고친 학생"만 보낸다.
    반드시 아래 두 가지를 student33.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -340,18 +339,23 @@ const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r
 const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
 const aiPending = new Set(); // 지금 AI 피드백을 받아오는 중인 학생 key
 
+/* 보고서 내용 지문(글이 바뀌었는지 비교용) */
+function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+const fbOf = s => (s && s.aiFeedback && s.aiFeedback.text) ? s.aiFeedback : null;
+const changedSinceFb = s => { const fb=fbOf(s); return !!fb && fb.hash!==undefined && fb.hash!==repHash(s); };
 /* AI 피드백 상자(보내기 버튼 포함). key가 있어야 버튼을 만든다. */
 function aiBoxHTML(key, s){
-  const fb = s && s.aiFeedback;
-  if(fb && fb.text){
+  const fb = fbOf(s);
+  const can = !!(s && s.submitted && hasReport(s)) && !aiPending.has(key);
+  if(aiPending.has(key)) return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI가 피드백을 쓰는 중이에요… (보통 10~40초)</span></div>${fb?`<div class="ai-txt" style="opacity:.5;">${esc(fb.text)}</div>`:''}</div>`;
+  if(fb){
     const when = fb.ts ? new Date(fb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 보냄 <span class="ai-note">${esc(when)}${fb.total!=null?` · 보낼 때 ${fb.total}자`:''}</span></span>
-      <button class="ai-reset" data-ai-reset="${esc(key)}" title="실수로 보냈을 때만 — 지우면 이 학생에게 다시 보낼 수 있어요">↺ 기회 되돌리기</button></div>
+    const tag = changedSinceFb(s) ? ' · <b style="color:#e65100;">피드백 받은 뒤 글을 고침</b>' : '';
+    return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 ${fb.n?fb.n+'번째 ':''}보냄 <span class="ai-note">${esc(when)}${fb.total!=null?` · 보낼 때 ${fb.total}자`:''}${tag}</span></span>
+      <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'} title="${s.submitted?'지금 글로 피드백을 새로 받아 학생 화면의 피드백을 바꿔요':'학생이 다시 제출하면 보낼 수 있어요'}">🔁 다시 보내기</button></div>
       <div class="ai-txt">${esc(fb.text)}</div></div>`;
   }
-  if(aiPending.has(key)) return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI가 피드백을 쓰는 중이에요… (보통 10~40초)</span></div></div>`;
-  const can = !!(s && s.submitted && hasReport(s));
-  const why = !hasReport(s) ? '아직 쓴 내용이 없어요' : (!s.submitted ? '학생이 제출하면 보낼 수 있어요' : '학생당 1회만 보낼 수 있어요');
+  const why = !hasReport(s) ? '아직 쓴 내용이 없어요' : (!s.submitted ? '학생이 제출하면 보낼 수 있어요' : '');
   return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 <span class="ai-note">${why}</span></span>
     <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'}>🤖 AI 피드백 보내기</button></div></div>`;
 }
@@ -368,7 +372,8 @@ function activityDetailHTML(s, id, key){
   return h + (key ? aiBoxHTML(key, s) : '');
 }
 /* 요약 패널 */
-function eligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; return s.submitted && hasReport(s) && !(s.aiFeedback&&s.aiFeedback.text) && !aiPending.has(k); }); }
+/* 일괄 보내기 대상: 제출했고, 아직 피드백을 못 받았거나 받은 뒤 글을 고친 학생 */
+function eligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; return s.submitted && hasReport(s) && !aiPending.has(k) && (!fbOf(s) || changedSinceFb(s)); }); }
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'flex' : 'none';
@@ -377,26 +382,26 @@ function renderAggregate(){
   document.getElementById('aggLong').textContent = list.filter(s=>totalOf(s)>=TOTAL_MIN).length;
   document.getElementById('aggAi').textContent = list.filter(s=>s.aiFeedback&&s.aiFeedback.text).length;
   const n = eligibleKeys().length, btn = document.getElementById('aiBulkBtn');
-  btn.textContent = `🤖 제출한 학생 모두에게 AI 피드백 보내기 (${n}명)`;
+  btn.textContent = `🤖 AI 피드백 일괄 보내기 — 아직 못 받았거나 고쳐서 다시 낸 학생 (${n}명)`;
   btn.disabled = n===0 || aiBulkRunning;
 }
 
-/* ---------- 🤖 AI 피드백 보내기 (학생당 1회) ---------- */
+/* ---------- 🤖 AI 피드백 보내기 (횟수 제한 없음 — 다시 보내면 최신 피드백으로 바뀜) ---------- */
 let aiBulkRunning = false;
 async function requestAI(key){
   const s = allStudents[key];
   if(!s || !s.submitted || !hasReport(s) || aiPending.has(key)) return false;
   const fbRef = db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiFeedback');
-  const existing = (await fbRef.once('value')).val();
-  if(existing && existing.text) return false; // 다른 창에서 이미 보냄 → 1회 제한
+  const prevN = (fbOf(s) && fbOf(s).n) || (fbOf(s) ? 1 : 0);
   aiPending.add(key); refreshAI();
   try{
     const r = repOf(s);
     const res = await fetch('/api/report-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(r) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.text) throw new Error(j.error || ('HTTP '+res.status));
-    await fbRef.set({ text: j.text, ts: Date.now(), total: totalOf(s) });
-    if(allStudents[key]) allStudents[key].aiFeedback = { text: j.text, ts: Date.now(), total: totalOf(s) };
+    const fb = { text: j.text, ts: Date.now(), total: totalOf(s), n: prevN + 1, hash: repHash(s) };
+    await fbRef.set(fb);
+    if(allStudents[key]) allStudents[key].aiFeedback = fb;
     return true;
   }catch(err){
     throw new Error(`${s.name||key}: ${err.message||err}`);
@@ -407,31 +412,26 @@ async function requestAI(key){
 function refreshAI(){ renderAggregate(); renderTeacherView(); refreshOpenModal(); }
 document.addEventListener('click', async e=>{
   const send = e.target.closest && e.target.closest('[data-ai-send]');
-  const reset = e.target.closest && e.target.closest('[data-ai-reset]');
-  if(!send && !reset) return;
+  if(!send) return;
   e.stopPropagation(); e.preventDefault();
-  if(send){
-    const key = send.dataset.aiSend, s = allStudents[key]||{};
-    if(!confirm(`${s.name||key} 학생에게 AI 피드백을 보낼까요?\n(학생당 1회 — 보내면 학생 화면에 바로 나타나요)`)) return;
-    try{ await requestAI(key); }catch(err){ alert('AI 피드백을 받지 못했어요.\n'+err.message+'\n\n잠시 후 다시 눌러 보세요(실패한 경우는 1회에 포함되지 않아요).'); }
-  } else {
-    const key = reset.dataset.aiReset, s = allStudents[key]||{};
-    if(!confirm(`${s.name||key} 학생의 AI 피드백을 지울까요?\n지우면 학생 화면에서도 사라지고, 다시 1회 보낼 수 있게 돼요.`)) return;
-    await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiFeedback').set(null);
-    if(allStudents[key]) delete allStudents[key].aiFeedback;
-    refreshAI();
-  }
+  const key = send.dataset.aiSend, s = allStudents[key]||{};
+  const fb = fbOf(s);
+  const msg = !fb ? `${s.name||key} 학생에게 AI 피드백을 보낼까요?\n(보내면 학생 화면에 바로 나타나요)`
+    : (changedSinceFb(s) ? `${s.name||key} 학생이 고친 글로 AI 피드백을 다시 받을까요?\n(학생 화면의 피드백이 새 피드백으로 바뀌어요)`
+                         : `${s.name||key} 학생의 글이 지난 피드백 이후 바뀌지 않았어요.\n그래도 AI 피드백을 다시 받을까요? (학생 화면의 피드백이 바뀌어요)`);
+  if(!confirm(msg)) return;
+  try{ await requestAI(key); }catch(err){ alert('AI 피드백을 받지 못했어요.\n'+err.message+'\n\n잠시 후 다시 눌러 보세요.'); }
 }, true);
 document.getElementById('aiBulkBtn').addEventListener('click', async ()=>{
   const keys = eligibleKeys(); if(!keys.length) return;
-  if(!confirm(`제출했고 아직 AI 피드백을 받지 않은 학생 ${keys.length}명에게 AI 피드백을 보낼까요?\n(학생당 1회, 한 번에 3명씩 처리해요)`)) return;
+  if(!confirm(`아직 AI 피드백을 못 받았거나, 받은 뒤 글을 고쳐 다시 제출한 학생 ${keys.length}명에게 AI 피드백을 보낼까요?\n(한 번에 3명씩 처리해요)`)) return;
   aiBulkRunning = true; renderAggregate();
   const st = document.getElementById('aiBulkStatus');
   let ok=0, fail=[], i=0;
   const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestAI(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `진행 중… ${ok+fail.length}/${keys.length}`; } };
   await Promise.all([worker(),worker(),worker()]);
   aiBulkRunning = false; renderAggregate();
-  st.textContent = `완료: ${ok}명 보냄` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 보내요)` : '');
+  st.textContent = `완료: ${ok}명 보냄` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생에게 다시 보내요)` : '');
   if(fail.length) console.warn('AI 피드백 실패:', fail);
 });
 let tdmKey = null;

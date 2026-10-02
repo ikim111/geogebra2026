@@ -1,16 +1,22 @@
 // Vercel 서버리스 함수: teacher33.html의 "🤖 AI 피드백 보내기" 버튼이 호출하는 엔드포인트.
 // 학생 보고서(제목·서론·본론·결론)를 받아, 선생님이 정한 프롬프트(아래 PROMPT_TEMPLATE)로
-// Gemini에게 피드백을 받아 돌려준다. 키는 grade-justify.js와 같은 Vercel 환경변수 GEMINI_API_KEY를 쓴다.
-// (브라우저에 키가 노출되지 않도록 서버 함수 안에서만 사용)
+// OpenAI에게 피드백을 받아 돌려준다. (API 키는 브라우저에 노출되지 않도록 이 서버 함수 안에서만 사용)
+//
+// [설정 방법] Vercel 프로젝트 > Settings > Environment Variables 에
+//   OPENAI_API_KEY = platform.openai.com 에서 발급한 API 키   (필수)
+//   OPENAI_MODEL   = 사용할 모델 ID                           (선택, 비우면 DEFAULT_MODEL)
+// 을 등록하고 재배포(Redeploy)하면 적용된다. OpenAI API는 무료로 쓸 수 없어서 platform.openai.com
+// > Settings > Billing 에서 크레딧을 먼저 충전해야 한다.
 //
 // 요청 형식(POST, JSON): { title, intro, body, concl }
-// 응답 형식(JSON): { text, counts:{title,intro,body,concl,total} }
+// 응답 형식(JSON): { text, counts:{title,intro,body,concl,total}, model }
 // - 글자 수는 띄어쓰기 포함, 줄바꿈 제외(student33.html의 글자 수 세기와 같은 방식).
 //   AI는 글자 수를 정확히 세지 못하므로, 서버에서 센 글자 수를 보고서 끝에 함께 적어 보낸다
 //   (채점 기준 4의 "1000자 이상 작성되었는가?"를 AI가 정확하게 판단할 수 있게).
-// - 1회 제한은 teacher33.html이 Firebase(students/{key}/aiFeedback)로 관리한다.
 
-const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+// 가장 저렴한 최신 모델(2026-10 기준 입력 100만 토큰당 $0.10, 출력 $0.50 — 보고서 1편 피드백에 약 2~3원).
+// 더 꼼꼼한 피드백을 원하면 Vercel 환경변수 OPENAI_MODEL에 더 큰 모델 ID를 넣으면 된다.
+const DEFAULT_MODEL = 'gpt-6-luna';
 const MAX_FIELD = 12000; // 한 칸 최대 글자 수(비정상적으로 긴 입력 방지)
 
 // ↓ 선생님이 준 프롬프트 원문 그대로. {{학생보고서}} 자리에 학생 보고서가 들어간다.
@@ -203,11 +209,12 @@ module.exports = async (req, res) => {
     res.status(405).json({ error: 'POST 요청만 지원합니다.' });
     return;
   }
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다. Vercel 프로젝트 환경변수를 확인해주세요.' });
+    res.status(500).json({ error: 'OPENAI_API_KEY가 설정되지 않았습니다. Vercel 프로젝트 환경변수를 확인해주세요.' });
     return;
   }
+  const model = (process.env.OPENAI_MODEL || DEFAULT_MODEL).trim();
 
   let b = req.body;
   if (typeof b === 'string') {
@@ -233,29 +240,42 @@ module.exports = async (req, res) => {
   // replace에 함수를 넘겨서 학생 글 속의 $& 같은 특수 패턴이 해석되지 않게 한다.
   const prompt = PROMPT_TEMPLATE.replace('{{학생보고서}}', () => report);
 
+  // OpenAI Chat Completions 호출. 추론(reasoning) 모델이면 추론을 '낮음'으로 해서 빠르고 싸게.
+  // 모델이 reasoning_effort를 지원하지 않아 400이 나면 그 옵션을 빼고 한 번 더 시도한다.
+  const call = (withEffort) => fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify(Object.assign(
+      { model, messages: [{ role: 'user', content: prompt }], max_completion_tokens: 8000 },
+      withEffort ? { reasoning_effort: 'low' } : {}
+    ))
+  });
+
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
-      })
-    });
+    let r = await call(true);
+    if (r.status === 400) {
+      const t = await r.text();
+      if (/reasoning/i.test(t)) r = await call(false);
+      else { res.status(502).json({ error: 'OpenAI API 호출 실패', detail: t.slice(0, 1000) }); return; }
+    }
     if (!r.ok) {
       const errText = await r.text();
-      res.status(502).json({ error: 'Gemini API 호출 실패', detail: errText.slice(0, 1000) });
+      let hint = '';
+      if (r.status === 401) hint = ' (API 키가 올바르지 않아요)';
+      else if (r.status === 429) hint = /quota|billing/i.test(errText) ? ' (크레딧이 없거나 사용 한도를 넘었어요 — OpenAI 결제를 확인하세요)' : ' (요청이 너무 많아요 — 잠시 후 다시 시도하세요)';
+      else if (r.status === 404) hint = ` (모델 '${model}'을 쓸 수 없어요 — OPENAI_MODEL을 확인하세요)`;
+      res.status(502).json({ error: 'OpenAI API 호출 실패' + hint, detail: errText.slice(0, 1000) });
       return;
     }
     const data = await r.json();
-    const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-    const text = Array.isArray(parts) ? parts.map(p => (p && p.text) || '').join('').trim() : '';
+    const msg = data && data.choices && data.choices[0] && data.choices[0].message;
+    const text = (msg && typeof msg.content === 'string') ? msg.content.trim() : '';
     if (!text) {
-      res.status(502).json({ error: 'Gemini 응답에 피드백이 없습니다.' });
+      const why = data && data.choices && data.choices[0] && data.choices[0].finish_reason;
+      res.status(502).json({ error: 'OpenAI 응답에 피드백이 없습니다.' + (why ? ` (finish_reason: ${why})` : '') });
       return;
     }
-    res.status(200).json({ text, counts });
+    res.status(200).json({ text, counts, model: data.model || model });
   } catch (err) {
     res.status(500).json({ error: err.message || String(err) });
   }
