@@ -106,8 +106,29 @@
   #aiCard{display:none;border:2px solid #7e57c2;}
   #aiCard .ai-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:bold;color:#4527a0;font-size:16px;margin-bottom:6px;}
   #aiCard .ai-time{font-size:12px;color:#999;font-weight:normal;}
-  #aiText{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.75;background:#f7f4fd;border-radius:8px;padding:12px 14px;}
+  #aiText{word-break:break-word;background:#f7f4fd;border-radius:10px;padding:12px;}
   #aiCard .ai-note{font-size:12.5px;color:#6a6a66;margin-top:8px;}
+  /* ---- AI 피드백 읽기 좋게(student33·teacher33 공통) ---- */
+  .fb{font-size:14.5px;line-height:1.65;color:#222;white-space:normal;}
+  .fb-note{font-size:12.5px;color:#6a6a66;background:#f4f2f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+  .fb-sec{background:#fff;border:1px solid #e3def0;border-radius:10px;padding:10px 14px;margin:8px 0;}
+  .fb-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:bold;color:#4527a0;margin-bottom:4px;}
+  .fb-score{background:#ede7f6;color:#4527a0;border-radius:12px;padding:1px 10px;font-size:13.5px;white-space:nowrap;}
+  .fb-row{display:flex;gap:8px;align-items:flex-start;margin:6px 0;}
+  .fb-tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-row.good .fb-tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-row.fix .fb-tag{background:#fff3e0;color:#e65100;}
+  .fb-row.ask .fb-tag{background:#e3f2fd;color:#1565c0;}
+  .fb p{margin:3px 0;}
+  .fb-li{margin:3px 0 3px 4px;}
+  .fb-sec.total{background:#4527a0;border-color:#4527a0;}
+  .fb-sec.total .fb-hd{color:#fff;margin:0;}
+  .fb-sec.total .fb-score{background:#fff;color:#4527a0;font-size:16px;}
+  .fb-sec.total p{color:#ddd5f3;font-size:12px;margin:4px 0 0;}
+  .fb-sec.first{border-left:5px solid #e65100;}
+  .fb-sec.st-ok{border-left:5px solid #2e7d32;background:#f3faf3;}
+  .fb-sec.st-mid{border-left:5px solid #f0a500;background:#fffaf0;}
+  .fb-sec.st-bad{border-left:5px solid #c62828;background:#fff6f6;}
 </style>
 </head>
 <body>
@@ -317,11 +338,53 @@ function renderPrep(d){
   }
   box.innerHTML = h;
 }
+/* ---------- AI 피드백 글을 읽기 좋게 그리기 (student33·teacher33 공통 — 두 파일을 똑같이 유지) ----------
+   [제목] ○/3점 → 항목 카드, 👍/🔧/❓ 줄 → "잘된 점/보완할 점/생각해 볼 질문" 표시, ※ 안내문 → 회색 상자.
+   예상하지 못한 형식이어도 줄글로 그대로 보여 준다(내용이 사라지지 않음). */
+function renderFeedbackHTML(text){
+  const e = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const KIND = [['👍','good','잘된 점'],['🔧','fix','보완할 점'],['❓','ask','생각해 볼 질문']];
+  const SCORE = /^(\d+|○)\s*\/\s*(\d+)\s*점?/;
+  const lines = String(text||'').replace(/\*\*/g,'').split(/\r?\n/).map(l=>l.replace(/^#+\s*/,'').trim());
+  let html = '', notice = [], sec = null;
+  const close = ()=>{
+    if(!sec) return;
+    let cls = '';
+    if(/예상 점수/.test(sec.title)) cls = ' total';
+    else if(/가장 먼저/.test(sec.title)) cls = ' first';
+    else if(/제출 상태/.test(sec.title)) cls = /중요한 보완/.test(sec.plain) ? ' st-bad' : (/일부/.test(sec.plain) ? ' st-mid' : ' st-ok');
+    html += `<div class="fb-sec${cls}"><div class="fb-hd"><span>${e(sec.title)}</span>${sec.score?`<b class="fb-score">${e(sec.score)}</b>`:''}</div>${sec.body}</div>`;
+    sec = null;
+  };
+  const addText = (t)=>{
+    if(!sec) return;
+    const sm = (!sec.score) && t.match(/^(?:예상 점수\s*[:：]\s*)?((?:\d+|○)\s*\/\s*\d+\s*점?)\s*(.*)$/);
+    if(sm && (/예상 점수/.test(t) || /예상 점수/.test(sec.title))){ sec.score = sm[1].replace(/\s+/g,''); if(sm[2]) addText(sm[2]); return; }
+    sec.plain += ' ' + t;
+    const k = KIND.find(x=> t.startsWith(x[0]));
+    if(k){ const rest = t.slice(k[0].length).replace(/^[\s:：]+/,''); if(!rest || /^없음\.?$/.test(rest)) return;
+      sec.body += `<div class="fb-row ${k[1]}"><span class="fb-tag">${k[2]}</span><span>${e(rest)}</span></div>`; return; }
+    if(/^[-•·]\s+/.test(t)){ sec.body += `<div class="fb-li">• ${e(t.replace(/^[-•·]\s+/,''))}</div>`; return; }
+    sec.body += `<p>${e(t)}</p>`;
+  };
+  for(const l of lines){
+    if(!l || /^[─━—=\-]{3,}$/.test(l)) continue;
+    const h = l.match(/^\[([^\]]+)\]\s*(.*)$/);
+    if(h){ close(); sec = {title:h[1].trim(), score:'', body:'', plain:''};
+      const rest = h[2].trim(); if(rest){ const sm = rest.match(SCORE); if(sm){ sec.score = sm[0].replace(/\s+/g,''); const after = rest.slice(sm[0].length).trim(); if(after) addText(after); } else addText(rest); }
+      continue; }
+    if(!sec){ notice.push(l); continue; }
+    addText(l);
+  }
+  close();
+  return `<div class="fb">${notice.length?`<div class="fb-note">${notice.map(e).join('<br>')}</div>`:''}${html}</div>`;
+}
+
 /* 선생님이 보낸 AI 피드백 */
 function renderAI(fb){
   const card = $('aiCard');
   if(!fb || !fb.text){ card.style.display='none'; return; }
-  $('aiText').textContent = fb.text;
+  $('aiText').innerHTML = renderFeedbackHTML(fb.text);
   $('aiTime').textContent = (fb.n>1 ? fb.n+'번째 피드백 · ' : '') + (fb.ts ? new Date(fb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '');
   card.style.display = 'block';
 }
