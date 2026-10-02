@@ -290,7 +290,7 @@
 /* ============================================================
    student33.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
    teacher32.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
-   - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 줄바꿈 제외)를 보여준다.
+   - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈 제외)를 보여준다.
    - 🤖 AI 피드백: 제출한 학생에게 보낸다(횟수 제한 없음). /api/report-feedback(Vercel 서버 함수, OpenAI)을
      호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total, n, hash}에 저장하면
      student33.html에 바로 나타난다(가장 최근 피드백만 보관, n = 몇 번째 피드백인지).
@@ -331,7 +331,7 @@ function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+
 /* ---------- 학생 보고서 표시 (student33.html의 data 필드) ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const str = x => (typeof x==='string' ? x : '');
-const countChars = s => Array.from(str(s).replace(/\r?\n/g,'')).length; // student33.html과 같은 방식
+const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // student33.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
 const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:200}, {k:'body', name:'본론', min:500}, {k:'concl', name:'결론', min:200} ];
 const TOTAL_MIN = 1000;
 const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl) }; };

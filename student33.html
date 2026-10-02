@@ -189,7 +189,7 @@
 
   <div class="card">
     <div class="task-head"><h2>📄 확률 탐구 보고서</h2><span class="badge pending" id="badge-r1">미완료</span></div>
-    <p class="hint">글자 수는 <b>띄어쓰기 포함</b>(줄바꿈 제외)으로 실시간으로 세어져요. 칸은 글이 길어지면 저절로 늘어나요. 쓰는 내용은 자동 저장돼요.</p>
+    <p class="hint">글자 수는 <b>띄어쓰기 포함</b>으로 실시간으로 세어져요(띄어쓰기를 여러 번 연달아 쳐도 1자, 줄바꿈은 세지 않아요). 칸은 글이 길어지면 저절로 늘어나요. 쓰는 내용은 자동 저장돼요.</p>
 
     <div class="sec">
       <div class="sec-head"><span class="lab">[제목]</span><span class="cnt" id="cnt-title">0자</span></div>
@@ -235,7 +235,7 @@
    [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~32번 단원과 같은 틀(게이트·단원 잠금·
    실시간 저장·일시정지·공지·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 글상자는 내용에 맞춰 저절로 늘어난다(안쪽 스크롤 없음).
-   - 글자 수: 띄어쓰기 포함, 줄바꿈 제외(api/report-feedback.js의 countChars와 같은 방식).
+   - 글자 수: 띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(api/report-feedback.js의 countChars와 같은 방식).
    - 32번(ACTIVITY_SUFFIX '__prob32')의 data를 읽어 개요·자료를 참고용으로 보여준다(읽기만 함).
    - teacher33.html이 AI 피드백을 students/{key}/aiFeedback = {text, ts, n, ...}에 저장하면 실시간으로 보여준다(가장 최근 것).
    ACTIVITY_SUFFIX는 teacher33.html과 반드시 동일해야 한다.
@@ -261,7 +261,9 @@ const SECS = [ {k:'title', min:0}, {k:'intro', min:200}, {k:'body', min:500}, {k
 const TOTAL_MIN = 1000;
 const state = { f:{ title:'', intro:'', body:'', concl:'' } };
 const $ = id => document.getElementById(id);
-const countChars = s => Array.from(String(s||'').replace(/\r?\n/g,'')).length; // 띄어쓰기 포함, 줄바꿈 제외
+// 글자 수: 띄어쓰기 포함. 단, 연달아 친 띄어쓰기는 1자로 세고, 줄 앞뒤 공백과 줄바꿈은 세지 않는다.
+// (api/report-feedback.js, teacher33.html의 countChars와 반드시 같아야 한다)
+const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length;
 const cnt = k => countChars(state.f[k]);
 const totalCount = () => cnt('intro') + cnt('body') + cnt('concl');
 function missing(){

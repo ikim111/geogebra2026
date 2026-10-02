@@ -10,7 +10,7 @@
 //
 // 요청 형식(POST, JSON): { title, intro, body, concl }
 // 응답 형식(JSON): { text, counts:{title,intro,body,concl,total}, model }
-// - 글자 수는 띄어쓰기 포함, 줄바꿈 제외(student33.html의 글자 수 세기와 같은 방식).
+// - 글자 수는 띄어쓰기 포함, 연달아 친 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(student33.html과 같은 방식).
 //   AI는 글자 수를 정확히 세지 못하므로, 서버에서 센 글자 수를 보고서 끝에 함께 적어 보낸다
 //   (채점 기준 4의 "1000자 이상 작성되었는가?"를 AI가 정확하게 판단할 수 있게).
 
@@ -202,7 +202,7 @@ AI의 역할은 글을 더 그럴듯하게 만들어 주는 것이 아니라 학
 학생의 보고서:
 {{학생보고서}}`;
 
-const countChars = s => Array.from(String(s || '').replace(/\r?\n/g, '')).length;
+const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
