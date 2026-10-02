@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</title>
+<title>22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -154,7 +154,7 @@
 <div id="gateScreen">
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
-    <h1>32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</h1>
+    <h1>22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</h1>
     <p class="gate-sub">탐구 질문을 만들고, 계획을 세우고, 자료를 모아 분석한 뒤 개요를 써 봅시다 — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
@@ -178,7 +178,7 @@
   <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
   <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
   <div id="stickyBar">
-    <div id="unitTitleBar">32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</div>
+    <div id="unitTitleBar">22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</div>
     <div class="sticky-controls">
       <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn">◀ 이전</button>
@@ -377,15 +377,15 @@
 
 <script>
 /* ============================================================
-   32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구 (VIII. 확률 — 수행평가 보고서 쓰기 전 단계)
+   22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구 (VIII. 확률 — 수행평가 보고서 쓰기 전 단계)
    선생님 활동지(step1 탐구 질문 만들기 / step2 탐구 계획하기 / step3 자료 수집·분석하기 /
    step4 개요 작성)를 4개 화면으로 옮겼다. 11~21번 단원과 같은 틀(게이트·단원 잠금·실시간 저장·
    일시정지·공지·속도조절·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 화면 이동은 자유롭다(step을 오가며 고칠 수 있음). 완료 조건은 배지·진행률에만 쓴다.
    - 입력은 자동 저장(students/{key}/data). 새로고침하면 그대로 되살아난다.
-   - student33.html(보고서 제출)이 이 단원의 data(개요·자료 출처)를 읽어 참고용으로 보여준다
-     → ACTIVITY_SUFFIX와 data 필드 이름을 바꾸면 student33.html도 함께 고쳐야 한다.
-   ACTIVITY_SUFFIX는 teacher32.html과 반드시 동일해야 한다.
+   - student23.html(보고서 제출)이 이 단원의 data(개요·자료 출처)를 읽어 참고용으로 보여준다
+     → ACTIVITY_SUFFIX와 data 필드 이름을 바꾸면 student23.html도 함께 고쳐야 한다.
+   ACTIVITY_SUFFIX는 teacher22.html과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
@@ -399,9 +399,10 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__prob32'; // teacher32.html, student33.html과 반드시 동일해야 함
-const UNIT_LABEL = '32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구';
-const UNIT_NO = 32;
+const ACTIVITY_SUFFIX = '__prob32'; // teacher22.html, student23.html과 반드시 동일해야 함
+// ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
+const UNIT_LABEL = '22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구';
+const UNIT_NO = 22;
 const TASKS = [
   {id:1, key:'s1', title:'step1 탐구 질문 만들기'},
   {id:2, key:'s2', title:'step2 탐구 계획하기'},

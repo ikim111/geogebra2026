@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교사용 실시간 대시보드 — 32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</title>
+<title>교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -103,20 +103,22 @@
   .text-answer-item .ta-status.pending{background:#fff3e0;color:var(--orange);}
   .text-answer-item .ta-text{font-size:13px;color:#333;white-space:pre-wrap;word-break:break-word;}
   .text-answer-empty{color:#999;font-size:13.5px;text-align:center;padding:24px 10px;}
-  .rec h4{font-size:13px;margin:10px 0 4px;color:#1a237e;border-bottom:1px solid #e3e6ea;padding-bottom:2px;}
-  .rec h4:first-child{margin-top:0;}
-  .rec .row2{display:grid;grid-template-columns:110px 1fr;gap:6px;font-size:13px;margin:3px 0;}
-  .rec .row2 .k{color:#777;font-weight:bold;}
-  .rec .row2 .v{white-space:pre-wrap;word-break:break-word;color:#222;}
-  .rec .v.none{color:#bbb;}
-  .rec table.t{border-collapse:collapse;font-size:12.5px;width:100%;margin:4px 0;}
-  .rec table.t th,.rec table.t td{border:1px solid #d5d9de;padding:4px 6px;vertical-align:top;text-align:left;white-space:pre-wrap;word-break:break-word;}
-  .rec table.t th{background:#f0f2f5;font-size:11.5px;color:#555;}
-  .rec .src{border:1px solid #e3e6ea;border-radius:8px;padding:6px 10px;margin:6px 0;}
-  .rec .src a{color:#1565c0;word-break:break-all;}
-  .rec .chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:9px;margin:1px 2px;background:#f0f2f5;color:#555;}
-  .rec .chip.o{background:#e8f1fc;color:#1565c0;} .rec .chip.t{background:#fff8e1;color:#b07800;} .rec .chip.x{background:#ffebee;color:#c62828;}
-  .rec .miss{font-size:12px;color:#e65100;margin-top:6px;}
+  .rep h4{font-size:13.5px;margin:12px 0 4px;color:#1a237e;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e3e6ea;padding-bottom:2px;}
+  .rep h4:first-child{margin-top:0;}
+  .rep h4 .c{font-weight:normal;font-size:12px;color:#888;}
+  .rep h4 .c.short{color:#e65100;font-weight:bold;}
+  .rep .v{font-size:13.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:#222;}
+  .rep .v.none{color:#bbb;}
+  .rep .tot{font-size:13px;color:#444;margin-bottom:6px;}
+  .rep .tot b{color:#1a237e;}
+  .text-answer-item .rep .v{max-height:none;}
+  .ai-box{margin-top:12px;border:1px solid #d1c4e9;background:#f7f4fd;border-radius:8px;padding:10px 12px;}
+  .ai-box .ai-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#4527a0;font-size:13.5px;}
+  .ai-box .ai-txt{word-break:break-word;margin-top:8px;}
+  .ai-box .ai-txt .fb{font-size:13.5px;}
+  .ai-box .ai-note{font-size:12px;color:#777;font-weight:normal;}
+  button.ai{background:#5e35b1;color:#fff;font-weight:bold;}
+  button.ai:disabled{background:#c5bce0;cursor:not-allowed;}
   .agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#fffbe6;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#5d4200;}
   .agg b{font-size:16px;color:#8d6e00;}
   .flipseq{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -126,6 +128,27 @@
   .kv{font-size:13px;color:#444;margin:2px 0;}
   .kv b{color:#1a237e;}
   .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto 8px;}
+  /* ---- AI 피드백 읽기 좋게(student23·teacher23 공통) ---- */
+  .fb{font-size:14.5px;line-height:1.65;color:#222;white-space:normal;}
+  .fb-note{font-size:12.5px;color:#6a6a66;background:#f4f2f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+  .fb-sec{background:#fff;border:1px solid #e3def0;border-radius:10px;padding:10px 14px;margin:8px 0;}
+  .fb-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:bold;color:#4527a0;margin-bottom:4px;}
+  .fb-score{background:#ede7f6;color:#4527a0;border-radius:12px;padding:1px 10px;font-size:13.5px;white-space:nowrap;}
+  .fb-row{display:flex;gap:8px;align-items:flex-start;margin:6px 0;}
+  .fb-tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-row.good .fb-tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-row.fix .fb-tag{background:#fff3e0;color:#e65100;}
+  .fb-row.ask .fb-tag{background:#e3f2fd;color:#1565c0;}
+  .fb p{margin:3px 0;}
+  .fb-li{margin:3px 0 3px 4px;}
+  .fb-sec.total{background:#4527a0;border-color:#4527a0;}
+  .fb-sec.total .fb-hd{color:#fff;margin:0;}
+  .fb-sec.total .fb-score{background:#fff;color:#4527a0;font-size:16px;}
+  .fb-sec.total p{color:#ddd5f3;font-size:12px;margin:4px 0 0;}
+  .fb-sec.first{border-left:5px solid #e65100;}
+  .fb-sec.st-ok{border-left:5px solid #2e7d32;background:#f3faf3;}
+  .fb-sec.st-mid{border-left:5px solid #f0a500;background:#fffaf0;}
+  .fb-sec.st-bad{border-left:5px solid #c62828;background:#fff6f6;}
 </style>
 </head>
 <body>
@@ -158,9 +181,9 @@
 })();
 </script>
 
-<!-- 요약뷰에서 학생의 step 칸(또는 상세 패널의 행)을 클릭하면, 그 학생이 그 step에 적은 내용을 보여주는 모달. -->
+<!-- 요약뷰에서 학생의 칸(또는 상세 패널의 행)을 클릭하면, 그 학생의 보고서 전체와 AI 피드백(보내기 버튼)을 보여주는 모달. -->
 <div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
     <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
     <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
     <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
@@ -170,8 +193,8 @@
 </div>
 
 <header>
-  <h1>📊 교사용 실시간 대시보드 — 32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구</h1>
-  <p>VIII. 확률 — 수행평가 보고서 쓰기 전 단계(탐구 질문·계획·자료 수집/분석·개요)를 실시간으로 확인해요</p>
+  <h1>📊 교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
+  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, 제출한 학생에게 AI 피드백을 보내요</p>
 </header>
 
 <div class="wrap">
@@ -218,10 +241,12 @@
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>평균 진행률: <b id="sumAvg">0%</b></div>
-        <div>step 4개 모두 완료: <b id="sumDone">0</b></div>
+        <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 <b>진행 현황</b> — step1 <b id="agg1">0</b>명 · step2 <b id="agg2">0</b>명 · step3 <b id="agg3">0</b>명 · step4 <b id="agg4">0</b>명 완료 · 제출 <b id="aggSub">0</b>명</span>
+        <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명 · AI 피드백 보냄 <b id="aggAi">0</b>명</span>
+        <button class="ai" id="aiBulkBtn" disabled>🤖 제출한 학생 모두에게 AI 피드백 보내기 (0명)</button>
+        <span id="aiBulkStatus" style="font-size:12.5px;color:#5e35b1;"></span>
       </div>
     </div>
 
@@ -248,7 +273,7 @@
         </div>
         <div class="detail" id="detail">
           <h3>학생 선택</h3>
-          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>step 칸(또는 행)을 클릭하면<br>학생이 적은 내용을 자세히 볼 수 있어요.</div>
+          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체를 보고 AI 피드백을 보낼 수 있어요.</div>
         </div>
       </div>
     </div>
@@ -259,7 +284,7 @@
         <div id="teacherTaskLabel" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
       </div>
       <div class="teacher-col">
-        <div class="teacher-col-title">✏️ 선택한 step에서 학생들이 적은 내용 (● 지금 보는 중)</div>
+        <div class="teacher-col-title">✏️ 학생 보고서 전체 (제출한 학생에게 🤖 AI 피드백을 보낼 수 있어요 · ● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
       </div>
     </div>
@@ -285,11 +310,14 @@
 
 <script>
 /* ============================================================
-   student32.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ① 질문·계획·자료 탐구).
-   teacher17/21과 같은 틀(번호순 정렬, 진행률, 지금 보는 중, 속도조절, 상세 모달,
-   공지·일시정지·수업 종료, 미리보기)을 쓰고, 과제는 step1~4 네 개다.
-   - 학생이 적은 내용(data)을 step별로 읽기 좋게 보여준다.
-   반드시 아래 두 가지를 student32.html과 동일하게 맞춰야 한다.
+   student23.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
+   teacher22.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
+   - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈 제외)를 보여준다.
+   - 🤖 AI 피드백: 제출한 학생에게 보낸다(횟수 제한 없음). /api/report-feedback(Vercel 서버 함수, OpenAI)을
+     호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total, n, hash}에 저장하면
+     student23.html에 바로 나타난다(가장 최근 피드백만 보관, n = 몇 번째 피드백인지).
+     hash는 피드백을 받을 때의 보고서 내용 지문 — 일괄 보내기는 "아직 못 받은 학생 + 받은 뒤 글을 고친 학생"만 보낸다.
+   반드시 아래 두 가지를 student23.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
    ============================================================ */
@@ -302,8 +330,9 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__prob32'; // student32.html과 반드시 동일해야 함
-const UNIT_LABEL = '32. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구';
+const ACTIVITY_SUFFIX = '__prob33'; // student23.html과 반드시 동일해야 함
+// ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
+const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
   ENTRY_UNIT: 'entry.926486903',
@@ -316,67 +345,172 @@ const CONFIG = {
 };
 
 const TASK_LABELS = [
-  {id:1, key:'s1', label:'step1 탐구 질문 만들기'},
-  {id:2, key:'s2', label:'step2 탐구 계획하기'},
-  {id:3, key:'s3', label:'step3 자료 수집, 분석하기'},
-  {id:4, key:'s4', label:'step4 개요 작성'}
+  {id:1, key:'r1', label:'보고서 작성'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
 
-/* ---------- 학생이 적은 내용 표시 (student32.html의 data 필드) ---------- */
+/* ---------- 학생 보고서 표시 (student23.html의 data 필드) ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const SELF_CHECKS = ['확률과 연관된 질문인가?','선택한 주제/유형에 적합한 질문인가?','질문이 충분히 구체적인가?','자료 수집(검색)이 가능한가?','단순한 사실 확인을 넘어서는 질문인가?','윤리적으로 올바른가?'];
-const DATA_CHECKS = ['최신성(작성·조사 시점)','신뢰성(출처·조사 기관)','관련성(탐구 주제와 일치)','필요성(보고서에 꼭 필요)'];
-const str = x => (typeof x==='string' ? x : '').trim();
-function kvRow(k, val){ const t=str(val); return `<div class="row2"><span class="k">${esc(k)}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; }
-function safeLink(u){ const t=str(u); return /^https?:\/\//i.test(t) ? `<a href="${esc(t)}" target="_blank" rel="noopener">${esc(t)}</a>` : `<span style="color:#e65100;">${esc(t)||'(링크 없음)'}</span>`; }
-function hasAny(d, id){
-  if(!d) return false;
-  if(id===1) return !!(str(d.topicInterest)||str(d.topicCareer)||str(d.topicHobby)||str(d.q1)||str(d.motive)||d.qtype);
-  if(id===2) return !!(str(d.finalQ)||str(d.plan1)||str(d.plan2)||str(d.plan3)||str(d.expect));
-  if(id===3) return Array.isArray(d.sources) && d.sources.some(x=>x&&(str(x.what)||str(x.link)||str(x.analysis)));
-  if(id===4) return !!(str(d.oTitle)||str(d.oIntro)||str(d.oBody)||str(d.oConcl));
-  return false;
-}
-function activityDetailHTML(s, id){
-  const d = (s && s.data) || null;
-  if(!hasAny(d, id)) return '';
-  let h = '<div class="rec">';
-  if(id===1){
-    h += '<h4>질문 주제</h4>' + kvRow('최근 관심사', d.topicInterest) + kvRow('진로', d.topicCareer) + kvRow('취미', d.topicHobby);
-    h += '<h4>탐구 질문</h4>' + kvRow('유형', d.qtype) + kvRow('주제', d.subject) + kvRow('1차 질문', d.q1) + kvRow('2차 질문', d.q2) + kvRow('3차 질문', d.q3) + kvRow('질문 선정 동기', d.motive);
-    const sc = str(d.selfCheck);
-    h += '<h4>체크리스트 (자기 평가)</h4><div>' + SELF_CHECKS.map((t,i)=>{ const c=sc[i]; const cls=c==='O'?'o':(c==='△'?'t':(c==='X'?'x':'')); const m=c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–')); return `<span class="chip ${cls}" title="${esc(t)}">${i+1}. ${m}</span>`; }).join('') + '</div>';
-  } else if(id===2){
-    h += kvRow('최종 탐구 질문', d.finalQ);
-    h += '<h4>탐구 계획</h4>' + kvRow('1. 조사·결론', d.plan1) + kvRow('2. 확률 계산식', d.plan2) + kvRow('3. 변수·한계·보정', d.plan3);
-    const rows = Array.isArray(d.planRows) ? d.planRows.filter(r=>r&&(str(r.need)||str(r.where))) : [];
-    h += '<h4>자료 수집 계획</h4>' + (rows.length ? `<table class="t"><tr><th>필요 자료</th><th>수집 방법(사이트명)</th></tr>${rows.map(r=>`<tr><td>${esc(str(r.need))}</td><td>${esc(str(r.where))}</td></tr>`).join('')}</table>` : '<div class="v none" style="font-size:13px;">(비어 있음)</div>');
-    h += '<h4>예상 결과</h4>' + kvRow('예상 결과', d.expect);
-  } else if(id===3){
-    const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)||str(x.analysis)));
-    src.forEach((x,i)=>{
-      h += `<div class="src"><b>📎 자료 ${i+1}</b>` + kvRow('수집한 자료', x.what) + kvRow('출처', x.site) +
-        `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div>` + kvRow('분석', x.analysis) + '</div>';
-    });
-    const dc = str(d.dataCheck);
-    h += '<h4>자료 수집 점검</h4><div>' + DATA_CHECKS.map((t,i)=>`<span class="chip ${dc[i]==='1'?'o':''}">${dc[i]==='1'?'☑':'☐'} ${esc(t)}</span>`).join('') + '</div>';
-  } else if(id===4){
-    h += kvRow('제목', d.oTitle) + kvRow('서론', d.oIntro) + kvRow('본론', d.oBody) + kvRow('결론', d.oConcl);
+const str = x => (typeof x==='string' ? x : '');
+const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // student23.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
+const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:200}, {k:'body', name:'본론', min:500}, {k:'concl', name:'결론', min:200} ];
+const TOTAL_MIN = 1000;
+const srcOf = s => { const d=(s&&s.data)||{}; return Array.isArray(d.sources) ? d.sources.filter(x=>x && (str(x.name).trim()||str(x.link).trim())).map(x=>({name:str(x.name).trim(), link:str(x.link).trim()})) : []; };
+const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl), sources: srcOf(s) }; };
+const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r.body)+countChars(r.concl); };
+const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
+const aiPending = new Set(); // 지금 AI 피드백을 받아오는 중인 학생 key
+
+/* 보고서 내용 지문(글이 바뀌었는지 비교용) */
+function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+const fbOf = s => (s && s.aiFeedback && s.aiFeedback.text) ? s.aiFeedback : null;
+const changedSinceFb = s => { const fb=fbOf(s); return !!fb && fb.hash!==undefined && fb.hash!==repHash(s); };
+/* ---------- AI 피드백 글을 읽기 좋게 그리기 (student23·teacher23 공통 — 두 파일을 똑같이 유지) ----------
+   [제목] ○/3점 → 항목 카드, 👍/🔧/❓ 줄 → "잘된 점/보완할 점/생각해 볼 질문" 표시, ※ 안내문 → 회색 상자.
+   예상하지 못한 형식이어도 줄글로 그대로 보여 준다(내용이 사라지지 않음). */
+function renderFeedbackHTML(text){
+  const e = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const KIND = [['👍','good','잘된 점'],['🔧','fix','보완할 점'],['❓','ask','생각해 볼 질문']];
+  const SCORE = /^(\d+|○)\s*\/\s*(\d+)\s*점?/;
+  const lines = String(text||'').replace(/\*\*/g,'').split(/\r?\n/).map(l=>l.replace(/^#+\s*/,'').trim());
+  let html = '', notice = [], sec = null;
+  const close = ()=>{
+    if(!sec) return;
+    let cls = '';
+    if(/예상 점수/.test(sec.title)) cls = ' total';
+    else if(/가장 먼저/.test(sec.title)) cls = ' first';
+    else if(/제출 상태/.test(sec.title)) cls = /중요한 보완/.test(sec.plain) ? ' st-bad' : (/일부/.test(sec.plain) ? ' st-mid' : ' st-ok');
+    html += `<div class="fb-sec${cls}"><div class="fb-hd"><span>${e(sec.title)}</span>${sec.score?`<b class="fb-score">${e(sec.score)}</b>`:''}</div>${sec.body}</div>`;
+    sec = null;
+  };
+  const addText = (t)=>{
+    if(!sec) return;
+    const sm = (!sec.score) && t.match(/^(?:예상 점수\s*[:：]\s*)?((?:\d+|○)\s*\/\s*\d+\s*점?)\s*(.*)$/);
+    if(sm && (/예상 점수/.test(t) || /예상 점수/.test(sec.title))){ sec.score = sm[1].replace(/\s+/g,''); if(sm[2]) addText(sm[2]); return; }
+    sec.plain += ' ' + t;
+    const k = KIND.find(x=> t.startsWith(x[0]));
+    if(k){ const rest = t.slice(k[0].length).replace(/^[\s:：]+/,''); if(!rest || /^없음\.?$/.test(rest)) return;
+      sec.body += `<div class="fb-row ${k[1]}"><span class="fb-tag">${k[2]}</span><span>${e(rest)}</span></div>`; return; }
+    if(/^[-•·]\s+/.test(t)){ sec.body += `<div class="fb-li">• ${e(t.replace(/^[-•·]\s+/,''))}</div>`; return; }
+    sec.body += `<p>${e(t)}</p>`;
+  };
+  for(const l of lines){
+    if(!l || /^[─━—=\-]{3,}$/.test(l)) continue;
+    const h = l.match(/^\[([^\]]+)\]\s*(.*)$/);
+    if(h){ close(); sec = {title:h[1].trim(), score:'', body:'', plain:''};
+      const rest = h[2].trim(); if(rest){ const sm = rest.match(SCORE); if(sm){ sec.score = sm[0].replace(/\s+/g,''); const after = rest.slice(sm[0].length).trim(); if(after) addText(after); } else addText(rest); }
+      continue; }
+    if(!sec){ notice.push(l); continue; }
+    addText(l);
   }
-  return h + '</div>';
+  close();
+  return `<div class="fb">${notice.length?`<div class="fb-note">${notice.map(e).join('<br>')}</div>`:''}${html}</div>`;
 }
-function onStudentsUpdated(){}
-/* 요약 패널: step별 완료 인원 */
+
+/* AI 피드백 상자(보내기 버튼 포함). key가 있어야 버튼을 만든다. */
+function aiBoxHTML(key, s){
+  const fb = fbOf(s);
+  const can = !!(s && s.submitted && hasReport(s)) && !aiPending.has(key);
+  if(aiPending.has(key)) return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI가 피드백을 쓰는 중이에요… (보통 10~40초)</span></div>${fb?`<div class="ai-txt" style="opacity:.5;">${renderFeedbackHTML(fb.text)}</div>`:''}</div>`;
+  if(fb){
+    const when = fb.ts ? new Date(fb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const tag = changedSinceFb(s) ? ' · <b style="color:#e65100;">피드백 받은 뒤 글을 고침</b>' : '';
+    return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 ${fb.n?fb.n+'번째 ':''}보냄 <span class="ai-note">${esc(when)}${fb.total!=null?` · 보낼 때 ${fb.total}자`:''}${tag}</span></span>
+      <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'} title="${s.submitted?'지금 글로 피드백을 새로 받아 학생 화면의 피드백을 바꿔요':'학생이 다시 제출하면 보낼 수 있어요'}">🔁 다시 보내기</button></div>
+      <div class="ai-txt">${renderFeedbackHTML(fb.text)}</div></div>`;
+  }
+  const why = !hasReport(s) ? '아직 쓴 내용이 없어요' : (!s.submitted ? '학생이 제출하면 보낼 수 있어요' : '');
+  return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 <span class="ai-note">${why}</span></span>
+    <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'}>🤖 AI 피드백 보내기</button></div></div>`;
+}
+function activityDetailHTML(s, id, key){
+  if(!hasReport(s)) return key ? aiBoxHTML(key, s) : '';
+  const r = repOf(s), tot = totalOf(s);
+  let h = `<div class="rep"><div class="tot">서론+본론+결론 <b style="color:${tot>=TOTAL_MIN?'#2e7d32':'#e65100'};">${tot.toLocaleString()}자</b> / ${TOTAL_MIN}자 이상 · ${s.submitted?'<b style="color:#2e7d32;">✅ 제출함</b>':'<span style="color:#e65100;">미제출</span>'}</div>`;
+  SECS.forEach(x=>{
+    const n = countChars(r[x.k]), short = x.min && n < x.min;
+    h += `<h4><span>[${x.name}]</span><span class="c${short?' short':''}">${n.toLocaleString()}자${x.min?` / ${x.min}자 이상`:''}</span></h4>` +
+         `<div class="v${r[x.k].trim()?'':' none'}">${r[x.k].trim()?esc(r[x.k]):'(비어 있음)'}</div>`;
+  });
+  const srcs = r.sources;
+  h += `<h4><span>[자료 출처]</span><span class="c${srcs.length<2?' short':''}">${srcs.length}개</span></h4>` + (srcs.length
+    ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
+    : '<div class="v none">(비어 있음)</div>');
+  h += '</div>';
+  return h + (key ? aiBoxHTML(key, s) : '');
+}
+/* 요약 패널 */
+/* 일괄 보내기 대상: 제출했고, 아직 피드백을 못 받았거나 받은 뒤 글을 고친 학생 */
+function eligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; return s.submitted && hasReport(s) && !aiPending.has(k) && (!fbOf(s) || changedSinceFb(s)); }); }
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'flex' : 'none';
   const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
-  TASK_LABELS.forEach(t=>{ document.getElementById('agg'+t.id).textContent = list.filter(s=>s.progress&&s.progress[t.key]&&s.progress[t.key].done).length; });
   document.getElementById('aggSub').textContent = list.filter(s=>s.submitted).length;
+  document.getElementById('aggLong').textContent = list.filter(s=>totalOf(s)>=TOTAL_MIN).length;
+  document.getElementById('aggAi').textContent = list.filter(s=>s.aiFeedback&&s.aiFeedback.text).length;
+  const n = eligibleKeys().length, btn = document.getElementById('aiBulkBtn');
+  btn.textContent = `🤖 AI 피드백 일괄 보내기 — 아직 못 받았거나 고쳐서 다시 낸 학생 (${n}명)`;
+  btn.disabled = n===0 || aiBulkRunning;
 }
+
+/* ---------- 🤖 AI 피드백 보내기 (횟수 제한 없음 — 다시 보내면 최신 피드백으로 바뀜) ---------- */
+let aiBulkRunning = false;
+async function requestAI(key){
+  const s = allStudents[key];
+  if(!s || !s.submitted || !hasReport(s) || aiPending.has(key)) return false;
+  const fbRef = db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiFeedback');
+  const prevN = (fbOf(s) && fbOf(s).n) || (fbOf(s) ? 1 : 0);
+  aiPending.add(key); refreshAI();
+  try{
+    const r = repOf(s);
+    const res = await fetch('/api/report-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(r) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !j.text) throw new Error(j.error || ('HTTP '+res.status));
+    const fb = { text: j.text, ts: Date.now(), total: totalOf(s), n: prevN + 1, hash: repHash(s) };
+    await fbRef.set(fb);
+    if(allStudents[key]) allStudents[key].aiFeedback = fb;
+    return true;
+  }catch(err){
+    throw new Error(`${s.name||key}: ${err.message||err}`);
+  }finally{
+    aiPending.delete(key); refreshAI();
+  }
+}
+function refreshAI(){ renderAggregate(); renderTeacherView(); refreshOpenModal(); }
+document.addEventListener('click', async e=>{
+  const send = e.target.closest && e.target.closest('[data-ai-send]');
+  if(!send) return;
+  e.stopPropagation(); e.preventDefault();
+  const key = send.dataset.aiSend, s = allStudents[key]||{};
+  const fb = fbOf(s);
+  const msg = !fb ? `${s.name||key} 학생에게 AI 피드백을 보낼까요?\n(보내면 학생 화면에 바로 나타나요)`
+    : (changedSinceFb(s) ? `${s.name||key} 학생이 고친 글로 AI 피드백을 다시 받을까요?\n(학생 화면의 피드백이 새 피드백으로 바뀌어요)`
+                         : `${s.name||key} 학생의 글이 지난 피드백 이후 바뀌지 않았어요.\n그래도 AI 피드백을 다시 받을까요? (학생 화면의 피드백이 바뀌어요)`);
+  if(!confirm(msg)) return;
+  try{ await requestAI(key); }catch(err){ alert('AI 피드백을 받지 못했어요.\n'+err.message+'\n\n잠시 후 다시 눌러 보세요.'); }
+}, true);
+document.getElementById('aiBulkBtn').addEventListener('click', async ()=>{
+  const keys = eligibleKeys(); if(!keys.length) return;
+  if(!confirm(`아직 AI 피드백을 못 받았거나, 받은 뒤 글을 고쳐 다시 제출한 학생 ${keys.length}명에게 AI 피드백을 보낼까요?\n(한 번에 3명씩 처리해요)`)) return;
+  aiBulkRunning = true; renderAggregate();
+  const st = document.getElementById('aiBulkStatus');
+  let ok=0, fail=[], i=0;
+  const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestAI(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `진행 중… ${ok+fail.length}/${keys.length}`; } };
+  await Promise.all([worker(),worker(),worker()]);
+  aiBulkRunning = false; renderAggregate();
+  st.textContent = `완료: ${ok}명 보냄` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생에게 다시 보내요)` : '');
+  if(fail.length) console.warn('AI 피드백 실패:', fail);
+});
+let tdmKey = null;
+function refreshOpenModal(){
+  if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
+  const s = allStudents[tdmKey]; if(!s) return;
+  document.getElementById('tdmTextWrap').innerHTML = activityDetailHTML(s, 1, tdmKey) || '';
+}
+function onStudentsUpdated(){ refreshOpenModal(); }
 
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
 let paused=false, anonymize=false, checkedKeys=new Set();
@@ -643,7 +777,7 @@ document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
 });
 
 /* ---------- ① 요약뷰: 번호순 정렬 + 진행률 막대 + 과제별 4단계 칸 ---------- */
-const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>step 칸(또는 행)을 클릭하면<br>학생이 적은 내용을 자세히 볼 수 있어요.</div>`;
+const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체를 보고 AI 피드백을 보낼 수 있어요.</div>`;
 function resetDetailPanel(){
   document.getElementById('detail').innerHTML = DEFAULT_DETAIL_HTML;
 }
@@ -774,7 +908,7 @@ function renderDetail(item){
   const s = item.student;
   const meta=document.createElement('div');
   meta.style.cssText='font-size:12.5px;color:#888;margin-bottom:10px;';
-  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 현재 보는 중: step ${s.currentTaskId||'-'} · 제출: ${s.submitted?'✅ 완료':'미제출'}`;
+  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 글자 수 ${totalOf(s).toLocaleString()}자 · 제출: ${s.submitted?'✅ 완료':'미제출'} · AI 피드백: ${(s.aiFeedback&&s.aiFeedback.text)?'보냄':'아직'}`;
   wrap.appendChild(meta);
   TASK_LABELS.forEach(t=>{
     const done = taskDone(s,t.id);
@@ -785,7 +919,7 @@ function renderDetail(item){
     const label = done ? '✅ 완료' : (isError ? '📝 입력함' : (visited ? '🟠 진행중' : '⬜ 안 함'));
 
     const row=document.createElement('div'); row.className='drow';
-    row.title='클릭하면 이 학생이 이 step에 적은 내용을 볼 수 있어요';
+    row.title='클릭하면 이 학생의 보고서 전체를 보고 AI 피드백을 보낼 수 있어요';
     row.addEventListener('click', ()=> openTaskDetail(item.key, s, t.id));
     const left=document.createElement('span'); left.textContent = t.label;
     const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = label;
@@ -794,7 +928,7 @@ function renderDetail(item){
   });
 }
 
-/* 요약뷰의 step 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생이 그 step에 적은 내용을 모달로 보여준다. */
+/* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 피드백을 모달로 보여준다. */
 function openTaskDetail(key, s, taskId){
   const t = TASK_LABELS.find(x=>x.id===taskId);
   const done = taskDone(s,taskId);
@@ -803,9 +937,10 @@ function openTaskDetail(key, s, taskId){
   document.getElementById('tdmTitle').textContent = t.label;
   document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${statusLabel}`;
   document.getElementById('tdmCanvasWrap').textContent='';
-  const html = activityDetailHTML(s, taskId);
+  tdmKey = key;
+  const html = activityDetailHTML(s, taskId, key);
   const textWrap = document.getElementById('tdmTextWrap');
-  textWrap.innerHTML = html || `<div style="color:#999;font-size:13px;padding:30px;text-align:center;">${visited ? '아직 이 step에 적은 내용이 없어요.' : '아직 이 step을 열어보지 않았어요.'}</div>`;
+  textWrap.innerHTML = html || `<div style="color:#999;font-size:13px;padding:30px;text-align:center;">${visited ? '아직 쓴 내용이 없어요.' : '아직 시작하지 않았어요.'}</div>`;
   document.getElementById('taskDetailOverlay').style.display='flex';
 }
 document.getElementById('taskDetailCloseBtn').addEventListener('click', ()=>{
@@ -816,7 +951,7 @@ document.getElementById('taskDetailOverlay').addEventListener('click', (e)=>{
 });
 
 /* ---------- 속도조절(화면 범위 제한) — 드래그로 과제 범위를 선택하면 그 범위 밖 화면은
-   학생 쪽에서 이동이 막힌다(student32.html의 clampToPacing/updateNavButtons가 소비). ---------- */
+   학생 쪽에서 이동이 막힌다(student23.html의 clampToPacing/updateNavButtons가 소비). ---------- */
 let paceMouseDownIdx=null, paceDragMoved=false, paceShiftHeld=false, paceAwaitingEnd=false, paceAnchor=null, paceDragging=false;
 (function buildPaceTrack(){
   const track=document.getElementById('paceTrack');
@@ -873,8 +1008,8 @@ function updatePaceBadge(){
   if(paceStart!=null && paceEnd!=null){
     badge.style.display='inline-block';
     badge.textContent = paceStart===paceEnd
-      ? `현재 학생들은 [ step ${paceStart} ]만 볼 수 있습니다`
-      : `현재 학생들은 [ step ${paceStart} ~ ${paceEnd} ]만 볼 수 있습니다`;
+      ? `현재 학생들은 [ ${paceStart} ]만 볼 수 있습니다`
+      : `현재 학생들은 [ ${paceStart} ~ ${paceEnd} ]만 볼 수 있습니다`;
   }else{
     badge.style.display='none';
   }
@@ -950,7 +1085,7 @@ function renderTeacherView(){
     head.appendChild(nameWrap); head.appendChild(status);
     box.appendChild(head);
     const detail=document.createElement('div');
-    detail.innerHTML = activityDetailHTML(s, selectedTaskId) || '<div class="ta-text" style="color:#999;">(아직 적은 내용 없음)</div>';
+    detail.innerHTML = activityDetailHTML(s, selectedTaskId, item.key) || '<div class="ta-text" style="color:#999;">(아직 쓴 내용 없음)</div>';
     box.appendChild(detail);
     box.addEventListener('click', ()=> openTaskDetail(item.key, s, selectedTaskId));
     textWrap.appendChild(box);
@@ -970,7 +1105,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* ---------- ③ 학생용 뷰: 실제 학생 파일을 미리보기 모드(iframe)로 띄워서 보여줌 ----------
-   student32.html이 ?preview=1&task=N으로 열리면 반/번호/이름 입력 없이 바로 appScreen을 그
+   student23.html이 ?preview=1&task=N으로 열리면 반/번호/이름 입력 없이 바로 appScreen을 그
    과제 페이지로 보여준다(읽기 전용, 실제 학생 데이터에는 영향 없음). "이전/다음" 버튼은
    taskId를 postMessage로 보내고(ggbPreviewGoto), 학생쪽이 그 taskId에 해당하는 페이지로
    이동한 뒤 현재 높이(ggbPreviewHeight)를 돌려준다 — 다른 단원과 동일한 프로토콜이다. */
@@ -979,7 +1114,7 @@ let previewTaskId=TASK_IDS[0];
 function ensurePreviewLoaded(){
   const frame=document.getElementById('previewFrame');
   if(!previewLoaded){
-    frame.src = 'student32.html?preview=1&task='+previewTaskId;
+    frame.src = 'student23.html?preview=1&task='+previewTaskId;
     previewLoaded=true;
   }
   updatePreviewLabel();

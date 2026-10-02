@@ -119,7 +119,7 @@ const FIREBASE_CONFIG = {
 };
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
-const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',32:'__prob32',33:'__prob33'};
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',22:'__prob32',23:'__prob33'};
 // ⚠️ 새 단원(studentN.html)을 추가할 때마다 여기에도 그 단원의 ACTIVITY_SUFFIX를 꼭 넣어야 목록에 "✅ 완료"가 표시된다.
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
@@ -158,8 +158,8 @@ const SECTIONS = [
   { chapter:'VIII. 확률', groups:[
       { title:'', items:[
         {n:21, label:1, title:'동전을 계속 던지면 어떻게 될까?', file:'student21.html'},
-        {n:32, label:2, title:'확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'student32.html'},
-        {n:33, label:3, title:'확률 탐구 글쓰기 ② 보고서 제출', file:'student33.html'}
+        {n:22, label:2, title:'확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'student22.html'},
+        {n:23, label:3, title:'확률 탐구 글쓰기 ② 보고서 제출', file:'student23.html'}
       ]}
   ]}
 ];

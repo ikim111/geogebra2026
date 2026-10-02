@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>33. 확률 탐구 글쓰기 ② 보고서 제출</title>
+<title>23. 확률 탐구 글쓰기 ② 보고서 제출</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -118,7 +118,7 @@
   #aiCard .ai-time{font-size:12px;color:#999;font-weight:normal;}
   #aiText{word-break:break-word;background:#f7f4fd;border-radius:10px;padding:12px;}
   #aiCard .ai-note{font-size:12.5px;color:#6a6a66;margin-top:8px;}
-  /* ---- AI 피드백 읽기 좋게(student33·teacher33 공통) ---- */
+  /* ---- AI 피드백 읽기 좋게(student23·teacher23 공통) ---- */
   .fb{font-size:14.5px;line-height:1.65;color:#222;white-space:normal;}
   .fb-note{font-size:12.5px;color:#6a6a66;background:#f4f2f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
   .fb-sec{background:#fff;border:1px solid #e3def0;border-radius:10px;padding:10px 14px;margin:8px 0;}
@@ -151,8 +151,8 @@
 <div id="gateScreen">
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
-    <h1>33. 확률 탐구 글쓰기 ② 보고서 제출</h1>
-    <p class="gate-sub">32번에서 준비한 개요와 자료를 바탕으로 보고서를 완성해 제출해요 — 김형준 선생님</p>
+    <h1>23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
+    <p class="gate-sub">[2] 질문·계획·자료 탐구에서 준비한 개요와 자료를 바탕으로 보고서를 완성해 제출해요 — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;color:#e65100;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
@@ -175,7 +175,7 @@
   <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
   <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
   <div id="stickyBar">
-    <div id="unitTitleBar">33. 확률 탐구 글쓰기 ② 보고서 제출</div>
+    <div id="unitTitleBar">23. 확률 탐구 글쓰기 ② 보고서 제출</div>
     <div class="sticky-controls">
       <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn" style="display:none;">◀ 이전</button>
@@ -201,7 +201,7 @@
   </div>
 
   <details class="ref" id="refBox" open>
-    <summary>📝 내가 준비한 개요와 자료 (32번에서 작성)</summary>
+    <summary>📝 내가 준비한 개요와 자료 ([2] 질문·계획·자료 탐구에서 작성)</summary>
     <div class="rbody" id="refBody"><span style="color:#999;">불러오는 중…</span></div>
   </details>
 
@@ -245,7 +245,7 @@
       <div class="sec-head"><span class="lab">[자료 출처]<small>2개 이상 · 글자 수에는 들어가지 않아요</small></span><span class="cnt" id="cnt-src">0개</span></div>
       <ul class="tips"><li>본론에서 사용한 자료의 <b>기관·자료 이름</b>과 <b>링크(https://…)</b>를 적어요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
       <div class="src-rows" id="srcRows"></div>
-      <div class="src-btns"><button type="button" id="addSrcRow">＋ 출처 추가</button><button type="button" id="loadPrepSrc">⬇ 32번에서 모은 자료 불러오기</button></div>
+      <div class="src-btns"><button type="button" id="addSrcRow">＋ 출처 추가</button><button type="button" id="loadPrepSrc">⬇ [2]에서 모은 자료 불러오기</button></div>
     </div>
   </div>
 </section>
@@ -268,14 +268,14 @@
 
 <script>
 /* ============================================================
-   33. 확률 탐구 글쓰기 ② 보고서 제출 (VIII. 확률 — 수행평가)
-   [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~32번 단원과 같은 틀(게이트·단원 잠금·
+   23. 확률 탐구 글쓰기 ② 보고서 제출 (VIII. 확률 — 수행평가)
+   [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~22번 단원과 같은 틀(게이트·단원 잠금·
    실시간 저장·일시정지·공지·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 글상자는 내용에 맞춰 저절로 늘어난다(안쪽 스크롤 없음).
    - 글자 수: 띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(api/report-feedback.js의 countChars와 같은 방식).
-   - 32번(ACTIVITY_SUFFIX '__prob32')의 data를 읽어 개요·자료를 참고용으로 보여준다(읽기만 함).
-   - teacher33.html이 AI 피드백을 students/{key}/aiFeedback = {text, ts, n, ...}에 저장하면 실시간으로 보여준다(가장 최근 것).
-   ACTIVITY_SUFFIX는 teacher33.html과 반드시 동일해야 한다.
+   - 22번(ACTIVITY_SUFFIX '__prob32')의 data를 읽어 개요·자료를 참고용으로 보여준다(읽기만 함).
+   - teacher23.html이 AI 피드백을 students/{key}/aiFeedback = {text, ts, n, ...}에 저장하면 실시간으로 보여준다(가장 최근 것).
+   ACTIVITY_SUFFIX는 teacher23.html과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
 const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
@@ -289,20 +289,21 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '426333242398',
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
-const ACTIVITY_SUFFIX = '__prob33'; // teacher33.html과 반드시 동일해야 함
-const PREP_SUFFIX = '__prob32';    // 32번(개요·자료) — 읽기만 한다
-const UNIT_LABEL = '33. 확률 탐구 글쓰기 ② 보고서 제출';
-const UNIT_NO = 33;
+const ACTIVITY_SUFFIX = '__prob33'; // teacher23.html과 반드시 동일해야 함
+// ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
+const PREP_SUFFIX = '__prob32';    // 22번(개요·자료) — 읽기만 한다
+const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
+const UNIT_NO = 23;
 const TASKS = [ {id:1, key:'r1', title:'보고서 작성'} ];
 const SECS = [ {k:'title', min:0}, {k:'intro', min:200}, {k:'body', min:500}, {k:'concl', min:200} ];
 const TOTAL_MIN = 1000;
 const state = { f:{ title:'', intro:'', body:'', concl:'' }, sources:[{name:'',link:''},{name:'',link:''}] };
-let prepData = null; // 32번 data(자료 불러오기용)
+let prepData = null; // 22번 data(자료 불러오기용)
 const isUrl = s => /^https?:\/\/\S+\.\S+/i.test(String(s||'').trim());
 const goodSources = () => state.sources.filter(x=> x.name.trim() && isUrl(x.link));
 const $ = id => document.getElementById(id);
 // 글자 수: 띄어쓰기 포함. 단, 연달아 친 띄어쓰기는 1자로 세고, 줄 앞뒤 공백과 줄바꿈은 세지 않는다.
-// (api/report-feedback.js, teacher33.html의 countChars와 반드시 같아야 한다)
+// (api/report-feedback.js, teacher23.html의 countChars와 반드시 같아야 한다)
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length;
 const cnt = k => countChars(state.f[k]);
 const totalCount = () => cnt('intro') + cnt('body') + cnt('concl');
@@ -347,10 +348,10 @@ $('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; stat
 $('loadPrepSrc').addEventListener('click', ()=>{
   if(finalLockedNow()) return;
   const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim())) : [];
-  if(!src.length){ alert('32번에 적은 자료가 없어요.'); return; }
+  if(!src.length){ alert('[2] 질문·계획·자료 탐구에 적은 자료가 없어요.'); return; }
   const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
   const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim() }));
-  if(!add.length){ alert('32번 자료가 이미 모두 들어 있어요.'); return; }
+  if(!add.length){ alert('[2]의 자료가 이미 모두 들어 있어요.'); return; }
   state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim()).concat(add);
   renderSources(); changed();
 });
@@ -380,11 +381,11 @@ function changed(opts){
   if(!(opts && opts.noSave)){ $('saveStatus').textContent = RT.connected ? '저장 중…' : ''; RT.pushProgressDebounced(); }
 }
 
-/* 32번에서 쓴 개요·자료(읽기 전용) */
+/* 22번에서 쓴 개요·자료(읽기 전용) */
 function renderPrep(d){
   prepData = d;
   const box = $('refBody');
-  if(!d){ box.innerHTML = '<span style="color:#999;">32번(질문·계획·자료 탐구)에 적은 내용이 없어요. 32번을 먼저 해 보세요.</span>'; return; }
+  if(!d){ box.innerHTML = '<span style="color:#999;">[2] 질문·계획·자료 탐구에 적은 내용이 없어요. 그것부터 먼저 해 보세요.</span>'; return; }
   const row = (k,v)=>{ const t=String(v||'').trim(); return `<div class="ol"><span class="k">${k}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; };
   let h = row('탐구 질문', d.finalQ || d.q3 || d.q2 || d.q1) + row('제목', d.oTitle) + row('서론', d.oIntro) + row('본론', d.oBody) + row('결론', d.oConcl);
   const src = Array.isArray(d.sources) ? d.sources.filter(x=>x && (String(x.what||'').trim() || String(x.link||'').trim())) : [];
@@ -396,7 +397,7 @@ function renderPrep(d){
   }
   box.innerHTML = h;
 }
-/* ---------- AI 피드백 글을 읽기 좋게 그리기 (student33·teacher33 공통 — 두 파일을 똑같이 유지) ----------
+/* ---------- AI 피드백 글을 읽기 좋게 그리기 (student23·teacher23 공통 — 두 파일을 똑같이 유지) ----------
    [제목] ○/3점 → 항목 카드, 👍/🔧/❓ 줄 → "잘된 점/보완할 점/생각해 볼 질문" 표시, ※ 안내문 → 회색 상자.
    예상하지 못한 형식이어도 줄글로 그대로 보여 준다(내용이 사라지지 않음). */
 function renderFeedbackHTML(text){
@@ -629,7 +630,7 @@ showPage(0);
 if(PREVIEW_MODE){
   $('previewBanner').style.display = 'block';
   $('gateScreen').style.display = 'none'; $('appScreen').style.display = 'block';
-  showPage(0); renderPrep({finalQ:'(미리보기) 학생이 32번에 적은 탐구 질문이 여기에 보여요'});
+  showPage(0); renderPrep({finalQ:'(미리보기) 학생이 [2]에 적은 탐구 질문이 여기에 보여요'});
   function reportPreviewHeight(){ if(window.parent && window.parent !== window) window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin); }
   window.addEventListener('message', (e)=>{
     if(e.origin !== window.location.origin) return;
