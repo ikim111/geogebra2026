@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>33. 확률 탐구 글쓰기 ② 보고서 제출</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --line:#d5d9de; --ink2:#52514e; --muted:#8a8a86; --soft:#f7f9fb; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  .step-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .step-tabs button{flex:1;min-width:120px;border:1px solid #444;background:#2a2e33;color:#cfd3d8;border-radius:6px;padding:6px 8px;font-size:12.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .step-tabs button.on{background:#e8eaed;color:#1A1D20;border-color:#e8eaed;}
+  .step-tabs button.done::after{content:' ✓';color:#66bb6a;}
+  .step-tabs button:disabled{opacity:.45;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{background:#9e9e9e;}
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .task, body.app-paused #pagerNav button, body.app-paused .submit-panel button{pointer-events:none !important;opacity:.5;}
+  body.final-locked .task .card{pointer-events:none !important;opacity:.7;}
+  body.final-locked .task .card details.guide{pointer-events:auto !important;}
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+  #saveStatus{font-size:11.5px;color:#9aa0a6;text-align:right;margin:-6px 4px 8px;}
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  #appScreen{display:none;}
+
+  /* ---- 보고서 ---- */
+  .card{background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .task-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px;}
+  .task-head h2{font-size:19px;margin:0;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .hint{font-size:13.5px;color:var(--ink2);margin:2px 0 10px;}
+  .sec{margin-top:18px;}
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .sec-head .lab{font-size:17px;font-weight:bold;color:#1a237e;}
+  .sec-head .lab small{font-size:12.5px;font-weight:normal;color:var(--muted);margin-left:6px;}
+  .cnt{font-size:13px;font-weight:bold;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .cnt.ok{color:var(--green);}
+  .cnt.short{color:var(--orange);}
+  .sec ul.tips{margin:0 0 6px;padding-left:18px;font-size:12.5px;color:#777;}
+  .task textarea{width:100%;font-family:inherit;font-size:15.5px;border:1px solid #c5cad1;border-radius:8px;padding:11px 13px;background:#fff;resize:none;overflow:hidden;line-height:1.75;min-height:90px;}
+  .task textarea.title{min-height:0;font-size:17px;font-weight:bold;}
+  .task textarea:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  #totalBar{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #totalBar b{font-variant-numeric:tabular-nums;}
+  #totalBar b.ok{color:#81c784;} #totalBar b.short{color:#ffb74d;}
+  details.ref{background:#fff;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  details.ref > summary{cursor:pointer;font-weight:bold;font-size:15px;padding:12px 18px;list-style:none;color:#333;}
+  details.ref > summary::-webkit-details-marker{display:none;}
+  details.ref > summary::before{content:'▶ ';font-size:11px;color:#999;}
+  details.ref[open] > summary::before{content:'▼ ';}
+  details.ref .rbody{padding:0 18px 14px;font-size:13.5px;}
+  .ol{display:grid;grid-template-columns:70px 1fr;gap:4px 10px;margin:4px 0;}
+  .ol .k{font-weight:bold;color:var(--ink2);}
+  .ol .v{white-space:pre-wrap;word-break:break-word;}
+  .ol .v.none{color:#bbb;}
+  .srcs{margin:8px 0 0;padding-left:0;list-style:none;}
+  .srcs li{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0;}
+  .srcs a{color:var(--blue);word-break:break-all;}
+  table.rub{width:100%;border-collapse:collapse;font-size:13px;}
+  table.rub th, table.rub td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left;}
+  table.rub th{background:#eceef1;white-space:nowrap;}
+  table.rub td.pt{text-align:center;white-space:nowrap;font-weight:bold;}
+  table.rub ul{margin:0;padding-left:16px;}
+  #aiCard{display:none;border:2px solid #7e57c2;}
+  #aiCard .ai-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:bold;color:#4527a0;font-size:16px;margin-bottom:6px;}
+  #aiCard .ai-time{font-size:12px;color:#999;font-weight:normal;}
+  #aiText{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.75;background:#f7f4fd;border-radius:8px;padding:12px 14px;}
+  #aiCard .ai-note{font-size:12.5px;color:#6a6a66;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>33. 확률 탐구 글쓰기 ② 보고서 제출</h1>
+    <p class="gate-sub">32번에서 준비한 개요와 자료를 바탕으로 보고서를 완성해 제출해요 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#e65100;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label><div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label><div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label><div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">33. 확률 탐구 글쓰기 ② 보고서 제출</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn" style="display:none;">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div id="totalBar">서론+본론+결론 <b id="totalCnt">0</b>자 / 1000자 이상</div>
+      </div>
+      <button id="nextBtn" style="display:none;">다음 ▶</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+    <div id="saveStatus"></div>
+
+    <div id="taskContainer">
+
+<section class="task" id="task-r1" data-task-id="1">
+  <div class="card" id="aiCard">
+    <div class="ai-head"><span>🤖 AI 피드백 <span style="font-size:12.5px;color:#7e57c2;font-weight:normal;">(선생님이 보내 준 1회 피드백)</span></span><span class="ai-time" id="aiTime"></span></div>
+    <div id="aiText"></div>
+    <div class="ai-note">피드백을 참고해 고치고 싶다면 아래 <b>"제출 취소"</b>를 누르고 보고서를 고친 뒤 다시 제출하세요.</div>
+  </div>
+
+  <details class="ref" id="refBox" open>
+    <summary>📝 내가 준비한 개요와 자료 (32번에서 작성)</summary>
+    <div class="rbody" id="refBody"><span style="color:#999;">불러오는 중…</span></div>
+  </details>
+
+  <details class="ref">
+    <summary>✅ 채점 기준 (총 15점) — 제출 전에 스스로 점검해요</summary>
+    <div class="rbody">
+      <table class="rub">
+        <tr><th>평가 요소</th><th>점검할 내용</th><th>배점</th></tr>
+        <tr><td>적절한 탐구 질문 형성</td><td><ul><li>확률 또는 통계와 관련된 질문인가?</li><li>의미가 분명하고 구체적인가?</li><li>실제 자료를 수집해 탐구할 수 있는가?</li><li>단순한 사실 확인을 넘어 자료로 분석·판단할 수 있는가?</li></ul></td><td class="pt">3점</td></tr>
+        <tr><td>신뢰성 있는 자료 수집</td><td><ul><li>탐구 질문에 알맞은 자료인가?</li><li>서로 다른 자료를 2개 이상 활용했는가?</li><li>출처와 링크를 확인할 수 있게 적었는가?</li><li>공공기관·연구기관·공식 통계 등 믿을 만한 자료인가?</li></ul></td><td class="pt">3점</td></tr>
+        <tr><td>자료의 타당한 분석</td><td><ul><li>수치를 나열하는 데 그치지 않고 특징·차이·경향을 설명했는가?</li><li>2개 이상의 자료를 서로 관련지어 분석했는가?</li><li>확률을 계산하거나 그 의미를 해석했는가?</li><li>자료가 보여주는 범위를 넘어 지나치게 단정하지 않았는가?</li></ul></td><td class="pt">4점</td></tr>
+        <tr><td>글의 논리적 완성</td><td><ul><li>글 전체가 탐구 질문의 답을 찾아가는가?</li><li>서론-본론-결론의 흐름이 자연스러운가?</li><li>결론이 앞의 분석을 근거로 하는가?</li><li><b>1000자 이상</b> 작성했는가?</li></ul></td><td class="pt">5점</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <div class="card">
+    <div class="task-head"><h2>📄 확률 탐구 보고서</h2><span class="badge pending" id="badge-r1">미완료</span></div>
+    <p class="hint">글자 수는 <b>띄어쓰기 포함</b>(줄바꿈 제외)으로 실시간으로 세어져요. 칸은 글이 길어지면 저절로 늘어나요. 쓰는 내용은 자동 저장돼요.</p>
+
+    <div class="sec">
+      <div class="sec-head"><span class="lab">[제목]</span><span class="cnt" id="cnt-title">0자</span></div>
+      <textarea class="title" data-k="title" rows="1" placeholder="탐구 질문이 드러나는 제목"></textarea>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><span class="lab">[서론]<small>200자 이상</small></span><span class="cnt" id="cnt-intro">0자 / 200자</span></div>
+      <ul class="tips"><li>왜 이 질문을 선택했는지(질문 선정 동기)</li><li>탐구를 통해 무엇을 알아보고 싶은지</li><li>본론에서 어떤 자료를 사용할 것인지 간단히 소개</li></ul>
+      <textarea data-k="intro"></textarea>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><span class="lab">[본론]<small>500자 이상</small></span><span class="cnt" id="cnt-body">0자 / 500자</span></div>
+      <ul class="tips"><li>두 개 이상의 신뢰할 수 있는 자료를 활용하고, 각 자료의 출처와 링크를 제시</li><li>각 자료에서 탐구 질문과 관련해 알 수 있는 내용을 분석</li><li>수집한 자료로 확률을 계산하고, 계산 결과가 무엇을 의미하는지 해석</li><li>자료와 계산 결과를 근거로 자신의 생각을 논리적으로 설명</li></ul>
+      <textarea data-k="body" style="min-height:180px;"></textarea>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><span class="lab">[결론]<small>200자 이상</small></span><span class="cnt" id="cnt-concl">0자 / 200자</span></div>
+      <ul class="tips"><li>탐구 질문에 대한 최종 답</li><li>이 자료만으로 단정하기 어려운 점(한계점)</li><li>추가로 고려하면 좋을 변수, 더 알아보고 싶은 점</li></ul>
+      <textarea data-k="concl"></textarea>
+    </div>
+  </div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <p style="margin:0 0 12px;font-size:14px;color:#555;">보고서를 다 썼으면 제출하세요. 제출하면 선생님이 AI 피드백을 한 번 보내 줄 수 있어요.<br>제출한 뒤에도 "제출 취소"를 누르면 다시 고칠 수 있어요.</p>
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg"></div>
+    <div class="pager-buttons" style="display:none;"><span id="pageLabel"></span></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   33. 확률 탐구 글쓰기 ② 보고서 제출 (VIII. 확률 — 수행평가)
+   [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~32번 단원과 같은 틀(게이트·단원 잠금·
+   실시간 저장·일시정지·공지·수업 종료·제출/백업·교사 미리보기)을 쓴다.
+   - 글상자는 내용에 맞춰 저절로 늘어난다(안쪽 스크롤 없음).
+   - 글자 수: 띄어쓰기 포함, 줄바꿈 제외(api/report-feedback.js의 countChars와 같은 방식).
+   - 32번(ACTIVITY_SUFFIX '__prob32')의 data를 읽어 개요·자료를 참고용으로 보여준다(읽기만 함).
+   - teacher33.html이 AI 피드백을 students/{key}/aiFeedback = {text, ts}에 저장하면 실시간으로 보여준다.
+   ACTIVITY_SUFFIX는 teacher33.html과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__prob33'; // teacher33.html과 반드시 동일해야 함
+const PREP_SUFFIX = '__prob32';    // 32번(개요·자료) — 읽기만 한다
+const UNIT_LABEL = '33. 확률 탐구 글쓰기 ② 보고서 제출';
+const UNIT_NO = 33;
+const TASKS = [ {id:1, key:'r1', title:'보고서 작성'} ];
+const SECS = [ {k:'title', min:0}, {k:'intro', min:200}, {k:'body', min:500}, {k:'concl', min:200} ];
+const TOTAL_MIN = 1000;
+const state = { f:{ title:'', intro:'', body:'', concl:'' } };
+const $ = id => document.getElementById(id);
+const countChars = s => Array.from(String(s||'').replace(/\r?\n/g,'')).length; // 띄어쓰기 포함, 줄바꿈 제외
+const cnt = k => countChars(state.f[k]);
+const totalCount = () => cnt('intro') + cnt('body') + cnt('concl');
+function missing(){
+  const m = [];
+  if(!state.f.title.trim()) m.push('제목');
+  SECS.forEach(x=>{ if(x.min && cnt(x.k) < x.min) m.push(`${({intro:'서론',body:'본론',concl:'결론'})[x.k]} ${x.min}자 이상`); });
+  if(totalCount() < TOTAL_MIN) m.push(`전체 ${TOTAL_MIN}자 이상`);
+  return m;
+}
+const isDone = () => missing().length === 0;
+const valueOf = () => `${state.f.title.trim() ? '제목: '+state.f.title.trim()+' · ' : ''}서론 ${cnt('intro')}자 · 본론 ${cnt('body')}자 · 결론 ${cnt('concl')}자 · 합계 ${totalCount()}자`;
+function collectData(){ return { title: state.f.title, intro: state.f.intro, body: state.f.body, concl: state.f.concl, total: totalCount() }; }
+
+function autoGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
+document.querySelectorAll('textarea[data-k]').forEach(el=>{
+  el.addEventListener('input', ()=>{ state.f[el.dataset.k] = el.value; autoGrow(el); changed(); });
+});
+window.addEventListener('resize', ()=> document.querySelectorAll('textarea[data-k]').forEach(autoGrow));
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function paintCounts(){
+  SECS.forEach(x=>{
+    const n = cnt(x.k), el = $('cnt-'+x.k);
+    if(!x.min){ el.textContent = `${n.toLocaleString()}자`; el.className='cnt'; return; }
+    el.textContent = `${n.toLocaleString()}자 / ${x.min}자 ${n>=x.min?'✅':''}`;
+    el.className = 'cnt ' + (n>=x.min ? 'ok' : (n>0 ? 'short' : ''));
+  });
+  const t = totalCount(); const tb = $('totalCnt');
+  tb.textContent = t.toLocaleString(); tb.className = t>=TOTAL_MIN ? 'ok' : 'short';
+  $('progressFill').style.width = Math.min(100, t/TOTAL_MIN*100) + '%';
+}
+function changed(opts){
+  paintCounts();
+  const d = isDone(), b = $('badge-r1');
+  b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  if(!(opts && opts.noSave)){ $('saveStatus').textContent = RT.connected ? '저장 중…' : ''; RT.pushProgressDebounced(); }
+}
+
+/* 32번에서 쓴 개요·자료(읽기 전용) */
+function renderPrep(d){
+  const box = $('refBody');
+  if(!d){ box.innerHTML = '<span style="color:#999;">32번(질문·계획·자료 탐구)에 적은 내용이 없어요. 32번을 먼저 해 보세요.</span>'; return; }
+  const row = (k,v)=>{ const t=String(v||'').trim(); return `<div class="ol"><span class="k">${k}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; };
+  let h = row('탐구 질문', d.finalQ || d.q3 || d.q2 || d.q1) + row('제목', d.oTitle) + row('서론', d.oIntro) + row('본론', d.oBody) + row('결론', d.oConcl);
+  const src = Array.isArray(d.sources) ? d.sources.filter(x=>x && (String(x.what||'').trim() || String(x.link||'').trim())) : [];
+  if(src.length){
+    h += '<div style="font-weight:bold;margin-top:10px;">📎 내가 모은 자료</div><ul class="srcs">' + src.map((x,i)=>{
+      const link = String(x.link||'').trim();
+      const a = /^https?:\/\//i.test(link) ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link)}</a>` : esc(link);
+      return `<li><b>자료 ${i+1}.</b> ${esc(x.what)}${x.site?` — <span style="color:#666;">${esc(x.site)}</span>`:''}<br>${a}${String(x.analysis||'').trim()?`<div style="color:#555;white-space:pre-wrap;margin-top:3px;">분석: ${esc(x.analysis)}</div>`:''}</li>`; }).join('') + '</ul>';
+  }
+  box.innerHTML = h;
+}
+/* 선생님이 보낸 AI 피드백 */
+function renderAI(fb){
+  const card = $('aiCard');
+  if(!fb || !fb.text){ card.style.display='none'; return; }
+  $('aiText').textContent = fb.text;
+  $('aiTime').textContent = fb.ts ? new Date(fb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  card.style.display = 'block';
+}
+
+/* ---------- 실시간 저장 (Firebase) — 11~21번 단원과 같은 구조 ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0,
+  classEnded:false, _lastKnownClassEnded:null, viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){ this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); this.db = firebase.database(); }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously().then(() => this._afterAuth(name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(name, room, number, statusEl){
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/' + this.sanitize(room) + ACTIVITY_SUFFIX);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.controlRef = this.roomRef.child('control');
+    this.connected = true;
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.data) restoreData(existing.data); // 저장된 내용을 먼저 되살린 뒤에 저장 시작
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({ name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+      this.pushProgress();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+    this.studentRef.child('aiFeedback').on('value', snap=> renderAI(snap.val()));
+    this.db.ref('rooms/' + this.sanitize(room) + PREP_SUFFIX + '/students/' + this.studentKey + '/data').once('value')
+      .then(snap=> renderPrep(snap.val())).catch(()=> renderPrep(null));
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused; applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs; $('announceText').textContent = c.announcement; $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){ $('announceBanner').style.display = 'none'; }
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing(); updateNavButtons();
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
+      else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
+      this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
+    });
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{ if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true }); }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    progress.r1 = { done: isDone(), value: valueOf(), visited: true };
+    this.studentRef.update({ progress, completed: isDone()?1:0, total: 1, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP })
+      .then(()=>{ $('saveStatus').textContent = '✔ 자동 저장됨'; }).catch(()=>{ $('saveStatus').textContent = '⚠️ 저장 실패 — 인터넷 연결을 확인하세요'; });
+  },
+  pushProgressDebounced(){ if(!this.connected) return; clearTimeout(this._t); this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 700); },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){ this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP }); this.pushProgress(); }
+  },
+  flushPending(){ if(this._t){ clearTimeout(this._t); this._t=null; } this.pushProgress(); }
+};
+function restoreData(d){
+  if(!d) return;
+  document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
+  paintAll(); changed({noSave:true});
+}
+function paintAll(){ document.querySelectorAll('textarea[data-k]').forEach(autoGrow); }
+
+function applyPauseLock(paused){ document.body.classList.toggle('app-paused', paused); $('lockOverlay').style.display = paused ? 'flex' : 'none'; updateNavButtons(); }
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 한 페이지(보고서 + 제출) — 교사 미리보기·속도조절 틀과 맞추기 위한 최소 구조 ---------- */
+const pages = [document.querySelector('#taskContainer > .task')];
+let currentPage = 0;
+function taskIdToPageIdx(n){ return n===1 ? 0 : -1; }
+function showPage(){
+  RT.setViewingTask(1);
+  requestAnimationFrame(()=> document.querySelectorAll('textarea[data-k]').forEach(autoGrow));
+  updateNavButtons();
+}
+function clampToPacing(){}
+function updateNavButtons(){ $('pacingMsg').style.display='none'; }
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){ try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const o = JSON.parse(raw); return (o && o.classNo && o.name) ? o : null; }catch(e){ return null; } }
+const IDENTITY_KEY = 'ggb_identity_prob33_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const o = JSON.parse(raw); return (o && o.name) ? o : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none'; $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none'; $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){ startApp(profile); $('switchUserName').textContent = id.name; $('switchUserWrap').style.display = 'block'; }
+  };
+  const showLocked = ()=>{ $('profileMissingBox').style.display='none'; $('profileBox').style.display='none'; $('unitLockedBox').style.display='block'; };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{ if(snap.val()===true) showOpen(); else showLocked(); }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  document.querySelectorAll('textarea[data-k]').forEach(t=> t.readOnly = locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    const m = missing();
+    if(m.length && !confirm(`아직 채우지 못한 기준이 있어요: ${m.join(', ')}\n그래도 제출할까요?`)) return;
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = { classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, data: collectData(), exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = `확률탐구보고서_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+});
+
+paintAll(); changed({noSave:true});
+showPage(0);
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe) ---------- */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none'; $('appScreen').style.display = 'block';
+  showPage(0); renderPrep({finalQ:'(미리보기) 학생이 32번에 적은 탐구 질문이 여기에 보여요'});
+  function reportPreviewHeight(){ if(window.parent && window.parent !== window) window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin); }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto'){ reportPreviewHeight(); requestAnimationFrame(reportPreviewHeight); }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+</body>
+</html>
