@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -119,6 +120,28 @@
   .ai-box .ai-note{font-size:12px;color:#777;font-weight:normal;}
   button.ai{background:#5e35b1;color:#fff;font-weight:bold;}
   button.ai:disabled{background:#c5bce0;cursor:not-allowed;}
+  /* ---- 📊 채점(AI 1차 → 선생님 수정) ---- */
+  .gr-box{margin-top:12px;border:1px solid #b2dfdb;background:#f3fbfa;border-radius:8px;padding:10px 12px;}
+  .gr-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#00695c;font-size:13.5px;}
+  .gr-hd .note{font-weight:normal;font-size:12px;color:#777;}
+  button.gr-ai{background:#00897b;color:#fff;font-weight:bold;padding:6px 12px;font-size:12.5px;}
+  button.gr-ai:disabled{background:#a7d3cd;cursor:not-allowed;}
+  .gr-warn{font-size:12.5px;color:#e65100;margin-top:6px;}
+  .gr-row{display:grid;grid-template-columns:110px 1fr auto;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid #dbeeeb;}
+  .gr-row:first-of-type{border-top:none;}
+  .gr-row .nm{font-weight:bold;font-size:13px;color:#333;}
+  .gr-row .nm small{display:block;font-weight:normal;color:#888;font-size:11.5px;}
+  .gr-row .why{font-size:12.5px;color:#555;line-height:1.5;}
+  .gr-row .why .ov{color:#00695c;font-weight:bold;}
+  .gr-chips{display:flex;gap:4px;flex-wrap:nowrap;}
+  .gr-chips button{position:relative;min-width:30px;height:30px;padding:0 6px;border:1px solid #b0bec5;background:#fff;color:#555;border-radius:6px;font-weight:bold;font-size:13px;}
+  .gr-chips button.on{background:#00897b;border-color:#00897b;color:#fff;}
+  .gr-chips button.ai-mark::after{content:'AI';position:absolute;top:-7px;right:-5px;font-size:9px;background:#7e57c2;color:#fff;border-radius:6px;padding:0 3px;line-height:13px;}
+  .gr-total{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;font-size:13.5px;}
+  .gr-total b{font-size:16px;color:#00695c;}
+  @media (max-width:700px){ .gr-row{grid-template-columns:1fr;} }
+  td.score-cell{font-weight:bold;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;}
+  td.score-cell .src{font-size:10.5px;font-weight:normal;color:#888;margin-left:3px;}
   .agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#fffbe6;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#5d4200;}
   .agg b{font-size:16px;color:#8d6e00;}
   .flipseq{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -248,6 +271,12 @@
         <button class="ai" id="aiBulkBtn" disabled>🤖 제출한 학생 모두에게 AI 피드백 보내기 (0명)</button>
         <span id="aiBulkStatus" style="font-size:12.5px;color:#5e35b1;"></span>
       </div>
+      <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
+        <span>📊 <b>채점</b> — AI 채점 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
+        <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점 일괄 (0명)</button>
+        <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
+        <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
+      </div>
     </div>
 
     <div class="tab-bar">
@@ -313,6 +342,8 @@
    student23.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
    teacher22.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
    - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈 제외)를 보여준다.
+   - 📊 채점: AI가 4개 항목(질문3·자료3·분석4·논리5)을 1차 채점(/api/report-grade)하고, 선생님이 숫자를 눌러
+     항목별로 고친다(aiGrade / teacherGrade). 표의 "점수" 칸과 엑셀 내려받기에 최종 점수가 나온다. 학생에게는 안 보인다.
    - 🤖 AI 피드백: 제출한 학생에게 보낸다(횟수 제한 없음). /api/report-feedback(Vercel 서버 함수, OpenAI)을
      호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total, n, hash}에 저장하면
      student23.html에 바로 나타난다(가장 최근 피드백만 보관, n = 몇 번째 피드백인지).
@@ -439,7 +470,7 @@ function activityDetailHTML(s, id, key){
     ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
     : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
-  return h + (key ? aiBoxHTML(key, s) : '');
+  return h + (key ? gradeBoxHTML(key, s) + aiBoxHTML(key, s) : '');
 }
 /* 요약 패널 */
 /* 일괄 보내기 대상: 제출했고, 아직 피드백을 못 받았거나 받은 뒤 글을 고친 학생 */
@@ -455,6 +486,125 @@ function renderAggregate(){
   btn.textContent = `🤖 AI 피드백 일괄 보내기 — 아직 못 받았거나 고쳐서 다시 낸 학생 (${n}명)`;
   btn.disabled = n===0 || aiBulkRunning;
 }
+
+/* ---------- 📊 채점: AI가 1차 채점 → 선생님이 항목별로 고친다 (teacherpa1과 같은 방식) ----------
+   rooms/{반}__prob33/students/{key}/aiGrade      = {scores:{question,data,analysis,logic}, reasons:{...}, total, hash, ts, model}
+   rooms/{반}__prob33/students/{key}/teacherGrade = {question:2, ...}  ← 선생님이 고친 항목만(AI 점수와 같게 고르면 지움)
+   최종 점수 = 선생님 점수가 있으면 그것, 없으면 AI 점수. 학생 화면에는 점수를 보여주지 않는다.
+   hash: 채점할 때의 보고서 지문 — 채점 뒤 학생이 글을 고치면 "다시 채점" 안내가 뜨고 일괄 채점 대상이 된다. */
+const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
+const SCORE_MAX = 15;
+const gradePending = new Set();
+let gradeBulkRunning = false;
+const isNum = v => typeof v === 'number' && isFinite(v);
+function gradeOf(s){
+  const ai = (s && s.aiGrade && s.aiGrade.scores) ? s.aiGrade : null;
+  const tg = (s && s.teacherGrade) || {};
+  let total = 0, cnt = 0, ov = 0;
+  const items = CRITERIA.map(c=>{
+    const a = ai && isNum(ai.scores[c.k]) ? ai.scores[c.k] : null;
+    const t = isNum(tg[c.k]) ? tg[c.k] : null;
+    const f = t!=null ? t : a;
+    if(f!=null){ total += f; cnt++; }
+    if(t!=null) ov++;
+    return Object.assign({}, c, { ai:a, teacher:t, final:f, reason: ai && ai.reasons ? (ai.reasons[c.k]||'') : '' });
+  });
+  return { items, total, complete: cnt===CRITERIA.length, any: cnt>0, overridden: ov, ai, stale: !!ai && !!ai.hash && ai.hash !== repHash(s) };
+}
+function gradeBoxHTML(key, s){
+  const g = gradeOf(s), pending = gradePending.has(key);
+  const can = hasReport(s) && !pending;
+  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 채점 <span class="note">AI가 1차 채점 → 숫자를 눌러 선생님이 항목별로 고쳐요 · 학생에게는 안 보여요</span></span>
+    <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점 중…' : (g.ai ? '🤖 AI 다시 채점' : '🤖 AI 채점')}</button></div>`;
+  if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
+  if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
+  g.items.forEach(it=>{
+    let chips = '';
+    for(let v=0; v<=it.max; v++){
+      const on = it.final===v, aiMark = it.ai===v;
+      chips += `<button class="${on?'on':''}${aiMark?' ai-mark':''}" data-gs="${esc(key)}" data-gc="${it.k}" data-gv="${v}" title="${aiMark?'AI 점수 · ':''}${v}점으로 정하기">${v}</button>`;
+    }
+    const why = it.teacher!=null && it.teacher!==it.ai
+      ? `<span class="ov">선생님 수정 ${it.teacher}점</span>${it.ai!=null?` (AI ${it.ai}점: ${esc(it.reason)})`:''} <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="font-size:11.5px;color:#888;">↺ AI 점수로</a>`
+      : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
+    h += `<div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>`;
+  });
+  h += `<div class="gr-total">${g.overridden?`<span style="font-size:12px;color:#00695c;">선생님 수정 ${g.overridden}개</span>`:''}합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}점${g.any && !g.complete ? ' <span style="font-size:12px;color:#e65100;">(일부 항목 미채점)</span>' : ''}</div></div>`;
+  return h;
+}
+async function requestGrade(key){
+  const s = allStudents[key];
+  if(!s || !hasReport(s) || gradePending.has(key)) return false;
+  gradePending.add(key); refreshAI();
+  try{
+    const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
+    const g = { scores: j.scores, reasons: j.reasons || {}, total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
+    await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
+    if(allStudents[key]) allStudents[key].aiGrade = g;
+    return true;
+  }catch(err){
+    throw new Error(`${s.name||key}: ${err.message||err}`);
+  }finally{
+    gradePending.delete(key); refreshAI();
+  }
+}
+async function setTeacherScore(key, c, v){
+  const s = allStudents[key]; if(!s) return;
+  const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
+  const val = (v==null || v===ai) ? null : v; // AI 점수와 같게 고르면 '수정 없음'으로
+  await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/teacherGrade/'+c).set(val);
+  if(!s.teacherGrade) s.teacherGrade = {};
+  if(val==null) delete s.teacherGrade[c]; else s.teacherGrade[c] = val;
+  refreshAI(); renderGrid();
+}
+/* 일괄 채점 대상: 제출했고, 아직 AI 채점 전이거나 채점 뒤 글을 고친 학생 */
+function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale); }); }
+function renderGradePanel(){
+  const panel = document.getElementById('gradePanel'); if(!panel) return;
+  panel.style.display = currentRoomKey ? 'flex' : 'none';
+  const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
+  const graded = list.map(gradeOf).filter(g=>g.any);
+  document.getElementById('grAi').textContent = list.filter(s=>s.aiGrade&&s.aiGrade.scores).length;
+  document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
+  document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
+  const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
+  btn.textContent = `🤖 AI 채점 일괄 — 제출했고 아직 채점 전이거나 고친 학생 (${n}명)`;
+  btn.disabled = n===0 || gradeBulkRunning;
+}
+document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
+  const keys = gradeEligibleKeys(); if(!keys.length) return;
+  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점할까요?\n(한 번에 3명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
+  gradeBulkRunning = true; renderGradePanel();
+  const st = document.getElementById('gradeBulkStatus');
+  let ok=0, fail=[], i=0;
+  const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestGrade(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `채점 중… ${ok+fail.length}/${keys.length}`; } };
+  await Promise.all([worker(),worker(),worker()]);
+  gradeBulkRunning = false; renderGradePanel(); renderGrid();
+  st.textContent = `완료: ${ok}명 채점` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 채점해요)` : '');
+  if(fail.length) console.warn('AI 채점 실패:', fail);
+});
+/* 점수 엑셀(.xlsx) 내려받기 — 항목별 최종 점수(선생님 수정 반영) + AI 점수 */
+document.getElementById('exportExcelBtn').addEventListener('click', ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  if(typeof XLSX==='undefined'){ alert('엑셀 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.'); return; }
+  const list = Object.keys(allStudents).map(k=>allStudents[k]||{}).sort(byNumber);
+  if(!list.length){ alert('아직 접속한 학생이 없어요.'); return; }
+  const header = ['번호','이름', ...CRITERIA.map(c=>`${c.name} /${c.max}점`), `총점 /${SCORE_MAX}점`, '선생님 수정 항목 수', ...CRITERIA.map(c=>`(AI) ${c.name}`), '(AI) 총점', '제목', '글자 수', '자료 출처 수', '제출 여부'];
+  const rows = [header];
+  list.forEach(s=>{
+    const g = gradeOf(s), r = repOf(s);
+    rows.push([ s.number||'', s.name||'(이름없음)', ...g.items.map(it=> it.final==null ? '' : it.final), g.any ? g.total : '', g.overridden,
+      ...g.items.map(it=> it.ai==null ? '' : it.ai), g.ai ? CRITERIA.reduce((a,c)=>a+(g.ai.scores[c.k]||0),0) : '',
+      r.title, totalOf(s), r.sources.length, s.submitted ? '제출완료' : '미제출' ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:10},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:9},{wch:30},{wch:8},{wch:10},{wch:9}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '점수');
+  const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `수행평가_확률탐구보고서_${currentRoomName||''}반_${ymd}.xlsx`);
+});
 
 /* ---------- 🤖 AI 피드백 보내기 (횟수 제한 없음 — 다시 보내면 최신 피드백으로 바뀜) ---------- */
 let aiBulkRunning = false;
@@ -479,9 +629,21 @@ async function requestAI(key){
     aiPending.delete(key); refreshAI();
   }
 }
-function refreshAI(){ renderAggregate(); renderTeacherView(); refreshOpenModal(); }
+function refreshAI(){ renderAggregate(); renderGradePanel(); renderTeacherView(); refreshOpenModal(); }
 document.addEventListener('click', async e=>{
-  const send = e.target.closest && e.target.closest('[data-ai-send]');
+  if(!e.target.closest) return;
+  // 📊 채점 상자: 점수 숫자 / ↺ AI 점수로 / 🤖 AI 채점
+  const gs = e.target.closest('[data-gs]'), gr = e.target.closest('[data-gr]'), ga = e.target.closest('[data-grade-ai]');
+  if(gs || gr || ga){
+    e.stopPropagation(); e.preventDefault();
+    try{
+      if(gs) await setTeacherScore(gs.dataset.gs, gs.dataset.gc, parseInt(gs.dataset.gv,10));
+      else if(gr) await setTeacherScore(gr.dataset.gr, gr.dataset.gc, null);
+      else { const k = ga.dataset.gradeAi; await requestGrade(k); renderGrid(); }
+    }catch(err){ alert('채점하지 못했어요.\n'+(err.message||err)+'\n\n잠시 후 다시 눌러 보세요.'); }
+    return;
+  }
+  const send = e.target.closest('[data-ai-send]');
   if(!send) return;
   e.stopPropagation(); e.preventDefault();
   const key = send.dataset.aiSend, s = allStudents[key]||{};
@@ -575,11 +737,15 @@ function buildGridHead(){
     tr.appendChild(th);
   });
 
+  const thScore=document.createElement('th'); thScore.textContent='점수';
+  thScore.title='최종 점수(선생님 수정 반영) / 15점 — 누르면 채점 화면이 열려요';
+  tr.appendChild(thScore);
+
   const thTime=document.createElement('th'); thTime.textContent='마지막 활동';
   tr.appendChild(thTime);
 }
 buildGridHead();
-const GRID_COLSPAN = 4 + TASK_IDS.length + 1; // 체크박스+이름+번호+진행률 + 과제N개 + 마지막활동
+const GRID_COLSPAN = 4 + TASK_IDS.length + 2; // 체크박스+이름+번호+진행률 + 과제N개 + 점수 + 마지막활동
 
 function populateRoomSelect(){
   const sel=document.getElementById('roomCode');
@@ -606,7 +772,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       setPaceRange(null, null, /*fromRemote*/true);
       // 1초에 한 번만 다시 그리되, 그 사이 들어온 마지막 변경은 버리지 않고 1초 뒤에 반영한다.
       let __ggbThrottleTs = 0, __ggbPendingSnap = null, __ggbTimer = null;
-      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); onStudentsUpdated(); };
+      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); renderGradePanel(); onStudentsUpdated(); };
       studentsRef.on('value', snap=>{
         const wait = 1000 - (Date.now()-__ggbThrottleTs);
         if(wait<=0){ __ggbApply(snap); return; }
@@ -632,7 +798,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       document.getElementById('currentRoomLabel').textContent = room+'반';
       document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(room));
       document.getElementById('summary').style.display='flex';
-      renderAggregate();
+      renderAggregate(); renderGradePanel();
     }).catch(err=>{ statusEl.textContent='⚠️ 로그인 실패: '+err.message; });
   }catch(err){ statusEl.textContent='⚠️ 연결 실패: '+err.message; }
 });
@@ -770,7 +936,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
   if(studentsRef) studentsRef.off();
   if(controlRef) controlRef.off();
-  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate();
+  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate(); renderGradePanel();
   document.getElementById('teacherAppScreen').style.display='none';
   document.getElementById('teacherGateScreen').style.display='block';
   document.getElementById('connStatus').textContent='반을 선택하고 "시작하기"를 눌러주세요.';
@@ -875,6 +1041,15 @@ function renderGrid(){
       td.appendChild(cell);
       tr.appendChild(td);
     });
+
+    const tdScore=document.createElement('td'); tdScore.className='score-cell';
+    const gg = gradeOf(s);
+    if(gg.any){
+      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' ⚠️':''}</span>`;
+      tdScore.title = `${gg.total}/${SCORE_MAX}점` + (gg.overridden?` · 선생님 수정 ${gg.overridden}개`:' · AI 점수') + (gg.stale?' · 채점 뒤 글이 바뀜':'');
+    } else { tdScore.textContent = '-'; tdScore.style.color='#bbb'; tdScore.title='아직 채점 전'; }
+    tdScore.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); });
+    tr.appendChild(tdScore);
 
     const tdTime=document.createElement('td');
     tdTime.textContent = fmtTime(s.lastActive);
