@@ -46,7 +46,7 @@
   #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
   #lockOverlay h2{font-size:22px;margin-bottom:8px;}
   #lockOverlay p{font-size:14px;opacity:.85;}
-  body.app-paused .task, body.app-paused #pagerNav button, body.app-paused .submit-panel button{pointer-events:none !important;opacity:.5;}
+  body.app-paused .task, body.app-paused .ai-page, body.app-paused #pagerNav button, body.app-paused .submit-panel button{pointer-events:none !important;opacity:.5;}
   body.final-locked .task .card{pointer-events:none !important;opacity:.7;}
   body.final-locked .task .card details.guide{pointer-events:auto !important;}
   #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
@@ -159,6 +159,7 @@
   .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
   /* ---- 💬 AI 도우미(챗봇) ---- */
   .chat-card{text-align:left;background:#fff;border:2px solid #b2dfdb;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .ai-page .chat-log{max-height:60vh;min-height:260px;}
   .chat-card .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
   .chat-card .hd b{color:#00695c;font-size:16px;}
   .chat-card .hd small{color:#888;font-size:12px;}
@@ -224,7 +225,8 @@
       <button data-p="1">step2 탐구 계획</button>
       <button data-p="2">step3 자료 수집·분석</button>
       <button data-p="3">step4 개요 작성</button>
-      <button data-p="4">제출</button>
+      <button data-p="4">💬 AI 도우미</button>
+      <button data-p="5">제출</button>
     </div>
   </div>
 
@@ -396,7 +398,8 @@
 
     </div>
 
-    <div class="submit-panel" data-task-id="submit">
+    <!-- 5페이지: 💬 AI 도우미(챗봇) — 언제든 탭으로 와서 물어볼 수 있다 -->
+    <div class="ai-page" id="aiPage" data-task-id="chat">
       <div class="chat-card" id="chatCard">
         <div class="hd"><b>💬 AI 도우미</b><small id="chatLeft"></small></div>
         <div class="chat-rules">질문을 만들거나 자료를 찾다가 막막할 때 물어보세요. AI 도우미는 <b>답을 대신 알려 주지 않고</b>, 스스로 생각할 수 있게 힌트를 줘요.<br>
@@ -406,6 +409,10 @@
         <div class="chat-in"><textarea id="chatInput" rows="1" maxlength="500" placeholder="AI 도우미에게 물어볼 내용을 적어요 (Enter: 보내기, Shift+Enter: 줄바꿈)"></textarea><button type="button" id="chatSend">보내기</button></div>
         <div class="ai-off" id="chatOff"></div>
       </div>
+    </div>
+
+    <!-- 6페이지: 결과 제출 -->
+    <div class="submit-panel" data-task-id="submit">
       <p style="margin:0 0 12px;font-size:14px;color:#555;">step1~4를 모두 마쳤으면 제출하세요. 제출한 뒤에도 "제출 취소"를 누르면 다시 고칠 수 있어요.</p>
       <button class="main" id="submitBtn">결과 제출하기</button><br>
       <button class="backup" id="backupBtn">백업 파일로 저장</button>
@@ -415,7 +422,7 @@
 
   <div id="pagerNav">
     <div id="pacingMsg"></div>
-    <div class="pager-buttons"><span id="pageLabel">1 / 5</span></div>
+    <div class="pager-buttons"><span id="pageLabel">1 / 6</span></div>
   </div>
 </div>
 
@@ -848,7 +855,7 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState=
 $('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
 
 /* ---------- 페이지(step 4개 + 제출) ---------- */
-const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.getElementById('aiPage'), document.querySelector('.submit-panel')];
 let currentPage = 0;
 function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
 function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
