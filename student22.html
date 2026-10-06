@@ -365,6 +365,7 @@
 ② 2024년 남자 기준으로 80세 미만에서 사망할 확률은 1 − (80세 이상에서 죽을 확률) = 1 − 0.415 = 0.585이다.   — [국가통계포털] 2024년 사망원인통계 결과</div>
     <div id="srcList"></div>
     <button type="button" class="mini-btn" id="addSrc">＋ 자료 추가</button>
+    <button type="button" class="mini-btn" id="loadPlan">⬇ step2 자료 수집 계획 불러오기</button>
   </div>
   <div class="card">
     <div class="warn-box"><b>🚫 온라인 검색, 이렇게 하지 말아요!</b>
@@ -635,6 +636,22 @@ function paintLinkOk(){
     el.style.color = bl ? '#c62828' : (isUrl(s.link) ? '#2e7d32' : '#e65100'); });
 }
 $('addSrc').addEventListener('click', ()=>{ state.sources.push({what:'',site:'',link:'',analysis:''}); renderSources(); changed(); });
+/* step2 '자료 수집 계획' 표를 자료 카드로 가져온다: 필요 자료 → 수집한 자료, 자료 수집 방법(사이트명) → 출처.
+   이미 같은 '수집한 자료'가 있는 줄은 건너뛰고, 빈 카드가 있으면 먼저 채운 뒤 모자라면 카드를 더 만든다. 링크·분석은 학생이 채운다. */
+$('loadPlan').addEventListener('click', ()=>{
+  const rows = state.planRows.filter(r=> r.need.trim() || r.where.trim());
+  if(!rows.length){ alert('step2의 자료 수집 계획에 적은 내용이 없어요.'); return; }
+  const have = new Set(state.sources.map(x=> x.what.trim()).filter(Boolean));
+  const add = rows.filter(r=> !have.has(r.need.trim()));
+  if(!add.length){ alert('step2 자료 수집 계획이 이미 모두 들어 있어요.'); return; }
+  add.forEach(r=>{
+    const card = { what:r.need.trim(), site:r.where.trim(), link:'', analysis:'' };
+    const empty = state.sources.findIndex(x=> !x.what.trim() && !x.site.trim() && !x.link.trim() && !x.analysis.trim());
+    if(empty>=0) state.sources[empty] = card; else state.sources.push(card);
+  });
+  renderSources(); changed();
+  alert(`step2 자료 수집 계획 ${add.length}줄을 가져왔어요. 이제 자료마다 링크와 분석을 채워 보세요.`);
+});
 
 /* 자료 수집 점검 체크리스트 */
 (function buildDataChecks(){
