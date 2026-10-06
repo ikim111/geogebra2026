@@ -567,6 +567,11 @@ function acEntries(s){
     return txt.toLowerCase().includes(q);
   });
 }
+/* 학생 화면은 15초마다 접속 신호를 보내 표가 계속 다시 그려지므로, 내용이 바뀐 칸만 다시 그린다
+   (선생님이 대화를 위로 올려 읽는 중에 화면이 맨 아래로 튀지 않게). */
+const __acCache = {};
+function acSet(id, html){ if(__acCache[id]===html) return false; __acCache[id]=html; document.getElementById(id).innerHTML = html; return true; }
+let __acLastSel = null;
 function renderAiChatTab(){
   const panel = document.getElementById('tab-aichat'); if(!panel || !panel.classList.contains('active')) return;
   const keys = Object.keys(allStudents);
@@ -574,15 +579,15 @@ function renderAiChatTab(){
   const feed = [];
   keys.forEach(k=>{ const s=allStudents[k]||{}; acEntries(s).forEach(l=>{ if(l.type==='chat') feed.push({k, s, l}); }); });
   feed.sort((a,b)=>(b.l.ts||0)-(a.l.ts||0));
-  document.getElementById('acFeed').innerHTML = feed.length ? feed.slice(0,40).map(f=>`<div class="it" data-acsel="${esc(f.k)}"><span class="t">${esc(acRange==='today'?acTime(f.l.ts):acDate(f.l.ts)+' '+acTime(f.l.ts))}</span><span class="n">${esc(displayName(f.k,f.s.name,f.s.number))}</span><span class="q">${acHl(f.l.q||'')}</span></div>`).join('')
-    : `<div class="text-answer-empty">${acQuery() ? '검색에 맞는 질문이 없어요.' : (acRange==='today' ? '오늘은 아직 AI 도우미에게 질문한 학생이 없어요.' : '아직 AI 도우미에게 질문한 학생이 없어요.')}</div>`;
+  acSet('acFeed', feed.length ? feed.slice(0,40).map(f=>`<div class="it" data-acsel="${esc(f.k)}"><span class="t">${esc(acRange==='today'?acTime(f.l.ts):acDate(f.l.ts)+' '+acTime(f.l.ts))}</span><span class="n">${esc(displayName(f.k,f.s.name,f.s.number))}</span><span class="q">${acHl(f.l.q||'')}</span></div>`).join('')
+    : `<div class="text-answer-empty">${acQuery() ? '검색에 맞는 질문이 없어요.' : (acRange==='today' ? '오늘은 아직 AI 도우미에게 질문한 학생이 없어요.' : '아직 AI 도우미에게 질문한 학생이 없어요.')}</div>`);
   // 학생 목록(최근 질문한 학생이 위로)
   const rows = keys.map(k=>{ const s=allStudents[k]||{}; const es=acEntries(s); const chats=es.filter(l=>l.type==='chat'); const last=es.length?es[es.length-1].ts:0; return {k,s,n:chats.length,fb:es.length-chats.length,last}; })
     .sort((a,b)=> (b.last||0)-(a.last||0) || byNumber(a.s,b.s));
-  document.getElementById('acList').innerHTML = rows.map(r=>`<div class="st${r.k===acSel?' sel':''}" data-acsel="${esc(r.k)}"><span>${esc(displayName(r.k,r.s.name,r.s.number))}<small>${r.last?(acRange==='today'?'마지막 '+acTime(r.last):acDate(r.last)+' '+acTime(r.last)):'기록 없음'}</small></span><span class="c">${r.n?('질문 '+r.n):''}${r.fb?` <span style="color:#888;font-weight:normal;">피드백 ${r.fb}</span>`:''}</span></div>`).join('') || '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+  acSet('acList', rows.map(r=>`<div class="st${r.k===acSel?' sel':''}" data-acsel="${esc(r.k)}"><span>${esc(displayName(r.k,r.s.name,r.s.number))}<small>${r.last?(acRange==='today'?'마지막 '+acTime(r.last):acDate(r.last)+' '+acTime(r.last)):'기록 없음'}</small></span><span class="c">${r.n?('질문 '+r.n):''}${r.fb?` <span style="color:#888;font-weight:normal;">피드백 ${r.fb}</span>`:''}</span></div>`).join('') || '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>');
   // 선택한 학생 대화
   const conv = document.getElementById('acConv');
-  if(!acSel || !allStudents[acSel]){ conv.innerHTML = '<div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div>'; return; }
+  if(!acSel || !allStudents[acSel]){ acSet('acConv', '<div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div>'); return; }
   const s = allStudents[acSel], es = acEntries(s);
   let h = `<div style="font-weight:bold;color:#311b92;">${esc(displayName(acSel,s.name,s.number))} <span style="font-weight:normal;color:#888;font-size:12.5px;">· ${acRange==='today'?'오늘':'전체'} 기록 ${es.length}개</span></div>`, lastDay = '';
   es.forEach(l=>{
@@ -591,7 +596,9 @@ function renderAiChatTab(){
     else h += `<div class="fbk"><b>🤖 AI 피드백 · step${l.step}</b> <span style="color:#999;font-size:11.5px;">${esc(acTime(l.ts))}</span>${(l.good||[]).map(t=>`<div>👍 ${acHl(t)}</div>`).join('')}${(l.fix||[]).length?l.fix.map(t=>`<div>🔧 ${acHl(t)}</div>`).join(''):'<div>🔧 보완할 점 없음</div>'}</div>`;
   });
   if(!es.length) h += `<div class="text-answer-empty">${acRange==='today'?'오늘 기록이 없어요. "전체"를 눌러 보세요.':'기록이 없어요.'}</div>`;
-  conv.innerHTML = h; conv.scrollTop = conv.scrollHeight;
+  const nearBottom = conv.scrollHeight - conv.scrollTop - conv.clientHeight < 60;
+  if(acSet('acConv', h) && (acSel!==__acLastSel || nearBottom)) conv.scrollTop = conv.scrollHeight; // 학생을 새로 골랐거나 맨 아래를 보고 있을 때만 아래로
+  __acLastSel = acSel;
 }
 document.addEventListener('click', e=>{
   const sel = e.target.closest && e.target.closest('[data-acsel]'); if(sel){ acSel = sel.dataset.acsel; renderAiChatTab(); return; }
@@ -791,7 +798,7 @@ document.getElementById('anonymizeBtn').addEventListener('click', ()=>{
 
 document.getElementById('clearBtn').addEventListener('click', ()=>{
   if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
-  if(!confirm(`${currentRoomKey}반의 학생 접속 기록을 모두 지울까요? (이전 시간대 학생 목록을 정리할 때 사용하세요)`)) return;
+  if(!confirm(`${currentRoomName}반의 학생 기록을 모두 지울까요? (이전 시간대 학생 목록을 정리할 때 사용하세요)\n⚠️ 학생이 쓴 내용과 AI 사용 기록(챗봇 대화·AI 피드백)도 함께 지워지고 되돌릴 수 없어요. 필요하면 ④ AI 대화 탭에서 엑셀로 먼저 내려받으세요.`)) return;
   studentsRef.set(null);
   selectedKey = null; checkedKeys = new Set();
 });
@@ -881,7 +888,7 @@ document.getElementById('classStartBtn').addEventListener('click', ()=>{
 document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   if(!studentsRef || checkedKeys.size===0) return;
   const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
-  if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}`)) return;
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}\n⚠️ 그 학생이 쓴 내용과 AI 사용 기록도 함께 지워져요.`)) return;
   const updates = {};
   checkedKeys.forEach(k=>{ updates[k] = null; });
   studentsRef.update(updates);
