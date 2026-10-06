@@ -422,8 +422,7 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step5</span>확률 글쓰기 — 개요 작성</h2><span class="badge pending" id="badge-s5">미완료</span></div>
     <p class="hint">보고서를 쓰기 전에 무엇을 어떤 순서로 쓸지 짧게(키워드·핵심 문장 위주로) 정리해요. 이 개요는 [3] 보고서 제출 화면에서도 볼 수 있어요.<br>
-      칸마다 <b>앞에서 쓴 내용 중 그 부분에 필요한 것</b>을 모아 두었어요. <b>⬇ 불러오기</b>를 누른 뒤 내 말로 고쳐 써요.</p>
-    <div class="load-all"><button type="button" class="mini-btn" id="loadAllOutline">📥 비어 있는 칸에 한 번에 불러오기</button></div>
+      칸마다 <b>앞에서 쓴 내용 중 그 부분에 필요한 것</b>을 모아 두었어요. 보면서 <b>내 말로 직접</b> 정리해요. (본론의 자료 출처·링크만 불러올 수 있어요)</p>
     <div class="outline-row sec-title"><div class="lab">제목</div><div><ul><li>탐구 질문이 드러나는 제목을 작성한다.</li></ul>
       <div class="ref-box" id="ref-oTitle"></div>
       <textarea data-k="oTitle"></textarea></div></div>
@@ -709,14 +708,20 @@ function renderPrevRef(){
   const NAME = {oTitle:'제목', oIntro:'서론', oBody:'본론', oConcl:'결론'};
   Object.keys(R).forEach(k=>{
     const box = $('ref-'+k); if(!box) return;
-    box.innerHTML = `<div class="rb-hd"><span>📋 ${NAME[k]}에 쓸 수 있는 내용 (앞에서 쓴 것)</span><button type="button" data-load="${k}">⬇ ${NAME[k]} 칸으로 불러오기</button></div>` +
+    box.innerHTML = `<div class="rb-hd"><span>📋 ${NAME[k]}에 쓸 수 있는 내용 (앞에서 쓴 것)</span>${k==='oBody' ? '<button type="button" data-load="oBody">⬇ 자료 출처·링크만 불러오기</button>' : ''}</div>` +
       R[k].items.map(([lab,t])=>{ t=String(t||'').trim(); return `<div class="ri${t?'':' none'}"><b>${esc(lab)}</b>: ${t?linkify(t):'(아직 안 씀)'}</div>`; }).join('');
   });
 }
-/* 불러오기: 칸이 비어 있으면 채우고, 이미 쓴 내용이 있으면 물어보고 아래에 덧붙인다 */
+/* 불러오기(선생님 요청 2026-10-07: 학생이 직접 쓰도록 본론의 '자료 출처·링크'만 불러온다 — 옮겨 적기만 하는 부분이라서).
+   칸이 비어 있으면 채우고, 이미 쓴 내용이 있으면 물어보고 아래에 덧붙인다 */
+function sourceLines(){
+  return state.sources.filter(x=> x.what.trim() || x.site.trim() || x.link.trim())
+    .map((x,i)=>`• 자료 ${i+1}: ${x.what.trim() || x.site.trim()}${x.site.trim() && x.what.trim() ? ' — ' + x.site.trim() : ''}${x.link.trim() ? ' (' + x.link.trim() + ')' : ''}`).join('\n');
+}
 function loadOutline(k, quiet){
-  const R = outlineRefs()[k]; const text = (R && R.text || '').trim();
-  if(!text){ if(!quiet) alert('앞에서 아직 쓴 내용이 없어서 불러올 것이 없어요.'); return false; }
+  if(k!=='oBody') return false;
+  const text = sourceLines().trim();
+  if(!text){ if(!quiet) alert('step3에서 찾은 자료가 아직 없어서 불러올 것이 없어요.'); return false; }
   const ta = document.querySelector(`textarea[data-k="${k}"]`); const cur = (state.f[k]||'').trim();
   if(cur){
     if(quiet) return false;
@@ -730,12 +735,6 @@ document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('[data-load]'); if(!b) return;
   if(finalLocked) return;
   loadOutline(b.dataset.load);
-});
-$('loadAllOutline').addEventListener('click', ()=>{
-  if(finalLocked) return;
-  const done = ['oTitle','oIntro','oBody','oConcl'].filter(k=> loadOutline(k, true));
-  const NAME = {oTitle:'제목', oIntro:'서론', oBody:'본론', oConcl:'결론'};
-  alert(done.length ? `${done.map(k=>NAME[k]).join('·')} 칸에 불러왔어요. 이제 내 말로 고쳐 써 보세요.\n(이미 쓴 칸은 건드리지 않았어요)` : '비어 있는 칸이 없거나 불러올 내용이 없어요. 칸마다 있는 ⬇ 불러오기 버튼을 써 보세요.');
 });
 function paintLinkOk(){
   state.sources.forEach((s,i)=>{ const el=$('lk'+i); if(!el) return;
