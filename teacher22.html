@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -80,6 +81,33 @@
   .tab-btn:hover{color:var(--blue);}
   .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
   .tab-panel{display:none;padding-top:16px;}
+  /* ---- ④ AI 대화 ---- */
+  .ac-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .ac-bar input[type=search]{padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13.5px;}
+  .seg{display:inline-flex;border:1px solid #c5cad1;border-radius:6px;overflow:hidden;}
+  .seg button{border:none;border-radius:0;background:#fff;color:#555;padding:7px 12px;font-size:13px;}
+  .seg button.on{background:#5e35b1;color:#fff;font-weight:bold;}
+  .ac-feed{max-height:220px;overflow-y:auto;padding:6px 10px;}
+  .ac-feed .it{display:flex;gap:8px;align-items:baseline;padding:5px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13.5px;}
+  .ac-feed .it:hover{background:#f7f4fd;}
+  .ac-feed .t{color:#999;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .ac-feed .n{font-weight:bold;color:#311b92;white-space:nowrap;}
+  .ac-feed .q{color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ac-main{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .ac-list{flex:0 0 260px;max-height:70vh;overflow-y:auto;padding:6px;}
+  .ac-list .st{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;}
+  .ac-list .st:hover{background:#f5f5f5;}
+  .ac-list .st.sel{background:#ede7f6;}
+  .ac-list .st small{color:#888;font-size:11.5px;display:block;}
+  .ac-list .st .c{font-weight:bold;color:#5e35b1;white-space:nowrap;}
+  .ac-conv{flex:1;min-width:320px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+  .ac-conv .day{align-self:center;font-size:11.5px;color:#888;background:#f0f2f5;border-radius:10px;padding:2px 10px;margin:6px 0;}
+  .ac-conv .msg{max-width:80%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+  .ac-conv .msg.me{align-self:flex-end;background:#e3f2fd;border-bottom-right-radius:4px;}
+  .ac-conv .msg.ai{align-self:flex-start;background:#f1f8e9;border-bottom-left-radius:4px;}
+  .ac-conv .msg .tm{display:block;font-size:11px;color:#999;margin-top:2px;}
+  .ac-conv .fbk{align-self:stretch;border:1px dashed #d1c4e9;background:#faf8fe;border-radius:8px;padding:6px 10px;font-size:13px;}
+  .ac-conv mark, .ac-feed mark{background:#fff59d;}
   .tab-panel.active{display:block;}
   .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
   #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
@@ -237,7 +265,7 @@
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>평균 진행률: <b id="sumAvg">0%</b></div>
-        <div>step 4개 모두 완료: <b id="sumDone">0</b></div>
+        <div>step 5개 모두 완료: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
         <span>📋 <b>진행 현황</b> — step1 <b id="agg1">0</b>명 · step2 <b id="agg2">0</b>명 · step3 <b id="agg3">0</b>명 · step4 <b id="agg4">0</b>명 · step5 <b id="agg5">0</b>명 완료 · 제출 <b id="aggSub">0</b>명</span>
@@ -253,6 +281,7 @@
       <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
       <button class="tab-btn" data-tab="student">③ 학생용</button>
+      <button class="tab-btn" data-tab="aichat">④ AI 대화</button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
@@ -285,6 +314,21 @@
       <div class="teacher-col">
         <div class="teacher-col-title">✏️ 선택한 step에서 학생들이 적은 내용 (● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
+      </div>
+    </div>
+
+    <div id="tab-aichat" class="tab-panel">
+      <div class="panel ac-bar">
+        <span class="seg"><button type="button" class="on" data-acrange="today">오늘만</button><button type="button" data-acrange="all">전체</button></span>
+        <label style="font-size:13px;"><input type="checkbox" id="acShowFb"> 🤖 AI 피드백 기록도 보기</label>
+        <input type="search" id="acSearch" placeholder="🔍 대화 검색 (예: 숙제, 답 알려줘)" style="flex:1;min-width:180px;">
+        <button type="button" class="pause" id="acExcelBtn">📥 엑셀 다운로드</button>
+      </div>
+      <div class="teacher-col-title">⚡ 실시간 질문 흐름 <span style="font-weight:normal;color:#999;">(최근 질문이 위로 · 누르면 그 학생 대화로)</span></div>
+      <div class="panel ac-feed" id="acFeed"></div>
+      <div class="ac-main">
+        <div class="panel ac-list" id="acList"></div>
+        <div class="panel ac-conv" id="acConv"><div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div></div>
       </div>
     </div>
 
@@ -505,7 +549,77 @@ function openAiLog(key){
   document.getElementById('tdmTextWrap').innerHTML = h;
   document.getElementById('taskDetailOverlay').style.display='flex';
 }
-function onStudentsUpdated(){}
+/* ---------- ④ AI 대화: 실시간 질문 흐름 + 학생별 대화(말풍선) + 검색 + 엑셀 ---------- */
+let acRange = 'today', acSel = null;
+const acDay = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+const acTime = ts => ts ? new Date(ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
+const acDate = ts => ts ? new Date(ts).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '';
+function acQuery(){ return (document.getElementById('acSearch').value||'').trim().toLowerCase(); }
+function acHl(t){ const q = acQuery(); const e = esc(t); if(!q) return e; const qe = esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); return e.replace(new RegExp(qe,'gi'), m=>`<mark>${m}</mark>`); }
+/* 보기 조건(오늘만/전체, 피드백 포함, 검색)에 맞는 기록 */
+function acEntries(s){
+  const today = acDay(Date.now()), q = acQuery(), showFb = document.getElementById('acShowFb').checked;
+  return aiLogsOf(s).filter(l=>{
+    if(l.type!=='chat' && !(showFb && l.type==='feedback')) return false;
+    if(acRange==='today' && acDay(l.ts)!==today) return false;
+    if(!q) return true;
+    const txt = l.type==='chat' ? (l.q||'')+' '+(l.a||'') : [].concat(l.good||[], l.fix||[], [l.snap||'']).join(' ');
+    return txt.toLowerCase().includes(q);
+  });
+}
+function renderAiChatTab(){
+  const panel = document.getElementById('tab-aichat'); if(!panel || !panel.classList.contains('active')) return;
+  const keys = Object.keys(allStudents);
+  // ⚡ 실시간 질문 흐름(챗봇 질문만, 최신 40개)
+  const feed = [];
+  keys.forEach(k=>{ const s=allStudents[k]||{}; acEntries(s).forEach(l=>{ if(l.type==='chat') feed.push({k, s, l}); }); });
+  feed.sort((a,b)=>(b.l.ts||0)-(a.l.ts||0));
+  document.getElementById('acFeed').innerHTML = feed.length ? feed.slice(0,40).map(f=>`<div class="it" data-acsel="${esc(f.k)}"><span class="t">${esc(acRange==='today'?acTime(f.l.ts):acDate(f.l.ts)+' '+acTime(f.l.ts))}</span><span class="n">${esc(displayName(f.k,f.s.name,f.s.number))}</span><span class="q">${acHl(f.l.q||'')}</span></div>`).join('')
+    : `<div class="text-answer-empty">${acQuery() ? '검색에 맞는 질문이 없어요.' : (acRange==='today' ? '오늘은 아직 AI 도우미에게 질문한 학생이 없어요.' : '아직 AI 도우미에게 질문한 학생이 없어요.')}</div>`;
+  // 학생 목록(최근 질문한 학생이 위로)
+  const rows = keys.map(k=>{ const s=allStudents[k]||{}; const es=acEntries(s); const chats=es.filter(l=>l.type==='chat'); const last=es.length?es[es.length-1].ts:0; return {k,s,n:chats.length,fb:es.length-chats.length,last}; })
+    .sort((a,b)=> (b.last||0)-(a.last||0) || byNumber(a.s,b.s));
+  document.getElementById('acList').innerHTML = rows.map(r=>`<div class="st${r.k===acSel?' sel':''}" data-acsel="${esc(r.k)}"><span>${esc(displayName(r.k,r.s.name,r.s.number))}<small>${r.last?(acRange==='today'?'마지막 '+acTime(r.last):acDate(r.last)+' '+acTime(r.last)):'기록 없음'}</small></span><span class="c">${r.n?('질문 '+r.n):''}${r.fb?` <span style="color:#888;font-weight:normal;">피드백 ${r.fb}</span>`:''}</span></div>`).join('') || '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+  // 선택한 학생 대화
+  const conv = document.getElementById('acConv');
+  if(!acSel || !allStudents[acSel]){ conv.innerHTML = '<div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div>'; return; }
+  const s = allStudents[acSel], es = acEntries(s);
+  let h = `<div style="font-weight:bold;color:#311b92;">${esc(displayName(acSel,s.name,s.number))} <span style="font-weight:normal;color:#888;font-size:12.5px;">· ${acRange==='today'?'오늘':'전체'} 기록 ${es.length}개</span></div>`, lastDay = '';
+  es.forEach(l=>{
+    const d = acDay(l.ts); if(d!==lastDay){ h += `<div class="day">${esc(acDate(l.ts))}</div>`; lastDay = d; }
+    if(l.type==='chat') h += `<div class="msg me">${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
+    else h += `<div class="fbk"><b>🤖 AI 피드백 · step${l.step}</b> <span style="color:#999;font-size:11.5px;">${esc(acTime(l.ts))}</span>${(l.good||[]).map(t=>`<div>👍 ${acHl(t)}</div>`).join('')}${(l.fix||[]).length?l.fix.map(t=>`<div>🔧 ${acHl(t)}</div>`).join(''):'<div>🔧 보완할 점 없음</div>'}</div>`;
+  });
+  if(!es.length) h += `<div class="text-answer-empty">${acRange==='today'?'오늘 기록이 없어요. "전체"를 눌러 보세요.':'기록이 없어요.'}</div>`;
+  conv.innerHTML = h; conv.scrollTop = conv.scrollHeight;
+}
+document.addEventListener('click', e=>{
+  const sel = e.target.closest && e.target.closest('[data-acsel]'); if(sel){ acSel = sel.dataset.acsel; renderAiChatTab(); return; }
+  const rg = e.target.closest && e.target.closest('[data-acrange]');
+  if(rg){ acRange = rg.dataset.acrange; document.querySelectorAll('[data-acrange]').forEach(b=>b.classList.toggle('on', b===rg)); renderAiChatTab(); }
+});
+document.getElementById('acShowFb').addEventListener('change', renderAiChatTab);
+document.getElementById('acSearch').addEventListener('input', renderAiChatTab);
+/* 엑셀: 이 반의 모든 AI 사용 기록(챗봇 대화 + AI 피드백) — 보기 조건과 관계없이 전부 */
+document.getElementById('acExcelBtn').addEventListener('click', ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  if(typeof XLSX==='undefined'){ alert('엑셀 기능을 불러오지 못했어요. 새로고침해 주세요.'); return; }
+  const rows = [['번호','이름','날짜·시각','종류','학생 질문 / 피드백 받을 때 학생 글','AI 답 / AI 피드백']];
+  Object.keys(allStudents).map(k=>({k,s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s)).forEach(({s})=>{
+    aiLogsOf(s).forEach(l=>{
+      const when = l.ts ? new Date(l.ts).toLocaleString('ko-KR') : '';
+      if(l.type==='chat') rows.push([s.number||'', s.name||'', when, '💬 AI 도우미', l.q||'', l.a||'']);
+      else rows.push([s.number||'', s.name||'', when, `🤖 AI 피드백 step${l.step}`, l.snap||'', [].concat((l.good||[]).map(t=>'잘한 점: '+t), (l.fix||[]).length ? l.fix.map(t=>'보완할 점: '+t) : ['보완할 점: 없음']).join('\n')]);
+    });
+  });
+  if(rows.length===1){ alert('아직 AI 사용 기록이 없어요.'); return; }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:10},{wch:20},{wch:16},{wch:50},{wch:60}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'AI 사용 기록');
+  const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `확률탐구_AI사용기록_${currentRoomName||''}반_${ymd}.xlsx`);
+});
+function onStudentsUpdated(){ renderAiChatTab(); }
 /* 요약 패널: step별 완료 인원 */
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
@@ -1121,6 +1235,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='teacher') renderTeacherView();
     if(btn.dataset.tab==='student') ensurePreviewLoaded();
+    if(btn.dataset.tab==='aichat') renderAiChatTab();
   });
 });
 
