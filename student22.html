@@ -141,6 +141,37 @@
   .guide .gchk{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:8px;}
   .guide .gnote{font-size:12.5px;color:#666;margin:2px 0;}
   .todo{font-size:13px;color:var(--muted);text-align:right;margin:2px 4px 12px;}
+  /* ---- 🤖 AI 피드백(step별) ---- */
+  .ai-fb{background:#fff;border:2px solid #d1c4e9;border-radius:12px;padding:12px 16px;margin-bottom:14px;}
+  .ai-fb .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .ai-fb .hd b{color:#4527a0;font-size:15px;}
+  .ai-fb .hd small{display:block;font-weight:normal;color:#888;font-size:12px;}
+  .ai-btn{border:none;background:#5e35b1;color:#fff;font-weight:bold;border-radius:8px;padding:9px 14px;font-size:13.5px;cursor:pointer;font-family:inherit;}
+  .ai-btn:disabled{background:#c5bce0;cursor:not-allowed;}
+  .ai-off{font-size:12.5px;color:#888;margin-top:6px;}
+  .fb-out{margin-top:10px;font-size:14px;line-height:1.65;}
+  .fb-out .row{display:flex;gap:8px;align-items:flex-start;margin:6px 0;}
+  .fb-out .tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-out .good .tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-out .fix .tag{background:#fff3e0;color:#e65100;}
+  .fb-out .none .tag{background:#e3f2fd;color:#1565c0;}
+  .fb-out .when{font-size:11.5px;color:#999;}
+  .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
+  /* ---- 💬 AI 도우미(챗봇) ---- */
+  .chat-card{text-align:left;background:#fff;border:2px solid #b2dfdb;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .chat-card .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .chat-card .hd b{color:#00695c;font-size:16px;}
+  .chat-card .hd small{color:#888;font-size:12px;}
+  .chat-rules{font-size:12.5px;color:#666;background:#f3fbfa;border-radius:8px;padding:8px 12px;margin:8px 0;}
+  .chat-log{max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:6px 2px;}
+  .msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+  .msg.me{align-self:flex-end;background:#e3f2fd;border-bottom-right-radius:4px;}
+  .msg.ai{align-self:flex-start;background:#f1f8e9;border-bottom-left-radius:4px;}
+  .msg.wait{color:#888;font-style:italic;}
+  .chat-in{display:flex;gap:8px;margin-top:8px;}
+  .chat-in textarea{flex:1;font-family:inherit;font-size:14.5px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;resize:none;min-height:44px;}
+  .chat-in button{border:none;background:#00897b;color:#fff;font-weight:bold;border-radius:8px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit;}
+  .chat-in button:disabled{background:#a7d3cd;cursor:not-allowed;}
   .todo.ok{color:var(--green);font-weight:bold;}
 </style>
 </head>
@@ -241,6 +272,7 @@
     <table class="chk" id="selfCheckTable"></table>
   </div>
   <div class="todo" id="todo1"></div>
+  <div class="ai-fb" id="aiFb1"></div>
 </section>
 
 <!-- ===================== STEP 2 ===================== -->
@@ -277,6 +309,7 @@
     <textarea data-k="expect"></textarea>
   </div>
   <div class="todo" id="todo2"></div>
+  <div class="ai-fb" id="aiFb2"></div>
 </section>
 
 <!-- ===================== STEP 3 ===================== -->
@@ -320,7 +353,7 @@
           ③ <b>관련성</b>: 자료의 조사 대상과 조건이 나의 탐구 질문과 일치하는가?<br>
           ④ <b>필요성</b>: 탐구 글을 작성하는 데 실제로 필요한 자료인가?</div>
         <p class="gnote">※ 위 사이트는 추천 사이트이며, 반드시 위 사이트에서만 자료를 찾아야 하는 것은 아닙니다.</p>
-        <p class="gnote">※ 블로그, 나무위키, 개인이 작성한 자료보다는 정부기관·공공기관·공식 통계·공식 기록 자료를 우선 활용하세요.</p>
+        <p class="gnote" style="color:#c62828;font-weight:bold;">🚫 블로그, 카페, 커뮤니티, SNS(인스타그램·페이스북·X 등), 위키(나무위키·위키백과), 질문·답변 사이트(지식iN 등), 유튜브, 브런치 같은 개인 글, AI가 만든 글은 자료로 인정하지 않아요. 이런 자료를 쓰면 자료 조사를 하지 않은 것으로 봐요. 정부기관·공공기관·공식 통계·공식 기록 자료를 쓰세요.</p>
         <p class="gnote">※ 사용한 자료의 출처와 링크를 반드시 기록하세요.</p>
         <p class="gnote">※ 검색 결과의 첫 번째 자료만 사용하지 말고, 여러 자료를 살펴본 후 탐구 질문에 적합한 자료를 선택하세요.</p>
       </div>
@@ -333,11 +366,12 @@
   </div>
   <div class="card">
     <div class="warn-box"><b>🚫 온라인 검색, 이렇게 하지 말아요!</b>
-      <ul><li>자신의 탐구 질문을 검색창에 그대로 입력하기</li><li>검색 결과 첫 페이지, 첫 번째 자료만 살펴보고 끝내기</li><li>통계 사이트가 아닌 네이버 블로그, 기사 등에서만 검색하기</li></ul></div>
+      <ul><li>자신의 탐구 질문을 검색창에 그대로 입력하기</li><li>검색 결과 첫 페이지, 첫 번째 자료만 살펴보고 끝내기</li><li>통계 사이트가 아닌 네이버 블로그, 기사 등에서만 검색하기</li><li><b style="color:#c62828;">블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글을 자료로 쓰기 → 자료 조사를 하지 않은 것으로 봐요</b></li></ul></div>
     <h3 style="margin-top:14px;">자료 수집 점검 체크리스트</h3>
     <div id="dataCheckList"></div>
   </div>
   <div class="todo" id="todo3"></div>
+  <div class="ai-fb" id="aiFb3"></div>
 </section>
 
 <!-- ===================== STEP 4 ===================== -->
@@ -357,11 +391,21 @@
       <textarea data-k="oConcl"></textarea></div></div>
   </div>
   <div class="todo" id="todo4"></div>
+  <div class="ai-fb" id="aiFb4"></div>
 </section>
 
     </div>
 
     <div class="submit-panel" data-task-id="submit">
+      <div class="chat-card" id="chatCard">
+        <div class="hd"><b>💬 AI 도우미</b><small id="chatLeft"></small></div>
+        <div class="chat-rules">질문을 만들거나 자료를 찾다가 막막할 때 물어보세요. AI 도우미는 <b>답을 대신 알려 주지 않고</b>, 스스로 생각할 수 있게 힌트를 줘요.<br>
+          예) "어떤 주제로 질문을 만들지 모르겠어요", "교통사고 자료는 어디서 찾아요?", "확률은 어떻게 구해요?"<br>
+          ※ 대화 내용은 선생님이 볼 수 있어요.</div>
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-in"><textarea id="chatInput" rows="1" maxlength="500" placeholder="AI 도우미에게 물어볼 내용을 적어요 (Enter: 보내기, Shift+Enter: 줄바꿈)"></textarea><button type="button" id="chatSend">보내기</button></div>
+        <div class="ai-off" id="chatOff"></div>
+      </div>
       <p style="margin:0 0 12px;font-size:14px;color:#555;">step1~4를 모두 마쳤으면 제출하세요. 제출한 뒤에도 "제출 취소"를 누르면 다시 고칠 수 있어요.</p>
       <button class="main" id="submitBtn">결과 제출하기</button><br>
       <button class="backup" id="backupBtn">백업 파일로 저장</button>
@@ -385,6 +429,9 @@
    - 입력은 자동 저장(students/{key}/data). 새로고침하면 그대로 되살아난다.
    - student23.html(보고서 제출)이 이 단원의 data(개요·자료 출처)를 읽어 참고용으로 보여준다
      → ACTIVITY_SUFFIX와 data 필드 이름을 바꾸면 student23.html도 함께 고쳐야 한다.
+   - 🤖 step마다 AI 피드백(step별 하루 5번), 제출 페이지에 💬 AI 도우미(챗봇, 하루 30번). 사용 기록은 students/{key}/aiLog.
+     선생님이 끄면(control/aiOff — mgmt에서 23번을 열면 자동으로 true, teacher22 버튼으로 다시 켤 수 있음) 잠긴다.
+   - 블로그·카페·커뮤니티·SNS·위키·지식iN·유튜브·개인 글·AI 생성글 출처는 자료로 인정하지 않는다(bannedSourceKind).
    ACTIVITY_SUFFIX는 teacher22.html과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
@@ -437,6 +484,44 @@ const $ = id => document.getElementById(id);
 const v = k => (state.f[k] || '').trim();
 const lastQ = () => v('q3') || v('q2') || v('q1');
 const isUrl = s => /^https?:\/\/\S+\.\S+/i.test((s||'').trim());
+/* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+   블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
+   (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
+   링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */
+const BANNED_SOURCES = [
+  ['블로그', ['blog.naver.com','blog.daum.net','tistory.com','egloos.com','blogspot.com','wordpress.com','velog.io','post.naver.com','blog.me']],
+  ['카페', ['cafe.naver.com','cafe.daum.net']],
+  ['커뮤니티', ['dcinside.com','fmkorea.com','theqoo.net','ruliweb.com','clien.net','ppomppu.co.kr','mlbpark.donga.com','inven.co.kr','instiz.net','pann.nate.com','todayhumor.co.kr','bobaedream.co.kr','etoland.co.kr','ilbe.com','82cook.com','reddit.com','humoruniv.com','dogdrip.net','arca.live','ygosu.com','gasengi.com','slrclub.com']],
+  ['SNS', ['instagram.com','facebook.com','fb.com','x.com','twitter.com','threads.net','threads.com','tiktok.com','band.us','kakao.com/story','story.kakao.com']],
+  ['위키', ['namu.wiki','wikipedia.org','wikiwand.com','librewiki.net']],
+  ['질문·답변 사이트', ['kin.naver.com','tip.daum.net','tip.kakao.com','quora.com','answers.yahoo.com']],
+  ['유튜브', ['youtube.com','youtu.be']],
+  ['개인 글 플랫폼', ['brunch.co.kr','medium.com','substack.com','postype.com']],
+  ['AI가 만든 글', ['chatgpt.com','chat.openai.com','openai.com/chat','gemini.google.com','bard.google.com','g.co/gemini','claude.ai','perplexity.ai','wrtn.ai','copilot.microsoft.com','poe.com','character.ai','clova-x.naver.com','askup.upstage.ai','liner.com','gamma.app']]
+];
+const BANNED_NAME_WORDS = [
+  ['블로그', /블로그|티스토리|tistory/i], ['카페', /네이버\s*카페|다음\s*카페/], ['커뮤니티', /디시|에펨|더쿠|루리웹|클리앙|뽐뿌|엠팍|인스티즈|네이트\s*판|오늘의\s*유머|보배드림|레딧|reddit/i],
+  ['SNS', /인스타그램|instagram|페이스북|facebook|트위터|twitter|스레드|틱톡|tiktok/i], ['위키', /나무\s*위키|위키\s*백과|wikipedia|namu\.wiki/i],
+  ['질문·답변 사이트', /지식\s*i?n|지식인|quora/i], ['유튜브', /유튜브|youtube/i], ['개인 글 플랫폼', /브런치|미디엄|medium\.com/i],
+  ['AI가 만든 글', /chat\s*gpt|챗\s*gpt|챗지피티|gemini|제미나이|claude|클로드|perplexity|퍼플렉시티|뤼튼|wrtn|copilot|코파일럿|생성형\s*ai|ai\s*답변/i]
+];
+function bannedSourceKind(link, name){
+  const raw = String(link||'').trim();
+  if(raw){
+    let host = '', path = '';
+    try{ const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); host = u.hostname.toLowerCase().replace(/^www\.|^m\./,''); path = u.pathname.toLowerCase(); }catch(e){}
+    if(host){
+      const hp = host + path;
+      for(const [kind, doms] of BANNED_SOURCES){
+        if(doms.some(d => d.includes('/') ? hp.startsWith(d) || hp.startsWith('www.'+d) : (host===d || host.endsWith('.'+d)))) return kind;
+      }
+    }
+  }
+  const nm = String(name||'');
+  for(const [kind, re] of BANNED_NAME_WORDS){ if(re.test(nm)) return kind; }
+  return '';
+}
+
 
 /* 완료 조건(배지·진행률용) */
 function missing(id){
@@ -453,7 +538,9 @@ function missing(id){
     if(!state.planRows.some(r=>r.need.trim() && r.where.trim())) m.push('자료 수집 계획(1줄 이상)');
     if(!v('expect')) m.push('예상 결과');
   } else if(id===3){
-    const good = state.sources.filter(s=>s.what.trim() && s.site.trim() && isUrl(s.link) && s.analysis.trim());
+    const good = state.sources.filter(s=>s.what.trim() && s.site.trim() && isUrl(s.link) && s.analysis.trim() && !bannedSourceKind(s.link, s.site));
+    const bad = state.sources.filter(s=> bannedSourceKind(s.link, s.site)).length;
+    if(bad) m.push(`인정되지 않는 출처(블로그·카페·커뮤니티·위키·지식iN·유튜브·SNS·AI 글 등) ${bad}개 → 공식 자료로 바꾸기`);
     if(good.length < 2) m.push(`자료 2개 이상(무슨 자료·출처·링크·분석 모두) — 지금 ${good.length}개`);
     if(state.dataCheck.some(c=>!c)) m.push('자료 수집 점검 체크리스트');
   } else if(id===4){
@@ -536,8 +623,9 @@ function renderSources(){
 }
 function paintLinkOk(){
   state.sources.forEach((s,i)=>{ const el=$('lk'+i); if(!el) return;
-    el.textContent = !s.link.trim() ? '' : (isUrl(s.link) ? '✅ 링크 형식 OK' : '⚠️ https:// 로 시작하는 주소를 붙여 넣어요');
-    el.style.color = isUrl(s.link) ? '#2e7d32' : '#e65100'; });
+    const bl = bannedSourceKind(s.link, s.site);
+    el.textContent = bl ? `🚫 인정되지 않는 출처예요(${bl}) — 자료 조사를 안 한 것으로 봐요` : (!s.link.trim() ? '' : (isUrl(s.link) ? '✅ 링크 형식 OK' : '⚠️ https:// 로 시작하는 주소를 붙여 넣어요'));
+    el.style.color = bl ? '#c62828' : (isUrl(s.link) ? '#2e7d32' : '#e65100'); });
 }
 $('addSrc').addEventListener('click', ()=>{ state.sources.push({what:'',site:'',link:'',analysis:''}); renderSources(); changed(); });
 
@@ -603,6 +691,7 @@ const RT = {
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
       this.paused = !!c.paused; applyPauseLock(this.paused);
+      AI.teacherOff = !!c.aiOff; AI.paint();
       if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
         this.lastSeenAnnounceTs = c.announcementTs; $('announceText').textContent = c.announcement; $('announceBanner').style.display = 'flex';
       } else if(!c.announcement){ $('announceBanner').style.display = 'none'; }
@@ -614,6 +703,8 @@ const RT = {
       else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
       this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
     });
+    // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
+    this.studentRef.child('aiLog').once('value').then(s3=>{ const v=s3.val()||{}; AI.logs = Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); AI.loaded = true; AI.paint(); }).catch(()=>{ AI.loaded = true; AI.paint(); });
     statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
     clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = setInterval(()=>{ if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true }); }, 15000);
@@ -653,6 +744,101 @@ function paintAll(){
   paintQtype(); paintSelfCheck(); renderPlanRows(); renderSources(); paintDataChecks();
   document.querySelectorAll('textarea[data-k]').forEach(autoGrow);
 }
+
+/* ---------- 🤖 AI 피드백(step별 5회) + 💬 AI 도우미(챗봇, 30회) ----------
+   - 모든 AI 사용은 students/{key}/aiLog 에 남는다({type:'feedback'|'chat', ts, ...}) → teacher22.html에서 기록 확인.
+   - 선생님이 끄면(control/aiOff) 버튼이 잠긴다. 하루 횟수: step별 피드백 5번, 챗봇 30번(오늘 날짜 기준).
+   - 피드백: /api/step-feedback, 챗봇: /api/chat-help (둘 다 답을 대신 써 주지 않도록 서버 프롬프트에서 막음). */
+const AI_FB_MAX = 5, AI_CHAT_MAX = 30;
+const AI = {
+  logs: [], loaded: false, teacherOff: false, busy: false,
+  offReason(){
+    if(PREVIEW_MODE) return '미리보기에서는 AI를 쓸 수 없어요.';
+    if(!RT.connected) return '실시간 연결이 되어야 AI를 쓸 수 있어요.';
+    if(this.teacherOff) return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)';
+    if(finalLocked) return '제출한 뒤에는 AI를 쓸 수 없어요. 고치려면 "제출 취소"를 누르세요.';
+    if(!this.loaded) return 'AI 사용 기록을 불러오는 중이에요…';
+    return '';
+  },
+  fbOf(step){ return this.logs.filter(l=>l.type==='feedback' && l.step===step); },
+  chats(){ return this.logs.filter(l=>l.type==='chat'); },
+  today(list){ const d = dayKey(Date.now()); return list.filter(l=> dayKey(l.ts)===d); }, // 하루 횟수는 오늘(이 기기 날짜) 쓴 것만 센다
+  log(entry){
+    entry.ts = Date.now(); this.logs.push(entry);
+    if(RT.connected){ const ref = RT.studentRef.child('aiLog').push(); ref.set(entry).catch(()=>{}); }
+  },
+  paint(){ [1,2,3,4].forEach(n=> paintStepFb(n)); paintChat(); }
+};
+const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+function paintStepFb(n){
+  const box = $('aiFb'+n); if(!box) return;
+  const used = AI.fbOf(n), last = used[used.length-1], left = AI_FB_MAX - AI.today(used).length, off = AI.offReason();
+  let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${AI_FB_MAX}</small></span>
+    <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : '🤖 AI 피드백 받기'}</button></div>`;
+  if(off) h += `<div class="ai-off">${off}</div>`;
+  else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${AI_FB_MAX}번을 모두 썼어요. 이제 스스로 점검해 봐요! (내일 다시 쓸 수 있어요)</div>`;
+  if(last){
+    h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}</div>`;
+    (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">잘한 점</span><span>${esc(t)}</span></div>`);
+    if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">보완할 점</span><span>${esc(t)}</span></div>`);
+    else h += `<div class="row none"><span class="tag">보완할 점</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
+    h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.</div></div>`;
+  }
+  box.innerHTML = h;
+}
+async function requestStepFb(n){
+  if(AI.busy || AI.offReason() || AI.today(AI.fbOf(n)).length >= AI_FB_MAX) return;
+  AI.busy = n; AI.paint();
+  try{
+    RT.flushPending();
+    const data = collectData();
+    const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ step:n, data }) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !Array.isArray(j.good)) throw new Error(j.error || ('HTTP '+res.status));
+    AI.log({ type:'feedback', step:n, good:j.good, fix:j.fix||[], snap: stepSnapshot(n, data) });
+  }catch(err){ alert('AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요.\n('+(err.message||err)+')\n※ 실패한 경우는 횟수에 들어가지 않아요.'); }
+  AI.busy = false; AI.paint();
+}
+/* 피드백 받을 때 학생이 그 step에 적어 둔 내용(선생님 기록 확인용) */
+function stepSnapshot(n, d){
+  const j = a => a.filter(Boolean).join('\n');
+  if(n===1) return j([d.subject&&`주제: ${d.subject}`, d.q1&&`1차: ${d.q1}`, d.q2&&`2차: ${d.q2}`, d.q3&&`3차: ${d.q3}`, d.motive&&`동기: ${d.motive}`]);
+  if(n===2) return j([d.finalQ&&`최종 질문: ${d.finalQ}`, d.plan1&&`계획1: ${d.plan1}`, d.plan2&&`계산식: ${d.plan2}`, d.plan3&&`변수·한계: ${d.plan3}`, d.expect&&`예상: ${d.expect}`]);
+  if(n===3) return (d.sources||[]).map((x,i)=>`자료${i+1}: ${x.site||''} ${x.link||''}\n분석: ${x.analysis||''}`).join('\n');
+  return j([d.oTitle&&`제목: ${d.oTitle}`, d.oIntro&&`서론: ${d.oIntro}`, d.oBody&&`본론: ${d.oBody}`, d.oConcl&&`결론: ${d.oConcl}`]);
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-fb]'); if(b) requestStepFb(+b.dataset.fb); });
+
+function paintChat(){
+  const log = $('chatLog'); if(!log) return;
+  const chats = AI.chats(), left = AI_CHAT_MAX - AI.today(chats).length, off = AI.offReason();
+  let h = chats.length ? '' : '<div class="msg ai">안녕하세요! 탐구 질문 만들기나 자료 찾기가 막막하면 편하게 물어보세요. 답을 대신 알려 주지는 않지만, 스스로 해낼 수 있게 도와줄게요 🙂</div>';
+  chats.forEach(c=>{ h += `<div class="msg me">${esc(c.q)}</div><div class="msg ai">${esc(c.a)}</div>`; });
+  if(AI.busy==='chat') h += `<div class="msg me">${esc(AI.pendingQ||'')}</div><div class="msg ai wait">생각하는 중…</div>`;
+  log.innerHTML = h; log.scrollTop = log.scrollHeight;
+  $('chatLeft').textContent = `오늘 남은 질문 ${Math.max(0,left)}/${AI_CHAT_MAX}`;
+  const dis = !!off || left<=0 || !!AI.busy;
+  $('chatSend').disabled = dis; $('chatInput').disabled = !!off || left<=0;
+  $('chatOff').textContent = off || (left<=0 ? `오늘 AI 도우미 질문 ${AI_CHAT_MAX}번을 모두 썼어요. 내일 다시 쓸 수 있어요.` : '');
+}
+async function sendChat(){
+  const inp = $('chatInput'), q = inp.value.trim();
+  if(!q || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= AI_CHAT_MAX) return;
+  AI.busy = 'chat'; AI.pendingQ = q; inp.value = ''; paintChat();
+  try{
+    const history = [];
+    AI.chats().slice(-5).forEach(c=>{ history.push({role:'user', content:c.q}); history.push({role:'assistant', content:c.a}); });
+    const res = await fetch('/api/chat-help', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:q, history, work: collectData() }) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !j.reply) throw new Error(j.error || ('HTTP '+res.status));
+    const w = collectData();
+    AI.log({ type:'chat', q, a:j.reply, ctx: [w.finalQ||w.q3||w.q2||w.q1||'', w.subject||''].join(' ').slice(0,300) });
+  }catch(err){ inp.value = q; alert('AI 도우미가 답하지 못했어요. 잠시 후 다시 보내 보세요.\n('+(err.message||err)+')'); }
+  AI.busy = false; AI.pendingQ = ''; paintChat(); [1,2,3,4].forEach(n=>paintStepFb(n));
+}
+$('chatSend').addEventListener('click', sendChat);
+$('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); sendChat(); } });
 
 function applyPauseLock(paused){ document.body.classList.toggle('app-paused', paused); $('lockOverlay').style.display = paused ? 'flex' : 'none'; updateNavButtons(); }
 document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
@@ -751,6 +937,7 @@ $('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIde
 let finalLocked = false;
 function applyFinalLock(locked){
   finalLocked = locked;
+  if(typeof AI!=='undefined') setTimeout(()=>AI.paint(), 0);
   document.body.classList.toggle('final-locked', locked);
   $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
   $('submitBtn').classList.toggle('cancel', locked);
@@ -776,6 +963,7 @@ $('backupBtn').addEventListener('click', ()=>{
 });
 
 paintAll(); changed({noSave:true});
+AI.paint();
 showPage(0);
 
 /* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe) ---------- */

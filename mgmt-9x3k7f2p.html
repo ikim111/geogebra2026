@@ -286,6 +286,9 @@ function toggleUnit(n, row, btn){
   btn.disabled = true;
   accessRef.child('units/'+n).set(next).then(()=>{
     accessData[n] = next;
+    // 23번(확률 탐구 글쓰기 ② 보고서 제출)을 열면 그 반의 22번 학생 AI(피드백·도우미)를 자동으로 끈다.
+    // (다시 켜려면 teacher22.html의 "🤖 학생 AI 켜기" 버튼) — 22번 저장 경로는 __prob32
+    if(n===23 && next) firebase.database().ref('rooms/'+sanitize(currentRoom)+'__prob32/control/aiOff').set(true).catch(()=>{});
     row.classList.toggle('locked', !next);
     btn.className = 'lock-toggle ' + (next?'open':'locked');
     btn.textContent = next ? '🔓 열림' : '🔒 잠김';

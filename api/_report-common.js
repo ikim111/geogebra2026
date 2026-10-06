@@ -1,5 +1,6 @@
-// 보고서 AI 기능(피드백·채점) 공통 코드. 파일 이름이 _로 시작해서 Vercel이 이 파일 자체를
-// 주소(/api/...)로 열지 않는다 — report-feedback.js, report-grade.js가 require로 가져다 쓴다.
+// 확률 탐구 글쓰기(22·23번) AI 기능 공통 코드. 파일 이름이 _로 시작해서 Vercel이 이 파일 자체를
+// 주소(/api/...)로 열지 않는다 — report-feedback.js, report-grade.js(23번 교사용),
+// step-feedback.js, chat-help.js(22번 학생용)가 require로 가져다 쓴다.
 //
 // [설정 방법] Vercel 프로젝트 > Settings > Environment Variables 에
 //   OPENAI_API_KEY = platform.openai.com 에서 발급한 API 키   (필수)
@@ -44,6 +45,7 @@ const PROMPT_TEMPLATE = `너는 중학교 2학년 학생의 확률·통계 탐�
 - 이 글은 중학교 2학년 학생이 처음 써 보는 탐구 글이다. 전문가나 대학생 수준의 엄밀함을 요구하지 않는다.
 - 학생이 질문을 정하고, 자료를 찾아, 그 수치로 확률을 계산하거나 해석하려고 했다면 그 시도를 충분히 인정한다.
 - 유병률과 발병률의 구분, 조건부확률의 엄밀한 조건, 분모·모집단의 정확한 정의, 자료의 독립성 같은 전문적인 통계 개념을 이유로 감점하지 않는다. 이런 점은 필요하면 "더 생각해 볼 질문"으로만 가볍게 제시한다.
+- 블로그, 카페, 커뮤니티, SNS, 위키(나무위키·위키백과), 질문·답변 사이트(지식iN 등), 유튜브, 브런치 같은 개인 글, AI가 만든 글은 자료로 인정하지 않는다. 이런 출처는 자료 개수에 넣지 않고, 이런 자료만 썼다면 자료 조사를 하지 않은 것으로 본다(보고서의 [자료 출처]에 "프로그램 판단: 자료로 인정하지 않음"이라고 표시된 것은 그대로 따른다).
 - 출처는 기관명이나 자료 이름만 있어도 출처를 밝힌 것으로 인정한다. 링크나 연도가 빠진 것은 보완할 점으로 알려 주되 감점은 최대 1점으로 한다.
 - 자료가 조금 오래되었거나 조건이 학생의 질문과 완전히 일치하지 않는 정도는 감점하지 않고 보완할 점으로만 알려 준다.
 - 감점은 다음처럼 분명한 문제가 있을 때만 한다: 확률·통계와 관련 없는 질문, 자료가 1개뿐이거나 출처가 전혀 없음, 수치를 나열만 하고 확률 계산·해석이 전혀 없음, 결론이 앞의 자료와 관계없음, 1000자 미만.
@@ -154,7 +156,8 @@ function parseReport(raw) {
   const title = pick('title'), intro = pick('intro'), body = pick('body'), concl = pick('concl');
   const sources = (Array.isArray(b.sources) ? b.sources : []).slice(0, 15)
     .map(x => ({ name: String((x && x.name) || '').slice(0, 300).trim(), link: String((x && x.link) || '').slice(0, 500).trim() }))
-    .filter(x => x.name || x.link);
+    .filter(x => x.name || x.link)
+    .map(x => Object.assign(x, { banned: bannedSourceKind(x.link, x.name) }));
   const counts = { title: countChars(title), intro: countChars(intro), body: countChars(body), concl: countChars(concl) };
   counts.total = counts.intro + counts.body + counts.concl;
   const none = '(작성하지 않음)';
@@ -163,7 +166,7 @@ function parseReport(raw) {
     `[서론]\n${intro || none}\n\n` +
     `[본론]\n${body || none}\n\n` +
     `[결론]\n${concl || none}\n\n` +
-    `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}`).join('\n') : none}\n\n` +
+    `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}${x.banned ? `  ← 프로그램 판단: ${x.banned}(자료로 인정하지 않음)` : ''}`).join('\n') : none}\n\n` +
     `(참고 — 프로그램이 센 글자 수, 띄어쓰기 포함: 서론 ${counts.intro}자, 본론 ${counts.body}자, 결론 ${counts.concl}자, 서론+본론+결론 합계 ${counts.total}자)`;
   return { empty: !intro && !body && !concl, counts, report, sources };
 }
@@ -171,7 +174,7 @@ function parseReport(raw) {
 /* OpenAI Chat Completions 호출. 추론 모델이면 추론을 '낮음'으로(빠르고 싸게).
    reasoning_effort나 response_format을 지원하지 않는 모델이면(400) 그 옵션을 빼고 다시 시도한다.
    반환: { ok:true, text, model } 또는 { ok:false, status, error, detail } */
-async function callOpenAI(prompt, opts) {
+async function callOpenAI(promptOrMessages, opts) {
   opts = opts || {};
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, status: 500, error: 'OPENAI_API_KEY가 설정되지 않았습니다. Vercel 프로젝트 환경변수를 확인해주세요.' };
@@ -181,7 +184,7 @@ async function callOpenAI(prompt, opts) {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'authorization': `Bearer ${apiKey}` },
     body: JSON.stringify(Object.assign(
-      { model, messages: [{ role: 'user', content: prompt }], max_completion_tokens: opts.maxTokens || 6000 },
+      { model, messages: Array.isArray(promptOrMessages) ? promptOrMessages : [{ role: 'user', content: promptOrMessages }], max_completion_tokens: opts.maxTokens || 6000 },
       useEffort ? { reasoning_effort: 'low' } : {},
       useFormat ? { response_format: opts.responseFormat } : {}
     ))
@@ -223,4 +226,63 @@ function rubricText() {
   return PROMPT_TEMPLATE.slice(a, b).trim();
 }
 
-module.exports = { PROMPT_TEMPLATE, countChars, parseReport, callOpenAI, rubricText };
+/* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+   블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
+   (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
+   링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */
+const BANNED_SOURCES = [
+  ['블로그', ['blog.naver.com','blog.daum.net','tistory.com','egloos.com','blogspot.com','wordpress.com','velog.io','post.naver.com','blog.me']],
+  ['카페', ['cafe.naver.com','cafe.daum.net']],
+  ['커뮤니티', ['dcinside.com','fmkorea.com','theqoo.net','ruliweb.com','clien.net','ppomppu.co.kr','mlbpark.donga.com','inven.co.kr','instiz.net','pann.nate.com','todayhumor.co.kr','bobaedream.co.kr','etoland.co.kr','ilbe.com','82cook.com','reddit.com','humoruniv.com','dogdrip.net','arca.live','ygosu.com','gasengi.com','slrclub.com']],
+  ['SNS', ['instagram.com','facebook.com','fb.com','x.com','twitter.com','threads.net','threads.com','tiktok.com','band.us','kakao.com/story','story.kakao.com']],
+  ['위키', ['namu.wiki','wikipedia.org','wikiwand.com','librewiki.net']],
+  ['질문·답변 사이트', ['kin.naver.com','tip.daum.net','tip.kakao.com','quora.com','answers.yahoo.com']],
+  ['유튜브', ['youtube.com','youtu.be']],
+  ['개인 글 플랫폼', ['brunch.co.kr','medium.com','substack.com','postype.com']],
+  ['AI가 만든 글', ['chatgpt.com','chat.openai.com','openai.com/chat','gemini.google.com','bard.google.com','g.co/gemini','claude.ai','perplexity.ai','wrtn.ai','copilot.microsoft.com','poe.com','character.ai','clova-x.naver.com','askup.upstage.ai','liner.com','gamma.app']]
+];
+const BANNED_NAME_WORDS = [
+  ['블로그', /블로그|티스토리|tistory/i], ['카페', /네이버\s*카페|다음\s*카페/], ['커뮤니티', /디시|에펨|더쿠|루리웹|클리앙|뽐뿌|엠팍|인스티즈|네이트\s*판|오늘의\s*유머|보배드림|레딧|reddit/i],
+  ['SNS', /인스타그램|instagram|페이스북|facebook|트위터|twitter|스레드|틱톡|tiktok/i], ['위키', /나무\s*위키|위키\s*백과|wikipedia|namu\.wiki/i],
+  ['질문·답변 사이트', /지식\s*i?n|지식인|quora/i], ['유튜브', /유튜브|youtube/i], ['개인 글 플랫폼', /브런치|미디엄|medium\.com/i],
+  ['AI가 만든 글', /chat\s*gpt|챗\s*gpt|챗지피티|gemini|제미나이|claude|클로드|perplexity|퍼플렉시티|뤼튼|wrtn|copilot|코파일럿|생성형\s*ai|ai\s*답변/i]
+];
+function bannedSourceKind(link, name){
+  const raw = String(link||'').trim();
+  if(raw){
+    let host = '', path = '';
+    try{ const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); host = u.hostname.toLowerCase().replace(/^www\.|^m\./,''); path = u.pathname.toLowerCase(); }catch(e){}
+    if(host){
+      const hp = host + path;
+      for(const [kind, doms] of BANNED_SOURCES){
+        if(doms.some(d => d.includes('/') ? hp.startsWith(d) || hp.startsWith('www.'+d) : (host===d || host.endsWith('.'+d)))) return kind;
+      }
+    }
+  }
+  const nm = String(name||'');
+  for(const [kind, re] of BANNED_NAME_WORDS){ if(re.test(nm)) return kind; }
+  return '';
+}
+
+/* 요청 본문 읽기(문자열이면 JSON으로) */
+function bodyOf(req) {
+  let b = req.body;
+  if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
+  return b || {};
+}
+/* JSON 응답 해석(앞뒤에 다른 글이 붙어 와도 { … }만 꺼내서 읽는다) */
+function parseJSON(text) {
+  try { return JSON.parse(text); } catch (e) {}
+  const m = String(text).match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+  return null;
+}
+
+/* 22번 학생용 AI(피드백·챗봇) 공통 원칙 */
+const STUDENT_AI_RULES = `- 학생의 질문, 문장, 분석, 계산 결과, 결론을 대신 만들어 주지 않는다. 완성된 탐구 질문이나 보고서 문장을 예시로 써 주지 않는다.
+- 실제 통계 수치(○○%, ○○명 등)를 알려 주지 않는다(AI가 수치를 지어낼 수 있다). 대신 어떤 공식 사이트에서 찾으면 좋을지 알려 준다.
+- 자료는 정부기관·공공기관·공식 통계·공식 기록을 쓰게 한다. 블로그, 카페, 커뮤니티, SNS, 위키(나무위키·위키백과), 질문·답변 사이트(지식iN 등), 유튜브, 브런치 같은 개인 글, AI가 만든 글은 자료로 인정되지 않는다(쓰면 자료 조사를 하지 않은 것으로 본다).
+- 중학교 2학년이 이해할 수 있는 쉬운 말과 "-해요" 말투로, 짧게 쓴다. 마크다운 기호(**, ## 등)는 쓰지 않는다.`;
+const RECOMMENDED_SITES = `추천 사이트: 기상자료개방포털(날씨·기후), 에어코리아(미세먼지), 국민건강영양조사(건강·운동·식생활), 국가통계포털 KOSIS(인구·출생·사망·물가·소득·생활비), 국가화재정보시스템(화재), 경찰청(범죄), TAAS 교통사고분석시스템(교통사고), 국가교통DB KTDB(교통량), 학교알리미·교육통계서비스(학교·교육), KBO 공식 홈페이지 등 종목별 공식 기록 사이트(스포츠), 식품안전나라(식중독·식품 안전), 보험개발원(보험).`;
+
+module.exports = { PROMPT_TEMPLATE, countChars, parseReport, callOpenAI, rubricText, bannedSourceKind, bodyOf, parseJSON, STUDENT_AI_RULES, RECOMMENDED_SITES };

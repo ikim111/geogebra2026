@@ -117,6 +117,25 @@
   .rec .chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:9px;margin:1px 2px;background:#f0f2f5;color:#555;}
   .rec .chip.o{background:#e8f1fc;color:#1565c0;} .rec .chip.t{background:#fff8e1;color:#b07800;} .rec .chip.x{background:#ffebee;color:#c62828;}
   .rec .miss{font-size:12px;color:#e65100;margin-top:6px;}
+  /* ---- 🤖 AI 사용 기록 ---- */
+  .ai-agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#f7f4fd;border:1px solid #d1c4e9;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#311b92;}
+  .ai-agg button.ai-toggle{background:#5e35b1;color:#fff;font-weight:bold;}
+  .ai-agg button.ai-toggle.off{background:#9e9e9e;}
+  .ai-agg .st{font-size:12.5px;}
+  .flag-chip{display:inline-block;background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:12px;padding:1px 9px;font-size:12px;font-weight:bold;cursor:pointer;margin:2px;}
+  td.ai-cell{white-space:nowrap;font-size:12px;cursor:pointer;color:#5e35b1;}
+  td.ai-cell .fl{color:#c62828;font-weight:bold;margin-left:4px;}
+  .alog .flags{background:#ffebee;border:1px solid #ef9a9a;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#b71c1c;}
+  .alog .flags.ok{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
+  .alog .ent{border:1px solid #e3e6ea;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px;}
+  .alog .ent.flagged{border-color:#ef9a9a;background:#fff8f8;}
+  .alog .ent .meta{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#888;margin-bottom:4px;}
+  .alog .ent .meta b{color:#5e35b1;}
+  .alog .q{background:#e3f2fd;border-radius:6px;padding:5px 9px;white-space:pre-wrap;word-break:break-word;margin:3px 0;}
+  .alog .a{background:#f1f8e9;border-radius:6px;padding:5px 9px;white-space:pre-wrap;word-break:break-word;margin:3px 0;}
+  .alog .snap{color:#666;font-size:12px;white-space:pre-wrap;word-break:break-word;background:#fafafa;border-radius:6px;padding:4px 8px;margin:3px 0;max-height:120px;overflow:auto;}
+  .alog .why{color:#c62828;font-weight:bold;font-size:12px;}
+  .alog mark{background:#ffcdd2;}
   .agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#fffbe6;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#5d4200;}
   .agg b{font-size:16px;color:#8d6e00;}
   .flipseq{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -160,7 +179,7 @@
 
 <!-- 요약뷰에서 학생의 step 칸(또는 상세 패널의 행)을 클릭하면, 그 학생이 그 step에 적은 내용을 보여주는 모달. -->
 <div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:760px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
     <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
     <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
     <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
@@ -222,6 +241,11 @@
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
         <span>📋 <b>진행 현황</b> — step1 <b id="agg1">0</b>명 · step2 <b id="agg2">0</b>명 · step3 <b id="agg3">0</b>명 · step4 <b id="agg4">0</b>명 완료 · 제출 <b id="aggSub">0</b>명</span>
+      </div>
+      <div class="ai-agg" id="aiAgg" style="display:none;">
+        <span>🤖 <b>AI 사용</b> — 쓴 학생 <b id="aiUsers">0</b>명 · 피드백 <b id="aiFbCnt">0</b>번 · 도우미 질문 <b id="aiChatCnt">0</b>번 <span style="font-size:12px;color:#777;">(표의 "AI" 칸을 누르면 학생별 기록)</span></span>
+        <button class="ai-toggle" id="aiToggleBtn">🤖 학생 AI 끄기</button>
+        <span class="st" id="aiState"></span>
       </div>
     </div>
 
@@ -289,6 +313,8 @@
    teacher17/21과 같은 틀(번호순 정렬, 진행률, 지금 보는 중, 속도조절, 상세 모달,
    공지·일시정지·수업 종료, 미리보기)을 쓰고, 과제는 step1~4 네 개다.
    - 학생이 적은 내용(data)을 step별로 읽기 좋게 보여준다.
+   - 🤖 학생 AI 사용 기록(students/{key}/aiLog) 보기, 학생 AI 켜기/끄기(control/aiOff).
+     mgmt에서 23번을 열면 aiOff가 자동으로 true가 되고, 여기서 다시 켤 수 있다. (이상 사용 감지는 나중에 추가 예정)
    반드시 아래 두 가지를 student22.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -341,6 +367,44 @@ function hasAny(d, id){
   if(id===4) return !!(str(d.oTitle)||str(d.oIntro)||str(d.oBody)||str(d.oConcl));
   return false;
 }
+/* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+   블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
+   (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
+   링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */
+const BANNED_SOURCES = [
+  ['블로그', ['blog.naver.com','blog.daum.net','tistory.com','egloos.com','blogspot.com','wordpress.com','velog.io','post.naver.com','blog.me']],
+  ['카페', ['cafe.naver.com','cafe.daum.net']],
+  ['커뮤니티', ['dcinside.com','fmkorea.com','theqoo.net','ruliweb.com','clien.net','ppomppu.co.kr','mlbpark.donga.com','inven.co.kr','instiz.net','pann.nate.com','todayhumor.co.kr','bobaedream.co.kr','etoland.co.kr','ilbe.com','82cook.com','reddit.com','humoruniv.com','dogdrip.net','arca.live','ygosu.com','gasengi.com','slrclub.com']],
+  ['SNS', ['instagram.com','facebook.com','fb.com','x.com','twitter.com','threads.net','threads.com','tiktok.com','band.us','kakao.com/story','story.kakao.com']],
+  ['위키', ['namu.wiki','wikipedia.org','wikiwand.com','librewiki.net']],
+  ['질문·답변 사이트', ['kin.naver.com','tip.daum.net','tip.kakao.com','quora.com','answers.yahoo.com']],
+  ['유튜브', ['youtube.com','youtu.be']],
+  ['개인 글 플랫폼', ['brunch.co.kr','medium.com','substack.com','postype.com']],
+  ['AI가 만든 글', ['chatgpt.com','chat.openai.com','openai.com/chat','gemini.google.com','bard.google.com','g.co/gemini','claude.ai','perplexity.ai','wrtn.ai','copilot.microsoft.com','poe.com','character.ai','clova-x.naver.com','askup.upstage.ai','liner.com','gamma.app']]
+];
+const BANNED_NAME_WORDS = [
+  ['블로그', /블로그|티스토리|tistory/i], ['카페', /네이버\s*카페|다음\s*카페/], ['커뮤니티', /디시|에펨|더쿠|루리웹|클리앙|뽐뿌|엠팍|인스티즈|네이트\s*판|오늘의\s*유머|보배드림|레딧|reddit/i],
+  ['SNS', /인스타그램|instagram|페이스북|facebook|트위터|twitter|스레드|틱톡|tiktok/i], ['위키', /나무\s*위키|위키\s*백과|wikipedia|namu\.wiki/i],
+  ['질문·답변 사이트', /지식\s*i?n|지식인|quora/i], ['유튜브', /유튜브|youtube/i], ['개인 글 플랫폼', /브런치|미디엄|medium\.com/i],
+  ['AI가 만든 글', /chat\s*gpt|챗\s*gpt|챗지피티|gemini|제미나이|claude|클로드|perplexity|퍼플렉시티|뤼튼|wrtn|copilot|코파일럿|생성형\s*ai|ai\s*답변/i]
+];
+function bannedSourceKind(link, name){
+  const raw = String(link||'').trim();
+  if(raw){
+    let host = '', path = '';
+    try{ const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); host = u.hostname.toLowerCase().replace(/^www\.|^m\./,''); path = u.pathname.toLowerCase(); }catch(e){}
+    if(host){
+      const hp = host + path;
+      for(const [kind, doms] of BANNED_SOURCES){
+        if(doms.some(d => d.includes('/') ? hp.startsWith(d) || hp.startsWith('www.'+d) : (host===d || host.endsWith('.'+d)))) return kind;
+      }
+    }
+  }
+  const nm = String(name||'');
+  for(const [kind, re] of BANNED_NAME_WORDS){ if(re.test(nm)) return kind; }
+  return '';
+}
+
 function activityDetailHTML(s, id){
   const d = (s && s.data) || null;
   if(!hasAny(d, id)) return '';
@@ -359,7 +423,8 @@ function activityDetailHTML(s, id){
   } else if(id===3){
     const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)||str(x.analysis)));
     src.forEach((x,i)=>{
-      h += `<div class="src"><b>📎 자료 ${i+1}</b>` + kvRow('수집한 자료', x.what) + kvRow('출처', x.site) +
+      const bk = bannedSourceKind(x.link, x.site);
+      h += `<div class="src"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}><b>📎 자료 ${i+1}</b>${bk?` <span style="color:#c62828;font-size:12px;font-weight:bold;">🚫 ${esc(bk)} — 자료로 인정 안 됨</span>`:''}` + kvRow('수집한 자료', x.what) + kvRow('출처', x.site) +
         `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div>` + kvRow('분석', x.analysis) + '</div>';
     });
     const dc = str(d.dataCheck);
@@ -368,6 +433,56 @@ function activityDetailHTML(s, id){
     h += kvRow('제목', d.oTitle) + kvRow('서론', d.oIntro) + kvRow('본론', d.oBody) + kvRow('결론', d.oConcl);
   }
   return h + '</div>';
+}
+/* ---------- 🤖 AI 사용 기록 (student22.html의 students/{key}/aiLog) ---------- */
+let aiOff = false;
+const aiLogsOf = s => { const v = (s && s.aiLog) || {}; return Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); };
+function aiUsage(s){
+  const logs = aiLogsOf(s);
+  return { fb: logs.filter(l=>l.type==='feedback').length, chat: logs.filter(l=>l.type==='chat').length, logs };
+}
+function renderAiAgg(){
+  const box = document.getElementById('aiAgg'); if(!box) return;
+  box.style.display = currentRoomKey ? 'flex' : 'none';
+  const keys = Object.keys(allStudents);
+  let users=0, fb=0, chat=0;
+  keys.forEach(k=>{ const u = aiUsage(allStudents[k]); if(u.fb||u.chat) users++; fb+=u.fb; chat+=u.chat; });
+  document.getElementById('aiUsers').textContent = users;
+  document.getElementById('aiFbCnt').textContent = fb;
+  document.getElementById('aiChatCnt').textContent = chat;
+  const btn = document.getElementById('aiToggleBtn');
+  btn.textContent = aiOff ? '🤖 학생 AI 켜기' : '🤖 학생 AI 끄기';
+  btn.classList.toggle('off', aiOff);
+  document.getElementById('aiState').textContent = aiOff ? '🔒 지금 학생 AI가 꺼져 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)' : '🟢 학생이 AI 피드백·도우미를 쓸 수 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)';
+}
+document.getElementById('aiToggleBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!aiOff && !confirm('이 반 학생들의 AI 피드백·AI 도우미를 끌까요?')) return;
+  controlRef.update({ aiOff: !aiOff });
+});
+/* 학생 한 명의 AI 사용 기록 모달 */
+function openAiLog(key){
+  const s = allStudents[key]; if(!s) return;
+  const u = aiUsage(s);
+  const when = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  let h = '<div class="alog">';
+  if(!u.logs.length) h += '<div style="color:#999;padding:20px;text-align:center;">아직 AI를 쓰지 않았어요.</div>';
+  u.logs.slice().reverse().forEach(l=>{
+    if(l.type==='chat'){
+      h += `<div class="ent"><div class="meta"><span><b>💬 AI 도우미</b></span><span>${when(l.ts)}</span></div>
+        <div class="q">🙋 ${esc(l.q)}</div><div class="a">🤖 ${esc(l.a)}</div></div>`;
+    } else {
+      h += `<div class="ent"><div class="meta"><span><b>🤖 AI 피드백 · step${l.step}</b></span><span>${when(l.ts)}</span></div>
+        ${l.snap?`<div class="snap">학생 글(피드백 받을 때): ${esc(l.snap)}</div>`:''}
+        ${(l.good||[]).map(t=>`<div class="a">👍 ${esc(t)}</div>`).join('')}${(l.fix||[]).length?(l.fix||[]).map(t=>`<div class="a">🔧 ${esc(t)}</div>`).join(''):'<div class="a">🔧 보완할 점 없음</div>'}</div>`;
+    }
+  });
+  h += '</div>';
+  document.getElementById('tdmTitle').textContent = '🤖 AI 사용 기록';
+  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · AI 피드백 ${u.fb}번 · 도우미 질문 ${u.chat}번`;
+  document.getElementById('tdmCanvasWrap').textContent='';
+  document.getElementById('tdmTextWrap').innerHTML = h;
+  document.getElementById('taskDetailOverlay').style.display='flex';
 }
 function onStudentsUpdated(){}
 /* 요약 패널: step별 완료 인원 */
@@ -442,11 +557,15 @@ function buildGridHead(){
     tr.appendChild(th);
   });
 
+  const thAi=document.createElement('th'); thAi.textContent='AI';
+  thAi.title='AI 피드백·도우미 사용 횟수 — 누르면 기록을 볼 수 있어요';
+  tr.appendChild(thAi);
+
   const thTime=document.createElement('th'); thTime.textContent='마지막 활동';
   tr.appendChild(thTime);
 }
 buildGridHead();
-const GRID_COLSPAN = 4 + TASK_IDS.length + 1; // 체크박스+이름+번호+진행률 + 과제N개 + 마지막활동
+const GRID_COLSPAN = 4 + TASK_IDS.length + 2; // 체크박스+이름+번호+진행률 + 과제N개 + AI + 마지막활동
 
 function populateRoomSelect(){
   const sel=document.getElementById('roomCode');
@@ -473,7 +592,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       setPaceRange(null, null, /*fromRemote*/true);
       // 1초에 한 번만 다시 그리되, 그 사이 들어온 마지막 변경은 버리지 않고 1초 뒤에 반영한다.
       let __ggbThrottleTs = 0, __ggbPendingSnap = null, __ggbTimer = null;
-      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); onStudentsUpdated(); };
+      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); renderAiAgg(); onStudentsUpdated(); };
       studentsRef.on('value', snap=>{
         const wait = 1000 - (Date.now()-__ggbThrottleTs);
         if(wait<=0){ __ggbApply(snap); return; }
@@ -482,6 +601,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       });
       controlRef.on('value', snap=>{
         const c = snap.val() || {};
+        aiOff = !!c.aiOff; renderAiAgg();
         paused = !!c.paused;
         updatePauseBtn();
         classEnded = !!c.classEnded;
@@ -499,7 +619,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       document.getElementById('currentRoomLabel').textContent = room+'반';
       document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(room));
       document.getElementById('summary').style.display='flex';
-      renderAggregate();
+      renderAggregate(); renderAiAgg();
     }).catch(err=>{ statusEl.textContent='⚠️ 로그인 실패: '+err.message; });
   }catch(err){ statusEl.textContent='⚠️ 연결 실패: '+err.message; }
 });
@@ -637,7 +757,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
   if(studentsRef) studentsRef.off();
   if(controlRef) controlRef.off();
-  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate();
+  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate(); renderAiAgg();
   document.getElementById('teacherAppScreen').style.display='none';
   document.getElementById('teacherGateScreen').style.display='block';
   document.getElementById('connStatus').textContent='반을 선택하고 "시작하기"를 눌러주세요.';
@@ -743,6 +863,14 @@ function renderGrid(){
       tr.appendChild(td);
     });
 
+    const tdAi=document.createElement('td'); tdAi.className='ai-cell';
+    const au = aiUsage(s);
+    if(au.fb || au.chat){ tdAi.textContent = `피${au.fb}·질${au.chat}`; }
+    else { tdAi.textContent='-'; tdAi.style.color='#bbb'; }
+    tdAi.title = `AI 피드백 ${au.fb}번 · 도우미 질문 ${au.chat}번 — 누르면 기록을 볼 수 있어요`;
+    tdAi.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openAiLog(item.key); });
+    tr.appendChild(tdAi);
+
     const tdTime=document.createElement('td');
     tdTime.textContent = fmtTime(s.lastActive);
     tr.appendChild(tdTime);
@@ -793,6 +921,11 @@ function renderDetail(item){
     row.appendChild(left); row.appendChild(right);
     wrap.appendChild(row);
   });
+  const au = aiUsage(s);
+  const arow=document.createElement('div'); arow.className='drow'; arow.title='클릭하면 AI 사용 기록을 볼 수 있어요';
+  arow.innerHTML = `<span>🤖 AI 사용 기록</span><span class="st ok">피드백 ${au.fb} · 질문 ${au.chat}</span>`;
+  arow.addEventListener('click', ()=> openAiLog(item.key));
+  wrap.appendChild(arow);
 }
 
 /* 요약뷰의 step 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생이 그 step에 적은 내용을 모달로 보여준다. */

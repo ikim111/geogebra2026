@@ -382,6 +382,44 @@ const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
 
+/* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+   블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
+   (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
+   링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */
+const BANNED_SOURCES = [
+  ['블로그', ['blog.naver.com','blog.daum.net','tistory.com','egloos.com','blogspot.com','wordpress.com','velog.io','post.naver.com','blog.me']],
+  ['카페', ['cafe.naver.com','cafe.daum.net']],
+  ['커뮤니티', ['dcinside.com','fmkorea.com','theqoo.net','ruliweb.com','clien.net','ppomppu.co.kr','mlbpark.donga.com','inven.co.kr','instiz.net','pann.nate.com','todayhumor.co.kr','bobaedream.co.kr','etoland.co.kr','ilbe.com','82cook.com','reddit.com','humoruniv.com','dogdrip.net','arca.live','ygosu.com','gasengi.com','slrclub.com']],
+  ['SNS', ['instagram.com','facebook.com','fb.com','x.com','twitter.com','threads.net','threads.com','tiktok.com','band.us','kakao.com/story','story.kakao.com']],
+  ['위키', ['namu.wiki','wikipedia.org','wikiwand.com','librewiki.net']],
+  ['질문·답변 사이트', ['kin.naver.com','tip.daum.net','tip.kakao.com','quora.com','answers.yahoo.com']],
+  ['유튜브', ['youtube.com','youtu.be']],
+  ['개인 글 플랫폼', ['brunch.co.kr','medium.com','substack.com','postype.com']],
+  ['AI가 만든 글', ['chatgpt.com','chat.openai.com','openai.com/chat','gemini.google.com','bard.google.com','g.co/gemini','claude.ai','perplexity.ai','wrtn.ai','copilot.microsoft.com','poe.com','character.ai','clova-x.naver.com','askup.upstage.ai','liner.com','gamma.app']]
+];
+const BANNED_NAME_WORDS = [
+  ['블로그', /블로그|티스토리|tistory/i], ['카페', /네이버\s*카페|다음\s*카페/], ['커뮤니티', /디시|에펨|더쿠|루리웹|클리앙|뽐뿌|엠팍|인스티즈|네이트\s*판|오늘의\s*유머|보배드림|레딧|reddit/i],
+  ['SNS', /인스타그램|instagram|페이스북|facebook|트위터|twitter|스레드|틱톡|tiktok/i], ['위키', /나무\s*위키|위키\s*백과|wikipedia|namu\.wiki/i],
+  ['질문·답변 사이트', /지식\s*i?n|지식인|quora/i], ['유튜브', /유튜브|youtube/i], ['개인 글 플랫폼', /브런치|미디엄|medium\.com/i],
+  ['AI가 만든 글', /chat\s*gpt|챗\s*gpt|챗지피티|gemini|제미나이|claude|클로드|perplexity|퍼플렉시티|뤼튼|wrtn|copilot|코파일럿|생성형\s*ai|ai\s*답변/i]
+];
+function bannedSourceKind(link, name){
+  const raw = String(link||'').trim();
+  if(raw){
+    let host = '', path = '';
+    try{ const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); host = u.hostname.toLowerCase().replace(/^www\.|^m\./,''); path = u.pathname.toLowerCase(); }catch(e){}
+    if(host){
+      const hp = host + path;
+      for(const [kind, doms] of BANNED_SOURCES){
+        if(doms.some(d => d.includes('/') ? hp.startsWith(d) || hp.startsWith('www.'+d) : (host===d || host.endsWith('.'+d)))) return kind;
+      }
+    }
+  }
+  const nm = String(name||'');
+  for(const [kind, re] of BANNED_NAME_WORDS){ if(re.test(nm)) return kind; }
+  return '';
+}
+
 /* ---------- 학생 보고서 표시 (student23.html의 data 필드) ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const str = x => (typeof x==='string' ? x : '');
@@ -467,7 +505,7 @@ function activityDetailHTML(s, id, key){
   });
   const srcs = r.sources;
   h += `<h4><span>[자료 출처]</span><span class="c${srcs.length<2?' short':''}">${srcs.length}개</span></h4>` + (srcs.length
-    ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
+    ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${bannedSourceKind(x.link, x.name)?`<b style="color:#c62828;">🚫 ${esc(bannedSourceKind(x.link, x.name))}(인정 안 됨)</b> `:''}${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
     : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
   return h + (key ? gradeBoxHTML(key, s) + aiBoxHTML(key, s) : '');
