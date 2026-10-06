@@ -240,7 +240,7 @@
         <div>step 4개 모두 완료: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 <b>진행 현황</b> — step1 <b id="agg1">0</b>명 · step2 <b id="agg2">0</b>명 · step3 <b id="agg3">0</b>명 · step4 <b id="agg4">0</b>명 완료 · 제출 <b id="aggSub">0</b>명</span>
+        <span>📋 <b>진행 현황</b> — step1 <b id="agg1">0</b>명 · step2 <b id="agg2">0</b>명 · step3 <b id="agg3">0</b>명 · step4 <b id="agg4">0</b>명 · step5 <b id="agg5">0</b>명 완료 · 제출 <b id="aggSub">0</b>명</span>
       </div>
       <div class="ai-agg" id="aiAgg" style="display:none;">
         <span>🤖 <b>AI 사용</b> — 쓴 학생 <b id="aiUsers">0</b>명 · 피드백 <b id="aiFbCnt">0</b>번 · 도우미 질문 <b id="aiChatCnt">0</b>번 <span style="font-size:12px;color:#777;">(표의 "AI" 칸을 누르면 학생별 기록)</span></span>
@@ -294,7 +294,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 4</span>
+            <span id="previewLabel">1 / 5</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -311,7 +311,7 @@
 /* ============================================================
    student22.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ① 질문·계획·자료 탐구).
    teacher17/21과 같은 틀(번호순 정렬, 진행률, 지금 보는 중, 속도조절, 상세 모달,
-   공지·일시정지·수업 종료, 미리보기)을 쓰고, 과제는 step1~4 네 개다.
+   공지·일시정지·수업 종료, 미리보기)을 쓰고, 과제는 step1~5 다섯 개다.
    - 학생이 적은 내용(data)을 step별로 읽기 좋게 보여준다.
    - 🤖 학생 AI 사용 기록(students/{key}/aiLog) 보기, 학생 AI 켜기/끄기(control/aiOff).
      mgmt에서 23번을 열면 aiOff가 자동으로 true가 되고, 여기서 다시 켤 수 있다. (이상 사용 감지는 나중에 추가 예정)
@@ -345,8 +345,9 @@ const CONFIG = {
 const TASK_LABELS = [
   {id:1, key:'s1', label:'step1 탐구 질문 만들기'},
   {id:2, key:'s2', label:'step2 탐구 계획하기'},
-  {id:3, key:'s3', label:'step3 자료 분석·확률 계산하기'},
-  {id:4, key:'s4', label:'step4 개요 작성'}
+  {id:3, key:'s3', label:'step3 자료 찾기'},
+  {id:4, key:'s4', label:'step4 자료 분석·확률 계산하기'},
+  {id:5, key:'s5', label:'step5 개요 작성'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
@@ -362,9 +363,10 @@ function safeLink(u){ const t=str(u); return /^https?:\/\//i.test(t) ? `<a href=
 function hasAny(d, id){
   if(!d) return false;
   if(id===1) return !!(str(d.topicInterest)||str(d.topicCareer)||str(d.topicHobby)||str(d.q1)||str(d.motive)||d.qtype);
-  if(id===2) return !!(str(d.finalQ)||str(d.plan1)||str(d.plan2)||str(d.plan3)||str(d.expect)) || (Array.isArray(d.sources) && d.sources.some(x=>x&&(str(x.what)||str(x.link))));
-  if(id===3) return !!(str(d.calc)||str(d.meaning)) || (Array.isArray(d.sources) && d.sources.some(x=>x&&str(x.analysis)));
-  if(id===4) return !!(str(d.oTitle)||str(d.oIntro)||str(d.oBody)||str(d.oConcl));
+  if(id===2) return !!(str(d.finalQ)||str(d.plan1)||str(d.plan2)||str(d.plan3)||str(d.expect));
+  if(id===3) return (Array.isArray(d.sources) && d.sources.some(x=>x&&(str(x.what)||str(x.link)))) || (Array.isArray(d.planRows) && d.planRows.some(r=>r&&(str(r.need)||str(r.where))));
+  if(id===4) return !!(str(d.calc)||str(d.meaning)) || (Array.isArray(d.sources) && d.sources.some(x=>x&&str(x.analysis)));
+  if(id===5) return !!(str(d.oTitle)||str(d.oIntro)||str(d.oBody)||str(d.oConcl));
   return false;
 }
 /* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
@@ -417,6 +419,8 @@ function activityDetailHTML(s, id){
   } else if(id===2){
     h += kvRow('최종 탐구 질문', d.finalQ);
     h += '<h4>탐구 계획</h4>' + kvRow('1. 조사·결론', d.plan1) + kvRow('2. 확률 계산식', d.plan2) + kvRow('3. 변수·한계·보정', d.plan3);
+    h += '<h4>예상 결과</h4>' + kvRow('예상 결과', d.expect);
+  } else if(id===3){
     const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)));
     h += '<h4>찾은 자료</h4>';
     if(!src.length){
@@ -431,14 +435,13 @@ function activityDetailHTML(s, id){
     });
     const dc = str(d.dataCheck);
     h += '<h4>자료 수집 점검</h4><div>' + DATA_CHECKS.map((t,i)=>`<span class="chip ${dc[i]==='1'?'o':''}">${dc[i]==='1'?'☑':'☐'} ${esc(t)}</span>`).join('') + '</div>';
-    h += '<h4>예상 결과</h4>' + kvRow('예상 결과', d.expect);
-  } else if(id===3){
+  } else if(id===4){
     const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)||str(x.analysis)));
     h += '<h4>자료별 분석</h4>';
     src.forEach((x,i)=>{ h += `<div class="src"><b>📎 자료 ${i+1}</b> <span style="color:#666;font-size:12.5px;">${esc(str(x.what))} — ${esc(str(x.site))}</span>` + kvRow('알아낸 사실·수치', x.analysis) + '</div>'; });
     if(!src.length) h += '<div class="v none" style="font-size:13px;">(자료 없음)</div>';
     h += '<h4>확률 계산</h4>' + kvRow('계산식과 결과', d.calc) + kvRow('해석', d.meaning);
-  } else if(id===4){
+  } else if(id===5){
     h += kvRow('제목', d.oTitle) + kvRow('서론', d.oIntro) + kvRow('본론', d.oBody) + kvRow('결론', d.oConcl);
   }
   return h + '</div>';
