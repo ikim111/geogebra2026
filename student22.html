@@ -833,6 +833,7 @@ const RT = {
       this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
     });
     // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
+    this.studentRef.child('aiBonus').on('value', sb=>{ const b = sb.val() || {}; AI_BONUS = { day: b.day||'', fb: +b.fb||0, chat: +b.chat||0 }; AI.paint(); });
     this.studentRef.child('aiLog').once('value').then(s3=>{ const v=s3.val()||{}; AI.logs = Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); AI.loaded = true; AI.paint(); }).catch(()=>{ AI.loaded = true; AI.paint(); });
     statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
     clearInterval(this.heartbeatTimer);
@@ -884,6 +885,11 @@ function paintAll(){
    - 선생님이 끄면(control/aiOff) 버튼이 잠긴다. 하루 횟수: step별 피드백 5번, 챗봇 30번(오늘 날짜 기준).
    - 피드백: /api/step-feedback, 챗봇: /api/chat-help (둘 다 답을 대신 써 주지 않도록 서버 프롬프트에서 막음). */
 const AI_FB_MAX = 5, AI_CHAT_MAX = 30;
+/* 선생님이 teacher22에서 준 추가 기회(오늘만): students/{key}/aiBonus = {day:'YYYY-M-D', fb:n(step마다), chat:n} */
+let AI_BONUS = { day:'', fb:0, chat:0 };
+const bonusFb = () => AI_BONUS.day===dayKey(Date.now()) ? (AI_BONUS.fb||0) : 0;
+const bonusChat = () => AI_BONUS.day===dayKey(Date.now()) ? (AI_BONUS.chat||0) : 0;
+const fbMax = () => AI_FB_MAX + bonusFb(), chatMax = () => AI_CHAT_MAX + bonusChat();
 const AI = {
   logs: [], loaded: false, teacherOff: false, busy: false,
   offReason(){
@@ -907,11 +913,11 @@ const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.
 const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
 function paintStepFb(n){
   const box = $('aiFb'+n); if(!box) return;
-  const used = AI.fbOf(n), last = used[used.length-1], left = AI_FB_MAX - AI.today(used).length, off = AI.offReason();
-  let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${AI_FB_MAX}</small></span>
+  const used = AI.fbOf(n), last = used[used.length-1], left = fbMax() - AI.today(used).length, off = AI.offReason();
+  let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
     <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : '🤖 AI 피드백 받기'}</button></div>`;
   if(off) h += `<div class="ai-off">${off}</div>`;
-  else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${AI_FB_MAX}번을 모두 썼어요. 이제 스스로 점검해 봐요! (내일 다시 쓸 수 있어요)</div>`;
+  else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
   if(last){
     h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}</div>`;
     (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">잘한 점</span><span>${esc(t)}</span></div>`);
@@ -922,7 +928,7 @@ function paintStepFb(n){
   box.innerHTML = h;
 }
 async function requestStepFb(n){
-  if(AI.busy || AI.offReason() || AI.today(AI.fbOf(n)).length >= AI_FB_MAX) return;
+  if(AI.busy || AI.offReason() || AI.today(AI.fbOf(n)).length >= fbMax()) return;
   AI.busy = n; AI.paint();
   try{
     RT.flushPending();
@@ -947,19 +953,19 @@ document.addEventListener('click', e=>{ const b = e.target.closest && e.target.c
 
 function paintChat(){
   const log = $('chatLog'); if(!log) return;
-  const chats = AI.chats(), left = AI_CHAT_MAX - AI.today(chats).length, off = AI.offReason();
+  const chats = AI.chats(), left = chatMax() - AI.today(chats).length, off = AI.offReason();
   let h = chats.length ? '' : '<div class="msg ai">안녕하세요! 탐구 질문 만들기나 자료 찾기가 막막하면 편하게 물어보세요. 답을 대신 알려 주지는 않지만, 스스로 해낼 수 있게 도와줄게요 🙂</div>';
   chats.forEach(c=>{ h += `<div class="msg me">${esc(c.q)}</div><div class="msg ai">${esc(c.a)}</div>`; });
   if(AI.busy==='chat') h += `<div class="msg me">${esc(AI.pendingQ||'')}</div><div class="msg ai wait">생각하는 중…</div>`;
   log.innerHTML = h; log.scrollTop = log.scrollHeight;
-  $('chatLeft').textContent = `오늘 남은 질문 ${Math.max(0,left)}/${AI_CHAT_MAX}`;
+  $('chatLeft').textContent = `오늘 남은 질문 ${Math.max(0,left)}/${chatMax()}${bonusChat()?` (선생님 추가 +${bonusChat()})`:''}`;
   const dis = !!off || left<=0 || !!AI.busy;
   $('chatSend').disabled = dis; $('chatInput').disabled = !!off || left<=0;
-  $('chatOff').textContent = off || (left<=0 ? `오늘 AI 도우미 질문 ${AI_CHAT_MAX}번을 모두 썼어요. 내일 다시 쓸 수 있어요.` : '');
+  $('chatOff').textContent = off || (left<=0 ? `오늘 AI 도우미 질문 ${chatMax()}번을 모두 썼어요. 꼭 필요하면 선생님께 말씀드려요.` : '');
 }
 async function sendChat(){
   const inp = $('chatInput'), q = inp.value.trim();
-  if(!q || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= AI_CHAT_MAX) return;
+  if(!q || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= chatMax()) return;
   AI.busy = 'chat'; AI.pendingQ = q; inp.value = ''; paintChat();
   try{
     const history = [];

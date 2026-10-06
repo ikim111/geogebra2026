@@ -108,6 +108,10 @@
   .ac-conv .msg .tm{display:block;font-size:11px;color:#999;margin-top:2px;}
   .ac-conv .fbk{align-self:stretch;border:1px dashed #d1c4e9;background:#faf8fe;border-radius:8px;padding:6px 10px;font-size:13px;}
   .ac-conv mark, .ac-feed mark{background:#fff59d;}
+  .ac-bonus{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:#555;background:#f7f4fd;border-radius:8px;padding:6px 10px;}
+  .ac-bonus .sp{flex:1;}
+  .ac-bonus button{padding:4px 9px;font-size:12px;background:#ede7f6;color:#4527a0;border:1px solid #d1c4e9;}
+  .ac-bonus button.rs{background:#fff;color:#888;border-color:#ccc;}
   .tab-panel.active{display:block;}
   .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
   #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
@@ -589,7 +593,16 @@ function renderAiChatTab(){
   const conv = document.getElementById('acConv');
   if(!acSel || !allStudents[acSel]){ acSet('acConv', '<div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div>'); return; }
   const s = allStudents[acSel], es = acEntries(s);
-  let h = `<div style="font-weight:bold;color:#311b92;">${esc(displayName(acSel,s.name,s.number))} <span style="font-weight:normal;color:#888;font-size:12.5px;">· ${acRange==='today'?'오늘':'전체'} 기록 ${es.length}개</span></div>`, lastDay = '';
+  // ➕ 오늘 추가 기회(학생이 꼭 필요할 때) — students/{key}/aiBonus = {day, fb(step마다), chat}
+  const td = acDay(Date.now()), bo = (s.aiBonus && s.aiBonus.day===td) ? s.aiBonus : {fb:0, chat:0};
+  const usedChat = aiLogsOf(s).filter(l=>l.type==='chat' && acDay(l.ts)===td).length;
+  const usedFb = [1,2,3,4,5].map(n=> aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===n && acDay(l.ts)===td).length);
+  let h = `<div style="font-weight:bold;color:#311b92;">${esc(displayName(acSel,s.name,s.number))} <span style="font-weight:normal;color:#888;font-size:12.5px;">· ${acRange==='today'?'오늘':'전체'} 기록 ${es.length}개</span></div>
+    <div class="ac-bonus">오늘 사용: 챗봇 <b>${usedChat}/${30+(+bo.chat||0)}</b> · 피드백(step별) <b>${usedFb.join('·')}</b> / ${5+(+bo.fb||0)}번
+      <span class="sp"></span>➕ 오늘만 추가:
+      <button type="button" data-bonus="fb" data-n="1">피드백 +1</button><button type="button" data-bonus="fb" data-n="3">피드백 +3</button>
+      <button type="button" data-bonus="chat" data-n="5">챗봇 +5</button><button type="button" data-bonus="chat" data-n="10">챗봇 +10</button>
+      ${(+bo.fb||+bo.chat)?`<button type="button" data-bonus="reset" class="rs">추가 취소</button>`:''}</div>`, lastDay = '';
   es.forEach(l=>{
     const d = acDay(l.ts); if(d!==lastDay){ h += `<div class="day">${esc(acDate(l.ts))}</div>`; lastDay = d; }
     if(l.type==='chat') h += `<div class="msg me">${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
@@ -606,6 +619,18 @@ document.addEventListener('click', e=>{
   if(rg){ acRange = rg.dataset.acrange; document.querySelectorAll('[data-acrange]').forEach(b=>b.classList.toggle('on', b===rg)); renderAiChatTab(); }
 });
 document.getElementById('acShowFb').addEventListener('change', renderAiChatTab);
+/* ➕ 추가 기회 주기(오늘만 유효 — 날짜가 바뀌면 저절로 사라짐). 피드백은 step마다 그만큼 더 쓸 수 있다. */
+document.addEventListener('click', async e=>{
+  const b = e.target.closest && e.target.closest('[data-bonus]'); if(!b || !acSel || !allStudents[acSel]) return;
+  const s = allStudents[acSel], td = acDay(Date.now());
+  const cur = (s.aiBonus && s.aiBonus.day===td) ? s.aiBonus : {day:td, fb:0, chat:0};
+  let next;
+  if(b.dataset.bonus==='reset') next = null;
+  else { next = {day:td, fb:+cur.fb||0, chat:+cur.chat||0}; next[b.dataset.bonus] += +b.dataset.n; }
+  await db.ref('rooms/'+currentRoomKey+'/students/'+acSel+'/aiBonus').set(next);
+  if(next) s.aiBonus = next; else delete s.aiBonus;
+  renderAiChatTab();
+});
 document.getElementById('acSearch').addEventListener('input', renderAiChatTab);
 /* 엑셀: 이 반의 모든 AI 사용 기록(챗봇 대화 + AI 피드백) — 보기 조건과 관계없이 전부 */
 document.getElementById('acExcelBtn').addEventListener('click', ()=>{
