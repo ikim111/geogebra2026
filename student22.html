@@ -422,7 +422,7 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step5</span>확률 글쓰기 — 개요 작성</h2><span class="badge pending" id="badge-s5">미완료</span></div>
     <p class="hint">보고서를 쓰기 전에 무엇을 어떤 순서로 쓸지 짧게(키워드·핵심 문장 위주로) 정리해요. 이 개요는 [3] 보고서 제출 화면에서도 볼 수 있어요.<br>
-      칸마다 <b>앞에서 쓴 내용 중 그 부분에 필요한 것</b>을 모아 두었어요. 보면서 <b>내 말로 직접</b> 정리해요. (본론의 자료 출처·링크만 불러올 수 있어요)</p>
+      칸마다 <b>앞에서 쓴 내용 중 그 부분에 필요한 것</b>을 모아 두었어요. 서론·본론·결론은 <b>⬇ 불러오기</b>로 모은 뒤 다듬어요. 단, <b>결론의 '처음 예상과 비교'와 '더 알아보고 싶은 점'은 직접</b> 채워야 완료돼요.</p>
     <div class="outline-row sec-title"><div class="lab">제목</div><div><ul><li>탐구 질문이 드러나는 제목을 작성한다.</li></ul>
       <div class="ref-box" id="ref-oTitle"></div>
       <textarea data-k="oTitle"></textarea></div></div>
@@ -605,6 +605,7 @@ function missing(id){
     if(!v('meaning')) m.push('계산 결과의 해석');
   } else if(id===5){
     if(!v('oTitle') || !v('oIntro') || !v('oBody') || !v('oConcl')) m.push('제목·서론·본론·결론 개요');
+    conclBlanks().forEach(k=> m.push(`결론의 '${k}' 직접 쓰기`));
   }
   return m;
 }
@@ -688,6 +689,18 @@ function renderAnalysis(){
   $('anaList').querySelectorAll('textarea[data-a]').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>{ state.sources[+t.dataset.a].analysis = t.value; autoGrow(t); changed(); }); });
 }
 /* step5: 앞에서 쓴 내용을 개요 칸(제목·서론·본론·결론)별로 모아 보여 주고, ⬇ 불러오기로 칸에 넣는다 */
+const CMP_LINE = '• 처음 예상과 비교', MORE_LINE = '• 더 알아보고 싶은 점';
+/* 결론에서 학생이 직접 채워야 하는 줄이 비어 있는지(불러온 줄이 그대로 남아 있을 때만 검사) */
+function conclBlanks(){
+  const t = state.f.oConcl || '', out = [];
+  t.split('\n').forEach(l=>{
+    const k = l.startsWith(CMP_LINE) ? '처음 예상과 비교' : (l.startsWith(MORE_LINE) ? '더 알아보고 싶은 점' : '');
+    if(!k) return;
+    const after = l.slice(l.lastIndexOf(':')+1).trim();
+    if(!after) out.push(k);
+  });
+  return out;
+}
 function outlineRefs(){
   const srcs = state.sources.filter(x=> x.what.trim() || x.site.trim() || x.link.trim());
   const srcName = x => `${x.what.trim() || '(사용할 내용 없음)'}${x.site.trim() ? ' — ' + x.site.trim() : ''}${bannedSourceKind(x.link, x.site) ? ' (🚫 인정 안 되는 출처)' : ''}`;
@@ -699,7 +712,7 @@ function outlineRefs(){
     oBody: { items: [['어떻게 결론을 낼지', v('plan1')], ...srcs.map((x,i)=>[`자료 ${i+1}`, `${srcName(x)}${x.link.trim() ? '\n' + x.link.trim() : ''}${x.analysis.trim() ? '\n→ 알아낸 사실: ' + x.analysis.trim() : ''}`]), ['확률 계산', v('calc')], ['계산 결과의 뜻', v('meaning')]],
       text: [v('plan1') && `• 결론을 내는 방법: ${v('plan1')}`, ...srcs.map((x,i)=>`• 자료 ${i+1}: ${srcName(x)}${x.link.trim() ? ' (' + x.link.trim() + ')' : ''}${x.analysis.trim() ? '\n  → 알아낸 사실: ' + x.analysis.trim() : ''}`), v('calc') && `• 확률 계산: ${v('calc')}`, v('meaning') && `• 계산 결과의 뜻: ${v('meaning')}`].filter(Boolean).join('\n') },
     oConcl: { items: [['탐구 질문에 대한 답(해석)', v('meaning')], ['처음 예상한 결과', v('expect')], ['변수·한계점', v('plan3')]],
-      text: [v('meaning') && `• 탐구 질문에 대한 답: ${v('meaning')}`, v('expect') && `• 처음 예상(${v('expect')})과 비교: `, v('plan3') && `• 한계점: ${v('plan3')}`, '• 더 알아보고 싶은 점: '].filter(Boolean).join('\n') }
+      text: [v('meaning') && `• 탐구 질문에 대한 답: ${v('meaning')}`, `${CMP_LINE}${v('expect') ? ' (처음 예상: ' + v('expect') + ')' : ''}: `, v('plan3') && `• 한계점: ${v('plan3')}`, `${MORE_LINE}: `].filter(Boolean).join('\n') }
   };
 }
 function renderPrevRef(){
@@ -708,20 +721,21 @@ function renderPrevRef(){
   const NAME = {oTitle:'제목', oIntro:'서론', oBody:'본론', oConcl:'결론'};
   Object.keys(R).forEach(k=>{
     const box = $('ref-'+k); if(!box) return;
-    box.innerHTML = `<div class="rb-hd"><span>📋 ${NAME[k]}에 쓸 수 있는 내용 (앞에서 쓴 것)</span>${k==='oBody' ? '<button type="button" data-load="oBody">⬇ 자료 출처·링크만 불러오기</button>' : ''}</div>` +
+    box.innerHTML = `<div class="rb-hd"><span>📋 ${NAME[k]}에 쓸 수 있는 내용 (앞에서 쓴 것)</span>${k!=='oTitle' ? `<button type="button" data-load="${k}">⬇ ${NAME[k]} 칸으로 불러오기</button>` : ''}</div>` +
       R[k].items.map(([lab,t])=>{ t=String(t||'').trim(); return `<div class="ri${t?'':' none'}"><b>${esc(lab)}</b>: ${t?linkify(t):'(아직 안 씀)'}</div>`; }).join('');
   });
 }
-/* 불러오기(선생님 요청 2026-10-07: 학생이 직접 쓰도록 본론의 '자료 출처·링크'만 불러온다 — 옮겨 적기만 하는 부분이라서).
+/* 불러오기(선생님 결정 2026-10-07): 서론·본론·결론은 앞 내용을 모아 불러올 수 있다. 제목은 직접.
+   결론의 '처음 예상과 비교'·'더 알아보고 싶은 점'은 빈 줄로 들어가고, 학생이 직접 채워야 step5가 완료된다(missing 5).
    칸이 비어 있으면 채우고, 이미 쓴 내용이 있으면 물어보고 아래에 덧붙인다 */
 function sourceLines(){
   return state.sources.filter(x=> x.what.trim() || x.site.trim() || x.link.trim())
     .map((x,i)=>`• 자료 ${i+1}: ${x.what.trim() || x.site.trim()}${x.site.trim() && x.what.trim() ? ' — ' + x.site.trim() : ''}${x.link.trim() ? ' (' + x.link.trim() + ')' : ''}`).join('\n');
 }
 function loadOutline(k, quiet){
-  if(k!=='oBody') return false;
-  const text = sourceLines().trim();
-  if(!text){ if(!quiet) alert('step3에서 찾은 자료가 아직 없어서 불러올 것이 없어요.'); return false; }
+  if(k==='oTitle') return false; // 제목은 직접
+  const R = outlineRefs()[k]; const text = (R && R.text || '').trim();
+  if(!text){ if(!quiet) alert('앞에서 아직 쓴 내용이 없어서 불러올 것이 없어요.'); return false; }
   const ta = document.querySelector(`textarea[data-k="${k}"]`); const cur = (state.f[k]||'').trim();
   if(cur){
     if(quiet) return false;

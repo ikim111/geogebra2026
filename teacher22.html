@@ -444,6 +444,15 @@ function activityDetailHTML(s, id){
   } else if(id===5){
     h += kvRow('제목', d.oTitle) + kvRow('서론', d.oIntro) + kvRow('본론', d.oBody) + kvRow('결론', d.oConcl);
   }
+  // 이 step에서 학생이 받은 AI 피드백(가장 최근 것 + 횟수)
+  const fbs = aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===id);
+  if(fbs.length){
+    const l = fbs[fbs.length-1];
+    const when = l.ts ? new Date(l.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    h += `<h4>🤖 받은 AI 피드백 <span style="font-weight:normal;color:#888;font-size:12px;">(이 step ${fbs.length}번 · 마지막 ${esc(when)} · 전체 기록은 표의 "AI" 칸)</span></h4>`
+      + (l.good||[]).map(t=>`<div class="row2"><span class="k" style="color:#2e7d32;">👍 잘한 점</span><span class="v">${esc(t)}</span></div>`).join('')
+      + ((l.fix||[]).length ? l.fix.map(t=>`<div class="row2"><span class="k" style="color:#e65100;">🔧 보완할 점</span><span class="v">${esc(t)}</span></div>`).join('') : '<div class="row2"><span class="k" style="color:#1565c0;">🔧 보완할 점</span><span class="v">없음</span></div>');
+  }
   return h + '</div>';
 }
 /* ---------- 🤖 AI 사용 기록 (student22.html의 students/{key}/aiLog) ---------- */
