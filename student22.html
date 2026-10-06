@@ -141,6 +141,18 @@
   .guide .gchk{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:8px;}
   .guide .gnote{font-size:12.5px;color:#666;margin:2px 0;}
   .todo{font-size:13px;color:var(--muted);text-align:right;margin:2px 4px 12px;}
+  .prev .r{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:3px 0;}
+  .prev .r .k{color:#555;font-weight:bold;}
+  .prev .r .v{white-space:pre-wrap;word-break:break-word;}
+  .prev .r .v.none{color:#bbb;}
+  .prev h4{margin:10px 0 4px;font-size:13.5px;color:#0d47a1;}
+  .prev h4:first-child{margin-top:0;}
+  .prev .src{background:#fff;border:1px solid #dbe7f7;border-radius:8px;padding:6px 10px;margin:5px 0;}
+  .prev .src a{color:var(--blue);word-break:break-all;}
+  @media (max-width:700px){ .prev .r{grid-template-columns:1fr;} }
+  .ana-card{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;background:#fff;}
+  .ana-card .src-info{font-size:13px;color:#555;margin-bottom:6px;}
+  .ana-card .src-info a{color:var(--blue);word-break:break-all;}
   /* ---- 🤖 AI 피드백(step별) ---- */
   .ai-fb{background:#fff;border:2px solid #d1c4e9;border-radius:12px;padding:12px 16px;margin-bottom:14px;}
   .ai-fb .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -223,7 +235,7 @@
     <div class="step-tabs" id="stepTabs">
       <button data-p="0">step1 질문 만들기</button>
       <button data-p="1">step2 탐구 계획</button>
-      <button data-p="2">step3 자료 수집·분석</button>
+      <button data-p="2">step3 분석·확률 계산</button>
       <button data-p="3">step4 개요 작성</button>
       <button data-p="4">💬 AI 도우미</button>
       <button data-p="5">제출</button>
@@ -298,26 +310,7 @@
     <textarea data-k="plan3"></textarea>
   </div>
   <div class="card">
-    <h3>자료 수집 계획</h3>
-    <div class="ex">필요 자료 예) 성별 사망원인과 순위, 연령대별 사망원인 사망률 및 구성비, 사망보험의 종류 및 보장 비교…
-자료 수집 방법(사이트명) 예) 기상자료개방포털, 국민건강영양조사, 경찰청 범죄통계, 국가교통DB, 교육통계서비스 등</div>
-    <p class="hint" style="margin:0 0 8px;">📚 어떤 사이트에서 찾을지 모르겠다면 <a href="#" id="gotoGuide" style="color:var(--blue);font-weight:bold;">step3의 추천 사이트 안내</a>를 먼저 살펴보세요.</p>
-    <table class="tbl-plan"><thead><tr><th>필요 자료</th><th>자료 수집 방법(사이트명)</th><th></th></tr></thead><tbody id="planRows"></tbody></table>
-    <button type="button" class="mini-btn" id="addPlanRow" style="margin-top:8px;">＋ 줄 추가</button>
-  </div>
-  <div class="card">
-    <h3>예상 결과</h3>
-    <div class="ex">▶ 연구 주제에 따라 예상되는 결과를 적는다.  예) 생명보험에 가입하는 것이 더 유리하다</div>
-    <textarea data-k="expect"></textarea>
-  </div>
-  <div class="todo" id="todo2"></div>
-  <div class="ai-fb" id="aiFb2"></div>
-</section>
-
-<!-- ===================== STEP 3 ===================== -->
-<section class="task" id="task-s3" data-task-id="3">
-  <div class="card">
-    <div class="task-head"><h2><span class="step-tag">step3</span>자료 수집, 분석하기</h2><span class="badge pending" id="badge-s3">미완료</span></div>
+    <h3>자료 찾기 <span class="need">* 서로 다른 공식 자료 2개 이상</span></h3>
     <details class="guide" open>
       <summary>📚 자료 조사할 때 안내 자료 (추천 사이트)</summary>
       <div class="gbody">
@@ -360,18 +353,42 @@
         <p class="gnote">※ 검색 결과의 첫 번째 자료만 사용하지 말고, 여러 자료를 살펴본 후 탐구 질문에 적합한 자료를 선택하세요.</p>
       </div>
     </details>
-    <p class="hint">찾은 자료마다 <b>무슨 자료인지 · 출처(사이트명) · 링크 · 분석</b>을 적어요. 보고서에는 <b>서로 다른 자료 2개 이상</b>이 필요해요.</p>
-    <div class="ex">분석 예) ① 10년 전보다 80세 미만 사망률은 15.6% 낮아졌다. 따라서 내가 나이가 들면 80세 미만에서 사망 확률은 더욱 낮아질 것이다.
-② 2024년 남자 기준으로 80세 미만에서 사망할 확률은 1 − (80세 이상에서 죽을 확률) = 1 − 0.415 = 0.585이다.   — [국가통계포털] 2024년 사망원인통계 결과</div>
+    <p class="hint">찾은 자료마다 <b>사용할 내용 · 출처(사이트명) · 링크</b>를 적어요. 확률 계산은 다음 step3에서 해요.</p>
     <div id="srcList"></div>
     <button type="button" class="mini-btn" id="addSrc">＋ 자료 추가</button>
-    <button type="button" class="mini-btn" id="loadPlan">⬇ step2 자료 수집 계획 불러오기</button>
   </div>
   <div class="card">
     <div class="warn-box"><b>🚫 온라인 검색, 이렇게 하지 말아요!</b>
       <ul><li>자신의 탐구 질문을 검색창에 그대로 입력하기</li><li>검색 결과 첫 페이지, 첫 번째 자료만 살펴보고 끝내기</li><li>통계 사이트가 아닌 네이버 블로그, 기사 등에서만 검색하기</li><li><b style="color:#c62828;">블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글을 자료로 쓰기 → 자료 조사를 하지 않은 것으로 봐요</b></li></ul></div>
     <h3 style="margin-top:14px;">자료 수집 점검 체크리스트</h3>
     <div id="dataCheckList"></div>
+  </div>
+  <div class="card">
+    <h3>예상 결과</h3>
+    <div class="ex">▶ 연구 주제에 따라 예상되는 결과를 적는다.  예) 생명보험에 가입하는 것이 더 유리하다</div>
+    <textarea data-k="expect"></textarea>
+  </div>
+  <div class="todo" id="todo2"></div>
+  <div class="ai-fb" id="aiFb2"></div>
+</section>
+
+<!-- ===================== STEP 3 ===================== -->
+<section class="task" id="task-s3" data-task-id="3">
+  <div class="card">
+    <div class="task-head"><h2><span class="step-tag">step3</span>자료 분석·확률 계산하기</h2><span class="badge pending" id="badge-s3">미완료</span></div>
+    <p class="hint">step2에서 찾은 자료마다 <b>자료에서 알아낸 사실·수치</b>를 적고, 아래에서 <b>확률을 계산</b>해 그 뜻을 해석해요.</p>
+    <div class="ex">분석 예) ① 10년 전보다 80세 미만 사망률은 15.6% 낮아졌다. 따라서 내가 나이가 들면 80세 미만에서 사망 확률은 더욱 낮아질 것이다.
+② 2024년 남자 기준으로 80세 미만에서 사망할 확률은 1 − (80세 이상에서 죽을 확률) = 1 − 0.415 = 0.585이다.   — [국가통계포털] 2024년 사망원인통계 결과</div>
+    <div id="anaList"></div>
+  </div>
+  <div class="card">
+    <h3>확률 계산하기</h3>
+    <label class="f">확률 계산식과 결과</label>
+    <div class="ex">예) (80세 미만에서 사망할 확률) = 1 − (80세 이상 사망자 수 ÷ 전체 사망자 수) = 1 − 0.415 = 0.585</div>
+    <textarea data-k="calc" placeholder="step2에서 세운 계산식에 찾은 수치를 넣어 계산해요"></textarea>
+    <label class="f">계산 결과가 뜻하는 것 (해석)</label>
+    <div class="ex">예) 2024년 남자 기준으로 80세가 되기 전에 사망할 확률은 약 58.5%로, 절반이 넘는다.</div>
+    <textarea data-k="meaning" placeholder="계산한 확률이 탐구 질문에 대해 무엇을 말해 주는지 적어요"></textarea>
   </div>
   <div class="todo" id="todo3"></div>
   <div class="ai-fb" id="aiFb3"></div>
@@ -381,6 +398,10 @@
 <section class="task" id="task-s4" data-task-id="4">
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step4</span>확률 글쓰기 — 개요 작성</h2><span class="badge pending" id="badge-s4">미완료</span></div>
+    <details class="guide" id="prevRef" open>
+      <summary>📋 step1~3에서 내가 쓴 내용 (보면서 개요를 써요)</summary>
+      <div class="gbody" id="prevRefBody"></div>
+    </details>
     <p class="hint">보고서를 쓰기 전에 무엇을 어떤 순서로 쓸지 짧게(키워드·핵심 문장 위주로) 정리해요. 이 개요는 [3] 보고서 제출 화면에서도 볼 수 있어요.</p>
     <div class="outline-row"><div class="lab">제목</div><div><ul><li>탐구 질문이 드러나는 제목을 작성한다.</li></ul><textarea data-k="oTitle"></textarea></div></div>
     <div class="outline-row"><div class="lab">1. 서론<small>보고서 200자 이상</small></div><div>
@@ -430,7 +451,7 @@
 <script>
 /* ============================================================
    22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구 (VIII. 확률 — 수행평가 보고서 쓰기 전 단계)
-   선생님 활동지(step1 탐구 질문 만들기 / step2 탐구 계획하기 / step3 자료 수집·분석하기 /
+   선생님 활동지(step1 탐구 질문 만들기 / step2 탐구 계획하기(자료 찾기 포함) / step3 자료 분석·확률 계산하기 /
    step4 개요 작성)를 4개 화면으로 옮겼다. 11~21번 단원과 같은 틀(게이트·단원 잠금·실시간 저장·
    일시정지·공지·속도조절·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 화면 이동은 자유롭다(step을 오가며 고칠 수 있음). 완료 조건은 배지·진행률에만 쓴다.
@@ -461,7 +482,7 @@ const UNIT_NO = 22;
 const TASKS = [
   {id:1, key:'s1', title:'step1 탐구 질문 만들기'},
   {id:2, key:'s2', title:'step2 탐구 계획하기'},
-  {id:3, key:'s3', title:'step3 자료 수집, 분석하기'},
+  {id:3, key:'s3', title:'step3 자료 분석·확률 계산하기'},
   {id:4, key:'s4', title:'step4 개요 작성'}
 ];
 const SELF_CHECKS = [
@@ -543,24 +564,30 @@ function missing(id){
   } else if(id===2){
     if(!v('finalQ')) m.push('최종 탐구 질문');
     if(!v('plan1') || !v('plan2') || !v('plan3')) m.push('탐구 계획 1~3');
-    if(!state.planRows.some(r=>r.need.trim() && r.where.trim())) m.push('자료 수집 계획(1줄 이상)');
-    if(!v('expect')) m.push('예상 결과');
-  } else if(id===3){
-    const good = state.sources.filter(s=>s.what.trim() && s.site.trim() && isUrl(s.link) && s.analysis.trim() && !bannedSourceKind(s.link, s.site));
+    const good = goodSources();
     const bad = state.sources.filter(s=> bannedSourceKind(s.link, s.site)).length;
     if(bad) m.push(`인정되지 않는 출처(블로그·카페·커뮤니티·위키·지식iN·유튜브·SNS·AI 글 등) ${bad}개 → 공식 자료로 바꾸기`);
-    if(good.length < 2) m.push(`자료 2개 이상(무슨 자료·출처·링크·분석 모두) — 지금 ${good.length}개`);
+    if(good.length < 2) m.push(`자료 2개 이상(사용할 내용·출처·링크 모두) — 지금 ${good.length}개`);
     if(state.dataCheck.some(c=>!c)) m.push('자료 수집 점검 체크리스트');
+    if(!v('expect')) m.push('예상 결과');
+  } else if(id===3){
+    const good = goodSources();
+    if(good.length < 2) m.push('step2에서 자료 2개 이상 찾기');
+    else if(good.some(s=>!s.analysis.trim())) m.push('자료마다 알아낸 사실·수치');
+    if(!v('calc')) m.push('확률 계산식과 결과');
+    if(!v('meaning')) m.push('계산 결과의 해석');
   } else if(id===4){
     if(!v('oTitle') || !v('oIntro') || !v('oBody') || !v('oConcl')) m.push('제목·서론·본론·결론 개요');
   }
   return m;
 }
 const isDone = id => missing(id).length === 0;
+/* 인정되는 자료: 사용할 내용·출처·링크가 있고, 금지 출처가 아닌 것 */
+function goodSources(){ return state.sources.filter(s=>s.what.trim() && s.site.trim() && isUrl(s.link) && !bannedSourceKind(s.link, s.site)); }
 function valueOf(id){
   if(id===1) return [lastQ() && `질문: ${lastQ()}`, state.qtype && `유형: ${state.qtype}`].filter(Boolean).join(' · ');
-  if(id===2) return v('finalQ') ? `최종 질문: ${v('finalQ')}` : '';
-  if(id===3){ const n = state.sources.filter(s=>s.what.trim()||s.link.trim()).length; return n ? `자료 ${n}개 작성` : ''; }
+  if(id===2){ const n = state.sources.filter(s=>s.what.trim()||s.link.trim()).length; return [v('finalQ') && `최종 질문: ${v('finalQ')}`, n && `자료 ${n}개`].filter(Boolean).join(' · '); }
+  if(id===3){ const n = state.sources.filter(s=>s.analysis.trim()).length; return [n && `자료 ${n}개 분석`, v('calc') && `계산: ${v('calc').slice(0,40)}`].filter(Boolean).join(' · '); }
   if(id===4) return v('oTitle') ? `제목: ${v('oTitle')}` : '';
   return '';
 }
@@ -597,37 +624,54 @@ $('copyQ3').addEventListener('click', ()=>{
   const t = document.querySelector('[data-k="finalQ"]'); t.value = q; state.f.finalQ = q; autoGrow(t); changed();
 });
 
-/* 자료 수집 계획 표 */
-function renderPlanRows(){
-  $('planRows').innerHTML = state.planRows.map((r,i)=>`<tr>
-    <td><textarea data-row="${i}" data-col="need" rows="1">${esc(r.need)}</textarea></td>
-    <td><textarea data-row="${i}" data-col="where" rows="1">${esc(r.where)}</textarea></td>
-    <td class="x">${state.planRows.length>1?`<button type="button" class="mini-btn del" data-del="${i}" title="이 줄 지우기">✕</button>`:''}</td></tr>`).join('');
-  $('planRows').querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>{ state.planRows[+t.dataset.row][t.dataset.col]=t.value; autoGrow(t); changed(); }); });
-  $('planRows').querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ()=>{ state.planRows.splice(+b.dataset.del,1); renderPlanRows(); changed(); }));
-}
-$('addPlanRow').addEventListener('click', ()=>{ state.planRows.push({need:'',where:''}); renderPlanRows(); changed(); });
 
 /* 자료 카드 */
 function renderSources(){
   $('srcList').innerHTML = state.sources.map((s,i)=>`<div class="src-card">
     <div class="hd"><span>📎 자료 ${i+1}</span>${state.sources.length>1?`<button type="button" class="mini-btn del" data-sdel="${i}">자료 지우기</button>`:''}</div>
-    <div class="k">수집한 자료 (무슨 자료인지 — 본인이 사용한 부분)</div>
+    <div class="k">사용할 내용 (무슨 자료의 어느 부분을 쓸지)</div>
     <textarea data-s="${i}" data-c="what" placeholder="예: 2024년 성별·연령별 사망률 표 중 80세 이상 남성 부분">${esc(s.what)}</textarea>
     <div class="two">
       <div><div class="k">출처 (사이트명·자료 이름)</div><input type="text" data-s="${i}" data-c="site" value="${esc(s.site)}" placeholder="예: [국가통계포털] 2024년 사망원인통계 결과"></div>
       <div><div class="k">링크 <span class="link-ok" id="lk${i}"></span></div><input type="url" data-s="${i}" data-c="link" value="${esc(s.link)}" placeholder="https://…"></div>
     </div>
-    <div class="k">분석 (자료에서 내가 알아낸 정보·사실, 확률 계산)</div>
-    <textarea data-s="${i}" data-c="analysis" placeholder="① … ② …">${esc(s.analysis)}</textarea>
   </div>`).join('');
   $('srcList').querySelectorAll('[data-s]').forEach(el=>{
     if(el.tagName==='TEXTAREA') autoGrow(el);
     el.addEventListener('input', ()=>{ state.sources[+el.dataset.s][el.dataset.c]=el.value; if(el.tagName==='TEXTAREA') autoGrow(el); paintLinkOk(); changed(); });
   });
   $('srcList').querySelectorAll('[data-sdel]').forEach(b=>b.addEventListener('click', ()=>{
-    if(!confirm('이 자료를 지울까요?')) return; state.sources.splice(+b.dataset.sdel,1); renderSources(); changed(); }));
+    if(!confirm('이 자료를 지울까요?')) return; state.sources.splice(+b.dataset.sdel,1); renderSources(); renderAnalysis(); changed(); }));
   paintLinkOk();
+}
+/* step3: step2에서 찾은 자료마다 분석 칸 */
+function renderAnalysis(){
+  const list = state.sources.map((s,i)=>({s,i})).filter(o=> o.s.what.trim() || o.s.site.trim() || o.s.link.trim());
+  if(!list.length){ $('anaList').innerHTML = '<div class="warn-box">step2에서 자료를 먼저 찾아 적어 주세요. 찾은 자료가 여기에 나타나요.</div>'; return; }
+  $('anaList').innerHTML = list.map(({s,i})=>{
+    const bk = bannedSourceKind(s.link, s.site);
+    const link = isUrl(s.link) ? `<a href="${esc(s.link.trim())}" target="_blank" rel="noopener">${esc(s.link.trim())}</a>` : `<span style="color:#e65100;">${esc(s.link)||'(링크 없음)'}</span>`;
+    return `<div class="ana-card"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}>
+      <div class="hd" style="font-weight:bold;">📎 자료 ${i+1}${bk?` <span style="color:#c62828;font-size:12.5px;">🚫 인정되지 않는 출처(${esc(bk)}) — step2에서 공식 자료로 바꿔요</span>`:''}</div>
+      <div class="src-info">${esc(s.what)||'(사용할 내용 없음)'} — ${esc(s.site)||'(출처 없음)'}<br>${link}</div>
+      <div class="k" style="font-size:13px;font-weight:bold;color:var(--ink2);margin:6px 0 4px;">이 자료에서 알아낸 사실·수치</div>
+      <textarea data-a="${i}" placeholder="① … ② …">${esc(s.analysis)}</textarea>
+    </div>`; }).join('');
+  $('anaList').querySelectorAll('textarea[data-a]').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>{ state.sources[+t.dataset.a].analysis = t.value; autoGrow(t); changed(); }); });
+}
+/* step4: step1~3에서 쓴 내용 한눈에 보기 */
+function renderPrevRef(){
+  const row = (k,t)=>{ t=String(t||'').trim(); return `<div class="r"><span class="k">${k}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; };
+  let h = '<div class="prev"><h4>step1 · 탐구 질문</h4>' + row('질문 유형', state.qtype) + row('탐구 질문', v('finalQ') || lastQ()) + row('질문 선정 동기', v('motive'));
+  h += '<h4>step2 · 탐구 계획·자료</h4>' + row('어떻게 결론을 낼지', v('plan1')) + row('확률 계산식', v('plan2')) + row('변수·한계점', v('plan3')) + row('예상 결과', v('expect'));
+  const src = state.sources.filter(s=> s.what.trim() || s.site.trim() || s.link.trim());
+  src.forEach((s,i)=>{
+    const link = isUrl(s.link) ? `<a href="${esc(s.link.trim())}" target="_blank" rel="noopener">${esc(s.link.trim())}</a>` : esc(s.link);
+    h += `<div class="src"><b>📎 자료 ${i+1}</b> ${esc(s.what)} — ${esc(s.site)}<br>${link}${s.analysis.trim()?`<div style="margin-top:3px;white-space:pre-wrap;">🔎 ${esc(s.analysis)}</div>`:''}</div>`;
+  });
+  if(!src.length) h += row('자료', '');
+  h += '<h4>step3 · 확률 계산</h4>' + row('계산식과 결과', v('calc')) + row('해석', v('meaning')) + '</div>';
+  $('prevRefBody').innerHTML = h;
 }
 function paintLinkOk(){
   state.sources.forEach((s,i)=>{ const el=$('lk'+i); if(!el) return;
@@ -635,23 +679,7 @@ function paintLinkOk(){
     el.textContent = bl ? `🚫 인정되지 않는 출처예요(${bl}) — 자료 조사를 안 한 것으로 봐요` : (!s.link.trim() ? '' : (isUrl(s.link) ? '✅ 링크 형식 OK' : '⚠️ https:// 로 시작하는 주소를 붙여 넣어요'));
     el.style.color = bl ? '#c62828' : (isUrl(s.link) ? '#2e7d32' : '#e65100'); });
 }
-$('addSrc').addEventListener('click', ()=>{ state.sources.push({what:'',site:'',link:'',analysis:''}); renderSources(); changed(); });
-/* step2 '자료 수집 계획' 표를 자료 카드로 가져온다: 필요 자료 → 수집한 자료, 자료 수집 방법(사이트명) → 출처.
-   이미 같은 '수집한 자료'가 있는 줄은 건너뛰고, 빈 카드가 있으면 먼저 채운 뒤 모자라면 카드를 더 만든다. 링크·분석은 학생이 채운다. */
-$('loadPlan').addEventListener('click', ()=>{
-  const rows = state.planRows.filter(r=> r.need.trim() || r.where.trim());
-  if(!rows.length){ alert('step2의 자료 수집 계획에 적은 내용이 없어요.'); return; }
-  const have = new Set(state.sources.map(x=> x.what.trim()).filter(Boolean));
-  const add = rows.filter(r=> !have.has(r.need.trim()));
-  if(!add.length){ alert('step2 자료 수집 계획이 이미 모두 들어 있어요.'); return; }
-  add.forEach(r=>{
-    const card = { what:r.need.trim(), site:r.where.trim(), link:'', analysis:'' };
-    const empty = state.sources.findIndex(x=> !x.what.trim() && !x.site.trim() && !x.link.trim() && !x.analysis.trim());
-    if(empty>=0) state.sources[empty] = card; else state.sources.push(card);
-  });
-  renderSources(); changed();
-  alert(`step2 자료 수집 계획 ${add.length}줄을 가져왔어요. 이제 자료마다 링크와 분석을 채워 보세요.`);
-});
+$('addSrc').addEventListener('click', ()=>{ state.sources.push({what:'',site:'',link:'',analysis:''}); renderSources(); renderAnalysis(); changed(); });
 
 /* 자료 수집 점검 체크리스트 */
 (function buildDataChecks(){
@@ -762,10 +790,15 @@ function restoreData(d){
   if(Array.isArray(d.planRows) && d.planRows.length) state.planRows = d.planRows.map(r=>({need:(r&&r.need)||'', where:(r&&r.where)||''}));
   if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(s=>({what:(s&&s.what)||'', site:(s&&s.site)||'', link:(s&&s.link)||'', analysis:(s&&s.analysis)||''}));
   if(typeof d.dataCheck==='string') state.dataCheck = DATA_CHECKS.map((_,i)=>d.dataCheck[i]==='1');
+  // 예전 구조(step2 '자료 수집 계획' 표)에 적은 내용이 있고 자료 카드가 비어 있으면 자료 카드로 옮긴다.
+  const rowsUsed = state.planRows.filter(r=> r.need.trim() || r.where.trim());
+  const cardsEmpty = state.sources.every(x=> !x.what.trim() && !x.site.trim() && !x.link.trim() && !x.analysis.trim());
+  if(rowsUsed.length && cardsEmpty) state.sources = rowsUsed.map(r=>({what:r.need.trim(), site:r.where.trim(), link:'', analysis:''}));
+  while(state.sources.length < 2) state.sources.push({what:'',site:'',link:'',analysis:''});
   paintAll(); changed({noSave:true});
 }
 function paintAll(){
-  paintQtype(); paintSelfCheck(); renderPlanRows(); renderSources(); paintDataChecks();
+  paintQtype(); paintSelfCheck(); renderSources(); renderAnalysis(); paintDataChecks();
   document.querySelectorAll('textarea[data-k]').forEach(autoGrow);
 }
 
@@ -828,8 +861,8 @@ async function requestStepFb(n){
 function stepSnapshot(n, d){
   const j = a => a.filter(Boolean).join('\n');
   if(n===1) return j([d.subject&&`주제: ${d.subject}`, d.q1&&`1차: ${d.q1}`, d.q2&&`2차: ${d.q2}`, d.q3&&`3차: ${d.q3}`, d.motive&&`동기: ${d.motive}`]);
-  if(n===2) return j([d.finalQ&&`최종 질문: ${d.finalQ}`, d.plan1&&`계획1: ${d.plan1}`, d.plan2&&`계산식: ${d.plan2}`, d.plan3&&`변수·한계: ${d.plan3}`, d.expect&&`예상: ${d.expect}`]);
-  if(n===3) return (d.sources||[]).map((x,i)=>`자료${i+1}: ${x.site||''} ${x.link||''}\n분석: ${x.analysis||''}`).join('\n');
+  if(n===2) return j([d.finalQ&&`최종 질문: ${d.finalQ}`, d.plan1&&`계획1: ${d.plan1}`, d.plan2&&`계산식: ${d.plan2}`, d.plan3&&`변수·한계: ${d.plan3}`, ...(d.sources||[]).map((x,i)=>(x.what||x.site||x.link)&&`자료${i+1}: ${x.what||''} / ${x.site||''} ${x.link||''}`), d.expect&&`예상: ${d.expect}`]);
+  if(n===3) return j([...(d.sources||[]).map((x,i)=>x.analysis&&`자료${i+1} 분석: ${x.analysis}`), d.calc&&`계산: ${d.calc}`, d.meaning&&`해석: ${d.meaning}`]);
   return j([d.oTitle&&`제목: ${d.oTitle}`, d.oIntro&&`서론: ${d.oIntro}`, d.oBody&&`본론: ${d.oBody}`, d.oConcl&&`결론: ${d.oConcl}`]);
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-fb]'); if(b) requestStepFb(+b.dataset.fb); });
@@ -889,6 +922,9 @@ function showPage(idx){
   document.querySelectorAll('#stepTabs button').forEach(b=> b.classList.toggle('on', +b.dataset.p === currentPage));
   RT.setViewingTask(pageTaskNum(currentPage));
   window.scrollTo(0,0);
+  const tn = pageTaskNum(currentPage);
+  if(tn===3) renderAnalysis();   // step2에서 바꾼 자료를 반영
+  if(tn===4) renderPrevRef();    // step1~3 내용 다시 모아 보기
   requestAnimationFrame(()=> pages[currentPage].querySelectorAll('textarea').forEach(autoGrow)); // 숨겨져 있던 글상자 높이 다시 맞추기
   updateNavButtons();
 }
@@ -908,8 +944,6 @@ function updateNavButtons(){
   } else pm.style.display='none';
 }
 $('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
-$('gotoGuide').addEventListener('click', e=>{ e.preventDefault(); const i=taskIdToPageIdx(3); if(i<0||!pageAllowed(i)) return; showPage(i);
-  const g=document.querySelector('#task-s3 details.guide'); g.open=true; requestAnimationFrame(()=>g.scrollIntoView({block:'start'})); });
 $('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
 document.querySelectorAll('#stepTabs button').forEach(b=> b.addEventListener('click', ()=> showPage(+b.dataset.p)));
 

@@ -345,7 +345,7 @@ const CONFIG = {
 const TASK_LABELS = [
   {id:1, key:'s1', label:'step1 탐구 질문 만들기'},
   {id:2, key:'s2', label:'step2 탐구 계획하기'},
-  {id:3, key:'s3', label:'step3 자료 수집, 분석하기'},
+  {id:3, key:'s3', label:'step3 자료 분석·확률 계산하기'},
   {id:4, key:'s4', label:'step4 개요 작성'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
@@ -362,8 +362,8 @@ function safeLink(u){ const t=str(u); return /^https?:\/\//i.test(t) ? `<a href=
 function hasAny(d, id){
   if(!d) return false;
   if(id===1) return !!(str(d.topicInterest)||str(d.topicCareer)||str(d.topicHobby)||str(d.q1)||str(d.motive)||d.qtype);
-  if(id===2) return !!(str(d.finalQ)||str(d.plan1)||str(d.plan2)||str(d.plan3)||str(d.expect));
-  if(id===3) return Array.isArray(d.sources) && d.sources.some(x=>x&&(str(x.what)||str(x.link)||str(x.analysis)));
+  if(id===2) return !!(str(d.finalQ)||str(d.plan1)||str(d.plan2)||str(d.plan3)||str(d.expect)) || (Array.isArray(d.sources) && d.sources.some(x=>x&&(str(x.what)||str(x.link))));
+  if(id===3) return !!(str(d.calc)||str(d.meaning)) || (Array.isArray(d.sources) && d.sources.some(x=>x&&str(x.analysis)));
   if(id===4) return !!(str(d.oTitle)||str(d.oIntro)||str(d.oBody)||str(d.oConcl));
   return false;
 }
@@ -417,18 +417,27 @@ function activityDetailHTML(s, id){
   } else if(id===2){
     h += kvRow('최종 탐구 질문', d.finalQ);
     h += '<h4>탐구 계획</h4>' + kvRow('1. 조사·결론', d.plan1) + kvRow('2. 확률 계산식', d.plan2) + kvRow('3. 변수·한계·보정', d.plan3);
-    const rows = Array.isArray(d.planRows) ? d.planRows.filter(r=>r&&(str(r.need)||str(r.where))) : [];
-    h += '<h4>자료 수집 계획</h4>' + (rows.length ? `<table class="t"><tr><th>필요 자료</th><th>수집 방법(사이트명)</th></tr>${rows.map(r=>`<tr><td>${esc(str(r.need))}</td><td>${esc(str(r.where))}</td></tr>`).join('')}</table>` : '<div class="v none" style="font-size:13px;">(비어 있음)</div>');
-    h += '<h4>예상 결과</h4>' + kvRow('예상 결과', d.expect);
-  } else if(id===3){
-    const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)||str(x.analysis)));
+    const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)));
+    h += '<h4>찾은 자료</h4>';
+    if(!src.length){
+      // 예전 구조(자료 수집 계획 표)로 쓴 학생
+      const rows = Array.isArray(d.planRows) ? d.planRows.filter(r=>r&&(str(r.need)||str(r.where))) : [];
+      h += rows.length ? `<table class="t"><tr><th>필요 자료</th><th>수집 방법(사이트명)</th></tr>${rows.map(r=>`<tr><td>${esc(str(r.need))}</td><td>${esc(str(r.where))}</td></tr>`).join('')}</table>` : '<div class="v none" style="font-size:13px;">(비어 있음)</div>';
+    }
     src.forEach((x,i)=>{
       const bk = bannedSourceKind(x.link, x.site);
-      h += `<div class="src"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}><b>📎 자료 ${i+1}</b>${bk?` <span style="color:#c62828;font-size:12px;font-weight:bold;">🚫 ${esc(bk)} — 자료로 인정 안 됨</span>`:''}` + kvRow('수집한 자료', x.what) + kvRow('출처', x.site) +
-        `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div>` + kvRow('분석', x.analysis) + '</div>';
+      h += `<div class="src"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}><b>📎 자료 ${i+1}</b>${bk?` <span style="color:#c62828;font-size:12px;font-weight:bold;">🚫 ${esc(bk)} — 자료로 인정 안 됨</span>`:''}` + kvRow('사용할 내용', x.what) + kvRow('출처', x.site) +
+        `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div></div>`;
     });
     const dc = str(d.dataCheck);
     h += '<h4>자료 수집 점검</h4><div>' + DATA_CHECKS.map((t,i)=>`<span class="chip ${dc[i]==='1'?'o':''}">${dc[i]==='1'?'☑':'☐'} ${esc(t)}</span>`).join('') + '</div>';
+    h += '<h4>예상 결과</h4>' + kvRow('예상 결과', d.expect);
+  } else if(id===3){
+    const src = (d.sources||[]).filter(x=>x&&(str(x.what)||str(x.site)||str(x.link)||str(x.analysis)));
+    h += '<h4>자료별 분석</h4>';
+    src.forEach((x,i)=>{ h += `<div class="src"><b>📎 자료 ${i+1}</b> <span style="color:#666;font-size:12.5px;">${esc(str(x.what))} — ${esc(str(x.site))}</span>` + kvRow('알아낸 사실·수치', x.analysis) + '</div>'; });
+    if(!src.length) h += '<div class="v none" style="font-size:13px;">(자료 없음)</div>';
+    h += '<h4>확률 계산</h4>' + kvRow('계산식과 결과', d.calc) + kvRow('해석', d.meaning);
   } else if(id===4){
     h += kvRow('제목', d.oTitle) + kvRow('서론', d.oIntro) + kvRow('본론', d.oBody) + kvRow('결론', d.oConcl);
   }
