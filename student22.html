@@ -90,6 +90,22 @@
   .qtype .q{color:var(--blue);font-weight:bold;}
   .qtype ul{margin:6px 0 0;padding-left:18px;color:#666;font-size:13px;}
   .qtype.on{border-color:var(--blue);background:#e8f1fc;}
+  .qstage{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;background:#fff;}
+  .qstage.chkstage{background:#fafbfc;}
+  .qstage.tstage{background:#f6f9ff;border-color:#c9d8f2;}
+  .qhd{font-weight:bold;color:var(--ink2);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .qhd small{font-weight:normal;color:#888;font-size:12.5px;}
+  .qnum{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;padding:0 6px;border-radius:12px;background:var(--blue);color:#fff;font-size:12.5px;}
+  .qnum.ck{background:#607d8b;} .qnum.tc{background:#5c6bc0;}
+  td.aic{width:80px;text-align:center;font-size:17px;font-weight:bold;}
+  td.aic.o{color:var(--blue);} td.aic.t{color:#b07800;} td.aic.x{color:#c62828;} td.aic.none{color:#bbb;font-size:12px;font-weight:normal;}
+  .tfb-none{color:#777;font-size:13.5px;}
+  .tfb-v{display:inline-block;padding:4px 10px;border-radius:14px;font-weight:bold;font-size:14px;}
+  .tfb-v.ok{background:#e8f5e9;color:#2e7d32;} .tfb-v.no{background:#ffebee;color:#c62828;}
+  .tfb-c{margin-top:8px;white-space:pre-wrap;font-size:14px;line-height:1.6;}
+  .tfb-m{margin-top:6px;color:#888;font-size:12px;}
+  .tfb-new{animation:tfbFlash 1.6s ease 2;}
+  @keyframes tfbFlash{50%{background:#fff3c4;}}
   .qrow{display:flex;gap:8px;align-items:flex-start;margin:6px 0;}
   .qrow .lab{flex:0 0 42px;font-weight:bold;color:var(--ink2);padding-top:9px;}
   table.chk{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px;}
@@ -292,19 +308,22 @@
     <p class="hint" style="margin-top:10px;">유형: <b id="qtypeView">(위에서 골라 주세요)</b> — 질문을 점점 더 구체적으로 다듬어 보세요.</p>
     <div class="ex">예측형 예) 1차 내가 일찍 죽을 확률은? → 2차 우리나라 남자가 80세 전에 사망할 확률은? → 3차 2024년 통계 기준, 우리나라 남성이 80세가 되기 전에 사망할 확률은 얼마일까?
 비교/선택형 예) 1차 야구는 홈에서 더 잘할까? → 2차 KIA는 홈과 원정 중 어디서 더 많이 이길까? → 3차 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
-    <div class="qrow"><span class="lab">1차</span><textarea data-k="q1" placeholder="처음 떠오른 질문"></textarea></div>
-    <div class="qrow"><span class="lab">2차</span><textarea data-k="q2" placeholder="더 구체적으로 다듬은 질문"></textarea></div>
-    <div class="qrow"><span class="lab">3차</span><textarea data-k="q3" placeholder="최종에 가까운 질문"></textarea></div>
+    <p class="hint" style="margin-top:12px;">아래 순서대로 진행해요: <b>1차 질문</b> → <b>체크리스트</b>(자기평가 + AI평가) → <b>2차 질문</b> → <b>선생님 피드백</b> → <b>3차 질문</b></p>
+    <div class="qstage"><div class="qhd"><span class="qnum">1차</span>처음 떠오른 질문</div>
+      <textarea data-k="q1" placeholder="처음 떠오른 질문을 적어요"></textarea></div>
+    <div class="qstage chkstage"><div class="qhd"><span class="qnum ck">✔</span>체크리스트 <small>자기평가는 내가 ○△✕를 고르고, AI평가는 아래 버튼을 누르면 AI가 채워 줘요</small></div>
+      <table class="chk" id="selfCheckTable"></table>
+      <div class="ai-fb" id="aiFb1"></div></div>
+    <div class="qstage"><div class="qhd"><span class="qnum">2차</span>AI 피드백을 보고 다듬은 질문</div>
+      <textarea data-k="q2" placeholder="체크리스트와 AI 피드백을 보고 질문을 다듬어요"></textarea></div>
+    <div class="qstage tstage"><div class="qhd"><span class="qnum tc">👩‍🏫</span>선생님 피드백</div>
+      <div id="teacherFbBox"></div></div>
+    <div class="qstage"><div class="qhd"><span class="qnum">3차</span>선생님 피드백을 보고 더 다듬은 질문</div>
+      <textarea data-k="q3" placeholder="선생님 피드백을 반영해 다듬어요 (피드백을 기다리지 않고 먼저 써도 돼요)"></textarea></div>
     <label class="f">질문 선정 동기 <span class="need">* 보고서 서론에 쓰여요</span></label>
     <textarea data-k="motive" placeholder="왜 이 질문을 탐구하고 싶은지 적어 보세요."></textarea>
   </div>
-  <div class="card">
-    <h3>※ 탐구 질문 점검 체크리스트 (자기 평가)</h3>
-    <p class="hint">내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라 보세요.</p>
-    <table class="chk" id="selfCheckTable"></table>
-  </div>
   <div class="todo" id="todo1"></div>
-  <div class="ai-fb" id="aiFb1"></div>
 </section>
 
 <!-- ===================== STEP 2 ===================== -->
@@ -312,13 +331,16 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step2</span>탐구 계획하기</h2><span class="badge pending" id="badge-s2">미완료</span></div>
     <label class="f">최종 탐구 질문</label>
+    <div class="ex">아래 탐구 계획 예시는 이 두 질문에 대한 예시예요.
+예측형 예) 2024년 통계 기준, 우리나라 남성이 80세가 되기 전에 사망할 확률은 얼마일까?
+비교/선택형 예) 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
     <textarea data-k="finalQ" placeholder="step1에서 다듬은 질문을 최종 탐구 질문으로 적어요"></textarea>
     <button type="button" class="mini-btn" id="copyQ3" style="margin-top:6px;">⬇ step1의 마지막 질문 가져오기</button>
   </div>
   <div class="card">
     <h3>탐구 계획</h3>
     <label class="f">1. 무엇을 조사하여 어떻게 결론을 도출할 것인지</label>
-    <div class="ex">예측형 예) (80세 미만 남성의 사망 확률)×(보험료)와 (은행 적금 80세 만기 시 얻는 돈)을 비교하여 결론 도출.
+    <div class="ex">예측형 예) 2024년 사망원인통계에서 (80세 이상 남성 사망자 수)와 (전체 남성 사망자 수)를 조사해 80세 전에 사망할 확률을 구하고, 그 확률이 얼마나 큰지로 결론 도출.
 비교/선택형 예) 2024년 KIA의 홈경기 승률과 원정경기 승률을 각각 구해 어느 쪽이 더 높은지 비교하여 결론 도출.</div>
     <textarea data-k="plan1"></textarea>
     <label class="f">2. 확률 계산식</label>
@@ -333,7 +355,7 @@
   <div class="card">
     <h3>예상 결과</h3>
     <div class="ex">▶ 연구 주제에 따라 예상되는 결과를 적는다.
-예측형 예) 생명보험에 가입하는 것이 더 유리하다
+예측형 예) 80세 전에 사망할 확률은 절반(50%)보다 낮을 것이다
 비교/선택형 예) 응원하는 관중이 많은 홈경기에서 이길 확률이 더 높을 것이다</div>
     <textarea data-k="expect"></textarea>
   </div>
@@ -389,6 +411,8 @@
       </div>
     </details>
     <p class="hint">찾은 자료마다 <b>사용할 내용 · 출처(사이트명) · 링크</b>를 적어요. 확률 계산은 다음 step4에서 해요.</p>
+    <div class="ex">예측형 예) 사용할 내용: 2024년 성별·연령별 사망자 수 중 80세 이상 남성 · 출처: [국가통계포털] 2024년 사망원인통계 · 링크: https://kosis.kr/…
+비교/선택형 예) 사용할 내용: 2024 KIA 타이거즈 홈·원정 경기별 승패 · 출처: [KBO 기록실] 2024 팀 홈/원정 성적 · 링크: https://www.koreabaseball.com/…</div>
     <div id="srcList"></div>
     <button type="button" class="mini-btn" id="addSrc">＋ 자료 추가</button>
   </div>
@@ -437,11 +461,11 @@
       <div class="ref-box" id="ref-oTitle"></div>
       <textarea data-k="oTitle"></textarea></div></div>
     <div class="outline-row sec-intro"><div class="lab">1. 서론</div><div>
-      <ul><li>왜 이 질문을 선택했는지 설명한다.(질문 선정 동기)</li><li>탐구를 통해 무엇을 알아보고 싶은지 설명한다.</li><li>본론에서 어떤 자료를 사용할 것인지 간단히 소개한다.</li></ul>
+      <ul><li>주제에 대해 간략히 소개한다.</li><li>왜 이 질문을 선택했는지 설명한다.(질문 선정 동기)</li><li>탐구 계획을 요약하여 설명한다.</li></ul>
       <div class="ref-box" id="ref-oIntro"></div>
       <textarea data-k="oIntro"></textarea></div></div>
     <div class="outline-row sec-body"><div class="lab">2. 본론</div><div>
-      <ul><li>두 개 이상의 신뢰할 수 있는 자료를 활용하고, 각 자료의 출처와 링크를 제시한다.</li><li>각 자료에서 탐구 질문과 관련하여 알 수 있는 내용을 분석한다.</li><li>수집한 자료로 확률을 계산하고, 계산 결과가 무엇을 의미하는지 해석한다.</li><li>자료와 계산 결과를 근거로 자신의 생각을 논리적으로 설명한다.</li></ul>
+      <ul><li>각 자료에서 탐구 질문과 관련하여 알 수 있는 내용을 분석한다.</li><li>탐구 계획에 따라 확률을 계산한다.</li><li>확률값을 논리적으로 해석한다.</li></ul>
       <div class="ref-box" id="ref-oBody"></div>
       <textarea data-k="oBody"></textarea></div></div>
     <div class="outline-row sec-concl"><div class="lab">3. 결론</div><div>
@@ -648,9 +672,9 @@ function paintQtype(){
   $('qtypeView').textContent = state.qtype || '(위에서 골라 주세요)';
 }
 (function buildSelfCheck(){
-  $('selfCheckTable').innerHTML = `<tr><th></th><th>점검 내용</th><th>자기 평가</th></tr>` + SELF_CHECKS.map((t,i)=>
+  $('selfCheckTable').innerHTML = `<tr><th></th><th>점검 내용</th><th>자기평가</th><th>AI평가</th></tr>` + SELF_CHECKS.map((t,i)=>
     `<tr><td class="n">${i+1}</td><td>${t}</td><td class="sel"><span class="ox3" data-i="${i}">
-      <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td></tr>`).join('');
+      <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td><td class="aic none" id="aiChk${i}">–</td></tr>`).join('');
   document.querySelectorAll('.ox3 button').forEach(b => b.addEventListener('click', ()=>{
     const i = +b.parentNode.dataset.i; state.selfCheck[i] = state.selfCheck[i] === b.dataset.v ? '' : b.dataset.v; paintSelfCheck(); changed();
   }));
@@ -717,10 +741,11 @@ function outlineRefs(){
   const q = v('finalQ') || lastQ();
   return {
     oTitle: { items: [['탐구 질문', q]], text: q },
-    oIntro: { items: [['질문 선정 동기', v('motive')], ['알아보고 싶은 것(탐구 질문)', q], ['사용할 자료', srcs.map(srcName).join('\n')]],
-      text: [v('motive') && `• 질문 선정 동기: ${v('motive')}`, q && `• 알아보고 싶은 것: ${q}`, srcs.length && `• 사용할 자료: ${srcs.map(x=> x.what.trim() || x.site.trim()).join(', ')}`].filter(Boolean).join('\n') },
-    oBody: { items: [['어떻게 결론을 낼지', v('plan1')], ...srcs.map((x,i)=>[`자료 ${i+1}`, `${srcName(x)}${x.link.trim() ? '\n' + x.link.trim() : ''}${x.analysis.trim() ? '\n→ 알아낸 사실: ' + x.analysis.trim() : ''}`]), ['확률 계산', v('calc')], ['계산 결과의 뜻', v('meaning')]],
-      text: [v('plan1') && `• 결론을 내는 방법: ${v('plan1')}`, ...srcs.map((x,i)=>`• 자료 ${i+1}: ${srcName(x)}${x.link.trim() ? ' (' + x.link.trim() + ')' : ''}${x.analysis.trim() ? '\n  → 알아낸 사실: ' + x.analysis.trim() : ''}`), v('calc') && `• 확률 계산: ${v('calc')}`, v('meaning') && `• 계산 결과의 뜻: ${v('meaning')}`].filter(Boolean).join('\n') },
+    // 서론: 주제 소개 · 질문 선정 동기 · 탐구 계획 요약 / 본론: 자료별 분석 · 확률 계산 · 해석 (동료 선생님 피드백 반영 2026-10-07)
+    oIntro: { items: [['주제', [v('subject'), q && `탐구 질문: ${q}`].filter(Boolean).join('\n')], ['질문 선정 동기', v('motive')], ['탐구 계획', [v('plan1'), v('plan2') && `확률 계산식: ${v('plan2')}`].filter(Boolean).join('\n')]],
+      text: [(v('subject') || q) && `• 주제: ${v('subject') || ''}${q ? (v('subject') ? ' — ' : '') + q : ''}`, v('motive') && `• 질문 선정 동기: ${v('motive')}`, v('plan1') && `• 탐구 계획: ${v('plan1')}`].filter(Boolean).join('\n') },
+    oBody: { items: [...srcs.map((x,i)=>[`자료 ${i+1}`, `${srcName(x)}${x.link.trim() ? '\n' + x.link.trim() : ''}${x.analysis.trim() ? '\n→ 알아낸 사실: ' + x.analysis.trim() : ''}`]), ['확률 계산', v('calc')], ['확률값의 해석', v('meaning')]],
+      text: [...srcs.map((x,i)=>`• 자료 ${i+1} 분석: ${x.what.trim() || x.site.trim()}${x.analysis.trim() ? ' → ' + x.analysis.trim() : ''}`), v('calc') && `• 확률 계산: ${v('calc')}`, v('meaning') && `• 확률값의 해석: ${v('meaning')}`].filter(Boolean).join('\n') },
     oConcl: { items: [['탐구 질문에 대한 답(해석)', v('meaning')], ['처음 예상한 결과', v('expect')], ['변수·한계점', v('plan3')]],
       text: [v('meaning') && `• 탐구 질문에 대한 답: ${v('meaning')}`, `${CMP_LINE}${v('expect') ? ' (처음 예상: ' + v('expect') + ')' : ''}: `, v('plan3') && `• 한계점: ${v('plan3')}`, `${MORE_LINE}: `].filter(Boolean).join('\n') }
   };
@@ -843,6 +868,7 @@ const RT = {
       this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
     });
     // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
+    this.studentRef.child('teacherFb').on('value', st=>{ setTeacherFb(st.val()); });
     this.studentRef.child('aiBonus').on('value', sb=>{ const b = sb.val() || {}; AI_BONUS = { day: b.day||'', fb: +b.fb||0, chat: +b.chat||0 }; AI.paint(); });
     this.studentRef.child('aiLog').once('value').then(s3=>{ const v=s3.val()||{}; AI.logs = Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); AI.loaded = true; AI.paint(); }).catch(()=>{ AI.loaded = true; AI.paint(); });
     statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
@@ -886,7 +912,7 @@ function restoreData(d){
   paintAll(); changed({noSave:true});
 }
 function paintAll(){
-  paintQtype(); paintSelfCheck(); renderSources(); renderAnalysis(); paintDataChecks();
+  paintQtype(); paintSelfCheck(); paintTeacherFb(false); renderSources(); renderAnalysis(); paintDataChecks();
   document.querySelectorAll('textarea[data-k]').forEach(autoGrow);
 }
 
@@ -920,19 +946,48 @@ const AI = {
   paint(){ TASKS.forEach(t=> paintStepFb(t.id)); paintChat(); }
 };
 const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+/* step1 체크리스트의 AI평가 칸: 가장 최근 step1 AI 피드백의 checks('O△X…' 6글자) */
+function paintAiChecks(last){
+  const c = (last && typeof last.checks==='string') ? last.checks : '';
+  SELF_CHECKS.forEach((_,i)=>{
+    const el = $('aiChk'+i); if(!el) return; const v = c[i];
+    el.textContent = v==='O' ? '○' : v==='△' ? '△' : v==='X' ? '✕' : '–';
+    el.className = 'aic ' + (v==='O' ? 'o' : v==='△' ? 't' : v==='X' ? 'x' : 'none');
+  });
+}
+/* 👩‍🏫 선생님 피드백(teacher22 '⑤ 질문 피드백'에서 보냄): students/{key}/teacherFb = {ok:true|false, comment, q, ts} */
+let TEACHER_FB = null, TFB_SEEN = false;
+function setTeacherFb(v){
+  const prevTs = TEACHER_FB && TEACHER_FB.ts; TEACHER_FB = (v && typeof v==='object') ? v : null;
+  paintTeacherFb(TFB_SEEN && !!TEACHER_FB && TEACHER_FB.ts !== prevTs); // 처음 불러올 때는 반짝이지 않고, 수업 중에 새로 오면 반짝
+  TFB_SEEN = true;
+}
+function paintTeacherFb(isNew){
+  const box = $('teacherFbBox'); if(!box) return;
+  const t = TEACHER_FB;
+  if(!t || (t.ok!==true && t.ok!==false)){ box.innerHTML = '<div class="tfb-none">아직 선생님 피드백이 없어요. 기다리지 않고 3차 질문을 먼저 써도 돼요. 피드백이 오면 여기에 바로 나타나요.</div>'; return; }
+  box.innerHTML = `<span class="tfb-v ${t.ok?'ok':'no'}">${t.ok ? '✅ 이 질문으로 진행해도 좋아요' : '🔁 질문을 다시 생각해 봐요'}</span>`
+    + (String(t.comment||'').trim() ? `<div class="tfb-c">${esc(t.comment)}</div>` : '')
+    + `<div class="tfb-m">${t.q ? `피드백한 질문: "${esc(t.q)}" · ` : ''}${fmtWhen(t.ts)}</div>`;
+  const st = box.closest('.qstage');
+  if(isNew && st){ st.classList.remove('tfb-new'); void st.offsetWidth; st.classList.add('tfb-new'); }
+}
 const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
 function paintStepFb(n){
   const box = $('aiFb'+n); if(!box) return;
   const used = AI.fbOf(n), last = used[used.length-1], left = fbMax() - AI.today(used).length, off = AI.offReason();
-  let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
-    <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : '🤖 AI 피드백 받기'}</button></div>`;
+  if(n===1) paintAiChecks(last);
+  const title = n===1 ? '🤖 AI평가 · AI 피드백' : '🤖 AI 피드백';
+  const desc = n===1 ? '가장 최근에 쓴 질문을 체크리스트로 평가하고 좋은 점·개선 아이디어를 알려 줘요' : '지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요';
+  let h = `<div class="hd"><span><b>${title}</b><small>${desc} · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
+    <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : (n===1 ? '🤖 AI평가·피드백 받기' : '🤖 AI 피드백 받기')}</button></div>`;
   if(off) h += `<div class="ai-off">${off}</div>`;
   else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
   if(last){
-    h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}</div>`;
-    (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">잘한 점</span><span>${esc(t)}</span></div>`);
-    if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">보완할 점</span><span>${esc(t)}</span></div>`);
-    else h += `<div class="row none"><span class="tag">보완할 점</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
+    h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}${n===1 && last.target ? ` · 평가한 질문: ${esc(last.target)}` : ''}</div>`;
+    (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
+    if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">개선 아이디어</span><span>${esc(t)}</span></div>`);
+    else h += `<div class="row none"><span class="tag">개선 아이디어</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
     h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.</div></div>`;
   }
   box.innerHTML = h;
@@ -946,7 +1001,9 @@ async function requestStepFb(n){
     const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ step:n, data }) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !Array.isArray(j.good)) throw new Error(j.error || ('HTTP '+res.status));
-    AI.log({ type:'feedback', step:n, good:j.good, fix:j.fix||[], snap: stepSnapshot(n, data) });
+    const entry = { type:'feedback', step:n, good:j.good, fix:j.fix||[], snap: stepSnapshot(n, data) };
+    if(n===1){ entry.checks = Array.isArray(j.checks) ? j.checks.join('') : ''; entry.target = j.target || ''; }
+    AI.log(entry);
   }catch(err){ alert('AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요.\n('+(err.message||err)+')\n※ 실패한 경우는 횟수에 들어가지 않아요.'); }
   AI.busy = false; AI.paint();
 }

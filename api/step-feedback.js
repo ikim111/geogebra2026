@@ -4,6 +4,7 @@
 //
 // 요청 형식(POST, JSON): { step: 1~5, data: student22.html의 data }
 // 응답 형식(JSON): { good:[문장], fix:[문장], model }
+//   step1은 추가로 { checks:['O'|'△'|'X' ×6], target:'1차'|'2차'|'3차' } — 체크리스트 6항목 AI평가(가장 최근에 쓴 질문 기준)
 const { bodyOf, callOpenAI, parseJSON, bannedSourceKind, STUDENT_AI_RULES, RECOMMENDED_SITES } = require('./_report-common');
 
 const S = x => String(x == null ? '' : x).slice(0, 3000).trim();
@@ -23,7 +24,8 @@ const STEPS = {
 (3) 현실성: 현실적으로 확률을 구할 수 있는 질문인가?
     (공식 통계나 기록을 바탕으로 확률을 구할 수 있는 사건인가? 너무 막연하거나, 개인의 마음·취향처럼 셀 수 없는 것이거나, 관련 기록이 있을 수 없는 질문은 아닌가? 앞으로 일어날 일을 예측하는 질문도 지난 기록으로 확률을 구할 수 있으면 괜찮다.)
 ※ 지금은 질문을 만드는 단계이다. "자료를 찾아보세요", "기록을 조사해 보세요"처럼 자료 조사를 하라는 말은 하지 않는다.
-※ 질문 선정 동기, 체크리스트 자기 평가는 참고만 하고 평가하지 않는다.`,
+※ 질문 선정 동기, 체크리스트 자기 평가는 참고만 하고 평가하지 않는다.
+※ good·fix는 "가장 최근에 쓴 질문"(3차 > 2차 > 1차 중 마지막으로 채운 것)을 중심으로 쓴다.`,
     text: d => `관심사: ${S(d.topicInterest) || '-'} / 진로: ${S(d.topicCareer) || '-'} / 취미: ${S(d.topicHobby) || '-'}
 질문 유형: ${S(d.qtype) || '(안 고름)'}
 주제: ${S(d.subject) || '-'}
@@ -77,8 +79,8 @@ ${(Array.isArray(d.sources) ? d.sources : []).filter(x => x && (S(x.what) || S(x
   5: { name: 'step5 개요 작성하기',
     check: `개요는 키워드·핵심 문장 위주의 짧은 정리이므로 문장 완성도는 보지 않는다. 다음 내용이 개요에 들어 있는지 본다.
 - 제목에 탐구 질문이 드러나는가?
-- 서론: 질문 선정 동기, 무엇을 알아보고 싶은지, 사용할 자료 소개
-- 본론: 2개 이상의 공식 자료와 출처, 자료 분석, 확률 계산과 그 의미 해석
+- 서론: 주제 소개, 질문 선정 동기, 탐구 계획 요약
+- 본론: 자료별 분석(탐구 질문과 관련해 알 수 있는 내용), 탐구 계획에 따른 확률 계산, 확률값의 해석
 - 결론: 탐구 질문에 대한 최종 답, 한계점, 추가로 고려할 변수·더 알아보고 싶은 점
 (실제 보고서는 서론+본론+결론 합계 900자 이상으로 쓴다. 칸별 최소 글자 수는 없다.)`,
     text: d => `최종 탐구 질문: ${S(d.finalQ) || '-'}
@@ -92,6 +94,17 @@ ${(Array.isArray(d.sources) ? d.sources : []).filter(x => x && (S(x.what) || S(x
 const item = { type: 'array', items: { type: 'string' } };
 const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'step_feedback', strict: true, schema: {
   type: 'object', additionalProperties: false, required: ['good', 'fix'], properties: { good: item, fix: item } } } };
+// step1: 체크리스트 6항목 AI평가(○=O, △, ✕=X)
+const RESPONSE_FORMAT_1 = { type: 'json_schema', json_schema: { name: 'step1_feedback', strict: true, schema: {
+  type: 'object', additionalProperties: false, required: ['checks', 'good', 'fix'],
+  properties: { checks: { type: 'array', items: { type: 'string', enum: ['O', '△', 'X'] } }, good: item, fix: item } } } };
+const latestQ = d => S(d.q3) ? ['3차', S(d.q3)] : S(d.q2) ? ['2차', S(d.q2)] : S(d.q1) ? ['1차', S(d.q1)] : ['', ''];
+const CHECK_GUIDE = `[체크리스트 AI평가 — step1에서만]
+"가장 최근에 쓴 질문"을 아래 6항목으로 각각 평가해 checks 배열(6개, 순서대로)에 "O"(○ 잘 됨), "△"(조금 아쉬움), "X"(✕ 안 됨) 중 하나로 적는다.
+중학교 2학년 수준으로 너그럽게 본다. 분명한 문제가 있을 때만 X, 애매하면 △, 대체로 괜찮으면 O.
+${SELF.map((t, i) => `${i + 1}. ${t}`).join('\n')}
+(5번: 답이 단답형으로 쉽고 간단하게 나오면 안 된다. 6번: 편향적이거나 특정 인물에 대한 비난·조롱의 의도가 담기면 안 된다.)
+질문이 비어 있으면 모두 "X"로 둔다.`;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
@@ -99,6 +112,8 @@ module.exports = async (req, res) => {
   const st = STEPS[parseInt(b.step, 10)];
   if (!st) { res.status(400).json({ error: 'step이 올바르지 않습니다.' }); return; }
   const d = (b.data && typeof b.data === 'object') ? b.data : {};
+  const isStep1 = parseInt(b.step, 10) === 1;
+  const [tLabel, tQ] = latestQ(d);
   const prompt = `너는 중학교 2학년 학생의 확률 탐구 글쓰기(수행평가) 준비를 도와주는 AI 피드백 도우미이다.
 학생이 지금 "${st.name}" 단계에 적은 내용을 아래 확인 기준에 비추어 보고 피드백한다.
 피드백이란 잘한 점은 칭찬하고, 아쉬운 점은 보완하라고 알려 주는 것이다.
@@ -118,16 +133,22 @@ ${STUDENT_AI_RULES}
 [확인 기준 — ${st.name}]
 ${st.check}
 
-[출력]
-JSON 하나만 출력한다: {"good":["잘한 점"], "fix":["보완할 점"]}
+${isStep1 ? CHECK_GUIDE + '\n\n' : ''}[출력]
+JSON 하나만 출력한다: ${isStep1 ? '{"checks":["O","△","O","O","X","O"], "good":["좋은 점"], "fix":["개선 아이디어"]}' : '{"good":["잘한 점"], "fix":["보완할 점"]}'}
 - good 최대 2개, fix 최대 2개. 각 문장은 80자 이내.
 
 [학생이 적은 내용]
-${st.text(d)}`;
-  const r = await callOpenAI(prompt, { maxTokens: 3000, responseFormat: RESPONSE_FORMAT });
+${st.text(d)}${isStep1 ? `\n가장 최근에 쓴 질문(${tLabel || '없음'}): ${tQ || '(비어 있음)'}` : ''}`;
+  const r = await callOpenAI(prompt, { maxTokens: 3000, responseFormat: isStep1 ? RESPONSE_FORMAT_1 : RESPONSE_FORMAT });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
   if (!j) { res.status(502).json({ error: 'AI 피드백을 해석하지 못했어요.' }); return; }
   const clean = a => (Array.isArray(a) ? a : []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 3).map(x => x.slice(0, 200));
-  res.status(200).json({ good: clean(j.good).slice(0, 2), fix: clean(j.fix), model: r.model });
+  const out = { good: clean(j.good).slice(0, 2), fix: clean(j.fix), model: r.model };
+  if (isStep1) {
+    const c = Array.isArray(j.checks) ? j.checks.map(x => (x === 'O' || x === '△' || x === 'X') ? x : (x === '○' ? 'O' : (x === '✕' || x === 'x') ? 'X' : '△')) : [];
+    out.checks = SELF.map((_, i) => c[i] || '△');
+    out.target = tLabel;
+  }
+  res.status(200).json(out);
 };

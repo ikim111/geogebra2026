@@ -82,6 +82,24 @@
   .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
   .tab-panel{display:none;padding-top:16px;}
   /* ---- ④ AI 대화 ---- */
+  .qfb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:12px;}
+  .qfb-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+  .qfb-card.sent-ok{border-color:#a5d6a7;} .qfb-card.sent-no{border-color:#ef9a9a;}
+  .qfb-card .nm{font-weight:bold;color:#311b92;display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .qfb-card .nm small{font-weight:normal;color:#888;font-size:12px;}
+  .qfb-card .q{font-size:13.5px;line-height:1.55;}
+  .qfb-card .q .l{display:inline-block;min-width:34px;font-weight:bold;color:#888;font-size:12px;}
+  .qfb-card .q.latest{font-weight:bold;color:#0d47a1;}
+  .qfb-card .chips{font-size:12px;color:#666;}
+  .qfb-card .chips .chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:9px;margin:1px 2px;background:#f0f2f5;color:#555;}
+  .qfb-card .chips .chip.o{background:#e8f1fc;color:#1565c0;} .qfb-card .chips .chip.t{background:#fff8e1;color:#b07800;} .qfb-card .chips .chip.x{background:#ffebee;color:#c62828;}
+  .qfb-card .st{font-size:12.5px;padding:5px 8px;border-radius:6px;background:#f5f5f5;}
+  .qfb-card .st.ok{background:#e8f5e9;color:#2e7d32;} .qfb-card .st.no{background:#ffebee;color:#c62828;} .qfb-card .st .chg{color:#e65100;font-weight:bold;}
+  .qfb-card textarea{width:100%;box-sizing:border-box;min-height:52px;padding:7px 9px;border:1px solid #ccc;border-radius:6px;font:inherit;font-size:13.5px;resize:vertical;}
+  .qfb-card .btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .qfb-card .btns button{flex:1;padding:8px 6px;border-radius:6px;border:1px solid;font-weight:bold;cursor:pointer;font-size:13px;font-family:inherit;}
+  .qfb-card .btns .ok{background:#e8f5e9;border-color:#66bb6a;color:#2e7d32;} .qfb-card .btns .no{background:#ffebee;border-color:#ef5350;color:#c62828;}
+  .qfb-card .btns .del{flex:0 0 auto;background:#fff;border-color:#ccc;color:#888;font-weight:normal;}
   .ac-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .ac-bar input[type=search]{padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13.5px;}
   .seg{display:inline-flex;border:1px solid #c5cad1;border-radius:6px;overflow:hidden;}
@@ -286,6 +304,7 @@
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
       <button class="tab-btn" data-tab="student">③ 학생용</button>
       <button class="tab-btn" data-tab="aichat">④ AI 대화</button>
+      <button class="tab-btn" data-tab="qfb">⑤ 질문 피드백</button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
@@ -334,6 +353,15 @@
         <div class="panel ac-list" id="acList"></div>
         <div class="panel ac-conv" id="acConv"><div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div></div>
       </div>
+    </div>
+
+    <div id="tab-qfb" class="tab-panel">
+      <div class="panel ac-bar">
+        <span class="seg"><button type="button" class="on" data-qfbf="todo">피드백할 학생</button><button type="button" data-qfbf="all">전체</button></span>
+        <span id="qfbCount" style="font-size:13px;color:#555;"></span>
+        <span style="font-size:12.5px;color:#888;flex:1;min-width:200px;">step1 질문에 피드백을 보내면 학생 화면 '선생님 피드백' 칸에 바로 나타나요. 주관식은 선택이에요. 학생은 피드백을 기다리지 않고 3차 질문을 쓸 수 있어요.</span>
+      </div>
+      <div id="qfbList" class="qfb-list"></div>
     </div>
 
     <div id="tab-student" class="tab-panel">
@@ -464,6 +492,10 @@ function activityDetailHTML(s, id){
     h += '<h4>탐구 질문</h4>' + kvRow('유형', d.qtype) + kvRow('주제', d.subject) + kvRow('1차 질문', d.q1) + kvRow('2차 질문', d.q2) + kvRow('3차 질문', d.q3) + kvRow('질문 선정 동기', d.motive);
     const sc = str(d.selfCheck);
     h += '<h4>체크리스트 (자기 평가)</h4><div>' + SELF_CHECKS.map((t,i)=>{ const c=sc[i]; const cls=c==='O'?'o':(c==='△'?'t':(c==='X'?'x':'')); const m=c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–')); return `<span class="chip ${cls}" title="${esc(t)}">${i+1}. ${m}</span>`; }).join('') + '</div>';
+    const af = aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===1).pop(), ac = af && typeof af.checks==='string' ? af.checks : '';
+    if(ac) h += `<h4>체크리스트 (AI평가${af.target?' · '+esc(af.target)+' 질문':''})</h4><div>` + SELF_CHECKS.map((t,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(t)}">${i+1}. ${ox(ac[i])}</span>`).join('') + '</div>';
+    const tf = qfbOf(s);
+    h += '<h4>👩‍🏫 선생님 피드백</h4>' + (tf ? kvRow(tf.ok?'✅ 진행 가능':'🔁 다시 생각', (str(tf.comment)||'(말 없음)') + (tf.q?`  — 피드백한 질문: ${tf.q}`:'')) : '<div class="v none" style="font-size:13px;">아직 보내지 않았어요. (⑤ 질문 피드백 탭에서 보낼 수 있어요)</div>');
   } else if(id===2){
     h += kvRow('최종 탐구 질문', d.finalQ);
     h += '<h4>탐구 계획</h4>' + kvRow('1. 조사·결론', d.plan1) + kvRow('2. 확률 계산식', d.plan2) + kvRow('3. 변수·한계·보정', d.plan3);
@@ -543,6 +575,7 @@ function openAiLog(key){
     } else {
       h += `<div class="ent"><div class="meta"><span><b>🤖 AI 피드백 · step${l.step}</b></span><span>${when(l.ts)}</span></div>
         ${l.snap?`<div class="snap">학생 글(피드백 받을 때): ${esc(l.snap)}</div>`:''}
+        ${typeof l.checks==='string' && l.checks ? `<div class="a">✔ AI평가${l.target?'('+esc(l.target)+')':''}: ${SELF_CHECKS.map((t,i)=>`${i+1}${ox(l.checks[i])}`).join(' ')}</div>` : ''}
         ${(l.good||[]).map(t=>`<div class="a">👍 ${esc(t)}</div>`).join('')}${(l.fix||[]).length?(l.fix||[]).map(t=>`<div class="a">🔧 ${esc(t)}</div>`).join(''):'<div class="a">🔧 보완할 점 없음</div>'}</div>`;
     }
   });
@@ -651,7 +684,86 @@ document.getElementById('acExcelBtn').addEventListener('click', ()=>{
   const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
   XLSX.writeFile(wb, `확률탐구_AI사용기록_${currentRoomName||''}반_${ymd}.xlsx`);
 });
-function onStudentsUpdated(){ renderAiChatTab(); }
+/* ---------- ⑤ 질문 피드백: step1 탐구 질문에 선생님 피드백 보내기 ----------
+   students/{key}/teacherFb = {ok:true(이 질문으로 진행)|false(다시 생각), comment(선택), q(피드백한 질문), ts}
+   student22.html step1 '선생님 피드백' 칸에 실시간으로 나타난다. 학생 화면은 15초마다 접속 신호를 보내므로
+   카드는 내용이 바뀐 부분만 다시 그리고, 선생님이 쓰는 중인 글상자는 건드리지 않는다. */
+let qfbFilter = 'todo';
+const qfbRecent = new Set(); // 이번에 보낸 학생은 '피드백할 학생' 보기에서도 바로 사라지지 않게
+const qfbLatest = d => { d = d||{}; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
+const qfbOf = s => { const t = s && s.teacherFb; return (t && (t.ok===true || t.ok===false)) ? t : null; };
+function qfbNeeds(s){ const [, q] = qfbLatest(s.data); if(!q) return false; const t = qfbOf(s); return !t || str(t.q) !== q; }
+const ox = c => c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–'));
+const oxCls = c => c==='O'?'o':(c==='△'?'t':(c==='X'?'x':''));
+function qfbViewHTML(k, s){
+  const d = s.data || {}, [lab, lq] = qfbLatest(d), t = qfbOf(s);
+  const fbs = aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===1), af = fbs[fbs.length-1];
+  const sc = str(d.selfCheck), ac = af && typeof af.checks==='string' ? af.checks : '';
+  let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
+  [['1차','q1'],['2차','q2'],['3차','q3']].forEach(([l,f])=>{ const v = str(d[f]); if(v) h += `<div class="q${l===lab?' latest':''}"><span class="l">${l}</span>${esc(v)}</div>`; });
+  if(!lq) h += '<div class="q" style="color:#aaa;">아직 질문을 쓰지 않았어요.</div>';
+  h += `<div class="chips">자기평가 ${SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(sc[i])}" title="${esc(x)}">${i+1}${ox(sc[i])}</span>`).join('')}</div>`;
+  h += `<div class="chips">AI평가${af&&af.target?`(${esc(af.target)})`:''} ${ac ? SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(x)}">${i+1}${ox(ac[i])}</span>`).join('') : '<span style="color:#aaa;">아직 안 받음</span>'}</div>`;
+  if(t){
+    const when = t.ts ? new Date(t.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const chg = lq && str(t.q) !== lq;
+    h += `<div class="st ${t.ok?'ok':'no'}">${t.ok?'✅ 진행해도 좋아요':'🔁 다시 생각해 봐요'} 보냄 · ${esc(when)}${str(t.comment)?`<br>💬 ${esc(str(t.comment))}`:''}${chg?'<br><span class="chg">⚠ 보낸 뒤 학생이 질문을 바꿨어요</span>':''}</div>`;
+  }
+  return h;
+}
+function renderQfbTab(){
+  const panel = document.getElementById('tab-qfb'); if(!panel || !panel.classList.contains('active')) return;
+  const list = document.getElementById('qfbList');
+  const all = Object.keys(allStudents).map(k=>({k, s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s));
+  const need = all.filter(x=>qfbNeeds(x.s));
+  const shown = qfbFilter==='all' ? all : all.filter(x=> qfbNeeds(x.s) || qfbRecent.has(x.k));
+  document.getElementById('qfbCount').innerHTML = `피드백할 학생 <b>${need.length}</b>명 · 보낸 학생 <b>${all.filter(x=>qfbOf(x.s)).length}</b>명`;
+  const keep = new Set(shown.map(x=>x.k));
+  [...list.querySelectorAll('.qfb-card')].forEach(c=>{ if(!keep.has(c.dataset.k)) c.remove(); });
+  if(!shown.length){ if(!list.querySelector('.empty-msg')) list.innerHTML = `<div class="text-answer-empty empty-msg">${qfbFilter==='all'?'아직 접속한 학생이 없어요.':'지금 피드백할 학생이 없어요. (질문을 쓰지 않았거나, 이미 보낸 질문 그대로예요)'}</div>`; return; }
+  const em = list.querySelector('.empty-msg'); if(em) em.remove();
+  let prev = null;
+  shown.forEach(({k, s})=>{
+    let card = list.querySelector(`.qfb-card[data-k="${CSS.escape(k)}"]`);
+    if(!card){
+      card = document.createElement('div'); card.className = 'qfb-card'; card.dataset.k = k;
+      card.innerHTML = `<div class="qv"></div><textarea class="qc" placeholder="(선택) 학생에게 남길 말 — 예: 대상과 기간을 더 분명히 정해 보자"></textarea>
+        <div class="btns"><button type="button" class="ok" data-qfbsend="1">✅ 이 질문으로 진행</button><button type="button" class="no" data-qfbsend="0">🔁 다시 생각해 보기</button><button type="button" class="del" data-qfbdel title="보낸 피드백 지우기">취소</button></div>`;
+      card.querySelector('.qc').addEventListener('input', e=>{ e.target.dataset.dirty = '1'; });
+    }
+    const v = card.querySelector('.qv'), html = qfbViewHTML(k, s);
+    if(v.__html !== html){ v.innerHTML = html; v.__html = html; }
+    const t = qfbOf(s), ta = card.querySelector('.qc');
+    if(document.activeElement !== ta && !ta.dataset.dirty) ta.value = t ? str(t.comment) : '';
+    card.classList.toggle('sent-ok', !!(t && t.ok)); card.classList.toggle('sent-no', !!(t && !t.ok));
+    card.querySelector('[data-qfbdel]').style.display = t ? '' : 'none';
+    const want = prev ? prev.nextSibling : list.firstChild;
+    if(want !== card) list.insertBefore(card, want); // 순서가 다를 때만 옮긴다(쓰는 중인 글상자 보호)
+    prev = card;
+  });
+}
+document.addEventListener('click', async e=>{
+  const f = e.target.closest && e.target.closest('[data-qfbf]');
+  if(f){ qfbFilter = f.dataset.qfbf; qfbRecent.clear(); document.querySelectorAll('[data-qfbf]').forEach(b=>b.classList.toggle('on', b===f)); renderQfbTab(); return; }
+  const b = e.target.closest && e.target.closest('[data-qfbsend],[data-qfbdel]'); if(!b) return;
+  const card = b.closest('.qfb-card'), k = card && card.dataset.k, s = k && allStudents[k];
+  if(!s || !currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  const ref = db.ref('rooms/'+currentRoomKey+'/students/'+k+'/teacherFb');
+  const ta = card.querySelector('.qc');
+  try{
+    if(b.hasAttribute('data-qfbdel')){
+      if(!confirm('보낸 피드백을 지울까요? 학생 화면에서도 사라져요.')) return;
+      await ref.set(null); delete s.teacherFb; ta.value = ''; delete ta.dataset.dirty;
+    } else {
+      const [, q] = qfbLatest(s.data);
+      if(!q){ alert('이 학생은 아직 질문을 쓰지 않았어요.'); return; }
+      const fb = { ok: b.dataset.qfbsend==='1', comment: ta.value.trim().slice(0, 500), q, ts: Date.now() };
+      await ref.set(fb); s.teacherFb = fb; delete ta.dataset.dirty; qfbRecent.add(k);
+    }
+  }catch(err){ alert('보내지 못했어요. 인터넷 연결을 확인해 주세요.\n('+(err.message||err)+')'); return; }
+  renderQfbTab();
+});
+function onStudentsUpdated(){ renderAiChatTab(); renderQfbTab(); }
 /* 요약 패널: step별 완료 인원 */
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
@@ -1268,6 +1380,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='teacher') renderTeacherView();
     if(btn.dataset.tab==='student') ensurePreviewLoaded();
     if(btn.dataset.tab==='aichat') renderAiChatTab();
+    if(btn.dataset.tab==='qfb') renderQfbTab();
   });
 });
 
