@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --navy:#1a237e; --green:#2e7d32; --red:#c62828; --orange:#e65100; --mentor:#fff3cd; --line:#d5d9de; }
   *{box-sizing:border-box;}
@@ -25,7 +26,7 @@
   .panel{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;}
   .panel h2{font-size:16px;margin:0 0 8px;color:var(--navy);}
   .hint{font-size:13px;color:#666;line-height:1.6;margin:4px 0;}
-  button.btn{border:1px solid #c5cad1;background:#fff;border-radius:7px;padding:7px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  button.btn, label.btn{border:1px solid #c5cad1;color:#222;background:#fff;border-radius:7px;padding:7px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
   button.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
   button.btn.danger{color:var(--red);border-color:#ef9a9a;}
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
@@ -252,6 +253,12 @@ const DEFAULTS = {
 29 최한결 0`, [2,4,5,9,11,12,13,14,16,17,23,25])
 };
 
+/* 1~4반·9~12반: 2학기 중간고사 멘토·멘티 명렬표(멘토 = 반별 총점 상위 12명). 발표 점수는 담당 선생님이 입력.
+   tie = 12등 동점자(이 중 1명을 선생님이 멘토로 정해야 함). exam = 중간고사 총점(참고용). */
+const OTHER = {"1": {"roster": [{"no": 1, "name": "김가온", "exam": 65, "mentor": false, "tie": false}, {"no": 2, "name": "김서윤", "exam": 78, "mentor": false, "tie": false}, {"no": 3, "name": "김수현", "exam": 55, "mentor": false, "tie": false}, {"no": 4, "name": "김조운", "exam": 72, "mentor": false, "tie": false}, {"no": 5, "name": "김태유", "exam": 73, "mentor": false, "tie": false}, {"no": 7, "name": "박승현", "exam": 78, "mentor": false, "tie": false}, {"no": 8, "name": "박시언", "exam": 86, "mentor": true, "tie": false}, {"no": 9, "name": "설재인", "exam": 100, "mentor": true, "tie": false}, {"no": 10, "name": "신재현", "exam": 81, "mentor": false, "tie": true}, {"no": 11, "name": "심수앙", "exam": 82, "mentor": true, "tie": false}, {"no": 12, "name": "우현빈", "exam": 82, "mentor": true, "tie": false}, {"no": 13, "name": "윤성헌", "exam": 70, "mentor": false, "tie": false}, {"no": 14, "name": "이기범", "exam": 72, "mentor": false, "tie": false}, {"no": 15, "name": "이도율", "exam": 55, "mentor": false, "tie": false}, {"no": 16, "name": "이루리", "exam": 63, "mentor": false, "tie": false}, {"no": 17, "name": "이서연", "exam": 82, "mentor": true, "tie": false}, {"no": 18, "name": "이서진", "exam": 82, "mentor": true, "tie": false}, {"no": 19, "name": "이성민", "exam": 86, "mentor": true, "tie": false}, {"no": 20, "name": "임서영", "exam": 98, "mentor": true, "tie": false}, {"no": 21, "name": "임채린", "exam": 50, "mentor": false, "tie": false}, {"no": 22, "name": "임희수", "exam": 82, "mentor": true, "tie": false}, {"no": 23, "name": "정민권", "exam": 86, "mentor": true, "tie": false}, {"no": 24, "name": "정수빈", "exam": 81, "mentor": false, "tie": true}, {"no": 25, "name": "조유상", "exam": 88, "mentor": true, "tie": false}, {"no": 26, "name": "허유빈", "exam": 77, "mentor": false, "tie": false}, {"no": 27, "name": "홍동건", "exam": 65, "mentor": false, "tie": false}, {"no": 28, "name": "황담희", "exam": 31, "mentor": false, "tie": false}, {"no": 29, "name": "황인욱", "exam": 71, "mentor": false, "tie": false}]}, "2": {"roster": [{"no": 1, "name": "강세린", "exam": 80, "mentor": false, "tie": false}, {"no": 2, "name": "구교현", "exam": 65, "mentor": false, "tie": false}, {"no": 3, "name": "김도윤", "exam": 86, "mentor": true, "tie": false}, {"no": 4, "name": "김세하", "exam": 56, "mentor": false, "tie": false}, {"no": 5, "name": "김수현", "exam": 74, "mentor": false, "tie": false}, {"no": 6, "name": "김시온", "exam": 54, "mentor": false, "tie": false}, {"no": 7, "name": "김우현", "exam": 90, "mentor": true, "tie": false}, {"no": 8, "name": "김윤조", "exam": 81, "mentor": false, "tie": false}, {"no": 9, "name": "김재인", "exam": 98, "mentor": true, "tie": false}, {"no": 10, "name": "류은서", "exam": 74, "mentor": false, "tie": false}, {"no": 11, "name": "문동혁", "exam": 69, "mentor": false, "tie": false}, {"no": 12, "name": "박시우", "exam": 72, "mentor": false, "tie": false}, {"no": 13, "name": "박유라", "exam": 88, "mentor": true, "tie": false}, {"no": 14, "name": "박하윤", "exam": 81, "mentor": false, "tie": false}, {"no": 15, "name": "방혜린", "exam": 74, "mentor": false, "tie": false}, {"no": 16, "name": "서보민", "exam": 64, "mentor": false, "tie": false}, {"no": 17, "name": "서율찬", "exam": 78, "mentor": false, "tie": false}, {"no": 18, "name": "신동우", "exam": 82, "mentor": false, "tie": true}, {"no": 19, "name": "신시후", "exam": 37, "mentor": false, "tie": false}, {"no": 20, "name": "윤주하", "exam": 96, "mentor": true, "tie": false}, {"no": 21, "name": "이동혁", "exam": 85, "mentor": true, "tie": false}, {"no": 22, "name": "이채은", "exam": 86, "mentor": true, "tie": false}, {"no": 23, "name": "이하연", "exam": 78, "mentor": false, "tie": false}, {"no": 24, "name": "임현균", "exam": 82, "mentor": false, "tie": true}, {"no": 26, "name": "장주은", "exam": 30, "mentor": false, "tie": false}, {"no": 27, "name": "정세영", "exam": 90, "mentor": true, "tie": false}, {"no": 28, "name": "정혜라", "exam": 88, "mentor": true, "tie": false}, {"no": 29, "name": "허아인", "exam": 90, "mentor": true, "tie": false}, {"no": 30, "name": "김소율", "exam": 85, "mentor": true, "tie": false}]}, "3": {"roster": [{"no": 1, "name": "권남웅", "exam": 94, "mentor": true, "tie": false}, {"no": 2, "name": "김민슬", "exam": 94, "mentor": true, "tie": false}, {"no": 3, "name": "김준호", "exam": 82, "mentor": true, "tie": false}, {"no": 4, "name": "김채원", "exam": 20, "mentor": false, "tie": false}, {"no": 5, "name": "김현성", "exam": 89, "mentor": true, "tie": false}, {"no": 6, "name": "류예현", "exam": 50, "mentor": false, "tie": false}, {"no": 7, "name": "박성주", "exam": 78, "mentor": false, "tie": false}, {"no": 8, "name": "서준영", "exam": 70, "mentor": false, "tie": false}, {"no": 9, "name": "소윤아", "exam": 86, "mentor": true, "tie": false}, {"no": 10, "name": "신하윤", "exam": 75, "mentor": false, "tie": false}, {"no": 11, "name": "안하율", "exam": 81, "mentor": true, "tie": false}, {"no": 12, "name": "양라온", "exam": 65, "mentor": false, "tie": false}, {"no": 13, "name": "안하준", "exam": 85, "mentor": true, "tie": false}, {"no": 14, "name": "양예나", "exam": 73, "mentor": false, "tie": false}, {"no": 15, "name": "양은서", "exam": 62, "mentor": false, "tie": false}, {"no": 16, "name": "여태규", "exam": 23, "mentor": false, "tie": false}, {"no": 17, "name": "이동윤", "exam": 82, "mentor": true, "tie": false}, {"no": 18, "name": "이서율", "exam": 47, "mentor": false, "tie": false}, {"no": 19, "name": "이성윤", "exam": 85, "mentor": true, "tie": false}, {"no": 20, "name": "이예린", "exam": 86, "mentor": true, "tie": false}, {"no": 21, "name": "이예림", "exam": 80, "mentor": false, "tie": true}, {"no": 22, "name": "이예영", "exam": 38, "mentor": false, "tie": false}, {"no": 23, "name": "이효은", "exam": 80, "mentor": false, "tie": true}, {"no": 24, "name": "장은채", "exam": 86, "mentor": true, "tie": false}, {"no": 25, "name": "조서율", "exam": 61, "mentor": false, "tie": false}, {"no": 26, "name": "조재민", "exam": 73, "mentor": false, "tie": false}, {"no": 27, "name": "최승유", "exam": 42, "mentor": false, "tie": false}, {"no": 28, "name": "현수빈", "exam": 74, "mentor": false, "tie": false}, {"no": 30, "name": "이지환", "exam": 44, "mentor": false, "tie": false}]}, "4": {"roster": [{"no": 1, "name": "고예린", "exam": 85, "mentor": true, "tie": false}, {"no": 2, "name": "김건희", "exam": 63, "mentor": false, "tie": false}, {"no": 3, "name": "김민재", "exam": 94, "mentor": true, "tie": false}, {"no": 4, "name": "김성훈", "exam": 82, "mentor": true, "tie": false}, {"no": 5, "name": "김시윤", "exam": 86, "mentor": true, "tie": false}, {"no": 6, "name": "김연서", "exam": 91, "mentor": true, "tie": false}, {"no": 7, "name": "김예지", "exam": 73, "mentor": false, "tie": false}, {"no": 8, "name": "김재연", "exam": 78, "mentor": false, "tie": true}, {"no": 9, "name": "김정헌", "exam": 74, "mentor": false, "tie": false}, {"no": 10, "name": "김지유", "exam": 86, "mentor": true, "tie": false}, {"no": 11, "name": "박민서", "exam": 68, "mentor": false, "tie": false}, {"no": 12, "name": "배온유", "exam": 62, "mentor": false, "tie": false}, {"no": 13, "name": "백규림", "exam": 82, "mentor": true, "tie": false}, {"no": 14, "name": "유병우", "exam": 76, "mentor": false, "tie": false}, {"no": 15, "name": "유혜솔", "exam": 78, "mentor": false, "tie": true}, {"no": 16, "name": "윤정후", "exam": 70, "mentor": false, "tie": false}, {"no": 17, "name": "이도윤", "exam": 82, "mentor": true, "tie": false}, {"no": 18, "name": "이서윤", "exam": 38, "mentor": false, "tie": false}, {"no": 19, "name": "이서현", "exam": 82, "mentor": true, "tie": false}, {"no": 21, "name": "이연수", "exam": 62, "mentor": false, "tie": false}, {"no": 23, "name": "이지우", "exam": 72, "mentor": false, "tie": false}, {"no": 24, "name": "조유진", "exam": 12, "mentor": false, "tie": false}, {"no": 25, "name": "최강희", "exam": 84, "mentor": true, "tie": false}, {"no": 26, "name": "최유빈", "exam": 61, "mentor": false, "tie": false}, {"no": 27, "name": "홍성현", "exam": 70, "mentor": false, "tie": false}, {"no": 28, "name": "황수연", "exam": 90, "mentor": true, "tie": false}, {"no": 29, "name": "이도율", "exam": 31, "mentor": false, "tie": false}]}, "9": {"roster": [{"no": 1, "name": "김겸", "exam": 82, "mentor": true, "tie": false}, {"no": 2, "name": "김도율", "exam": 97, "mentor": true, "tie": false}, {"no": 3, "name": "김주원", "exam": 63, "mentor": false, "tie": false}, {"no": 4, "name": "김현준", "exam": 80, "mentor": false, "tie": false}, {"no": 5, "name": "노유찬", "exam": 23, "mentor": false, "tie": false}, {"no": 6, "name": "문정원", "exam": 77, "mentor": false, "tie": false}, {"no": 7, "name": "박채원", "exam": 86, "mentor": true, "tie": false}, {"no": 8, "name": "박현서", "exam": 51, "mentor": false, "tie": false}, {"no": 9, "name": "신은서", "exam": 82, "mentor": true, "tie": false}, {"no": 10, "name": "오하영", "exam": 70, "mentor": false, "tie": false}, {"no": 11, "name": "오현우", "exam": 81, "mentor": true, "tie": false}, {"no": 12, "name": "은재훈", "exam": 45, "mentor": false, "tie": false}, {"no": 13, "name": "이선규", "exam": 84, "mentor": true, "tie": false}, {"no": 14, "name": "이선유", "exam": 50, "mentor": false, "tie": false}, {"no": 15, "name": "이아인", "exam": 22, "mentor": false, "tie": false}, {"no": 16, "name": "이지윤", "exam": 47, "mentor": false, "tie": false}, {"no": 17, "name": "이찬호", "exam": 94, "mentor": true, "tie": false}, {"no": 18, "name": "장정욱", "exam": 92, "mentor": true, "tie": false}, {"no": 19, "name": "정서아", "exam": 82, "mentor": true, "tie": false}, {"no": 20, "name": "정해인", "exam": 84, "mentor": true, "tie": false}, {"no": 21, "name": "조윤주", "exam": 64, "mentor": false, "tie": false}, {"no": 22, "name": "조혜진", "exam": 46, "mentor": false, "tie": false}, {"no": 23, "name": "주찬진", "exam": 78, "mentor": false, "tie": false}, {"no": 24, "name": "최루익", "exam": 77, "mentor": false, "tie": false}, {"no": 25, "name": "최서인", "exam": 70, "mentor": false, "tie": false}, {"no": 26, "name": "한시은", "exam": 98, "mentor": true, "tie": false}, {"no": 27, "name": "한지원", "exam": 70, "mentor": false, "tie": false}, {"no": 28, "name": "황서연", "exam": 60, "mentor": false, "tie": false}, {"no": 29, "name": "황정윤", "exam": 84, "mentor": true, "tie": false}]}, "10": {"roster": [{"no": 1, "name": "고규민", "exam": 88, "mentor": true, "tie": false}, {"no": 2, "name": "곽규림", "exam": 45, "mentor": false, "tie": false}, {"no": 3, "name": "국지우", "exam": 70, "mentor": false, "tie": false}, {"no": 4, "name": "김민채", "exam": 85, "mentor": true, "tie": false}, {"no": 5, "name": "김서윤", "exam": 77, "mentor": false, "tie": true}, {"no": 6, "name": "김서진", "exam": 81, "mentor": true, "tie": false}, {"no": 7, "name": "김시은", "exam": 19, "mentor": false, "tie": false}, {"no": 8, "name": "김시현", "exam": 81, "mentor": true, "tie": false}, {"no": 9, "name": "남지윤", "exam": 74, "mentor": false, "tie": false}, {"no": 10, "name": "노우혁", "exam": 54, "mentor": false, "tie": false}, {"no": 11, "name": "박시언", "exam": 65, "mentor": false, "tie": false}, {"no": 12, "name": "박주영", "exam": 90, "mentor": true, "tie": false}, {"no": 13, "name": "박희수", "exam": 69, "mentor": false, "tie": false}, {"no": 14, "name": "손지율", "exam": 46, "mentor": false, "tie": false}, {"no": 15, "name": "윤재인", "exam": 61, "mentor": false, "tie": false}, {"no": 16, "name": "이시진", "exam": 78, "mentor": true, "tie": false}, {"no": 17, "name": "이시호", "exam": 90, "mentor": true, "tie": false}, {"no": 18, "name": "이용규", "exam": 53, "mentor": false, "tie": false}, {"no": 19, "name": "이정우", "exam": 94, "mentor": true, "tie": false}, {"no": 20, "name": "이태희", "exam": 86, "mentor": true, "tie": false}, {"no": 21, "name": "이해인", "exam": 43, "mentor": false, "tie": false}, {"no": 22, "name": "임수영", "exam": 62, "mentor": false, "tie": false}, {"no": 23, "name": "정유찬", "exam": 67, "mentor": false, "tie": false}, {"no": 24, "name": "정하윤", "exam": 77, "mentor": false, "tie": true}, {"no": 25, "name": "조서연", "exam": 84, "mentor": true, "tie": false}, {"no": 26, "name": "최다은", "exam": 77, "mentor": false, "tie": true}, {"no": 27, "name": "최서은", "exam": 64, "mentor": false, "tie": false}, {"no": 28, "name": "하우진", "exam": 90, "mentor": true, "tie": false}, {"no": 29, "name": "하준우", "exam": 74, "mentor": false, "tie": false}]}, "11": {"roster": [{"no": 1, "name": "김도연", "exam": 82, "mentor": true, "tie": false}, {"no": 2, "name": "김서율", "exam": 72, "mentor": false, "tie": false}, {"no": 3, "name": "김소민", "exam": 74, "mentor": false, "tie": false}, {"no": 4, "name": "김승유", "exam": 94, "mentor": true, "tie": false}, {"no": 5, "name": "김연준", "exam": 79, "mentor": true, "tie": false}, {"no": 6, "name": "김자온", "exam": 85, "mentor": true, "tie": false}, {"no": 7, "name": "김지후", "exam": 63, "mentor": false, "tie": false}, {"no": 8, "name": "김채민", "exam": 78, "mentor": false, "tie": false}, {"no": 9, "name": "민도현", "exam": 86, "mentor": true, "tie": false}, {"no": 10, "name": "박다은", "exam": 27, "mentor": false, "tie": false}, {"no": 11, "name": "박서인", "exam": 47, "mentor": false, "tie": false}, {"no": 12, "name": "박시연", "exam": 98, "mentor": true, "tie": false}, {"no": 13, "name": "박연서", "exam": 78, "mentor": false, "tie": false}, {"no": 14, "name": "박현욱", "exam": 81, "mentor": true, "tie": false}, {"no": 15, "name": "성서연", "exam": 81, "mentor": true, "tie": false}, {"no": 16, "name": "안서현", "exam": 81, "mentor": true, "tie": false}, {"no": 17, "name": "양시윤", "exam": 66, "mentor": false, "tie": false}, {"no": 18, "name": "양정후", "exam": 55, "mentor": false, "tie": false}, {"no": 19, "name": "어지나", "exam": 57, "mentor": false, "tie": false}, {"no": 20, "name": "오채은", "exam": 94, "mentor": true, "tie": false}, {"no": 21, "name": "윤서준", "exam": 81, "mentor": true, "tie": false}, {"no": 22, "name": "이원우", "exam": 26, "mentor": false, "tie": false}, {"no": 23, "name": "이지승", "exam": 78, "mentor": false, "tie": false}, {"no": 24, "name": "이채은", "exam": 74, "mentor": false, "tie": false}, {"no": 25, "name": "장은우", "exam": 74, "mentor": false, "tie": false}, {"no": 26, "name": "전예원", "exam": 77, "mentor": false, "tie": false}, {"no": 27, "name": "최여원", "exam": 76, "mentor": false, "tie": false}, {"no": 28, "name": "최혜인", "exam": 47, "mentor": false, "tie": false}, {"no": 29, "name": "추정연", "exam": 81, "mentor": true, "tie": false}]}, "12": {"roster": [{"no": 1, "name": "구민범", "exam": 100, "mentor": true, "tie": false}, {"no": 2, "name": "김규현", "exam": 65, "mentor": false, "tie": false}, {"no": 3, "name": "김나은", "exam": 81, "mentor": true, "tie": false}, {"no": 4, "name": "김도훈", "exam": 90, "mentor": true, "tie": false}, {"no": 5, "name": "김동연", "exam": 37, "mentor": false, "tie": false}, {"no": 6, "name": "김청명", "exam": 88, "mentor": true, "tie": false}, {"no": 7, "name": "류혜정", "exam": 63, "mentor": false, "tie": false}, {"no": 8, "name": "박새론", "exam": 54, "mentor": false, "tie": false}, {"no": 9, "name": "박소영", "exam": 71, "mentor": false, "tie": false}, {"no": 10, "name": "서용준", "exam": 67, "mentor": false, "tie": false}, {"no": 11, "name": "양현서", "exam": 73, "mentor": false, "tie": false}, {"no": 12, "name": "양휘서", "exam": 19, "mentor": false, "tie": false}, {"no": 13, "name": "유용준", "exam": 72, "mentor": false, "tie": false}, {"no": 14, "name": "이서정", "exam": 50, "mentor": false, "tie": false}, {"no": 16, "name": "이우찬", "exam": 86, "mentor": true, "tie": false}, {"no": 17, "name": "이하경", "exam": 76, "mentor": false, "tie": false}, {"no": 18, "name": "임리안", "exam": 73, "mentor": false, "tie": false}, {"no": 19, "name": "전세령", "exam": 82, "mentor": true, "tie": false}, {"no": 20, "name": "정태승", "exam": 47, "mentor": false, "tie": false}, {"no": 21, "name": "정혜린", "exam": 94, "mentor": true, "tie": false}, {"no": 22, "name": "조윤재", "exam": 70, "mentor": false, "tie": false}, {"no": 23, "name": "조하은", "exam": 81, "mentor": true, "tie": false}, {"no": 24, "name": "최서우", "exam": 79, "mentor": true, "tie": false}, {"no": 25, "name": "최서윤", "exam": 82, "mentor": true, "tie": false}, {"no": 26, "name": "최은비", "exam": 77, "mentor": false, "tie": false}, {"no": 27, "name": "한단태", "exam": 73, "mentor": false, "tie": false}, {"no": 28, "name": "한윤석", "exam": 92, "mentor": true, "tie": false}, {"no": 29, "name": "한채은", "exam": 94, "mentor": true, "tie": false}]}};
+Object.keys(OTHER).forEach(c=>{ DEFAULTS[c] = { roster: OTHER[c].roster.map(x=>Object.assign({score:0}, x)), mode:'' }; });
+['5','6','7','8'].forEach(c=>{ DEFAULTS[c].mode = 'seat'; });
+
 /* ---------- 상태 ---------- */
 let room = (new URLSearchParams(location.search).get('classNo')||'').trim() || '8';
 let S = { roster:[], teams:[], seats:{} };
@@ -266,11 +273,13 @@ const clone = o => JSON.parse(JSON.stringify(o));
 
 function normalize(v){
   v = v || {};
-  const roster = (Array.isArray(v.roster) ? v.roster : Object.values(v.roster||{})).filter(Boolean).map(x=>({no:+x.no||0, name:String(x.name||''), score:+x.score||0, mentor:!!x.mentor}));
+  const roster = (Array.isArray(v.roster) ? v.roster : Object.values(v.roster||{})).filter(Boolean).map(x=>{ const o = {no:+x.no||0, name:String(x.name||''), score:+x.score||0, mentor:!!x.mentor}; if(x.tie) o.tie = true; if(x.exam!=null) o.exam = +x.exam; return o; });
   const teams = (Array.isArray(v.teams) ? v.teams : Object.values(v.teams||{})).filter(t=>t && t.m!=null).map(t=>({m:+t.m, e:(Array.isArray(t.e)?t.e:Object.values(t.e||{})).map(Number)}));
   const seats = {}; Object.entries(v.seats||{}).forEach(([k,s])=>{ if(s && s.g) seats[k] = {g:+s.g, r:+s.r||0}; });
-  return { roster, teams, seats };
+  return { roster, teams, seats, mode: v.mode==='pair' || v.mode==='seat' ? v.mode : '' };
 }
+/* 12등 동점자: 아직 정하지 않은 동점자(tie)가 있으면 짝 정하기를 막는다 */
+const tiePending = () => S.roster.filter(x=>x.tie);
 /* 차례: 발표 점수 많은 순, 같으면 명단 순서 */
 function order(){ return S.roster.map((x,i)=>Object.assign({i}, x)).filter(x=>x.no).sort((a,b)=> b.score-a.score || a.i-b.i); }
 const byNo = no => S.roster.find(x=>x.no===no);
@@ -284,11 +293,11 @@ function teamColor(t){ const k = S.teams.indexOf(t); return `hsl(${HUES[k%HUES.l
 function save(){
   if(!ref){ $('saveState').textContent = '⚠️ 저장 안 됨(연결 실패)'; return; }
   $('saveState').textContent = '저장 중…';
-  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, ts: Date.now() })
+  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, mode:S.mode||'', ts: Date.now() })
     .then(()=> $('saveState').textContent = '✔ 저장됨')
     .catch(()=> $('saveState').textContent = '⚠️ 저장 실패');
 }
-function commit(fn){ undoStack.push(clone(S)); if(undoStack.length>50) undoStack.shift(); fn(); save(); render(); }
+function commit(fn, noRender){ undoStack.push(clone(S)); if(undoStack.length>50) undoStack.shift(); fn(); save(); if(!noRender) render(); }
 function undo(){ if(!undoStack.length) return; S = undoStack.pop(); pairSel = {mentor:null, mentees:[]}; save(); render(); }
 
 function loadRoom(r){
@@ -305,12 +314,18 @@ function loadRoom(r){
     const v = snap.val();
     if(first && !v && DEFAULTS[room]){ first = false; S = normalize(DEFAULTS[room]); save(); render(); return; }
     first = false;
-    S = normalize(v); render();
+    const nv = normalize(v);
+    if(JSON.stringify(nv) === JSON.stringify(normalize(S))) return; // 방금 내가 저장한 것 — 다시 그리지 않는다(입력 중인 칸 유지)
+    S = nv; render();
   }, ()=>{ $('saveState').textContent = '⚠️ 불러오기 실패'; });
 }
 
 /* ---------- 화면 ---------- */
 function render(){
+  const pairOnly = S.mode==='pair';
+  document.querySelector('#tabs [data-t="seat"]').style.display = pairOnly ? 'none' : '';
+  document.querySelector('#tabs [data-t="view"]').textContent = pairOnly ? '③ 매칭 결과' : '④ 자리표';
+  if(pairOnly && tab==='seat') tab = 'pair';
   ['roster','pair','seat','view'].forEach(t=> $('t-'+t).style.display = t===tab ? '' : 'none');
   document.querySelectorAll('#tabs button').forEach(b=> b.classList.toggle('on', b.dataset.t===tab));
   if(tab==='roster') renderRoster();
@@ -323,23 +338,39 @@ function render(){
 function renderRoster(){
   const o = order(), rk = rankMap(), mentors = S.roster.filter(x=>x.mentor).length;
   const active = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.ri!=null ? [document.activeElement.dataset.ri, document.activeElement.dataset.f] : null;
-  let h = `<div class="panel"><h2>${esc(room)}반 명단 · 발표 점수 <span style="font-size:13px;color:#666;font-weight:normal;">— ${S.roster.length}명 · 멘토 ${mentors}명 · 멘티 ${S.roster.length-mentors}명</span></h2>
+  const ties = tiePending();
+  let h = `<div class="panel"><h2>진행 방식</h2><div class="row">
+      <button class="tog ${S.mode==='pair'?'on':''}" data-mode="pair" style="padding:7px 14px;font-size:14px;">🤝 멘토·멘티 매칭만</button>
+      <button class="tog ${S.mode==='seat'?'on':''}" data-mode="seat" style="padding:7px 14px;font-size:14px;">🪑 매칭 + 자리배치</button>
+      <span class="hint">${S.mode==='pair' ? '② 짝 정하기까지 하고, ③ 매칭 결과를 보여 줘요.' : S.mode==='seat' ? '② 짝 정하기 → ③ 자리 고르기 → ④ 자리표 순서예요.' : '먼저 이 반에서 어떻게 할지 골라 주세요.'}</span></div></div>`;
+  if(ties.length) h += `<div class="panel" style="border:2px solid #f0a500;"><h2>⚠️ 12등 동점자 — 멘토 1명을 골라 주세요</h2>
+      <p class="hint">중간고사 총점 12등이 동점이에요. 아래에서 <b>멘토로 할 학생 1명</b>을 누르면 나머지는 멘티가 돼요. (예: 발표 점수가 많은 학생)</p>
+      <div class="cands">${ties.map(x=>`<button class="cand m" data-tiepick="${x.no}">${esc(x.no+' '+x.name)}<small>시험 ${x.exam!=null?x.exam:'-'} · 발표 ${x.score}</small></button>`).join('')}</div></div>`;
+  h += `<div class="panel"><h2>${esc(room)}반 명단 · 발표 점수 <span style="font-size:13px;color:#666;font-weight:normal;">— ${S.roster.length}명 · 멘토 ${mentors}명 · 멘티 ${S.roster.length-mentors}명</span></h2>
     <p class="hint">발표 점수가 많은 순서대로 짝과 자리를 골라요(같으면 이 표의 순서). <b>멘토</b> 칸을 눌러 멘토(음영)를 정해요. 모둠이 6개라 멘토는 <b>12명</b>이 딱 맞아요.</p>
     ${mentors!==12 && S.roster.length ? `<div class="notice">지금 멘토가 ${mentors}명이에요. 멘토 자리는 12개(모둠 6개 × 2)예요.</div>` : ''}
     ${(S.teams.length || Object.keys(S.seats).length) ? `<div class="notice">이미 짝이나 자리를 정했어요. 명단을 바꾸면 짝·자리와 어긋날 수 있어요.</div>` : ''}
-    <table class="roster"><tr><th>차례</th><th>번호</th><th>이름</th><th>발표</th><th>멘토</th><th></th></tr>`;
+    <table class="roster"><tr><th>차례</th><th>번호</th><th>이름</th><th>발표</th><th>멘토</th>${S.roster.some(x=>x.exam!=null)?'<th>시험(참고)</th>':''}<th></th></tr>`;
   S.roster.forEach((x,i)=>{
     h += `<tr class="${x.mentor?'mentor':''}"><td>${x.no ? rk[x.no]+1 : ''}</td>
       <td><input data-ri="${i}" data-f="no" type="number" value="${x.no||''}"></td>
       <td><input data-ri="${i}" data-f="name" value="${esc(x.name)}"></td>
       <td><input data-ri="${i}" data-f="score" type="number" value="${x.score}"></td>
-      <td><button class="tog ${x.mentor?'on':''}" data-mt="${i}">${x.mentor?'멘토':'멘티'}</button></td>
-      <td><button class="btn danger" data-del="${i}" style="padding:3px 8px;">삭제</button></td></tr>`;
+      <td><button class="tog ${x.mentor?'on':''}" tabindex="-1" data-mt="${i}" ${x.tie?'style="border-color:#f0a500;color:#b07800;"':''}>${x.tie?'동점(미정)':(x.mentor?'멘토':'멘티')}</button></td>
+      ${S.roster.some(y=>y.exam!=null)?`<td style="color:#888;font-size:13px;">${x.exam!=null?x.exam:''}</td>`:''}
+      <td><button class="btn danger" tabindex="-1" data-del="${i}" style="padding:3px 8px;">삭제</button></td></tr>`;
   });
   h += `</table><div class="row" style="margin-top:8px;"><button class="btn" id="addRow">＋ 학생 추가</button>
     ${DEFAULTS[room] ? `<button class="btn" id="resetDefault">↺ 처음 받은 명단으로</button>` : ''}
     <button class="btn danger" id="clearAll">명단 모두 지우기</button></div></div>
-    <div class="panel"><h2>한꺼번에 넣기</h2>
+    <div class="panel"><h2>발표 점수만 한꺼번에 넣기</h2>
+    <p class="hint">명단(번호·이름)은 이미 들어 있어요. 발표 점수만 넣으면 돼요. 방법 3가지 중 편한 것을 쓰세요.</p>
+    <ol class="hint" style="margin:4px 0 8px;padding-left:20px;"><li>위 표의 <b>발표</b> 칸에 바로 입력 (Enter나 Tab을 누르면 다음 학생 칸으로)</li><li>시트·엑셀에서 <b>번호와 발표</b>(또는 번호·이름·발표) 칸을 복사해 아래에 붙여 넣기</li><li>엑셀 파일(.xlsx·.csv) 올리기 — 번호와 발표 점수가 있는 표면 돼요</li></ol>
+    <textarea class="paste" id="scoreBox" placeholder="번호와 발표 점수 (예)&#10;1	12&#10;2	8&#10;또는 12 문도은 28 2 김다윤 11"></textarea>
+    <div class="row" style="margin-top:6px;"><button class="btn primary" id="applyScores">발표 점수 넣기</button>
+      <label class="btn" style="display:inline-block;">📂 엑셀 파일 올리기<input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" style="display:none;"></label>
+      <span class="hint" id="scoreMsg"></span></div></div>
+    <div class="panel"><h2>명단 통째로 바꾸기</h2>
     <p class="hint">시트에서 <b>번호·이름·발표</b> 칸을 복사해 붙여 넣으세요. 한 줄에 여러 명(번호 이름 발표 번호 이름 발표 …)이 있어도 돼요. 붙여 넣으면 지금 명단을 <b>바꿔요</b>.</p>
     <textarea class="paste" id="pasteBox" placeholder="12	문도은	28	2	김다윤	11"></textarea>
     <p class="hint">멘토 번호(쉼표로): <input id="mentorList" style="width:60%;padding:5px;border:1px solid #c5cad1;border-radius:6px;" placeholder="예: 2, 7, 9, 10, 13 …" value="${esc(S.roster.filter(x=>x.mentor).map(x=>x.no).join(', '))}"></p>
@@ -350,11 +381,58 @@ function renderRoster(){
 document.addEventListener('change', e=>{
   const el = e.target; if(el.dataset.ri==null) return;
   const i = +el.dataset.ri, f = el.dataset.f;
-  commit(()=>{ const x = S.roster[i]; if(!x) return; x[f] = f==='name' ? el.value.trim() : (+el.value||0); });
+  // 표를 다시 그리지 않고 저장만 한다(Tab으로 다음 칸에 계속 입력할 수 있게). 차례 칸만 고친다.
+  commit(()=>{ const x = S.roster[i]; if(!x) return; x[f] = f==='name' ? el.value.trim() : (+el.value||0); }, true);
+  const rk = rankMap();
+  document.querySelectorAll('table.roster tr').forEach((tr,k)=>{ if(!k) return; const x = S.roster[k-1]; if(x && tr.cells[0]) tr.cells[0].textContent = x.no ? rk[x.no]+1 : ''; });
+});
+/* 발표 칸에서 Enter·Tab → 다음 학생의 발표 칸으로(점수를 빠르게 입력) */
+document.addEventListener('keydown', e=>{
+  const el = e.target; if(!el.dataset || el.dataset.f!=='score' || (e.key!=='Enter' && e.key!=='Tab')) return;
+  e.preventDefault();
+  const next = document.querySelector(`[data-ri="${+el.dataset.ri + (e.shiftKey?-1:1)}"][data-f="score"]`);
+  el.dispatchEvent(new Event('change', {bubbles:true}));
+  if(next){ next.focus(); next.select(); }
+});
+/* 발표 점수 넣기: "번호 발표" 또는 "번호 이름 발표"가 이어진 글에서 번호로 찾아 점수만 바꾼다 */
+function parseScores(text){
+  const toks = String(text).split(/[\s,]+/).filter(Boolean), out = [];
+  const isInt = t => /^\d+$/.test(t), isNum = t => /^-?\d+(\.\d+)?$/.test(t);
+  for(let k=0;k<toks.length;){
+    if(isInt(toks[k]) && toks[k+1]!=null && !isNum(toks[k+1]) && toks[k+2]!=null && isNum(toks[k+2])){ out.push({no:+toks[k], name:toks[k+1], score:+toks[k+2]}); k+=3; }
+    else if(isInt(toks[k]) && toks[k+1]!=null && isNum(toks[k+1])){ out.push({no:+toks[k], score:+toks[k+1]}); k+=2; }
+    else k++;
+  }
+  return out;
+}
+function applyScoreList(list, msgEl){
+  if(!list.length){ msgEl.textContent = '번호와 발표 점수를 찾지 못했어요.'; return; }
+  let ok = 0; const miss = [], diff = [];
+  commit(()=>{ list.forEach(it=>{ const x = S.roster.find(y=>y.no===it.no); if(!x){ miss.push(it.no); return; } if(it.name && x.name && it.name!==x.name) diff.push(`${it.no}번(${x.name}≠${it.name})`); x.score = it.score; ok++; }); });
+  const m = document.getElementById('scoreMsg') || msgEl;
+  m.textContent = `✔ ${ok}명 점수를 넣었어요.` + (miss.length ? ` 명단에 없는 번호: ${miss.join(', ')}.` : '') + (diff.length ? ` 이름이 다른 번호: ${diff.join(', ')} (점수는 번호 기준으로 넣었어요).` : '');
+}
+document.addEventListener('change', e=>{
+  if(e.target.id!=='xlsxFile' || !e.target.files.length) return;
+  const f = e.target.files[0], rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      if(typeof XLSX==='undefined') throw new Error('엑셀 기능을 불러오지 못했어요');
+      const wb = XLSX.read(new Uint8Array(rd.result), {type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:true});
+      applyScoreList(parseScores(rows.map(r=> (r||[]).map(c=> c==null?'':String(c).replace(/\s+/g,'')).join('\t')).join('\n')), document.getElementById('scoreMsg'));
+    }catch(err){ document.getElementById('scoreMsg').textContent = '파일을 읽지 못했어요: ' + (err.message||err); }
+  };
+  rd.readAsArrayBuffer(f); e.target.value = '';
 });
 document.addEventListener('click', e=>{
   const t = e.target.closest ? e.target.closest('button') : null; if(!t) return;
-  if(t.dataset.mt!=null){ commit(()=>{ const x=S.roster[+t.dataset.mt]; x.mentor=!x.mentor; }); return; }
+  if(t.dataset.mt!=null){ const x0 = S.roster[+t.dataset.mt];
+    if(x0.tie){ if(!confirm(`${x0.no} ${x0.name} 학생을 멘토로 정할까요? (다른 동점자는 멘티가 돼요)`)) return; commit(()=> S.roster.forEach(x=>{ if(x.tie){ x.mentor = x.no===x0.no; delete x.tie; } })); return; }
+    commit(()=>{ x0.mentor = !x0.mentor; }); return; }
+  if(t.dataset.mode){ commit(()=>{ S.mode = t.dataset.mode; }); return; }
+  if(t.dataset.tiepick){ const n = +t.dataset.tiepick; commit(()=> S.roster.forEach(x=>{ if(x.tie){ x.mentor = x.no===n; delete x.tie; } })); return; }
+  if(t.id==='applyScores'){ applyScoreList(parseScores($('scoreBox').value), $('scoreMsg')); return; }
   if(t.dataset.del!=null){ const x=S.roster[+t.dataset.del]; if(!confirm(`${x.no} ${x.name} 학생을 명단에서 지울까요?`)) return;
     commit(()=>{ S.roster.splice(+t.dataset.del,1); S.teams = S.teams.filter(tm=>tm.m!==x.no).map(tm=>({m:tm.m, e:tm.e.filter(n=>n!==x.no)})); delete S.seats[x.no]; }); return; }
   if(t.id==='addRow'){ commit(()=> S.roster.push({no:0,name:'',score:0,mentor:false})); return; }
@@ -378,6 +456,7 @@ function renderPair(){
   let list = o.map((x,k)=>{ const tm = teamOf(x.no); return `<div class="it ${tm?'done':''} ${cur&&cur.no===x.no?'cur':''}"><span class="rk">${k+1}</span><span class="badge ${x.mentor?'m':'e'}">${x.mentor?'멘토':'멘티'}</span><span class="nm">${esc(x.no+' '+x.name)}${tm?' ✓':''}</span><span class="sc">${x.score}</span></div>`; }).join('');
   let main = '';
   if(!S.roster.length) main = `<div class="notice">먼저 ① 명단을 넣어 주세요.</div>`;
+  else if(tiePending().length) main = `<div class="notice">⚠️ 12등 동점자(${tiePending().map(x=>esc(x.no+' '+x.name)).join(', ')}) 중 멘토 1명을 ① 명단 화면에서 먼저 골라 주세요.</div>`;
   else if(!cur) main = `<div class="ok-msg">🎉 모든 학생의 짝(팀)이 정해졌어요. ③ 자리 고르기로 넘어가요.</div>`;
   else {
     const freeMentees = o.filter(x=> !x.mentor && !teamOf(x.no) && x.no!==cur.no);
@@ -418,7 +497,7 @@ document.addEventListener('click', e=>{
   const cur = currentTurn();
   if(t.dataset.pe){ const n = +t.dataset.pe; const i = pairSel.mentees.indexOf(n); if(i>=0) pairSel.mentees.splice(i,1); else pairSel.mentees.push(n); renderPair(); return; }
   if(t.dataset.pm){ const n = +t.dataset.pm; pairSel.mentor = pairSel.mentor===n ? null : n; pairSel.mentees = []; renderPair(); return; }
-  if(t.id==='pairOk' && cur){
+  if(t.id==='pairOk' && cur && !tiePending().length){
     commit(()=>{
       if(cur.mentor){ S.teams.push({m:cur.no, e:pairSel.mentees.slice(0,2)}); }
       else { let tm = teamOf(pairSel.mentor); if(!tm){ tm = {m:pairSel.mentor, e:[]}; S.teams.push(tm); } tm.e.push(cur.no, ...pairSel.mentees.slice(0,1)); tm.e = tm.e.slice(0,2); }
@@ -486,6 +565,13 @@ document.addEventListener('click', e=>{
 
 /* ④ 자리표 */
 function renderView(){
+  if(S.mode==='pair'){
+    const to = teamOrder();
+    $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 멘토·멘티 매칭</h2><button class="btn" onclick="window.print()">🖨 인쇄</button></div>
+      <table class="roster" style="font-size:17px;"><tr><th>팀</th><th>멘토</th><th>멘티 1</th><th>멘티 2</th></tr>${to.map((t,k)=>`<tr><td>${k+1}</td><td style="background:var(--mentor);font-weight:bold;">${esc(nm(t.m))}</td><td>${esc(t.e[0]!=null?nm(t.e[0]):'')}</td><td>${esc(t.e[1]!=null?nm(t.e[1]):'')}</td></tr>`).join('') || '<tr><td colspan="4" style="color:#999;">아직 정한 팀이 없어요.</td></tr>'}</table>
+      ${order().filter(x=>!teamOf(x.no)).length ? `<p class="hint" style="color:#c62828;">아직 팀이 없는 학생: ${order().filter(x=>!teamOf(x.no)).map(x=>esc(x.no+' '+x.name)).join(', ')}</p>` : ''}</div>`;
+    return;
+  }
   const seated = Object.keys(S.seats).length;
   $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="window.print()">🖨 인쇄</button></div></div>
     <h2 style="display:none;" class="print-only">2학년 ${esc(room)}반 자리표</h2>${boardHTML({big:true})}</div>`;
