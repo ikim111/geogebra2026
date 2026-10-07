@@ -4,7 +4,8 @@
 //
 // 요청 형식(POST, JSON): { step: 1~5, data: student22.html의 data }
 // 응답 형식(JSON): { good:[문장], fix:[문장], model }
-//   step1은 추가로 { checks:['O'|'△'|'X' ×6], target:'1차'|'2차'|'3차' } — 체크리스트 6항목 AI평가(가장 최근에 쓴 질문 기준)
+//   step1: 요청에 which:1|2(1차/2차 질문)를 함께 보내면 그 질문만 평가한다.
+//          응답에 추가로 { checks:['O'|'△'|'X' ×6], target:'1차'|'2차' } — 체크리스트 6항목 AI평가
 const { bodyOf, callOpenAI, parseJSON, bannedSourceKind, STUDENT_AI_RULES, RECOMMENDED_SITES } = require('./_report-common');
 
 const S = x => String(x == null ? '' : x).slice(0, 3000).trim();
@@ -25,7 +26,7 @@ const STEPS = {
     (공식 통계나 기록을 바탕으로 확률을 구할 수 있는 사건인가? 너무 막연하거나, 개인의 마음·취향처럼 셀 수 없는 것이거나, 관련 기록이 있을 수 없는 질문은 아닌가? 앞으로 일어날 일을 예측하는 질문도 지난 기록으로 확률을 구할 수 있으면 괜찮다.)
 ※ 지금은 질문을 만드는 단계이다. "자료를 찾아보세요", "기록을 조사해 보세요"처럼 자료 조사를 하라는 말은 하지 않는다.
 ※ 질문 선정 동기, 체크리스트 자기 평가는 참고만 하고 평가하지 않는다.
-※ good·fix는 "가장 최근에 쓴 질문"(3차 > 2차 > 1차 중 마지막으로 채운 것)을 중심으로 쓴다.`,
+※ good·fix는 아래 "평가할 질문" 하나에 대해서만 쓴다. 2차 질문을 평가할 때는 1차보다 나아진 점이 있으면 좋은 점으로 말해 준다.`,
     text: d => `관심사: ${S(d.topicInterest) || '-'} / 진로: ${S(d.topicCareer) || '-'} / 취미: ${S(d.topicHobby) || '-'}
 질문 유형: ${S(d.qtype) || '(안 고름)'}
 주제: ${S(d.subject) || '-'}
@@ -100,7 +101,7 @@ const RESPONSE_FORMAT_1 = { type: 'json_schema', json_schema: { name: 'step1_fee
   properties: { checks: { type: 'array', items: { type: 'string', enum: ['O', '△', 'X'] } }, good: item, fix: item } } } };
 const latestQ = d => S(d.q3) ? ['3차', S(d.q3)] : S(d.q2) ? ['2차', S(d.q2)] : S(d.q1) ? ['1차', S(d.q1)] : ['', ''];
 const CHECK_GUIDE = `[체크리스트 AI평가 — step1에서만]
-"가장 최근에 쓴 질문"을 아래 6항목으로 각각 평가해 checks 배열(6개, 순서대로)에 "O"(○ 잘 됨), "△"(조금 아쉬움), "X"(✕ 안 됨) 중 하나로 적는다.
+"평가할 질문"을 아래 6항목으로 각각 평가해 checks 배열(6개, 순서대로)에 "O"(○ 잘 됨), "△"(조금 아쉬움), "X"(✕ 안 됨) 중 하나로 적는다.
 중학교 2학년 수준으로 너그럽게 본다. 분명한 문제가 있을 때만 X, 애매하면 △, 대체로 괜찮으면 O.
 ${SELF.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 (5번: 답이 단답형으로 쉽고 간단하게 나오면 안 된다. 6번: 편향적이거나 특정 인물에 대한 비난·조롱의 의도가 담기면 안 된다.)
@@ -113,7 +114,8 @@ module.exports = async (req, res) => {
   if (!st) { res.status(400).json({ error: 'step이 올바르지 않습니다.' }); return; }
   const d = (b.data && typeof b.data === 'object') ? b.data : {};
   const isStep1 = parseInt(b.step, 10) === 1;
-  const [tLabel, tQ] = latestQ(d);
+  const w = parseInt(b.which, 10);
+  const [tLabel, tQ] = (w === 1 || w === 2) ? [w + '차', S(d['q' + w])] : latestQ(d);
   const prompt = `너는 중학교 2학년 학생의 확률 탐구 글쓰기(수행평가) 준비를 도와주는 AI 피드백 도우미이다.
 학생이 지금 "${st.name}" 단계에 적은 내용을 아래 확인 기준에 비추어 보고 피드백한다.
 피드백이란 잘한 점은 칭찬하고, 아쉬운 점은 보완하라고 알려 주는 것이다.
@@ -138,7 +140,7 @@ JSON 하나만 출력한다: ${isStep1 ? '{"checks":["O","△","O","O","X","O"],
 - good 최대 2개, fix 최대 2개. 각 문장은 80자 이내.
 
 [학생이 적은 내용]
-${st.text(d)}${isStep1 ? `\n가장 최근에 쓴 질문(${tLabel || '없음'}): ${tQ || '(비어 있음)'}` : ''}`;
+${st.text(d)}${isStep1 ? `\n평가할 질문(${tLabel || '없음'}): ${tQ || '(비어 있음)'}` : ''}`;
   const r = await callOpenAI(prompt, { maxTokens: 3000, responseFormat: isStep1 ? RESPONSE_FORMAT_1 : RESPONSE_FORMAT });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);

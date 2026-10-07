@@ -492,8 +492,8 @@ function activityDetailHTML(s, id){
     h += '<h4>탐구 질문</h4>' + kvRow('유형', d.qtype) + kvRow('주제', d.subject) + kvRow('1차 질문', d.q1) + kvRow('2차 질문', d.q2) + kvRow('3차 질문', d.q3) + kvRow('질문 선정 동기', d.motive);
     const sc = str(d.selfCheck);
     h += '<h4>체크리스트 (자기 평가)</h4><div>' + SELF_CHECKS.map((t,i)=>{ const c=sc[i]; const cls=c==='O'?'o':(c==='△'?'t':(c==='X'?'x':'')); const m=c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–')); return `<span class="chip ${cls}" title="${esc(t)}">${i+1}. ${m}</span>`; }).join('') + '</div>';
-    const af = aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===1).pop(), ac = af && typeof af.checks==='string' ? af.checks : '';
-    if(ac) h += `<h4>체크리스트 (AI평가${af.target?' · '+esc(af.target)+' 질문':''})</h4><div>` + SELF_CHECKS.map((t,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(t)}">${i+1}. ${ox(ac[i])}</span>`).join('') + '</div>';
+    [1,2].forEach(w=>{ const af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
+      if(ac) h += `<h4>체크리스트 AI평가 (${w}차 질문)</h4><div>` + SELF_CHECKS.map((t,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(t)}">${i+1}. ${ox(ac[i])}</span>`).join('') + '</div>'; });
     const tf = qfbOf(s);
     h += '<h4>👩‍🏫 선생님 피드백</h4>' + (tf ? kvRow(tf.ok?'✅ 진행 가능':'🔁 다시 생각', (str(tf.comment)||'(말 없음)') + (tf.q?`  — 피드백한 질문: ${tf.q}`:'')) : '<div class="v none" style="font-size:13px;">아직 보내지 않았어요. (⑤ 질문 피드백 탭에서 보낼 수 있어요)</div>');
   } else if(id===2){
@@ -573,7 +573,7 @@ function openAiLog(key){
       h += `<div class="ent"><div class="meta"><span><b>💬 AI 도우미</b></span><span>${when(l.ts)}</span></div>
         <div class="q">🙋 ${esc(l.q)}</div><div class="a">🤖 ${esc(l.a)}</div></div>`;
     } else {
-      h += `<div class="ent"><div class="meta"><span><b>🤖 AI 피드백 · step${l.step}</b></span><span>${when(l.ts)}</span></div>
+      h += `<div class="ent"><div class="meta"><span><b>🤖 AI 피드백 · step${l.step}${l.target?' '+esc(l.target)+' 질문':''}</b></span><span>${when(l.ts)}</span></div>
         ${l.snap?`<div class="snap">학생 글(피드백 받을 때): ${esc(l.snap)}</div>`:''}
         ${typeof l.checks==='string' && l.checks ? `<div class="a">✔ AI평가${l.target?'('+esc(l.target)+')':''}: ${SELF_CHECKS.map((t,i)=>`${i+1}${ox(l.checks[i])}`).join(' ')}</div>` : ''}
         ${(l.good||[]).map(t=>`<div class="a">👍 ${esc(t)}</div>`).join('')}${(l.fix||[]).length?(l.fix||[]).map(t=>`<div class="a">🔧 ${esc(t)}</div>`).join(''):'<div class="a">🔧 보완할 점 없음</div>'}</div>`;
@@ -693,17 +693,19 @@ const qfbRecent = new Set(); // 이번에 보낸 학생은 '피드백할 학생'
 const qfbLatest = d => { d = d||{}; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
 const qfbOf = s => { const t = s && s.teacherFb; return (t && (t.ok===true || t.ok===false)) ? t : null; };
 function qfbNeeds(s){ const [, q] = qfbLatest(s.data); if(!q) return false; const t = qfbOf(s); return !t || str(t.q) !== q; }
+/* step1 AI 피드백 중 w차 질문에 대한 가장 최근 것(target 없는 예전 기록은 1차, '3차'는 2차로 본다) */
+function lastQAi(s, w){ const l = aiLogsOf(s).filter(x=>x.type==='feedback' && x.step===1 && (((x.target==='2차'||x.target==='3차') ? 2 : 1)===w)); return l[l.length-1]; }
 const ox = c => c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–'));
 const oxCls = c => c==='O'?'o':(c==='△'?'t':(c==='X'?'x':''));
 function qfbViewHTML(k, s){
   const d = s.data || {}, [lab, lq] = qfbLatest(d), t = qfbOf(s);
-  const fbs = aiLogsOf(s).filter(l=>l.type==='feedback' && l.step===1), af = fbs[fbs.length-1];
-  const sc = str(d.selfCheck), ac = af && typeof af.checks==='string' ? af.checks : '';
+  const sc = str(d.selfCheck);
   let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
   [['1차','q1'],['2차','q2'],['3차','q3']].forEach(([l,f])=>{ const v = str(d[f]); if(v) h += `<div class="q${l===lab?' latest':''}"><span class="l">${l}</span>${esc(v)}</div>`; });
   if(!lq) h += '<div class="q" style="color:#aaa;">아직 질문을 쓰지 않았어요.</div>';
   h += `<div class="chips">자기평가 ${SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(sc[i])}" title="${esc(x)}">${i+1}${ox(sc[i])}</span>`).join('')}</div>`;
-  h += `<div class="chips">AI평가${af&&af.target?`(${esc(af.target)})`:''} ${ac ? SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(x)}">${i+1}${ox(ac[i])}</span>`).join('') : '<span style="color:#aaa;">아직 안 받음</span>'}</div>`;
+  [1,2].forEach(w=>{ const af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
+    if(ac || w===1) h += `<div class="chips">AI평가(${w}차) ${ac ? SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(x)}">${i+1}${ox(ac[i])}</span>`).join('') : '<span style="color:#aaa;">아직 안 받음</span>'}</div>`; });
   if(t){
     const when = t.ts ? new Date(t.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     const chg = lq && str(t.q) !== lq;

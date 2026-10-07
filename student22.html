@@ -97,8 +97,10 @@
   .qhd small{font-weight:normal;color:#888;font-size:12.5px;}
   .qnum{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;padding:0 6px;border-radius:12px;background:var(--blue);color:#fff;font-size:12.5px;}
   .qnum.ck{background:#607d8b;} .qnum.tc{background:#5c6bc0;}
-  td.aic{width:80px;text-align:center;font-size:17px;font-weight:bold;}
-  td.aic.o{color:var(--blue);} td.aic.t{color:#b07800;} td.aic.x{color:#c62828;} td.aic.none{color:#bbb;font-size:12px;font-weight:normal;}
+  .qstage .ai-fb{margin-top:10px;}
+  .aichk{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px;}
+  .aichk span{font-size:12.5px;padding:3px 8px;border-radius:12px;background:#f0f2f5;color:#555;}
+  .aichk span b{margin-left:3px;} .aichk .o{background:#e8f1fc;color:#1565c0;} .aichk .t{background:#fff8e1;color:#9a6b00;} .aichk .x{background:#ffebee;color:#c62828;}
   .tfb-none{color:#777;font-size:13.5px;}
   .tfb-v{display:inline-block;padding:4px 10px;border-radius:14px;font-weight:bold;font-size:14px;}
   .tfb-v.ok{background:#e8f5e9;color:#2e7d32;} .tfb-v.no{background:#ffebee;color:#c62828;}
@@ -307,14 +309,15 @@
     <input type="text" data-k="subject" placeholder="위에서 고른 주제를 한 줄로 적어 보세요">
     <p class="hint" style="margin-top:10px;">유형: <b id="qtypeView">(위에서 골라 주세요)</b> — 질문을 점점 더 구체적으로 다듬어 보세요.</p>
     <div class="ex">예) 1차 야구는 홈에서 더 잘할까? → 2차 KIA는 홈과 원정 중 어디서 더 많이 이길까? → 3차 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
-    <p class="hint" style="margin-top:12px;">아래 순서대로 진행해요: <b>1차 질문</b> → <b>체크리스트</b>(자기평가 + AI평가) → <b>2차 질문</b> → <b>선생님 피드백</b> → <b>3차 질문</b></p>
+    <p class="hint" style="margin-top:12px;">아래 순서대로 진행해요: <b>1차 질문</b> → 체크리스트 자기평가 → <b>1차 AI 피드백</b> → <b>2차 질문</b> → <b>2차 AI 피드백</b> → <b>선생님 피드백</b> → <b>3차 질문</b></p>
     <div class="qstage"><div class="qhd"><span class="qnum">1차</span>처음 떠오른 질문</div>
-      <textarea data-k="q1" placeholder="처음 떠오른 질문을 적어요"></textarea></div>
-    <div class="qstage chkstage"><div class="qhd"><span class="qnum ck">✔</span>체크리스트 <small>자기평가는 내가 ○△✕를 고르고, AI평가는 아래 버튼을 누르면 AI가 채워 줘요</small></div>
-      <table class="chk" id="selfCheckTable"></table>
-      <div class="ai-fb" id="aiFb1"></div></div>
+      <textarea data-k="q1" placeholder="처음 떠오른 질문을 적어요"></textarea>
+      <div class="chkstage"><div class="qhd" style="margin-top:10px;"><span class="qnum ck">✔</span>체크리스트 자기평가 <small>내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라요</small></div>
+        <table class="chk" id="selfCheckTable"></table></div>
+      <div class="ai-fb" id="aiFbQ1"></div></div>
     <div class="qstage"><div class="qhd"><span class="qnum">2차</span>AI 피드백을 보고 다듬은 질문</div>
-      <textarea data-k="q2" placeholder="체크리스트와 AI 피드백을 보고 질문을 다듬어요"></textarea></div>
+      <textarea data-k="q2" placeholder="1차 AI 피드백을 보고 질문을 다듬어요"></textarea>
+      <div class="ai-fb" id="aiFbQ2"></div></div>
     <div class="qstage tstage"><div class="qhd"><span class="qnum tc">👩‍🏫</span>선생님 피드백</div>
       <div id="teacherFbBox"></div></div>
     <div class="qstage"><div class="qhd"><span class="qnum">3차</span>선생님 피드백을 보고 더 다듬은 질문</div>
@@ -661,9 +664,9 @@ function paintQtype(){
   $('qtypeView').textContent = state.qtype || '(위에서 골라 주세요)';
 }
 (function buildSelfCheck(){
-  $('selfCheckTable').innerHTML = `<tr><th></th><th>점검 내용</th><th>자기평가</th><th>AI평가</th></tr>` + SELF_CHECKS.map((t,i)=>
+  $('selfCheckTable').innerHTML = `<tr><th></th><th>점검 내용</th><th>자기평가</th></tr>` + SELF_CHECKS.map((t,i)=>
     `<tr><td class="n">${i+1}</td><td>${t}</td><td class="sel"><span class="ox3" data-i="${i}">
-      <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td><td class="aic none" id="aiChk${i}">–</td></tr>`).join('');
+      <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td></tr>`).join('');
   document.querySelectorAll('.ox3 button').forEach(b => b.addEventListener('click', ()=>{
     const i = +b.parentNode.dataset.i; state.selfCheck[i] = state.selfCheck[i] === b.dataset.v ? '' : b.dataset.v; paintSelfCheck(); changed();
   }));
@@ -792,7 +795,10 @@ function paintDataChecks(){ document.querySelectorAll('[data-dc]').forEach(cb=> 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ---------- 상태가 바뀔 때마다: 배지·진행률·남은 할 일 표시 + 저장 ---------- */
+let __qHad = '';
 function changed(opts){
+  const qHad = (v('q1')?'1':'0') + (v('q2')?'1':'0'); // 1차·2차 질문이 생기거나 지워지면 AI 피드백 버튼을 다시 그린다
+  if(qHad !== __qHad){ try{ paintQFb(1); paintQFb(2); __qHad = qHad; }catch(e){} }
   TASKS.forEach(t=>{
     const d = isDone(t.id), b = $('badge-'+t.key);
     b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
@@ -935,14 +941,29 @@ const AI = {
   paint(){ TASKS.forEach(t=> paintStepFb(t.id)); paintChat(); }
 };
 const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
-/* step1 체크리스트의 AI평가 칸: 가장 최근 step1 AI 피드백의 checks('O△X…' 6글자) */
-function paintAiChecks(last){
-  const c = (last && typeof last.checks==='string') ? last.checks : '';
-  SELF_CHECKS.forEach((_,i)=>{
-    const el = $('aiChk'+i); if(!el) return; const v = c[i];
-    el.textContent = v==='O' ? '○' : v==='△' ? '△' : v==='X' ? '✕' : '–';
-    el.className = 'aic ' + (v==='O' ? 'o' : v==='△' ? 't' : v==='X' ? 'x' : 'none');
-  });
+/* step1: 1차·2차 질문 아래에 각각 AI 피드백(체크리스트 6항목 ○△✕ + 좋은 점·개선 아이디어). 횟수는 1차·2차 합쳐 하루 5번.
+   기록: {type:'feedback', step:1, target:'1차'|'2차', q:평가한 질문, checks:'O△X…', good, fix} (target이 없는 예전 기록은 1차로 본다) */
+const CHK_SHORT = ['확률과 관련', '주제·유형에 적합', '충분히 구체적', '자료 수집 가능', '단순 사실 확인 이상', '윤리적'];
+const qTargetOf = l => (l.target==='2차' || l.target==='3차') ? 2 : 1;
+function paintQFb(w){
+  const box = $('aiFbQ'+w); if(!box) return;
+  const all = AI.fbOf(1), mine = all.filter(l=> qTargetOf(l)===w), last = mine[mine.length-1];
+  const left = fbMax() - AI.today(all).length, off = AI.offReason(), noQ = !v('q'+w);
+  let h = `<div class="hd"><span><b>🤖 ${w}차 질문 AI 피드백</b><small>${w}차 질문을 체크리스트 6가지로 평가하고 좋은 점·개선 아이디어를 알려 줘요 · 오늘 남은 횟수(1차·2차 합쳐) ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
+    <button type="button" class="ai-btn" data-fb="1" data-fbq="${w}" ${(off || left<=0 || AI.busy || noQ) ? 'disabled' : ''}>${AI.busy===1 && AI.busyQ===w ? '🤖 살펴보는 중…' : `🤖 ${w}차 질문 피드백 받기`}</button></div>`;
+  if(off) h += `<div class="ai-off">${off}</div>`;
+  else if(left<=0) h += `<div class="ai-off">오늘 질문 만들기 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
+  else if(noQ) h += `<div class="ai-off">먼저 ${w}차 질문을 써요.</div>`;
+  if(last){
+    const c = typeof last.checks==='string' ? last.checks : '';
+    h += `<div class="fb-out"><div class="when">${fmtWhen(last.ts)}${last.q ? ` · 평가한 질문: "${esc(last.q)}"` : ''}</div>`;
+    if(c) h += `<div class="aichk">${CHK_SHORT.map((t,i)=>{ const x=c[i]; return `<span class="${x==='O'?'o':x==='△'?'t':x==='X'?'x':''}" title="${esc(SELF_CHECKS[i])}">${i+1}. ${t}<b>${x==='O'?'○':x==='△'?'△':x==='X'?'✕':'–'}</b></span>`; }).join('')}</div>`;
+    (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
+    if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">개선 아이디어</span><span>${esc(t)}</span></div>`);
+    else h += `<div class="row none"><span class="tag">개선 아이디어</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
+    h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.</div></div>`;
+  }
+  box.innerHTML = h;
 }
 /* 👩‍🏫 선생님 피드백(teacher22 '⑤ 질문 피드백'에서 보냄): students/{key}/teacherFb = {ok:true|false, comment, q, ts} */
 let TEACHER_FB = null, TFB_SEEN = false;
@@ -963,17 +984,15 @@ function paintTeacherFb(isNew){
 }
 const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
 function paintStepFb(n){
+  if(n===1){ paintQFb(1); paintQFb(2); return; }
   const box = $('aiFb'+n); if(!box) return;
   const used = AI.fbOf(n), last = used[used.length-1], left = fbMax() - AI.today(used).length, off = AI.offReason();
-  if(n===1) paintAiChecks(last);
-  const title = n===1 ? '🤖 AI평가 · AI 피드백' : '🤖 AI 피드백';
-  const desc = n===1 ? '가장 최근에 쓴 질문을 체크리스트로 평가하고 좋은 점·개선 아이디어를 알려 줘요' : '지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요';
-  let h = `<div class="hd"><span><b>${title}</b><small>${desc} · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
-    <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : (n===1 ? '🤖 AI평가·피드백 받기' : '🤖 AI 피드백 받기')}</button></div>`;
+  let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
+    <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : '🤖 AI 피드백 받기'}</button></div>`;
   if(off) h += `<div class="ai-off">${off}</div>`;
   else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
   if(last){
-    h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}${n===1 && last.target ? ` · 평가한 질문: ${esc(last.target)}` : ''}</div>`;
+    h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}</div>`;
     (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
     if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">개선 아이디어</span><span>${esc(t)}</span></div>`);
     else h += `<div class="row none"><span class="tag">개선 아이디어</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
@@ -981,20 +1000,21 @@ function paintStepFb(n){
   }
   box.innerHTML = h;
 }
-async function requestStepFb(n){
+async function requestStepFb(n, w){
   if(AI.busy || AI.offReason() || AI.today(AI.fbOf(n)).length >= fbMax()) return;
-  AI.busy = n; AI.paint();
+  if(n===1 && !v('q'+w)) return;
+  AI.busy = n; AI.busyQ = w; AI.paint();
   try{
     RT.flushPending();
     const data = collectData();
-    const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ step:n, data }) });
+    const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(n===1 ? { step:n, which:w, data } : { step:n, data }) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !Array.isArray(j.good)) throw new Error(j.error || ('HTTP '+res.status));
     const entry = { type:'feedback', step:n, good:j.good, fix:j.fix||[], snap: stepSnapshot(n, data) };
-    if(n===1){ entry.checks = Array.isArray(j.checks) ? j.checks.join('') : ''; entry.target = j.target || ''; }
+    if(n===1){ entry.checks = Array.isArray(j.checks) ? j.checks.join('') : ''; entry.target = w+'차'; entry.q = v('q'+w); }
     AI.log(entry);
   }catch(err){ alert('AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요.\n('+(err.message||err)+')\n※ 실패한 경우는 횟수에 들어가지 않아요.'); }
-  AI.busy = false; AI.paint();
+  AI.busy = false; AI.busyQ = 0; AI.paint();
 }
 /* 피드백 받을 때 학생이 그 step에 적어 둔 내용(선생님 기록 확인용) */
 function stepSnapshot(n, d){
@@ -1005,7 +1025,7 @@ function stepSnapshot(n, d){
   if(n===4) return j([...(d.sources||[]).map((x,i)=>x.analysis&&`자료${i+1} 분석: ${x.analysis}`), d.calc&&`계산: ${d.calc}`, d.meaning&&`해석: ${d.meaning}`]);
   return j([d.oTitle&&`제목: ${d.oTitle}`, d.oIntro&&`서론: ${d.oIntro}`, d.oBody&&`본론: ${d.oBody}`, d.oConcl&&`결론: ${d.oConcl}`]);
 }
-document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-fb]'); if(b) requestStepFb(+b.dataset.fb); });
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-fb]'); if(b) requestStepFb(+b.dataset.fb, +b.dataset.fbq || 0); });
 
 function paintChat(){
   const log = $('chatLog'); if(!log) return;
