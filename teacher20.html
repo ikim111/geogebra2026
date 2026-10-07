@@ -91,6 +91,10 @@
   .notice{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;font-size:13.5px;color:#7a5c00;margin:8px 0;}
   .ok-msg{background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20;border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0;}
   @media print{ header,.tabs,.no-print{display:none !important;} body{background:#fff;} .panel{box-shadow:none;} }
+th.sth{cursor:pointer;user-select:none;white-space:nowrap;}
+th.sth:hover{background:#e3e8f0;}
+th.sth .arr{margin-left:4px;font-size:11px;color:#aab;}
+th.sth.on .arr{color:#1a237e;}
 </style>
 </head>
 <body>
@@ -339,13 +343,20 @@ function render(){
 
 /* ① 명단 */
 // 표 정렬은 보기만 바꾼다(S.roster 순서 = 발표 동점일 때의 차례라서 그대로 둔다)
-let rosterSort = 'no';
+// 엑셀처럼 머리글(번호·발표·멘토)을 누르면 정렬, 한 번 더 누르면 반대 방향
+let rosterSort = {k:'no', dir:1};
+const SORT_FIRST = {no:1, score:-1, mentor:1}; // 처음 누를 때: 번호 오름차순, 발표 많은 순, 멘토 먼저
 function rosterView(){
-  const rk = rankMap(), list = S.roster.map((x,i)=>({x,i}));
+  const list = S.roster.map((x,i)=>({x,i})), d = rosterSort.dir;
   const byNo = (a,b)=> (a.x.no||999)-(b.x.no||999) || a.i-b.i;
-  if(rosterSort==='score') return list.sort((a,b)=> (a.x.no?rk[a.x.no]:999)-(b.x.no?rk[b.x.no]:999) || a.i-b.i);
-  if(rosterSort==='mentor'){ const g = x => x.mentor ? 0 : (x.tie ? 1 : 2); return list.sort((a,b)=> g(a.x)-g(b.x) || byNo(a,b)); }
-  return list.sort(byNo);
+  if(rosterSort.k==='score') return list.sort((a,b)=> d*((a.x.score||0)-(b.x.score||0)) || a.i-b.i);
+  if(rosterSort.k==='mentor'){ const g = x => x.mentor ? 0 : (x.tie ? 1 : 2); return list.sort((a,b)=> d*(g(a.x)-g(b.x)) || byNo(a,b)); }
+  return list.sort((a,b)=> d*byNo(a,b));
+}
+function sortTh(k, label){
+  const on = rosterSort.k===k;
+  const arrow = on ? (rosterSort.dir>0?'▲':'▼') : '⇅';
+  return `<th class="sth ${on?'on':''}" data-rsort="${k}" title="눌러서 정렬 (한 번 더 누르면 반대로)">${label}<span class="arr">${arrow}</span></th>`;
 }
 function renderRoster(){
   const o = order(), rk = rankMap(), mentors = S.roster.filter(x=>x.mentor).length;
@@ -362,8 +373,7 @@ function renderRoster(){
     <p class="hint">발표 점수가 많은 순서대로 짝과 자리를 골라요(같으면 이 표의 순서). <b>멘토</b> 칸을 눌러 멘토(음영)를 정해요. 모둠이 6개라 멘토는 <b>12명</b>이 딱 맞아요.</p>
     ${mentors!==12 && S.roster.length ? `<div class="notice">지금 멘토가 ${mentors}명이에요. 멘토 자리는 12개(모둠 6개 × 2)예요.</div>` : ''}
     ${(S.teams.length || Object.keys(S.seats).length) ? `<div class="notice">이미 짝이나 자리를 정했어요. 명단을 바꾸면 짝·자리와 어긋날 수 있어요.</div>` : ''}
-    <div class="row no-print" style="margin:4px 0 6px;"><span class="hint" style="margin:0;">정렬:</span>${[['no','번호순'],['score','발표순'],['mentor','멘토·멘티']].map(([k,l])=>`<button class="tog ${rosterSort===k?'on':''}" data-rsort="${k}" style="padding:5px 12px;">${l}</button>`).join('')}</div>
-    <table class="roster"><tr><th>차례</th><th>번호</th><th>이름</th><th>발표</th><th>멘토</th>${S.roster.some(x=>x.exam!=null)?'<th>시험(참고)</th>':''}<th></th></tr>`;
+    <table class="roster"><tr><th>차례</th>${sortTh('no','번호')}<th>이름</th>${sortTh('score','발표')}${sortTh('mentor','멘토')}${S.roster.some(x=>x.exam!=null)?'<th>시험(참고)</th>':''}<th></th></tr>`;
   rosterView().forEach(({x,i})=>{
     h += `<tr class="${x.mentor?'mentor':''}" data-row="${i}"><td>${x.no ? rk[x.no]+1 : ''}</td>
       <td><input data-ri="${i}" data-f="no" type="number" value="${x.no||''}"></td>
@@ -391,7 +401,7 @@ function renderRoster(){
   $('t-roster').innerHTML = h;
   if(active){ const el = document.querySelector(`[data-ri="${active[0]}"][data-f="${active[1]}"]`); if(el){ el.focus(); } }
 }
-document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-rsort]'); if(!b) return; rosterSort = b.dataset.rsort; renderRoster(); });
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-rsort]'); if(!b) return; const k = b.dataset.rsort; rosterSort = rosterSort.k===k ? {k, dir:-rosterSort.dir} : {k, dir:SORT_FIRST[k]}; renderRoster(); });
 document.addEventListener('change', e=>{
   const el = e.target; if(el.dataset.ri==null) return;
   const i = +el.dataset.ri, f = el.dataset.f;
