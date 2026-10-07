@@ -441,7 +441,7 @@ function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+
 /* ---------- 학생이 적은 내용 표시 (student22.html의 data 필드) ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const SELF_CHECKS = ['확률을 구하는 질문인가?','예측형 또는 비교·선택형 질문의 형태인가?','대상·기간·조건이 정해져 있는가?','공식 통계·기록으로 답을 구할 수 있는 질문인가?','자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?','윤리적으로 올바른가?'];
-const DATA_CHECKS = ['최신성(작성·조사 시점)','신뢰성(출처·조사 기관)','관련성(탐구 주제와 일치)','필요성(보고서에 꼭 필요)'];
+const DATA_CHECKS = ['자료 1이 질문에 맞음','자료 2가 맞고 다른 정보','계산에 필요한 수치 모두'];
 const str = x => (typeof x==='string' ? x : '').trim();
 function kvRow(k, val){ const t=str(val); return `<div class="row2"><span class="k">${esc(k)}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; }
 function safeLink(u){ const t=str(u); return /^https?:\/\//i.test(t) ? `<a href="${esc(t)}" target="_blank" rel="noopener">${esc(t)}</a>` : `<span style="color:#e65100;">${esc(t)||'(링크 없음)'}</span>`; }
