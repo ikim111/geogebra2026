@@ -78,6 +78,13 @@
   .cnt{font-size:13px;font-weight:bold;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
   .cnt.ok{color:var(--green);}
   .cnt.short{color:var(--orange);}
+  .olbox{background:#fffdf2;border:1px dashed #e0c86a;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:14px;line-height:1.65;}
+  .olbox .oh{font-weight:bold;color:#8a6d00;margin-bottom:4px;font-size:14.5px;}
+  .olbox .oh small{font-weight:normal;color:#a08a40;font-size:12px;margin-left:6px;}
+  .olbox .ot{white-space:pre-wrap;color:#333;}
+  .olbox .none{color:#aaa;}
+  .olbox details{margin-top:6px;font-size:13px;color:#555;} .olbox details summary{cursor:pointer;color:#8a6d00;font-weight:bold;}
+  .olbox .src{margin:4px 0;padding-left:8px;border-left:2px solid #e0c86a;white-space:pre-wrap;}
   .sec ul.tips{margin:0 0 6px;padding-left:18px;font-size:12.5px;color:#777;}
   .task textarea{width:100%;font-family:inherit;font-size:15.5px;border:1px solid #c5cad1;border-radius:8px;padding:11px 13px;background:#fff;resize:none;overflow:hidden;line-height:1.75;min-height:90px;}
   .task textarea.title{min-height:0;font-size:17px;font-weight:bold;}
@@ -195,8 +202,8 @@
 
 <section class="task" id="task-r1" data-task-id="1">
 
-  <details class="ref" id="refBox" open>
-    <summary>📝 내가 준비한 개요와 자료 (1부 탐구 준비에서 작성)</summary>
+  <details class="ref" id="refBox">
+    <summary>📝 1부 탐구 준비에서 쓴 내용 한눈에 보기 <span style="font-weight:normal;font-size:12.5px;color:#888;">(서론·본론·결론 개요는 아래 칸마다 바로 위에 있어요)</span></summary>
     <div class="rbody" id="refBody"><span style="color:#999;">불러오는 중…</span></div>
   </details>
 
@@ -218,21 +225,25 @@
     <p class="hint">글자 수는 <b>띄어쓰기 포함</b>으로 실시간으로 세어져요(띄어쓰기를 여러 번 연달아 쳐도 1자, 줄바꿈은 세지 않아요). 칸은 글이 길어지면 저절로 늘어나요. 쓰는 내용은 자동 저장돼요.</p>
 
     <div class="sec">
+      <div class="olbox" id="ol-title"></div>
       <div class="sec-head"><span class="lab">[제목]</span><span class="cnt" id="cnt-title">0자</span></div>
       <textarea class="title" data-k="title" rows="1" placeholder="탐구 질문이 드러나는 제목"></textarea>
     </div>
     <div class="sec">
-      <div class="sec-head"><span class="lab">[서론]<small>150자 이상</small></span><span class="cnt" id="cnt-intro">0자 / 150자</span></div>
+      <div class="olbox" id="ol-intro"></div>
+      <div class="sec-head"><span class="lab">[서론 보고서 작성]<small>150자 이상</small></span><span class="cnt" id="cnt-intro">0자 / 150자</span></div>
       <ul class="tips"><li>주제에 대한 간략한 소개</li><li>왜 이 질문을 선택했는지(질문 선정 동기)</li><li>탐구 계획 요약</li></ul>
       <textarea data-k="intro"></textarea>
     </div>
     <div class="sec">
-      <div class="sec-head"><span class="lab">[본론]<small>700자 이상</small></span><span class="cnt" id="cnt-body">0자 / 700자</span></div>
+      <div class="olbox" id="ol-body"></div>
+      <div class="sec-head"><span class="lab">[본론 보고서 작성]<small>700자 이상</small></span><span class="cnt" id="cnt-body">0자 / 700자</span></div>
       <ul class="tips"><li>각 자료에서 탐구 질문과 관련해 알 수 있는 내용을 분석 (자료의 수치를 직접 인용)</li><li>탐구 계획에 따라 확률을 계산</li><li>확률값을 논리적으로 해석</li></ul>
       <textarea data-k="body" style="min-height:180px;"></textarea>
     </div>
     <div class="sec">
-      <div class="sec-head"><span class="lab">[결론]<small>150자 이상</small></span><span class="cnt" id="cnt-concl">0자 / 150자</span></div>
+      <div class="olbox" id="ol-concl"></div>
+      <div class="sec-head"><span class="lab">[결론 보고서 작성]<small>150자 이상</small></span><span class="cnt" id="cnt-concl">0자 / 150자</span></div>
       <ul class="tips"><li>탐구 질문에 대한 최종 답</li><li>추가로 고려하면 좋을 변수, 더 알아보고 싶은 점</li></ul>
       <textarea data-k="concl"></textarea>
     </div>
@@ -431,6 +442,21 @@ function renderPrep(d){
       return `<li><b>자료 ${i+1}.</b> ${esc(x.what)}${x.site?` — <span style="color:#666;">${esc(x.site)}</span>`:''}<br>${a}${String(x.analysis||'').trim()?`<div style="color:#555;white-space:pre-wrap;margin-top:3px;">분석: ${esc(x.analysis)}</div>`:''}</li>`; }).join('') + '</ul>';
   }
   box.innerHTML = h;
+  renderSecOutlines(d);
+}
+/* 서론·본론·결론 칸 바로 위에 그 부분의 개요(1부 step5)를 보여 준다 — 위아래로 왔다 갔다 하지 않게 */
+function renderSecOutlines(d){
+  d = d || {};
+  const T = v => String(v||'').trim();
+  const body = t => T(t) ? `<div class="ot">${esc(T(t))}</div>` : '<div class="ot none">(1부 개요에 적은 내용이 없어요)</div>';
+  const q = T(d.finalQ) || ((d.qDone===1||d.qDone===2) && T(d['q'+d.qDone])) || T(d.q3) || T(d.q2) || T(d.q1);
+  const set = (id, html)=>{ const el = $(id); if(el) el.innerHTML = html; };
+  set('ol-title', `<div class="oh">📋 [제목 개요]<small>1부에서 쓴 것</small></div>${body(d.oTitle)}${q?`<div class="ot" style="color:#666;margin-top:4px;">탐구 질문: ${esc(q)}</div>`:''}`);
+  set('ol-intro', `<div class="oh">📋 [서론 개요]<small>1부에서 쓴 것 — 보면서 문장으로 풀어 써요</small></div>${body(d.oIntro)}`);
+  const src = Array.isArray(d.sources) ? d.sources.filter(x=>x && (T(x.what)||T(x.analysis))) : [];
+  const more = (src.length || T(d.calc) || T(d.meaning)) ? `<details><summary>자료 분석·확률 계산 다시 보기</summary>${src.map((x,i)=>`<div class="src"><b>자료 ${i+1}.</b> ${esc(T(x.what))}${T(x.site)?' — '+esc(T(x.site)):''}${T(x.analysis)?'\n→ '+esc(T(x.analysis)):''}</div>`).join('')}${T(d.calc)?`<div class="src"><b>확률 계산:</b> ${esc(T(d.calc))}</div>`:''}${T(d.meaning)?`<div class="src"><b>해석:</b> ${esc(T(d.meaning))}</div>`:''}</details>` : '';
+  set('ol-body', `<div class="oh">📋 [본론 개요]<small>1부에서 쓴 것 — 보면서 문장으로 풀어 써요</small></div>${body(d.oBody)}${more}`);
+  set('ol-concl', `<div class="oh">📋 [결론 개요]<small>1부에서 쓴 것 — 보면서 문장으로 풀어 써요</small></div>${body(d.oConcl)}`);
 }
 /* ---------- AI 피드백 글을 읽기 좋게 그리기 (student23·teacher23 공통 — 두 파일을 똑같이 유지) ----------
    [제목] ○/3점 → 항목 카드, 👍/🔧/❓ 줄 → "잘된 점/보완할 점/생각해 볼 질문" 표시, ※ 안내문 → 회색 상자.
