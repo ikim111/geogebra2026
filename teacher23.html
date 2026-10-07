@@ -267,7 +267,7 @@
         <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 제출 <b id="aggSub">0</b>명 · 900자 이상 <b id="aggLong">0</b>명 · AI 피드백 보냄 <b id="aggAi">0</b>명</span>
+        <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명 · AI 피드백 보냄 <b id="aggAi">0</b>명</span>
         <button class="ai" id="aiBulkBtn" disabled>🤖 제출한 학생 모두에게 AI 피드백 보내기 (0명)</button>
         <span id="aiBulkStatus" style="font-size:12.5px;color:#5e35b1;"></span>
       </div>
@@ -424,8 +424,8 @@ function bannedSourceKind(link, name){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const str = x => (typeof x==='string' ? x : '');
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // student23.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
-const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:0}, {k:'body', name:'본론', min:0}, {k:'concl', name:'결론', min:0} ];
-const TOTAL_MIN = 900; // 서론+본론+결론 합계만 본다
+const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:150}, {k:'body', name:'본론', min:700}, {k:'concl', name:'결론', min:150} ];
+const TOTAL_MIN = 1000; // 서론 150·본론 700·결론 150 이상 + 합계 1000 이상
 const srcOf = s => { const d=(s&&s.data)||{}; return Array.isArray(d.sources) ? d.sources.filter(x=>x && (str(x.name).trim()||str(x.link).trim())).map(x=>({name:str(x.name).trim(), link:str(x.link).trim()})) : []; };
 const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl), sources: srcOf(s) }; };
 const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r.body)+countChars(r.concl); };

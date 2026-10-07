@@ -306,8 +306,7 @@
     <label class="f">주제</label>
     <input type="text" data-k="subject" placeholder="위에서 고른 주제를 한 줄로 적어 보세요">
     <p class="hint" style="margin-top:10px;">유형: <b id="qtypeView">(위에서 골라 주세요)</b> — 질문을 점점 더 구체적으로 다듬어 보세요.</p>
-    <div class="ex">예측형 예) 1차 내가 일찍 죽을 확률은? → 2차 우리나라 남자가 80세 전에 사망할 확률은? → 3차 2024년 통계 기준, 우리나라 남성이 80세가 되기 전에 사망할 확률은 얼마일까?
-비교/선택형 예) 1차 야구는 홈에서 더 잘할까? → 2차 KIA는 홈과 원정 중 어디서 더 많이 이길까? → 3차 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
+    <div class="ex">예) 1차 야구는 홈에서 더 잘할까? → 2차 KIA는 홈과 원정 중 어디서 더 많이 이길까? → 3차 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
     <p class="hint" style="margin-top:12px;">아래 순서대로 진행해요: <b>1차 질문</b> → <b>체크리스트</b>(자기평가 + AI평가) → <b>2차 질문</b> → <b>선생님 피드백</b> → <b>3차 질문</b></p>
     <div class="qstage"><div class="qhd"><span class="qnum">1차</span>처음 떠오른 질문</div>
       <textarea data-k="q1" placeholder="처음 떠오른 질문을 적어요"></textarea></div>
@@ -331,32 +330,27 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step2</span>탐구 계획하기</h2><span class="badge pending" id="badge-s2">미완료</span></div>
     <label class="f">최종 탐구 질문</label>
-    <div class="ex">아래 탐구 계획 예시는 이 두 질문에 대한 예시예요.
-예측형 예) 2024년 통계 기준, 우리나라 남성이 80세가 되기 전에 사망할 확률은 얼마일까?
-비교/선택형 예) 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
+    <div class="ex">아래 탐구 계획 예시는 이 질문에 대한 예시예요.
+예) 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
     <textarea data-k="finalQ" placeholder="step1에서 다듬은 질문을 최종 탐구 질문으로 적어요"></textarea>
     <button type="button" class="mini-btn" id="copyQ3" style="margin-top:6px;">⬇ step1의 마지막 질문 가져오기</button>
   </div>
   <div class="card">
     <h3>탐구 계획</h3>
     <label class="f">1. 무엇을 조사하여 어떻게 결론을 도출할 것인지</label>
-    <div class="ex">예측형 예) 2024년 사망원인통계에서 (80세 이상 남성 사망자 수)와 (전체 남성 사망자 수)를 조사해 80세 전에 사망할 확률을 구하고, 그 확률이 얼마나 큰지로 결론 도출.
-비교/선택형 예) 2024년 KIA의 홈경기 승률과 원정경기 승률을 각각 구해 어느 쪽이 더 높은지 비교하여 결론 도출.</div>
+    <div class="ex">예) 2024년 KIA의 홈경기 승률과 원정경기 승률을 각각 구해 어느 쪽이 더 높은지 비교하여 결론 도출.</div>
     <textarea data-k="plan1"></textarea>
     <label class="f">2. 확률 계산식</label>
-    <div class="ex">예측형 예) (80세 미만 남성의 사망 확률) = 1 − (80세 이상 남성의 사망률) = 1 − (○년간 80세 이상 남성 사망자 수) ÷ (○년간 남성 사망자 수)
-비교/선택형 예) (홈경기에서 이길 확률) = (홈경기 승리 수) ÷ (홈경기 수),  (원정경기에서 이길 확률) = (원정경기 승리 수) ÷ (원정경기 수) → 두 확률을 비교</div>
+    <div class="ex">예) (홈경기에서 이길 확률) = (홈경기 승리 수) ÷ (홈경기 수),  (원정경기에서 이길 확률) = (원정경기 승리 수) ÷ (원정경기 수) → 두 확률을 비교</div>
     <textarea data-k="plan2"></textarea>
     <label class="f">3. 조사가 불가능한(예측 불가능한) 변수, 조사의 한계점, 보정 계획</label>
-    <div class="ex">예측형 예) 80세 미만 사망률은 의료기술의 발전에 따라 점점 낮아질 것임. 추이를 분석하여 미래의 사망률을 보정할 필요가 있음.
-비교/선택형 예) 선수 부상·날씨·상대 팀 전력은 조사하기 어려움. 한 시즌만으로는 우연일 수 있으므로 최근 몇 년의 홈·원정 승률도 함께 살펴볼 필요가 있음.</div>
+    <div class="ex">예) 선수 부상·날씨·상대 팀 전력은 조사하기 어려움. 한 시즌만으로는 우연일 수 있으므로 최근 몇 년의 홈·원정 승률도 함께 살펴볼 필요가 있음.</div>
     <textarea data-k="plan3"></textarea>
   </div>
   <div class="card">
     <h3>예상 결과</h3>
     <div class="ex">▶ 연구 주제에 따라 예상되는 결과를 적는다.
-예측형 예) 80세 전에 사망할 확률은 절반(50%)보다 낮을 것이다
-비교/선택형 예) 응원하는 관중이 많은 홈경기에서 이길 확률이 더 높을 것이다</div>
+예) 응원하는 관중이 많은 홈경기에서 이길 확률이 더 높을 것이다</div>
     <textarea data-k="expect"></textarea>
   </div>
   <div class="todo" id="todo2"></div>
@@ -411,8 +405,7 @@
       </div>
     </details>
     <p class="hint">찾은 자료마다 <b>사용할 내용 · 출처(사이트명) · 링크</b>를 적어요. 확률 계산은 다음 step4에서 해요.</p>
-    <div class="ex">예측형 예) 사용할 내용: 2024년 성별·연령별 사망자 수 중 80세 이상 남성 · 출처: [국가통계포털] 2024년 사망원인통계 · 링크: https://kosis.kr/…
-비교/선택형 예) 사용할 내용: 2024 KIA 타이거즈 홈·원정 경기별 승패 · 출처: [KBO 기록실] 2024 팀 홈/원정 성적 · 링크: https://www.koreabaseball.com/…</div>
+    <div class="ex">예) 사용할 내용: 2024 KIA 타이거즈 홈·원정 경기별 승패 · 출처: [KBO 기록실] 2024 팀 홈/원정 성적 · 링크: https://www.koreabaseball.com/…</div>
     <div id="srcList"></div>
     <button type="button" class="mini-btn" id="addSrc">＋ 자료 추가</button>
   </div>
@@ -431,20 +424,16 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step4</span>자료 분석·확률 계산하기</h2><span class="badge pending" id="badge-s4">미완료</span></div>
     <p class="hint">step3에서 찾은 자료마다 <b>자료에서 알아낸 사실·수치</b>를 적고, 아래에서 <b>확률을 계산</b>해 그 뜻을 해석해요.</p>
-    <div class="ex">예측형 분석 예) ① 10년 전보다 80세 미만 사망률은 15.6% 낮아졌다. 따라서 내가 나이가 들면 80세 미만에서 사망 확률은 더욱 낮아질 것이다.
-② 2024년 남자 기준으로 80세 미만에서 사망할 확률은 1 − (80세 이상에서 죽을 확률) = 1 − 0.415 = 0.585이다.   — [국가통계포털] 2024년 사망원인통계 결과
-비교/선택형 분석 예) ① 2024년 KIA는 홈경기 72경기 중 45승, 원정경기 72경기 중 42승을 했다. (수치는 설명용 예시)   — [KBO 기록실] 2024 팀 홈/원정 성적</div>
+    <div class="ex">분석 예) 2024년 KIA는 홈경기 72경기 중 45승, 원정경기 72경기 중 42승을 했다. (수치는 설명용 예시)   — [KBO 기록실] 2024 팀 홈/원정 성적</div>
     <div id="anaList"></div>
   </div>
   <div class="card">
     <h3>확률 계산하기</h3>
     <label class="f">확률 계산식과 결과</label>
-    <div class="ex">예측형 예) (80세 미만에서 사망할 확률) = 1 − (80세 이상 사망자 수 ÷ 전체 사망자 수) = 1 − 0.415 = 0.585
-비교/선택형 예) (홈경기 승률) = 45 ÷ 72 = 0.625,  (원정경기 승률) = 42 ÷ 72 ≈ 0.583</div>
+    <div class="ex">예) (홈경기 승률) = 45 ÷ 72 = 0.625,  (원정경기 승률) = 42 ÷ 72 ≈ 0.583</div>
     <textarea data-k="calc" placeholder="step2에서 세운 계산식에 찾은 수치를 넣어 계산해요"></textarea>
     <label class="f">계산 결과가 뜻하는 것 (해석)</label>
-    <div class="ex">예측형 예) 2024년 남자 기준으로 80세가 되기 전에 사망할 확률은 약 58.5%로, 절반이 넘는다.
-비교/선택형 예) 홈경기 승률(62.5%)이 원정경기 승률(약 58.3%)보다 약 4%p 높아, 이 자료로는 홈경기에서 이길 확률이 더 높았다고 할 수 있다.</div>
+    <div class="ex">예) 홈경기 승률(62.5%)이 원정경기 승률(약 58.3%)보다 약 4%p 높아, 이 자료로는 홈경기에서 이길 확률이 더 높았다고 할 수 있다.</div>
     <textarea data-k="meaning" placeholder="계산한 확률이 탐구 질문에 대해 무엇을 말해 주는지 적어요"></textarea>
   </div>
   <div class="todo" id="todo4"></div>
@@ -460,16 +449,16 @@
     <div class="outline-row sec-title"><div class="lab">제목</div><div><ul><li>탐구 질문이 드러나는 제목을 작성한다.</li></ul>
       <div class="ref-box" id="ref-oTitle"></div>
       <textarea data-k="oTitle"></textarea></div></div>
-    <div class="outline-row sec-intro"><div class="lab">1. 서론</div><div>
+    <div class="outline-row sec-intro"><div class="lab">1. 서론<small>보고서 150자 이상</small></div><div>
       <ul><li>주제에 대해 간략히 소개한다.</li><li>왜 이 질문을 선택했는지 설명한다.(질문 선정 동기)</li><li>탐구 계획을 요약하여 설명한다.</li></ul>
       <div class="ref-box" id="ref-oIntro"></div>
       <textarea data-k="oIntro"></textarea></div></div>
-    <div class="outline-row sec-body"><div class="lab">2. 본론</div><div>
+    <div class="outline-row sec-body"><div class="lab">2. 본론<small>보고서 700자 이상</small></div><div>
       <ul><li>각 자료에서 탐구 질문과 관련하여 알 수 있는 내용을 분석한다.</li><li>탐구 계획에 따라 확률을 계산한다.</li><li>확률값을 논리적으로 해석한다.</li></ul>
       <div class="ref-box" id="ref-oBody"></div>
       <textarea data-k="oBody"></textarea></div></div>
-    <div class="outline-row sec-concl"><div class="lab">3. 결론</div><div>
-      <ul><li>탐구 질문에 대한 최종 답을 제시한다.</li><li>이 자료만으로 단정하기 어려운 점(한계점)을 설명한다.</li><li>추가로 고려하면 좋을 변수, 추가로 알아보고 싶은 점 등을 제시한다.</li></ul>
+    <div class="outline-row sec-concl"><div class="lab">3. 결론<small>보고서 150자 이상</small></div><div>
+      <ul><li>탐구 질문에 대한 최종 답을 제시한다.</li><li>추가로 고려하면 좋을 변수, 추가로 알아보고 싶은 점 등을 제시한다.</li></ul>
       <div class="ref-box" id="ref-oConcl"></div>
       <textarea data-k="oConcl"></textarea></div></div>
   </div>
@@ -693,9 +682,9 @@ function renderSources(){
   $('srcList').innerHTML = state.sources.map((s,i)=>`<div class="src-card">
     <div class="hd"><span>📎 자료 ${i+1}</span>${state.sources.length>1?`<button type="button" class="mini-btn del" data-sdel="${i}">자료 지우기</button>`:''}</div>
     <div class="k">사용할 내용 (무슨 자료의 어느 부분을 쓸지)</div>
-    <textarea data-s="${i}" data-c="what" placeholder="예: 2024년 성별·연령별 사망자 수 표 중 80세 이상 남성 부분 / 2024 KIA 홈·원정 경기별 승패">${esc(s.what)}</textarea>
+    <textarea data-s="${i}" data-c="what" placeholder="예: 2024 KIA 타이거즈 홈·원정 경기별 승패">${esc(s.what)}</textarea>
     <div class="two">
-      <div><div class="k">출처 (사이트명·자료 이름)</div><input type="text" data-s="${i}" data-c="site" value="${esc(s.site)}" placeholder="예: [국가통계포털] 2024년 사망원인통계 결과 / [KBO 기록실] 2024 팀 홈/원정 성적"></div>
+      <div><div class="k">출처 (사이트명·자료 이름)</div><input type="text" data-s="${i}" data-c="site" value="${esc(s.site)}" placeholder="예: [KBO 기록실] 2024 팀 홈/원정 성적"></div>
       <div><div class="k">링크 <span class="link-ok" id="lk${i}"></span></div><input type="url" data-s="${i}" data-c="link" value="${esc(s.link)}" placeholder="https://…"></div>
     </div>
   </div>`).join('');
@@ -746,8 +735,8 @@ function outlineRefs(){
       text: [(v('subject') || q) && `• 주제: ${v('subject') || ''}${q ? (v('subject') ? ' — ' : '') + q : ''}`, v('motive') && `• 질문 선정 동기: ${v('motive')}`, v('plan1') && `• 탐구 계획: ${v('plan1')}`].filter(Boolean).join('\n') },
     oBody: { items: [...srcs.map((x,i)=>[`자료 ${i+1}`, `${srcName(x)}${x.link.trim() ? '\n' + x.link.trim() : ''}${x.analysis.trim() ? '\n→ 알아낸 사실: ' + x.analysis.trim() : ''}`]), ['확률 계산', v('calc')], ['확률값의 해석', v('meaning')]],
       text: [...srcs.map((x,i)=>`• 자료 ${i+1} 분석: ${x.what.trim() || x.site.trim()}${x.analysis.trim() ? ' → ' + x.analysis.trim() : ''}`), v('calc') && `• 확률 계산: ${v('calc')}`, v('meaning') && `• 확률값의 해석: ${v('meaning')}`].filter(Boolean).join('\n') },
-    oConcl: { items: [['탐구 질문에 대한 답(해석)', v('meaning')], ['처음 예상한 결과', v('expect')], ['변수·한계점', v('plan3')]],
-      text: [v('meaning') && `• 탐구 질문에 대한 답: ${v('meaning')}`, `${CMP_LINE}${v('expect') ? ' (처음 예상: ' + v('expect') + ')' : ''}: `, v('plan3') && `• 한계점: ${v('plan3')}`, `${MORE_LINE}: `].filter(Boolean).join('\n') }
+    oConcl: { items: [['탐구 질문에 대한 답(해석)', v('meaning')], ['처음 예상한 결과', v('expect')]],
+      text: [v('meaning') && `• 탐구 질문에 대한 답: ${v('meaning')}`, `${CMP_LINE}${v('expect') ? ' (처음 예상: ' + v('expect') + ')' : ''}: `, `${MORE_LINE}: `].filter(Boolean).join('\n') }
   };
 }
 function renderPrevRef(){
