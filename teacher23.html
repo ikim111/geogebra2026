@@ -172,6 +172,10 @@
   .fb-sec.st-ok{border-left:5px solid #2e7d32;background:#f3faf3;}
   .fb-sec.st-mid{border-left:5px solid #f0a500;background:#fffaf0;}
   .fb-sec.st-bad{border-left:5px solid #c62828;background:#fff6f6;}
+  .ai-agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#f7f4fd;border:1px solid #d1c4e9;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#311b92;}
+  .ai-agg button.ai-toggle{background:#5e35b1;color:#fff;font-weight:bold;}
+  .ai-agg button.ai-toggle.off{background:#9e9e9e;}
+  .ai-agg .st{font-size:12.5px;}
 </style>
 </head>
 <body>
@@ -270,6 +274,11 @@
         <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명 · AI 피드백 보냄 <b id="aggAi">0</b>명</span>
         <button class="ai" id="aiBulkBtn" disabled>🤖 제출한 학생 모두에게 AI 피드백 보내기 (0명)</button>
         <span id="aiBulkStatus" style="font-size:12.5px;color:#5e35b1;"></span>
+      </div>
+      <div class="ai-agg" id="ai22Panel" style="display:none;">
+        <span>🤖 <b>1부 탐구 준비(22번) 학생 AI</b> <span style="font-size:12px;color:#777;">— AI 피드백·AI 도우미 (2부 보고서 화면에는 AI가 없어요)</span></span>
+        <button class="ai-toggle" id="ai22ToggleBtn">🤖 1부 학생 AI 끄기</button>
+        <span class="st" id="ai22State"></span>
       </div>
       <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
         <span>📊 <b>채점</b> — AI 채점 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
@@ -713,6 +722,18 @@ function refreshOpenModal(){
 function onStudentsUpdated(){ refreshOpenModal(); }
 
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
+/* 🤖 1부(22번) 학생 AI 켜기/끄기 — teacher22와 같은 값(rooms/{반}__prob32/control/aiOff)을 쓴다.
+   mgmt에서 23번을 열면 자동으로 꺼지고, 여기서 다시 켤 수 있다. */
+const AI22_SUFFIX = '__prob32';
+let ai22Ref = null, ai22Off = false;
+function renderAi22(){
+  const box = document.getElementById('ai22Panel'); if(!box) return;
+  box.style.display = ai22Ref ? 'flex' : 'none';
+  const btn = document.getElementById('ai22ToggleBtn');
+  btn.textContent = ai22Off ? '🤖 1부 학생 AI 켜기' : '🤖 1부 학생 AI 끄기';
+  btn.classList.toggle('off', ai22Off);
+  document.getElementById('ai22State').textContent = ai22Off ? '🔒 꺼져 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)' : '🟢 켜져 있어요 — 학생이 1부 화면에서 AI를 쓸 수 있어요.';
+}
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
 let paceStart=null, paceEnd=null;
@@ -806,6 +827,9 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       const roomRef = db.ref('rooms/'+roomKey);
       studentsRef = roomRef.child('students');
       controlRef = roomRef.child('control');
+      if(ai22Ref) ai22Ref.off();
+      ai22Ref = db.ref('rooms/'+sanitize(room)+AI22_SUFFIX+'/control/aiOff');
+      ai22Ref.on('value', sn=>{ ai22Off = !!sn.val(); renderAi22(); });
       selectedKey = null; checkedKeys = new Set();
       setPaceRange(null, null, /*fromRemote*/true);
       // 1초에 한 번만 다시 그리되, 그 사이 들어온 마지막 변경은 버리지 않고 1초 뒤에 반영한다.
@@ -971,9 +995,16 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   checkedKeys = new Set();
 });
 
+document.getElementById('ai22ToggleBtn').addEventListener('click', ()=>{
+  if(!ai22Ref){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!ai22Off && !confirm('이 반 학생들의 1부(22번) AI 피드백·AI 도우미를 끌까요?')) return;
+  if(ai22Off && !confirm('1부(22번) 학생 AI를 다시 켤까요?\n※ 2부 보고서를 쓰는 중이면 학생이 다른 탭에서 1부 AI를 쓸 수 있어요.')) return;
+  ai22Ref.set(!ai22Off);
+});
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
   if(studentsRef) studentsRef.off();
   if(controlRef) controlRef.off();
+  if(ai22Ref){ ai22Ref.off(); ai22Ref = null; } renderAi22();
   allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate(); renderGradePanel();
   document.getElementById('teacherAppScreen').style.display='none';
   document.getElementById('teacherGateScreen').style.display='block';
