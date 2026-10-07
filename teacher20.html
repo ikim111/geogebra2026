@@ -97,6 +97,18 @@
   .notice{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;font-size:13.5px;color:#7a5c00;margin:8px 0;}
   .ok-msg{background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20;border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0;}
   @media print{ header,.tabs,.no-print{display:none !important;} body{background:#fff;} .panel{box-shadow:none;} }
+  /* 자리표 인쇄(교사용·학생용): 엑셀 표처럼 검은 선·이름만·멘토 노랑 */
+  #printSheet{display:none;}
+  @media print{ body.ps > *:not(#printSheet){display:none !important;} body.ps #printSheet{display:block;} @page{size:A4 portrait;margin:12mm;} }
+  .ps-t{width:100%;border-collapse:collapse;table-layout:fixed;font-family:inherit;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .ps-t td{border:1px solid #000;height:19mm;text-align:center;vertical-align:middle;font-size:17pt;}
+  .ps-t td.m{background:#fff2cc;}
+  .ps-t td.h{height:9mm;font-weight:bold;font-size:14pt;border-top:2.5px solid #000;}
+  .ps-t td.gl{border-left:2.5px solid #000;} .ps-t td.gr{border-right:2.5px solid #000;} .ps-t tr.gb td{border-bottom:2.5px solid #000;}
+  .ps-t td.title{height:10mm;font-weight:bold;font-size:15pt;border:2.5px solid #000;}
+  .ps-t td.sp{border:0;height:8mm;}
+  .ps-t td.desk{border:2.5px solid #000;font-weight:bold;font-size:14pt;height:12mm;}
+  .ps-t td.who{border:0;height:7mm;font-size:10pt;color:#555;text-align:right;}
 th.sth{cursor:pointer;user-select:none;white-space:nowrap;}
 th.sth:hover{background:#e3e8f0;}
 th.sth .arr{margin-left:4px;font-size:11px;color:#aab;}
@@ -104,6 +116,7 @@ th.sth.on .arr{color:#1a237e;}
 </style>
 </head>
 <body>
+<div id="printSheet"></div>
 <header>
   <a class="home" id="homeLink" href="mgmt-9x3k7f2p.html">🏠 목차</a>
   <h1>🪑 자리배치 (멘토·멘티)</h1>
@@ -598,7 +611,7 @@ function renderSeat(){
       <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 멘티 자리 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요.<br>
-    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있고, 누르면 자리판에 미리 보여 줘요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
+    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있어요. 누르면 바로 앉고, 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기]로 바꿔요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
   else if(S.teams.length) top += `<div class="ok-msg">🎉 모든 팀의 자리가 정해졌어요. ④ 자리표에서 크게 볼 수 있어요.</div>`;
   top += `<div class="row no-print" style="margin:8px 0;"><button class="btn" id="undoBtn2" ${undoStack.length?'':'disabled'}>↶ 되돌리기</button><button class="btn danger" id="resetSeats">자리 모두 지우기</button></div>`;
   $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 3명 팀은 모둠 제목줄의 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
@@ -632,7 +645,8 @@ document.addEventListener('click', e=>{
     }
     if(!cur) return;
     if(!canSit(cur,g,side)){ const w = whyNot(cur,g,side); if(w && w!=='이미 찬 자리') alert(w); return; }
-    if(side==='L' && cur.e.length>=2){ pendingL = pendingL ? Object.assign({}, pendingL, {g}) : {g, top:cur.e[0], bot:cur.e[1]}; renderSeat(); return; }
+    // 3명 팀도 누르면 바로 앉는다(위 자리 = 첫 멘티). 위·아래는 모둠 제목줄 [↕ 멘티 자리 바꾸기]로 바꾼다
+    if(side==='L' && cur.e.length>=2){ commit(()=>{ S.seats[cur.m] = {g, s:'L', top:cur.e[0], bot:cur.e[1]}; }); seatPick = null; return; }
     commit(()=>{ S.seats[cur.m] = side==='L' ? {g, s:'L', top:null, bot:cur.e[0]} : {g, s:'R', bot:cur.e[0]}; }); seatPick = null; return;
   }
   if(!b0) return;
@@ -650,9 +664,42 @@ function renderView(){
     return;
   }
   const seated = Object.keys(S.seats).length;
-  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="window.print()">🖨 인쇄</button></div></div>
+  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="printSheet(false)" title="교탁이 아래 — 교사가 보는 방향">🖨 교사용 인쇄</button><button class="btn" onclick="printSheet(true)" title="교탁이 위 — 학생이 교탁을 보는 방향(위아래 뒤집기)">🖨 학생용 인쇄</button></div></div>
     <h2 style="display:none;" class="print-only">2학년 ${esc(room)}반 자리표</h2>${boardHTML({big:true})}</div>`;
 }
+
+/* 자리표 인쇄: 교사용(교탁 아래) / 학생용(180° 돌림, 교탁 위) */
+function sheetHTML(student){
+  const nmOnly = n => n!=null && byNo(n) ? esc(byNo(n).name) : '';
+  const grp = g => { // 모둠 하나 → 3줄 [{n, m(멘토), span}]
+    const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
+    const top = [{n:L?Ls.top:null, span:2}], mid = [{n:L?L.m:null, m:1}, {n:R?Rs.bot:null}], bot = [{n:L?Ls.bot:null}, {n:R?R.m:null, m:1}];
+    return student ? [bot.slice().reverse(), mid.slice().reverse(), top] : [top, mid, bot];
+  };
+  const band = gs => {
+    let h = '<tr>' + gs.map(g=>`<td class="h gl gr" colspan="2">${g}모둠</td>`).join('') + '</tr>';
+    const rows = gs.map(grp);
+    for(let r=0;r<3;r++){
+      h += `<tr class="${r===2?'gb':''}">` + rows.map(rs => rs[r].map((c,k,arr)=>`<td class="${c.m?'m':''} ${k===0?'gl':''} ${k===arr.length-1?'gr':''}" ${c.span?'colspan="2"':''}>${nmOnly(c.n)}</td>`).join('')).join('') + '</tr>';
+    }
+    return h;
+  };
+  const desk = '<tr><td class="sp" colspan="2"></td><td class="desk" colspan="2">교탁</td><td class="sp" colspan="2"></td></tr>';
+  const title = `<tr><td class="title" colspan="6">2학년 ${esc(room)}반</td></tr>`;
+  const sp = '<tr><td class="sp" colspan="6"></td></tr>';
+  const body = student
+    ? title + sp + desk + sp + band([1,2,3]) + band([4,5,6])
+    : title + band([6,5,4]) + band([3,2,1]) + sp + desk;
+  return `<table class="ps-t">${body}<tr><td class="who" colspan="6">${student?'학생용 (교탁이 앞)':'교사용 (교탁에서 본 방향)'}</td></tr></table>`;
+}
+function printSheet(student){
+  $('printSheet').innerHTML = sheetHTML(student);
+  document.body.classList.add('ps');
+  const done = () => { document.body.classList.remove('ps'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+window.printSheet = printSheet;
 
 /* ---------- 시작 ---------- */
 (function init(){
