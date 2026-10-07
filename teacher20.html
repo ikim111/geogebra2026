@@ -82,6 +82,7 @@
   .seat small{display:block;font-size:11px;font-weight:normal;color:#888;}
   .seat.filled{box-shadow:inset 0 0 0 3px var(--c,transparent);}
   .ggrid{display:grid;grid-template-columns:1fr 1fr;}
+  .ggrid .seat.top{grid-column:1 / span 2;} /* 위 자리는 두 칸을 합친 한 칸(왼쪽 묶음 멘티 자리) */
   .seat.blank{border-color:transparent;background:repeating-linear-gradient(45deg,#fafafa,#fafafa 6px,#f2f2f2 6px,#f2f2f2 12px);}
   .board.live .seat[data-g]{cursor:pointer;}
   .board.live .seat.no{cursor:not-allowed;} .board.live .seat.no:not(.filled){opacity:.45;}
@@ -574,7 +575,7 @@ function groupHTML(g, opts){
   const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
   const pv = opts && opts.interactive && pendingL && pendingL.g===g && opts.cur ? pendingL : null;
   return `<div class="group"><div class="gt">${g}모둠</div><div class="ggrid">`
-    + (pv ? pvCell(pv.top,'top',opts.cur,g,true) : cell(L?Ls.top:null,'top',L,g,'L',opts)) + `<div class="seat blank"></div>`
+    + (pv ? pvCell(pv.top,'top',opts.cur,g,true) : cell(L?Ls.top:null,'top',L,g,'L',opts))
     + (pv ? pvCell(opts.cur.m,'mseat',opts.cur,g,false) : cell(L?L.m:null,'mseat',L,g,'L',opts)) + cell(R?Rs.bot:null,'',R,g,'R',opts)
     + (pv ? pvCell(pv.bot,'',opts.cur,g,true) : cell(L?Ls.bot:null,'',L,g,'L',opts)) + cell(R?R.m:null,'mseat',R,g,'R',opts)
     + `</div></div>`;
