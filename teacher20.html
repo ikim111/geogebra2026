@@ -86,6 +86,9 @@
   .board.live .seat[data-g]{cursor:pointer;}
   .board.live .seat.no{cursor:not-allowed;} .board.live .seat.no:not(.filled){opacity:.45;}
   .board.live .seat.hov.ok{outline:3px solid var(--blue);outline-offset:-3px;}
+  .seat.preview{color:#555;border:2px dashed var(--blue);box-shadow:none;animation:pv 1.2s ease-in-out infinite alternate;}
+  .seat.preview.swap{cursor:pointer;} .seat.preview.swap::after{content:'↕';margin-left:4px;color:var(--blue);font-size:13px;}
+  @keyframes pv{from{opacity:.7;}to{opacity:1;}}
   .teacher-desk{grid-column:2;border:2px solid #455a64;border-radius:8px;text-align:center;padding:12px;font-weight:bold;background:#eceff1;}
   .big .seat{min-height:64px;font-size:20px;} .big .seat.top{min-height:54px;}
   .notice{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;font-size:13.5px;color:#7a5c00;margin:8px 0;}
@@ -549,7 +552,7 @@ document.addEventListener('change', e=>{
                          [ 4 ][ 5 ]        노랑(2·5) = 멘토 자리, 흰색(1·3·4) = 멘티 자리
    S.seats[멘토번호] = {g:모둠, s:'L'|'R', top:1번 멘티(L·3명 팀만), bot:4번 또는 3번 멘티} */
 const GROUPS_TOP = [6,5,4], GROUPS_BOTTOM = [3,2,1];
-let pendingL = null; // 3명 팀이 왼쪽 묶음을 골랐을 때 1번 자리에 앉을 멘티를 묻는 중 {g}
+let pendingL = null; // 3명 팀이 왼쪽 묶음을 골랐을 때 자리판에 미리 보여 주는 중 {g, top, bot} — 1·4번을 바꾼 뒤 확정
 function teamOrder(){ const rk = rankMap(); return S.teams.slice().sort((a,b)=> Math.min(rk[a.m], ...a.e.map(n=>rk[n])) - Math.min(rk[b.m], ...b.e.map(n=>rk[n]))); }
 function setAt(g, side){ const k = Object.keys(S.seats).find(m=> S.seats[m].g===g && S.seats[m].s===side); return k!=null ? S.teams.find(t=>t.m===+k) : null; }
 function curSeatTeam(){ if(seatPick!=null){ const t = S.teams.find(x=>x.m===seatPick); if(t && !S.seats[t.m]) return t; seatPick = null; } return teamOrder().find(t=> !S.seats[t.m]) || null; }
@@ -563,12 +566,17 @@ function cell(no, cls, t, g, side, opts){
   const tip = it ? (setAt(g,side) ? '눌러서 바꾸기·비우기' : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
   return `<div class="seat ${cls} ${x?'filled':''} ${st}" style="${t?`--c:${teamColor(t)}`:''}" ${it?`data-g="${g}" data-s="${side}" title="${tip}"`:''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
+function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 1·4번 칸은 누르면 서로 바뀐다
+  const x = byNo(no);
+  return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" ${swap?'data-pvswap="1" title="누르면 1번↔4번 바뀌어요"':''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
+}
 function groupHTML(g, opts){
   const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
+  const pv = opts && opts.interactive && pendingL && pendingL.g===g && opts.cur ? pendingL : null;
   return `<div class="group"><div class="gt">${g}모둠</div><div class="ggrid">`
-    + cell(L?Ls.top:null,'top',L,g,'L',opts) + `<div class="seat blank"></div>`
-    + cell(L?L.m:null,'mseat',L,g,'L',opts) + cell(R?Rs.bot:null,'',R,g,'R',opts)
-    + cell(L?Ls.bot:null,'',L,g,'L',opts) + cell(R?R.m:null,'mseat',R,g,'R',opts)
+    + (pv ? pvCell(pv.top,'top',opts.cur,g,true) : cell(L?Ls.top:null,'top',L,g,'L',opts)) + `<div class="seat blank"></div>`
+    + (pv ? pvCell(opts.cur.m,'mseat',opts.cur,g,false) : cell(L?L.m:null,'mseat',L,g,'L',opts)) + cell(R?Rs.bot:null,'',R,g,'R',opts)
+    + (pv ? pvCell(pv.bot,'',opts.cur,g,true) : cell(L?Ls.bot:null,'',L,g,'L',opts)) + cell(R?R.m:null,'mseat',R,g,'R',opts)
     + `</div></div>`;
 }
 function boardHTML(opts){ return `<div class="board ${opts&&opts.big?'big':''} ${opts&&opts.interactive?'live':''}">${GROUPS_TOP.map(g=>groupHTML(g,opts)).join('')}${GROUPS_BOTTOM.map(g=>groupHTML(g,opts)).join('')}<div class="teacher-desk">교탁</div></div>`; }
@@ -580,9 +588,10 @@ function renderSeat(){
   let top = '';
   if(unteamed) top += `<div class="notice">아직 팀이 없는 학생이 ${unteamed}명 있어요. ② 짝 정하기를 먼저 마치면 좋아요.</div>`;
   if(cur && pendingL){
-    top += `<div class="turn no-print"><div class="who">${pendingL.g}모둠 왼쪽 묶음 — 1번(위쪽) 자리에 누가 앉나요?</div>
-      <div class="what">멘토 ${esc(nm(cur.m))}는 노란 자리(2번)에 앉아요. 1번(위쪽)에 앉을 멘티를 고르면, 다른 멘티는 4번(아래)에 앉아요.</div>
-      <div class="cands">${cur.e.map(n=>`<button class="cand" data-topmentee="${n}">⬆ ${esc(nm(n))} → 1번</button>`).join('')}<button class="btn" id="cancelL">취소</button></div></div>`;
+    top += `<div class="turn no-print"><div class="who">${pendingL.g}모둠 왼쪽 묶음 — 이렇게 앉을까요?</div>
+      <div class="what">자리판에 <b>깜박이는 이름</b>으로 미리 보여 줘요. 멘토 ${esc(nm(cur.m))}는 노란 자리(2번), <b>1번(위)</b> ${esc(nm(pendingL.top))}, <b>4번(아래)</b> ${esc(nm(pendingL.bot))}.<br>
+      멘티 이름을 누르거나 아래 [↕ 바꾸기]를 누르면 1번과 4번이 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
+      <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 1·4번 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요.<br>
     ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음(1·2·4)</b>만 앉을 수 있고, 누르면 1번(위쪽)에 앉을 멘티를 골라요.' : '2명 팀은 왼쪽 묶음(2·4, 1번은 빈자리)이나 오른쪽 묶음(3·5) 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
@@ -600,10 +609,11 @@ document.addEventListener('click', e=>{
   if(tab!=='seat') return;
   const st = e.target.closest && e.target.closest('[data-st]'); if(st){ const m = +st.dataset.st; if(!S.seats[m]){ seatPick = m; pendingL = null; renderSeat(); } return; }
   const b0 = e.target.closest && e.target.closest('button');
-  if(b0 && b0.dataset.topmentee && pendingL){
-    const cur = curSeatTeam(), topNo = +b0.dataset.topmentee, other = cur.e.find(n=>n!==topNo);
-    const g = pendingL.g; pendingL = null;
-    commit(()=>{ S.seats[cur.m] = {g, s:'L', top:topNo, bot:other}; }); seatPick = null; return;
+  if(pendingL && ((b0 && b0.id==='swapL') || (e.target.closest && e.target.closest('[data-pvswap]')))){ pendingL = Object.assign({}, pendingL, {top:pendingL.bot, bot:pendingL.top}); renderSeat(); return; }
+  if(b0 && b0.id==='confirmL' && pendingL){
+    const cur = curSeatTeam(), pv = pendingL; pendingL = null;
+    if(!cur || setAt(pv.g,'L') || !cur.e.includes(pv.top) || !cur.e.includes(pv.bot)){ renderSeat(); return; }
+    commit(()=>{ S.seats[cur.m] = {g:pv.g, s:'L', top:pv.top, bot:pv.bot}; }); seatPick = null; return;
   }
   if(b0 && b0.id==='cancelL'){ pendingL = null; renderSeat(); return; }
   const c = e.target.closest && e.target.closest('.board.live .seat[data-g]');
@@ -617,7 +627,7 @@ document.addEventListener('click', e=>{
     }
     if(!cur) return;
     if(!canSit(cur,g,side)){ const w = whyNot(cur,g,side); if(w && w!=='이미 찬 자리') alert(w); return; }
-    if(side==='L' && cur.e.length>=2){ pendingL = {g}; renderSeat(); return; }
+    if(side==='L' && cur.e.length>=2){ pendingL = pendingL ? Object.assign({}, pendingL, {g}) : {g, top:cur.e[0], bot:cur.e[1]}; renderSeat(); return; }
     commit(()=>{ S.seats[cur.m] = side==='L' ? {g, s:'L', top:null, bot:cur.e[0]} : {g, s:'R', bot:cur.e[0]}; }); seatPick = null; return;
   }
   if(!b0) return;
