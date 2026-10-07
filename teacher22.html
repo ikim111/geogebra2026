@@ -440,7 +440,7 @@ function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+
 
 /* ---------- 학생이 적은 내용 표시 (student22.html의 data 필드) ---------- */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const SELF_CHECKS = ['확률과 연관된 질문인가?','선택한 주제/유형에 적합한 질문인가?','질문이 충분히 구체적인가?','자료 수집(검색)이 가능한가?','단순한 사실 확인을 넘어서는 질문인가?','윤리적으로 올바른가?'];
+const SELF_CHECKS = ['확률을 구하는 질문인가?','예측형 또는 비교·선택형 질문의 형태인가?','대상·기간·조건이 정해져 있는가?','공식 통계·기록으로 답을 구할 수 있는 질문인가?','자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?','윤리적으로 올바른가?'];
 const DATA_CHECKS = ['최신성(작성·조사 시점)','신뢰성(출처·조사 기관)','관련성(탐구 주제와 일치)','필요성(보고서에 꼭 필요)'];
 const str = x => (typeof x==='string' ? x : '').trim();
 function kvRow(k, val){ const t=str(val); return `<div class="row2"><span class="k">${esc(k)}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; }

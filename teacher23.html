@@ -113,6 +113,10 @@
   .rep .tot{font-size:13px;color:#444;margin-bottom:6px;}
   .rep .tot b{color:#1a237e;}
   .text-answer-item .rep .v{max-height:none;}
+  .gr-q{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0 4px;font-size:12px;}
+  .gr-q span{padding:2px 7px;border-radius:10px;background:#f0f2f5;color:#555;} .gr-q span b{margin-left:2px;}
+  .gr-q .o{background:#e8f1fc;color:#1565c0;} .gr-q .t{background:#fff8e1;color:#9a6b00;} .gr-q .x{background:#ffebee;color:#c62828;}
+  .gr-q small{color:#888;margin-left:6px;}
   .gr-item{border-bottom:1px dashed #cfe8e5;padding:4px 0;}
   .gr-fb{margin:2px 0 6px 0;padding:6px 10px;background:#fff;border-radius:6px;font-size:13px;}
   .gr-fb .lbl{font-size:11.5px;color:#888;margin-bottom:2px;}
@@ -475,6 +479,9 @@ function renderAggregate(){
    rooms/{반}__prob33/students/{key}/teacherGrade = {question:2, ...}  ← 선생님이 고친 항목만(AI 점수와 같게 고르면 지움)
    최종 점수 = 선생님 점수가 있으면 그것, 없으면 AI 점수. 학생 화면에는 점수를 보여주지 않는다.
    hash: 채점할 때의 보고서 지문 — 채점 뒤 학생이 글을 고치면 "다시 채점" 안내가 뜨고 일괄 채점 대상이 된다. */
+/* 탐구 질문 5항목(1부 step1 자기평가와 같은 기준) — AI가 ○△✕로 판단, 점수 = ○0.6·△0.3·✕0 합계 반올림 */
+const Q5 = ["확률을 구하는 질문인가?", "예측형 또는 비교·선택형 질문의 형태인가?", "대상·기간·조건이 정해져 있는가?", "공식 통계·기록으로 답을 구할 수 있는 질문인가?", "자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?"];
+const Q5S = ['확률을 구함','예측형·비교선택형','대상·기간·조건','공식 자료로 답','수치로 계산·비교'];
 const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
 const SCORE_MAX = 15;
 const gradePending = new Set();
@@ -513,10 +520,12 @@ function gradeBoxHTML(key, s){
       ? `<span class="ov">선생님 수정 ${it.teacher}점</span>${it.ai!=null?` (AI ${it.ai}점: ${esc(it.reason)})`:''} <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="font-size:11.5px;color:#888;">↺ AI 점수로</a>`
       : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
     const f = g.ai && g.ai.fb && g.ai.fb[it.k];
+    const qc = it.k==='question' && g.ai && typeof g.ai.qchecks==='string' && g.ai.qchecks ? g.ai.qchecks : '';
+    const qch = qc ? `<div class="gr-q">${Q5.map((t,i)=>{ const x=qc[i]; return `<span class="${x==='O'?'o':x==='△'?'t':x==='X'?'x':''}" title="${esc(t)}">${i+1}. ${esc(Q5S[i])} <b>${x==='O'?'○':x==='△'?'△':x==='X'?'✕':'–'}</b></span>`; }).join('')}<small>○0.6 · △0.3 · ✕0 합계 ${[...qc].reduce((a,x)=>a+({O:0.6,'△':0.3,X:0}[x]||0),0).toFixed(1)} → 반올림 ${it.ai}점</small></div>` : '';
     const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
-    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
+    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${qch}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
   });
   if(g.ai && (g.ai.first || g.ai.status)){
     const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
@@ -534,7 +543,7 @@ async function requestGrade(key){
     const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
-    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
+    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
       total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
