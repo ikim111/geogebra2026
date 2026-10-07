@@ -338,6 +338,15 @@ function render(){
 }
 
 /* ① 명단 */
+// 표 정렬은 보기만 바꾼다(S.roster 순서 = 발표 동점일 때의 차례라서 그대로 둔다)
+let rosterSort = 'no';
+function rosterView(){
+  const rk = rankMap(), list = S.roster.map((x,i)=>({x,i}));
+  const byNo = (a,b)=> (a.x.no||999)-(b.x.no||999) || a.i-b.i;
+  if(rosterSort==='score') return list.sort((a,b)=> (a.x.no?rk[a.x.no]:999)-(b.x.no?rk[b.x.no]:999) || a.i-b.i);
+  if(rosterSort==='mentor'){ const g = x => x.mentor ? 0 : (x.tie ? 1 : 2); return list.sort((a,b)=> g(a.x)-g(b.x) || byNo(a,b)); }
+  return list.sort(byNo);
+}
 function renderRoster(){
   const o = order(), rk = rankMap(), mentors = S.roster.filter(x=>x.mentor).length;
   const active = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.ri!=null ? [document.activeElement.dataset.ri, document.activeElement.dataset.f] : null;
@@ -353,9 +362,10 @@ function renderRoster(){
     <p class="hint">발표 점수가 많은 순서대로 짝과 자리를 골라요(같으면 이 표의 순서). <b>멘토</b> 칸을 눌러 멘토(음영)를 정해요. 모둠이 6개라 멘토는 <b>12명</b>이 딱 맞아요.</p>
     ${mentors!==12 && S.roster.length ? `<div class="notice">지금 멘토가 ${mentors}명이에요. 멘토 자리는 12개(모둠 6개 × 2)예요.</div>` : ''}
     ${(S.teams.length || Object.keys(S.seats).length) ? `<div class="notice">이미 짝이나 자리를 정했어요. 명단을 바꾸면 짝·자리와 어긋날 수 있어요.</div>` : ''}
+    <div class="row no-print" style="margin:4px 0 6px;"><span class="hint" style="margin:0;">정렬:</span>${[['no','번호순'],['score','발표순'],['mentor','멘토·멘티']].map(([k,l])=>`<button class="tog ${rosterSort===k?'on':''}" data-rsort="${k}" style="padding:5px 12px;">${l}</button>`).join('')}</div>
     <table class="roster"><tr><th>차례</th><th>번호</th><th>이름</th><th>발표</th><th>멘토</th>${S.roster.some(x=>x.exam!=null)?'<th>시험(참고)</th>':''}<th></th></tr>`;
-  S.roster.forEach((x,i)=>{
-    h += `<tr class="${x.mentor?'mentor':''}"><td>${x.no ? rk[x.no]+1 : ''}</td>
+  rosterView().forEach(({x,i})=>{
+    h += `<tr class="${x.mentor?'mentor':''}" data-row="${i}"><td>${x.no ? rk[x.no]+1 : ''}</td>
       <td><input data-ri="${i}" data-f="no" type="number" value="${x.no||''}"></td>
       <td><input data-ri="${i}" data-f="name" value="${esc(x.name)}"></td>
       <td><input data-ri="${i}" data-f="score" type="number" value="${x.score}"></td>
@@ -381,19 +391,21 @@ function renderRoster(){
   $('t-roster').innerHTML = h;
   if(active){ const el = document.querySelector(`[data-ri="${active[0]}"][data-f="${active[1]}"]`); if(el){ el.focus(); } }
 }
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-rsort]'); if(!b) return; rosterSort = b.dataset.rsort; renderRoster(); });
 document.addEventListener('change', e=>{
   const el = e.target; if(el.dataset.ri==null) return;
   const i = +el.dataset.ri, f = el.dataset.f;
   // 표를 다시 그리지 않고 저장만 한다(Tab으로 다음 칸에 계속 입력할 수 있게). 차례 칸만 고친다.
   commit(()=>{ const x = S.roster[i]; if(!x) return; x[f] = f==='name' ? el.value.trim() : (+el.value||0); }, true);
   const rk = rankMap();
-  document.querySelectorAll('table.roster tr').forEach((tr,k)=>{ if(!k) return; const x = S.roster[k-1]; if(x && tr.cells[0]) tr.cells[0].textContent = x.no ? rk[x.no]+1 : ''; });
+  document.querySelectorAll('table.roster tr[data-row]').forEach(tr=>{ const x = S.roster[+tr.dataset.row]; if(x && tr.cells[0]) tr.cells[0].textContent = x.no ? rk[x.no]+1 : ''; });
 });
 /* 발표 칸에서 Enter·Tab → 다음 학생의 발표 칸으로(점수를 빠르게 입력) */
 document.addEventListener('keydown', e=>{
   const el = e.target; if(!el.dataset || el.dataset.f!=='score' || (e.key!=='Enter' && e.key!=='Tab')) return;
   e.preventDefault();
-  const next = document.querySelector(`[data-ri="${+el.dataset.ri + (e.shiftKey?-1:1)}"][data-f="score"]`);
+  // 화면에 보이는 순서(정렬 상태)대로 다음·이전 학생 칸으로
+  const all = [...document.querySelectorAll('table.roster [data-f="score"]')], next = all[all.indexOf(el) + (e.shiftKey?-1:1)];
   el.dispatchEvent(new Event('change', {bubbles:true}));
   if(next){ next.focus(); next.select(); }
 });
