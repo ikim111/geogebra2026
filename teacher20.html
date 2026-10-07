@@ -128,7 +128,7 @@ th.sth.on .arr{color:#1a237e;}
    2) 멘토(음영)는 멘티 1~2명을 고른다. 멘티는 멘토 1명 + (원하면) 멘티 1명을 고른다. 한 팀 = 멘토 1명 + 멘티 1~2명.
    3) 자리도 팀 단위로, 팀에서 가장 순서가 빠른 학생 기준으로 차례대로 고른다.
    자리 모양: 모둠 6개(위 6·5·4, 아래 3·2·1, 교탁은 아래). 모둠 = 세로 묶음 2개(왼쪽 1·2·4, 오른쪽 3·5), 노랑(2·5) = 멘토 자리.
-     3명 팀은 왼쪽 묶음만(1번에 앉을 멘티를 고름), 2명 팀은 왼쪽(2·4) 또는 오른쪽(3·5). 그래서 3명 팀은 최대 6팀.
+     3명 팀은 왼쪽 묶음만(멘티 위·아래 자리를 미리보기에서 정함), 2명 팀은 왼쪽(2·4) 또는 오른쪽(3·5). 그래서 3명 팀은 최대 6팀.
    저장: Firebase rooms/{반}__seat20 = {roster:[{no,name,score,mentor}], teams:[{m, e:[번호…]}], seats:{멘토번호:{g,r}}, ts}
    ============================================================ */
 const FIREBASE_CONFIG = {
@@ -552,23 +552,23 @@ document.addEventListener('change', e=>{
                          [ 4 ][ 5 ]        노랑(2·5) = 멘토 자리, 흰색(1·3·4) = 멘티 자리
    S.seats[멘토번호] = {g:모둠, s:'L'|'R', top:1번 멘티(L·3명 팀만), bot:4번 또는 3번 멘티} */
 const GROUPS_TOP = [6,5,4], GROUPS_BOTTOM = [3,2,1];
-let pendingL = null; // 3명 팀이 왼쪽 묶음을 골랐을 때 자리판에 미리 보여 주는 중 {g, top, bot} — 1·4번을 바꾼 뒤 확정
+let pendingL = null; // 3명 팀이 왼쪽 묶음을 골랐을 때 자리판에 미리 보여 주는 중 {g, top, bot} — 멘티 위·아래를 바꾼 뒤 확정
 function teamOrder(){ const rk = rankMap(); return S.teams.slice().sort((a,b)=> Math.min(rk[a.m], ...a.e.map(n=>rk[n])) - Math.min(rk[b.m], ...b.e.map(n=>rk[n]))); }
 function setAt(g, side){ const k = Object.keys(S.seats).find(m=> S.seats[m].g===g && S.seats[m].s===side); return k!=null ? S.teams.find(t=>t.m===+k) : null; }
 function curSeatTeam(){ if(seatPick!=null){ const t = S.teams.find(x=>x.m===seatPick); if(t && !S.seats[t.m]) return t; seatPick = null; } return teamOrder().find(t=> !S.seats[t.m]) || null; }
 /* 2명 팀이 왼쪽 묶음을 너무 많이 차지하면 뒤 차례 3명 팀이 앉을 곳이 없어지므로 막는다 */
 function leftReserved(t){ const freeL = [1,2,3,4,5,6].filter(g=>!setAt(g,'L')).length; const need3 = S.teams.filter(x=> x!==t && x.e.length>=2 && !S.seats[x.m]).length; return freeL <= need3; }
 function canSit(t, g, side){ if(!t || setAt(g,side)) return false; if(side==='R' && t.e.length>=2) return false; if(side==='L' && t.e.length<2 && leftReserved(t)) return false; return true; }
-function whyNot(t, g, side){ if(setAt(g,side)) return '이미 찬 자리'; if(side==='R' && t && t.e.length>=2) return '3명 팀은 왼쪽 묶음(1·2·4)만 앉을 수 있어요'; if(side==='L' && t && t.e.length<2 && leftReserved(t)) return '남은 왼쪽 묶음은 아직 자리를 고르지 않은 3명 팀 몫이에요. 오른쪽 묶음(3·5)을 골라요.'; return ''; }
+function whyNot(t, g, side){ if(setAt(g,side)) return '이미 찬 자리'; if(side==='R' && t && t.e.length>=2) return '3명 팀은 왼쪽 묶음(멘티 위·아래 자리)만 앉을 수 있어요'; if(side==='L' && t && t.e.length<2 && leftReserved(t)) return '남은 왼쪽 묶음은 아직 자리를 고르지 않은 3명 팀 몫이에요. 오른쪽 묶음을 골라요.'; return ''; }
 function cell(no, cls, t, g, side, opts){
   const x = no!=null ? byNo(no) : null, it = opts && opts.interactive;
   const st = it ? (setAt(g,side) ? 'ok' : (canSit(opts.cur,g,side) ? 'ok' : 'no')) : '';
-  const tip = it ? (setAt(g,side) ? '눌러서 바꾸기·비우기' : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
+  const tip = it ? (setAt(g,side) ? (side==='L' && S.seats[setAt(g,side).m].top!=null && cls!=='mseat' ? '누르면 멘티 위·아래 자리가 바뀌어요' : '누르면 이 묶음을 비울 수 있어요') : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
   return `<div class="seat ${cls} ${x?'filled':''} ${st}" style="${t?`--c:${teamColor(t)}`:''}" ${it?`data-g="${g}" data-s="${side}" title="${tip}"`:''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
-function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 1·4번 칸은 누르면 서로 바뀐다
+function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 멘티 칸은 누르면 위·아래가 서로 바뀐다
   const x = byNo(no);
-  return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" ${swap?'data-pvswap="1" title="누르면 1번↔4번 바뀌어요"':''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
+  return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" ${swap?'data-pvswap="1" title="누를 때마다 멘티 위·아래 자리가 바뀌어요"':''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
 function groupHTML(g, opts){
   const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
@@ -589,15 +589,15 @@ function renderSeat(){
   if(unteamed) top += `<div class="notice">아직 팀이 없는 학생이 ${unteamed}명 있어요. ② 짝 정하기를 먼저 마치면 좋아요.</div>`;
   if(cur && pendingL){
     top += `<div class="turn no-print"><div class="who">${pendingL.g}모둠 왼쪽 묶음 — 이렇게 앉을까요?</div>
-      <div class="what">자리판에 <b>깜박이는 이름</b>으로 미리 보여 줘요. 멘토 ${esc(nm(cur.m))}는 노란 자리(2번), <b>1번(위)</b> ${esc(nm(pendingL.top))}, <b>4번(아래)</b> ${esc(nm(pendingL.bot))}.<br>
-      멘티 이름을 누르거나 아래 [↕ 바꾸기]를 누르면 1번과 4번이 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
-      <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 1·4번 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
+      <div class="what">자리판에 <b>깜박이는 이름</b>으로 미리 보여 줘요. 멘토 ${esc(nm(cur.m))}는 노란 자리, <b>위 자리</b> ${esc(nm(pendingL.top))}, <b>아래 자리</b> ${esc(nm(pendingL.bot))}.<br>
+      멘티 이름이나 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
+      <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 멘티 자리 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요.<br>
-    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음(1·2·4)</b>만 앉을 수 있고, 누르면 1번(위쪽)에 앉을 멘티를 골라요.' : '2명 팀은 왼쪽 묶음(2·4, 1번은 빈자리)이나 오른쪽 묶음(3·5) 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
+    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있고, 누르면 자리판에 미리 보여 줘요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
   else if(S.teams.length) top += `<div class="ok-msg">🎉 모든 팀의 자리가 정해졌어요. ④ 자리표에서 크게 볼 수 있어요.</div>`;
   top += `<div class="row no-print" style="margin:8px 0;"><button class="btn" id="undoBtn2" ${undoStack.length?'':'disabled'}>↶ 되돌리기</button><button class="btn danger" id="resetSeats">자리 모두 지우기</button></div>`;
-  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 1(위)·2(노랑, 멘토)·4, 오른쪽 묶음 = 3·5(노랑, 멘토). 앉은 묶음을 누르면 1·4번 바꾸기나 비우기를 할 수 있어요.</p></div></div></div>`;
+  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 앉은 3명 팀은 멘티 이름을 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
 }
 /* 같은 묶음 자리를 함께 강조 */
 document.addEventListener('mouseover', e=>{
@@ -621,7 +621,8 @@ document.addEventListener('click', e=>{
     const g = +c.dataset.g, side = c.dataset.s, t = setAt(g,side), cur = curSeatTeam();
     if(t){
       const stt = S.seats[t.m];
-      if(side==='L' && stt.top!=null && confirm(`${g}모둠 왼쪽: 1번(${nm(stt.top)})과 4번(${nm(stt.bot)}) 자리를 바꿀까요?\n(취소를 누르면 비우기를 물어봐요)`)){ commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
+      // 3명 팀의 멘티(위·아래 자리)를 누르면 바로 서로 바뀐다 — 여러 번 눌러도 계속 바뀜
+      if(side==='L' && stt.top!=null && !c.classList.contains('mseat')){ commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
       if(confirm(`${g}모둠 ${side==='L'?'왼쪽':'오른쪽'} 묶음(${[t.m,...t.e].map(n=>byNo(n)?byNo(n).name:n).join(', ')})을 비울까요?`)) commit(()=>{ delete S.seats[t.m]; });
       return;
     }
