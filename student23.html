@@ -278,7 +278,7 @@
    [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~22번 단원과 같은 틀(게이트·단원 잠금·
    실시간 저장·일시정지·공지·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 글상자는 내용에 맞춰 저절로 늘어난다(안쪽 스크롤 없음).
-   - 글자 수: 띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(api/report-feedback.js의 countChars와 같은 방식).
+   - 글자 수: 띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(api/_report-common.js의 countChars와 같은 방식).
    - 22번(ACTIVITY_SUFFIX '__prob32')의 data를 읽어 개요·자료를 참고용으로 보여준다(읽기만 함).
    - 23번에서는 학생이 AI 도움을 받지 않는다. teacher23.html의 AI 피드백·채점(aiFeedback·aiGrade)은 선생님만 본다(학생 화면에 표시 안 함).
    ACTIVITY_SUFFIX는 teacher23.html과 반드시 동일해야 한다.
@@ -309,7 +309,7 @@ const isUrl = s => /^https?:\/\/\S+\.\S+/i.test(String(s||'').trim());
 const goodSources = () => state.sources.filter(x=> x.name.trim() && isUrl(x.link) && !bannedSourceKind(x.link, x.name));
 const $ = id => document.getElementById(id);
 // 글자 수: 띄어쓰기 포함. 단, 연달아 친 띄어쓰기는 1자로 세고, 줄 앞뒤 공백과 줄바꿈은 세지 않는다.
-// (api/report-feedback.js, teacher23.html의 countChars와 반드시 같아야 한다)
+// (api/_report-common.js, teacher23.html의 countChars와 반드시 같아야 한다)
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length;
 const cnt = k => countChars(state.f[k]);
 const totalCount = () => cnt('intro') + cnt('body') + cnt('concl');

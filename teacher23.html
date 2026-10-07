@@ -113,6 +113,12 @@
   .rep .tot{font-size:13px;color:#444;margin-bottom:6px;}
   .rep .tot b{color:#1a237e;}
   .text-answer-item .rep .v{max-height:none;}
+  .gr-item{border-bottom:1px dashed #cfe8e5;padding:4px 0;}
+  .gr-fb{margin:2px 0 6px 0;padding:6px 10px;background:#fff;border-radius:6px;font-size:13px;}
+  .gr-fb .lbl{font-size:11.5px;color:#888;margin-bottom:2px;}
+  .gr-fb .fb-row{margin:3px 0;}
+  .gr-sum{margin-top:8px;}
+  .gr-sum .fb-sec p{margin:4px 0 0;font-size:13.5px;}
   .ai-box{margin-top:12px;border:1px solid #d1c4e9;background:#f7f4fd;border-radius:8px;padding:10px 12px;}
   .ai-box .ai-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#4527a0;font-size:13.5px;}
   .ai-box .ai-txt{word-break:break-word;margin-top:8px;}
@@ -208,7 +214,7 @@
 })();
 </script>
 
-<!-- 요약뷰에서 학생의 칸(또는 상세 패널의 행)을 클릭하면, 그 학생의 보고서 전체와 AI 피드백(보내기 버튼)을 보여주는 모달. -->
+<!-- 요약뷰에서 학생의 칸(또는 상세 패널의 행)을 클릭하면, 그 학생의 보고서 전체와 AI 채점·피드백을 보여주는 모달. -->
 <div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:14px;padding:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
     <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
@@ -221,7 +227,7 @@
 
 <header>
   <h1>📊 교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
-  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, 제출한 학생에게 AI 피드백을 보내요</p>
+  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, AI 채점·피드백을 받아 선생님이 점수를 확정해요</p>
 </header>
 
 <div class="wrap">
@@ -271,9 +277,7 @@
         <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명 · AI 피드백 보냄 <b id="aggAi">0</b>명</span>
-        <button class="ai" id="aiBulkBtn" disabled>🤖 제출한 학생 모두에게 AI 피드백 보내기 (0명)</button>
-        <span id="aiBulkStatus" style="font-size:12.5px;color:#5e35b1;"></span>
+        <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명</span>
       </div>
       <div class="ai-agg" id="ai22Panel" style="display:none;">
         <span>🤖 <b>1부 탐구 준비(22번) 학생 AI</b> <span style="font-size:12px;color:#777;">— AI 피드백·AI 도우미 (2부 보고서 화면에는 AI가 없어요)</span></span>
@@ -281,8 +285,8 @@
         <span class="st" id="ai22State"></span>
       </div>
       <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
-        <span>📊 <b>채점</b> — AI 채점 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
-        <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점 일괄 (0명)</button>
+        <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
+        <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
         <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
         <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
       </div>
@@ -311,7 +315,7 @@
         </div>
         <div class="detail" id="detail">
           <h3>학생 선택</h3>
-          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체를 보고 AI 피드백을 보낼 수 있어요.</div>
+          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체와 AI 채점·피드백을 볼 수 있어요.</div>
         </div>
       </div>
     </div>
@@ -322,7 +326,7 @@
         <div id="teacherTaskLabel" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
       </div>
       <div class="teacher-col">
-        <div class="teacher-col-title">✏️ 학생 보고서 전체 (제출한 학생에게 🤖 AI 피드백을 보낼 수 있어요 · ● 지금 보는 중)</div>
+        <div class="teacher-col-title">✏️ 학생 보고서 전체 (🤖 AI 채점·피드백을 받고 점수를 고칠 수 있어요 · ● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
       </div>
     </div>
@@ -351,12 +355,11 @@
    student23.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
    teacher22.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
    - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈 제외)를 보여준다.
-   - 📊 채점: AI가 4개 항목(질문3·자료3·분석4·논리5)을 1차 채점(/api/report-grade)하고, 선생님이 숫자를 눌러
-     항목별로 고친다(aiGrade / teacherGrade). 표의 "점수" 칸과 엑셀 내려받기에 최종 점수가 나온다. 학생에게는 안 보인다.
-   - 🤖 AI 피드백: 제출한 학생에게 보낸다(횟수 제한 없음). /api/report-feedback(Vercel 서버 함수, OpenAI)을
-     호출하고 결과를 rooms/{반}__prob33/students/{key}/aiFeedback = {text, ts, total, n, hash}에 저장하면
-     student23.html에 바로 나타난다(가장 최근 피드백만 보관, n = 몇 번째 피드백인지).
-     hash는 피드백을 받을 때의 보고서 내용 지문 — 일괄 보내기는 "아직 못 받은 학생 + 받은 뒤 글을 고친 학생"만 보낸다.
+   - 📊 AI 채점·피드백(2026-10-07 합침): /api/report-grade를 한 번 불러 4개 항목(질문3·자료3·분석4·논리5)마다
+     1차 점수·채점 이유(선생님용)와 학생용 피드백(잘된 점·보완할 점·생각해 볼 질문), 가장 먼저 고칠 점, 제출 상태를 받는다.
+     rooms/{반}__prob33/students/{key}/aiGrade = {scores, reasons, fb:{항목:{good,fix,ask}}, first, status, statusReason, total, hash, ts, model}
+     선생님은 숫자를 눌러 항목별로 고친다(teacherGrade). 표의 "점수" 칸과 엑셀에 최종 점수가 나온다.
+     학생에게는 이 화면에서 보이지 않는다(나중에 별도 결과 확인 탭에서 보여 줄 예정).
    반드시 아래 두 가지를 student23.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -439,72 +442,11 @@ const srcOf = s => { const d=(s&&s.data)||{}; return Array.isArray(d.sources) ? 
 const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl), sources: srcOf(s) }; };
 const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r.body)+countChars(r.concl); };
 const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
-const aiPending = new Set(); // 지금 AI 피드백을 받아오는 중인 학생 key
 
 /* 보고서 내용 지문(글이 바뀌었는지 비교용) */
 function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
-const fbOf = s => (s && s.aiFeedback && s.aiFeedback.text) ? s.aiFeedback : null;
-const changedSinceFb = s => { const fb=fbOf(s); return !!fb && fb.hash!==undefined && fb.hash!==repHash(s); };
-/* ---------- AI 피드백 글을 읽기 좋게 그리기 (student23·teacher23 공통 — 두 파일을 똑같이 유지) ----------
-   [제목] ○/3점 → 항목 카드, 👍/🔧/❓ 줄 → "잘된 점/보완할 점/생각해 볼 질문" 표시, ※ 안내문 → 회색 상자.
-   예상하지 못한 형식이어도 줄글로 그대로 보여 준다(내용이 사라지지 않음). */
-function renderFeedbackHTML(text){
-  const e = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const KIND = [['👍','good','잘된 점'],['🔧','fix','보완할 점'],['❓','ask','생각해 볼 질문']];
-  const SCORE = /^(\d+|○)\s*\/\s*(\d+)\s*점?/;
-  const lines = String(text||'').replace(/\*\*/g,'').split(/\r?\n/).map(l=>l.replace(/^#+\s*/,'').trim());
-  let html = '', notice = [], sec = null;
-  const close = ()=>{
-    if(!sec) return;
-    let cls = '';
-    if(/예상 점수/.test(sec.title)) cls = ' total';
-    else if(/가장 먼저/.test(sec.title)) cls = ' first';
-    else if(/제출 상태/.test(sec.title)) cls = /중요한 보완/.test(sec.plain) ? ' st-bad' : (/일부/.test(sec.plain) ? ' st-mid' : ' st-ok');
-    html += `<div class="fb-sec${cls}"><div class="fb-hd"><span>${e(sec.title)}</span>${sec.score?`<b class="fb-score">${e(sec.score)}</b>`:''}</div>${sec.body}</div>`;
-    sec = null;
-  };
-  const addText = (t)=>{
-    if(!sec) return;
-    const sm = (!sec.score) && t.match(/^(?:예상 점수\s*[:：]\s*)?((?:\d+|○)\s*\/\s*\d+\s*점?)\s*(.*)$/);
-    if(sm && (/예상 점수/.test(t) || /예상 점수/.test(sec.title))){ sec.score = sm[1].replace(/\s+/g,''); if(sm[2]) addText(sm[2]); return; }
-    sec.plain += ' ' + t;
-    const k = KIND.find(x=> t.startsWith(x[0]));
-    if(k){ const rest = t.slice(k[0].length).replace(/^[\s:：]+/,''); if(!rest || /^없음\.?$/.test(rest)) return;
-      sec.body += `<div class="fb-row ${k[1]}"><span class="fb-tag">${k[2]}</span><span>${e(rest)}</span></div>`; return; }
-    if(/^[-•·]\s+/.test(t)){ sec.body += `<div class="fb-li">• ${e(t.replace(/^[-•·]\s+/,''))}</div>`; return; }
-    sec.body += `<p>${e(t)}</p>`;
-  };
-  for(const l of lines){
-    if(!l || /^[─━—=\-]{3,}$/.test(l)) continue;
-    const h = l.match(/^\[([^\]]+)\]\s*(.*)$/);
-    if(h){ close(); sec = {title:h[1].trim(), score:'', body:'', plain:''};
-      const rest = h[2].trim(); if(rest){ const sm = rest.match(SCORE); if(sm){ sec.score = sm[0].replace(/\s+/g,''); const after = rest.slice(sm[0].length).trim(); if(after) addText(after); } else addText(rest); }
-      continue; }
-    if(!sec){ notice.push(l); continue; }
-    addText(l);
-  }
-  close();
-  return `<div class="fb">${notice.length?`<div class="fb-note">${notice.map(e).join('<br>')}</div>`:''}${html}</div>`;
-}
-
-/* AI 피드백 상자(보내기 버튼 포함). key가 있어야 버튼을 만든다. */
-function aiBoxHTML(key, s){
-  const fb = fbOf(s);
-  const can = !!(s && s.submitted && hasReport(s)) && !aiPending.has(key);
-  if(aiPending.has(key)) return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI가 피드백을 쓰는 중이에요… (보통 10~40초)</span></div>${fb?`<div class="ai-txt" style="opacity:.5;">${renderFeedbackHTML(fb.text)}</div>`:''}</div>`;
-  if(fb){
-    const when = fb.ts ? new Date(fb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    const tag = changedSinceFb(s) ? ' · <b style="color:#e65100;">피드백 받은 뒤 글을 고침</b>' : '';
-    return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 ${fb.n?fb.n+'번째 ':''}보냄 <span class="ai-note">${esc(when)}${fb.total!=null?` · 보낼 때 ${fb.total}자`:''}${tag}</span></span>
-      <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'} title="${s.submitted?'지금 글로 피드백을 새로 받아 학생 화면의 피드백을 바꿔요':'학생이 다시 제출하면 보낼 수 있어요'}">🔁 다시 보내기</button></div>
-      <div class="ai-txt">${renderFeedbackHTML(fb.text)}</div></div>`;
-  }
-  const why = !hasReport(s) ? '아직 쓴 내용이 없어요' : (!s.submitted ? '학생이 제출하면 보낼 수 있어요' : '');
-  return `<div class="ai-box"><div class="ai-hd"><span>🤖 AI 피드백 <span class="ai-note">${why}</span></span>
-    <button class="ai" data-ai-send="${esc(key)}" ${can?'':'disabled'}>🤖 AI 피드백 보내기</button></div></div>`;
-}
 function activityDetailHTML(s, id, key){
-  if(!hasReport(s)) return key ? aiBoxHTML(key, s) : '';
+  if(!hasReport(s)) return key ? gradeBoxHTML(key, s) : '';
   const r = repOf(s), tot = totalOf(s);
   let h = `<div class="rep"><div class="tot">서론+본론+결론 <b style="color:${tot>=TOTAL_MIN?'#2e7d32':'#e65100'};">${tot.toLocaleString()}자</b> / ${TOTAL_MIN}자 이상 · ${s.submitted?'<b style="color:#2e7d32;">✅ 제출함</b>':'<span style="color:#e65100;">미제출</span>'}</div>`;
   SECS.forEach(x=>{
@@ -517,21 +459,15 @@ function activityDetailHTML(s, id, key){
     ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li>${bannedSourceKind(x.link, x.name)?`<b style="color:#c62828;">🚫 ${esc(bannedSourceKind(x.link, x.name))}(인정 안 됨)</b> `:''}${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:''}</li>`).join('') + '</ol>'
     : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
-  return h + (key ? gradeBoxHTML(key, s) + aiBoxHTML(key, s) : '');
+  return h + (key ? gradeBoxHTML(key, s) : '');
 }
 /* 요약 패널 */
-/* 일괄 보내기 대상: 제출했고, 아직 피드백을 못 받았거나 받은 뒤 글을 고친 학생 */
-function eligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; return s.submitted && hasReport(s) && !aiPending.has(k) && (!fbOf(s) || changedSinceFb(s)); }); }
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'flex' : 'none';
   const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
   document.getElementById('aggSub').textContent = list.filter(s=>s.submitted).length;
   document.getElementById('aggLong').textContent = list.filter(s=>totalOf(s)>=TOTAL_MIN).length;
-  document.getElementById('aggAi').textContent = list.filter(s=>s.aiFeedback&&s.aiFeedback.text).length;
-  const n = eligibleKeys().length, btn = document.getElementById('aiBulkBtn');
-  btn.textContent = `🤖 AI 피드백 일괄 보내기 — 아직 못 받았거나 고쳐서 다시 낸 학생 (${n}명)`;
-  btn.disabled = n===0 || aiBulkRunning;
 }
 
 /* ---------- 📊 채점: AI가 1차 채점 → 선생님이 항목별로 고친다 (teacherpa1과 같은 방식) ----------
@@ -561,8 +497,10 @@ function gradeOf(s){
 function gradeBoxHTML(key, s){
   const g = gradeOf(s), pending = gradePending.has(key);
   const can = hasReport(s) && !pending;
-  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 채점 <span class="note">AI가 1차 채점 → 숫자를 눌러 선생님이 항목별로 고쳐요 · 학생에게는 안 보여요</span></span>
-    <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점 중…' : (g.ai ? '🤖 AI 다시 채점' : '🤖 AI 채점')}</button></div>`;
+  const when = g.ai && g.ai.ts ? new Date(g.ai.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → 숫자를 눌러 선생님이 항목별로 고쳐요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
+    <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점·피드백 받는 중… (10~40초)' : (g.ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button></div>`;
+  if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
   if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
   g.items.forEach(it=>{
@@ -574,8 +512,17 @@ function gradeBoxHTML(key, s){
     const why = it.teacher!=null && it.teacher!==it.ai
       ? `<span class="ov">선생님 수정 ${it.teacher}점</span>${it.ai!=null?` (AI ${it.ai}점: ${esc(it.reason)})`:''} <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="font-size:11.5px;color:#888;">↺ AI 점수로</a>`
       : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
-    h += `<div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>`;
+    const f = g.ai && g.ai.fb && g.ai.fb[it.k];
+    const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
+      + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
+      + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
+    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
   });
+  if(g.ai && (g.ai.first || g.ai.status)){
+    const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
+    h += `<div class="gr-sum">${g.ai.first?`<div class="fb-sec first"><div class="fb-hd"><span>가장 먼저 고치면 좋은 점</span></div><p>${esc(g.ai.first)}</p></div>`:''}`
+      + (ST ? `<div class="fb-sec ${ST[0]}"><div class="fb-hd"><span>${ST[1]}</span></div>${g.ai.statusReason?`<p>${esc(g.ai.statusReason)}</p>`:''}</div>` : '') + '</div>';
+  }
   h += `<div class="gr-total">${g.overridden?`<span style="font-size:12px;color:#00695c;">선생님 수정 ${g.overridden}개</span>`:''}합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}점${g.any && !g.complete ? ' <span style="font-size:12px;color:#e65100;">(일부 항목 미채점)</span>' : ''}</div></div>`;
   return h;
 }
@@ -587,7 +534,8 @@ async function requestGrade(key){
     const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
-    const g = { scores: j.scores, reasons: j.reasons || {}, total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
+    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
+      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
     return true;
@@ -607,7 +555,7 @@ async function setTeacherScore(key, c, v){
   refreshAI(); renderGrid();
 }
 /* 일괄 채점 대상: 제출했고, 아직 AI 채점 전이거나 채점 뒤 글을 고친 학생 */
-function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale); }); }
+function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
 function renderGradePanel(){
   const panel = document.getElementById('gradePanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'flex' : 'none';
@@ -617,12 +565,12 @@ function renderGradePanel(){
   document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
-  btn.textContent = `🤖 AI 채점 일괄 — 제출했고 아직 채점 전이거나 고친 학생 (${n}명)`;
+  btn.textContent = `🤖 AI 채점·피드백 일괄 — 제출했고 아직 안 받았거나 고친 학생 (${n}명)`;
   btn.disabled = n===0 || gradeBulkRunning;
 }
 document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
   const keys = gradeEligibleKeys(); if(!keys.length) return;
-  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점할까요?\n(한 번에 3명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
+  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 3명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
   gradeBulkRunning = true; renderGradePanel();
   const st = document.getElementById('gradeBulkStatus');
   let ok=0, fail=[], i=0;
@@ -653,29 +601,6 @@ document.getElementById('exportExcelBtn').addEventListener('click', ()=>{
   XLSX.writeFile(wb, `수행평가_확률탐구보고서_${currentRoomName||''}반_${ymd}.xlsx`);
 });
 
-/* ---------- 🤖 AI 피드백 보내기 (횟수 제한 없음 — 다시 보내면 최신 피드백으로 바뀜) ---------- */
-let aiBulkRunning = false;
-async function requestAI(key){
-  const s = allStudents[key];
-  if(!s || !s.submitted || !hasReport(s) || aiPending.has(key)) return false;
-  const fbRef = db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiFeedback');
-  const prevN = (fbOf(s) && fbOf(s).n) || (fbOf(s) ? 1 : 0);
-  aiPending.add(key); refreshAI();
-  try{
-    const r = repOf(s);
-    const res = await fetch('/api/report-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(r) });
-    const j = await res.json().catch(()=>({}));
-    if(!res.ok || !j.text) throw new Error(j.error || ('HTTP '+res.status));
-    const fb = { text: j.text, ts: Date.now(), total: totalOf(s), n: prevN + 1, hash: repHash(s) };
-    await fbRef.set(fb);
-    if(allStudents[key]) allStudents[key].aiFeedback = fb;
-    return true;
-  }catch(err){
-    throw new Error(`${s.name||key}: ${err.message||err}`);
-  }finally{
-    aiPending.delete(key); refreshAI();
-  }
-}
 function refreshAI(){ renderAggregate(); renderGradePanel(); renderTeacherView(); refreshOpenModal(); }
 document.addEventListener('click', async e=>{
   if(!e.target.closest) return;
@@ -690,29 +615,7 @@ document.addEventListener('click', async e=>{
     }catch(err){ alert('채점하지 못했어요.\n'+(err.message||err)+'\n\n잠시 후 다시 눌러 보세요.'); }
     return;
   }
-  const send = e.target.closest('[data-ai-send]');
-  if(!send) return;
-  e.stopPropagation(); e.preventDefault();
-  const key = send.dataset.aiSend, s = allStudents[key]||{};
-  const fb = fbOf(s);
-  const msg = !fb ? `${s.name||key} 학생에게 AI 피드백을 보낼까요?\n(보내면 학생 화면에 바로 나타나요)`
-    : (changedSinceFb(s) ? `${s.name||key} 학생이 고친 글로 AI 피드백을 다시 받을까요?\n(학생 화면의 피드백이 새 피드백으로 바뀌어요)`
-                         : `${s.name||key} 학생의 글이 지난 피드백 이후 바뀌지 않았어요.\n그래도 AI 피드백을 다시 받을까요? (학생 화면의 피드백이 바뀌어요)`);
-  if(!confirm(msg)) return;
-  try{ await requestAI(key); }catch(err){ alert('AI 피드백을 받지 못했어요.\n'+err.message+'\n\n잠시 후 다시 눌러 보세요.'); }
 }, true);
-document.getElementById('aiBulkBtn').addEventListener('click', async ()=>{
-  const keys = eligibleKeys(); if(!keys.length) return;
-  if(!confirm(`아직 AI 피드백을 못 받았거나, 받은 뒤 글을 고쳐 다시 제출한 학생 ${keys.length}명에게 AI 피드백을 보낼까요?\n(한 번에 3명씩 처리해요)`)) return;
-  aiBulkRunning = true; renderAggregate();
-  const st = document.getElementById('aiBulkStatus');
-  let ok=0, fail=[], i=0;
-  const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestAI(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `진행 중… ${ok+fail.length}/${keys.length}`; } };
-  await Promise.all([worker(),worker(),worker()]);
-  aiBulkRunning = false; renderAggregate();
-  st.textContent = `완료: ${ok}명 보냄` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생에게 다시 보내요)` : '');
-  if(fail.length) console.warn('AI 피드백 실패:', fail);
-});
 let tdmKey = null;
 function refreshOpenModal(){
   if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
@@ -1012,7 +915,7 @@ document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
 });
 
 /* ---------- ① 요약뷰: 번호순 정렬 + 진행률 막대 + 과제별 4단계 칸 ---------- */
-const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체를 보고 AI 피드백을 보낼 수 있어요.</div>`;
+const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체와 AI 채점·피드백을 볼 수 있어요.</div>`;
 function resetDetailPanel(){
   document.getElementById('detail').innerHTML = DEFAULT_DETAIL_HTML;
 }
@@ -1152,7 +1055,7 @@ function renderDetail(item){
   const s = item.student;
   const meta=document.createElement('div');
   meta.style.cssText='font-size:12.5px;color:#888;margin-bottom:10px;';
-  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 글자 수 ${totalOf(s).toLocaleString()}자 · 제출: ${s.submitted?'✅ 완료':'미제출'} · AI 피드백: ${(s.aiFeedback&&s.aiFeedback.text)?'보냄':'아직'}`;
+  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 글자 수 ${totalOf(s).toLocaleString()}자 · 제출: ${s.submitted?'✅ 완료':'미제출'} · AI 채점·피드백: ${(s.aiGrade&&s.aiGrade.scores)?(s.aiGrade.fb?'받음':'예전 채점(피드백 없음)'):'아직'}`;
   wrap.appendChild(meta);
   TASK_LABELS.forEach(t=>{
     const done = taskDone(s,t.id);
@@ -1163,7 +1066,7 @@ function renderDetail(item){
     const label = done ? '✅ 완료' : (isError ? '📝 입력함' : (visited ? '🟠 진행중' : '⬜ 안 함'));
 
     const row=document.createElement('div'); row.className='drow';
-    row.title='클릭하면 이 학생의 보고서 전체를 보고 AI 피드백을 보낼 수 있어요';
+    row.title='클릭하면 이 학생의 보고서 전체와 AI 채점·피드백을 볼 수 있어요';
     row.addEventListener('click', ()=> openTaskDetail(item.key, s, t.id));
     const left=document.createElement('span'); left.textContent = t.label;
     const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = label;
@@ -1172,7 +1075,7 @@ function renderDetail(item){
   });
 }
 
-/* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 피드백을 모달로 보여준다. */
+/* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 채점·피드백을 모달로 보여준다. */
 function openTaskDetail(key, s, taskId){
   const t = TASK_LABELS.find(x=>x.id===taskId);
   const done = taskDone(s,taskId);

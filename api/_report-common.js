@@ -1,5 +1,5 @@
 // 확률 탐구 글쓰기(22·23번) AI 기능 공통 코드. 파일 이름이 _로 시작해서 Vercel이 이 파일 자체를
-// 주소(/api/...)로 열지 않는다 — report-feedback.js, report-grade.js(23번 교사용),
+// 주소(/api/...)로 열지 않는다 — report-grade.js(23번 교사용 AI 채점·피드백),
 // step-feedback.js, chat-help.js(22번 학생용)가 require로 가져다 쓴다.
 //
 // [설정 방법] Vercel 프로젝트 > Settings > Environment Variables 에
