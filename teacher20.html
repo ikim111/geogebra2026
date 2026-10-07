@@ -75,7 +75,9 @@
   @media(max-width:960px){ .board-wrap{grid-template-columns:1fr;} }
   .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
   .group{border:2px solid #455a64;border-radius:10px;overflow:hidden;background:#fff;}
-  .group .gt{background:#455a64;color:#fff;text-align:center;font-weight:bold;font-size:14px;padding:4px;}
+  .group .gt{background:#455a64;color:#fff;text-align:center;font-weight:bold;font-size:14px;padding:4px;position:relative;}
+  .gswap{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;border-radius:6px;background:#fff;color:#1a237e;font-size:12px;font-weight:bold;padding:2px 8px;cursor:pointer;}
+  .gswap:hover{background:#ffe082;}
   .seat{border:1px solid #cfd8dc;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px;font-weight:bold;padding:4px;line-height:1.25;}
   .seat.mseat{background:var(--mentor);}
   .seat.top{min-height:40px;background:#fafafa;}
@@ -88,7 +90,7 @@
   .board.live .seat.no{cursor:not-allowed;} .board.live .seat.no:not(.filled){opacity:.45;}
   .board.live .seat.hov.ok{outline:3px solid var(--blue);outline-offset:-3px;}
   .seat.preview{color:#555;border:2px dashed var(--blue);box-shadow:none;animation:pv 1.2s ease-in-out infinite alternate;}
-  .seat.preview.swap{cursor:pointer;} .seat.preview.swap::after{content:'↕';margin-left:4px;color:var(--blue);font-size:13px;}
+  
   @keyframes pv{from{opacity:.7;}to{opacity:1;}}
   .teacher-desk{grid-column:2;border:2px solid #455a64;border-radius:8px;text-align:center;padding:12px;font-weight:bold;background:#eceff1;}
   .big .seat{min-height:64px;font-size:20px;} .big .seat.top{min-height:54px;}
@@ -564,17 +566,18 @@ function whyNot(t, g, side){ if(setAt(g,side)) return '이미 찬 자리'; if(si
 function cell(no, cls, t, g, side, opts){
   const x = no!=null ? byNo(no) : null, it = opts && opts.interactive;
   const st = it ? (setAt(g,side) ? 'ok' : (canSit(opts.cur,g,side) ? 'ok' : 'no')) : '';
-  const tip = it ? (setAt(g,side) ? (side==='L' && S.seats[setAt(g,side).m].top!=null && cls!=='mseat' ? '누르면 멘티 위·아래 자리가 바뀌어요' : '누르면 이 묶음을 비울 수 있어요') : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
+  const tip = it ? (setAt(g,side) ? (side==='L' && S.seats[setAt(g,side).m].top!=null && cls!=='mseat' ? '멘티 자리는 모둠 제목줄의 [멘티 자리 바꾸기]로 바꿔요. 비우려면 노란 자리를 눌러요' : '누르면 이 묶음을 비울 수 있어요') : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
   return `<div class="seat ${cls} ${x?'filled':''} ${st}" style="${t?`--c:${teamColor(t)}`:''}" ${it?`data-g="${g}" data-s="${side}" title="${tip}"`:''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
 function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 멘티 칸은 누르면 위·아래가 서로 바뀐다
   const x = byNo(no);
-  return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" ${swap?'data-pvswap="1" title="누를 때마다 멘티 위·아래 자리가 바뀌어요"':''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
+  return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" >${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
 function groupHTML(g, opts){
   const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
   const pv = opts && opts.interactive && pendingL && pendingL.g===g && opts.cur ? pendingL : null;
-  return `<div class="group"><div class="gt">${g}모둠</div><div class="ggrid">`
+  const canSwap = opts && opts.interactive && (pv || (L && Ls.top!=null));
+  return `<div class="group"><div class="gt">${g}모둠${canSwap?`<button class="gswap no-print" data-gswap="${g}" title="누를 때마다 멘티 위·아래 자리가 바뀌어요">↕ 멘티 자리 바꾸기</button>`:''}</div><div class="ggrid">`
     + (pv ? pvCell(pv.top,'top',opts.cur,g,true) : cell(L?Ls.top:null,'top',L,g,'L',opts))
     + (pv ? pvCell(opts.cur.m,'mseat',opts.cur,g,false) : cell(L?L.m:null,'mseat',L,g,'L',opts)) + cell(R?Rs.bot:null,'',R,g,'R',opts)
     + (pv ? pvCell(pv.bot,'',opts.cur,g,true) : cell(L?Ls.bot:null,'',L,g,'L',opts)) + cell(R?R.m:null,'mseat',R,g,'R',opts)
@@ -591,14 +594,14 @@ function renderSeat(){
   if(cur && pendingL){
     top += `<div class="turn no-print"><div class="who">${pendingL.g}모둠 왼쪽 묶음 — 이렇게 앉을까요?</div>
       <div class="what">자리판에 <b>깜박이는 이름</b>으로 미리 보여 줘요. 멘토 ${esc(nm(cur.m))}는 노란 자리, <b>위 자리</b> ${esc(nm(pendingL.top))}, <b>아래 자리</b> ${esc(nm(pendingL.bot))}.<br>
-      멘티 이름이나 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
+      [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
       <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 멘티 자리 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요.<br>
     ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있고, 누르면 자리판에 미리 보여 줘요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} 왼쪽 목록에서 팀을 눌러 순서를 바꿀 수도 있어요.</div></div>`;
   else if(S.teams.length) top += `<div class="ok-msg">🎉 모든 팀의 자리가 정해졌어요. ④ 자리표에서 크게 볼 수 있어요.</div>`;
   top += `<div class="row no-print" style="margin:8px 0;"><button class="btn" id="undoBtn2" ${undoStack.length?'':'disabled'}>↶ 되돌리기</button><button class="btn danger" id="resetSeats">자리 모두 지우기</button></div>`;
-  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 앉은 3명 팀은 멘티 이름을 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
+  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 3명 팀은 모둠 제목줄의 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
 }
 /* 같은 묶음 자리를 함께 강조 */
 document.addEventListener('mouseover', e=>{
@@ -610,20 +613,20 @@ document.addEventListener('click', e=>{
   if(tab!=='seat') return;
   const st = e.target.closest && e.target.closest('[data-st]'); if(st){ const m = +st.dataset.st; if(!S.seats[m]){ seatPick = m; pendingL = null; renderSeat(); } return; }
   const b0 = e.target.closest && e.target.closest('button');
-  if(pendingL && ((b0 && b0.id==='swapL') || (e.target.closest && e.target.closest('[data-pvswap]')))){ pendingL = Object.assign({}, pendingL, {top:pendingL.bot, bot:pendingL.top}); renderSeat(); return; }
+  if(pendingL && b0 && (b0.id==='swapL' || (b0.dataset.gswap && +b0.dataset.gswap===pendingL.g))){ pendingL = Object.assign({}, pendingL, {top:pendingL.bot, bot:pendingL.top}); renderSeat(); return; }
   if(b0 && b0.id==='confirmL' && pendingL){
     const cur = curSeatTeam(), pv = pendingL; pendingL = null;
     if(!cur || setAt(pv.g,'L') || !cur.e.includes(pv.top) || !cur.e.includes(pv.bot)){ renderSeat(); return; }
     commit(()=>{ S.seats[cur.m] = {g:pv.g, s:'L', top:pv.top, bot:pv.bot}; }); seatPick = null; return;
   }
+  if(b0 && b0.dataset.gswap && !pendingL){ const t = setAt(+b0.dataset.gswap,'L'); if(t && S.seats[t.m].top!=null) commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
   if(b0 && b0.id==='cancelL'){ pendingL = null; renderSeat(); return; }
   const c = e.target.closest && e.target.closest('.board.live .seat[data-g]');
   if(c){
     const g = +c.dataset.g, side = c.dataset.s, t = setAt(g,side), cur = curSeatTeam();
     if(t){
       const stt = S.seats[t.m];
-      // 3명 팀의 멘티(위·아래 자리)를 누르면 바로 서로 바뀐다 — 여러 번 눌러도 계속 바뀜
-      if(side==='L' && stt.top!=null && !c.classList.contains('mseat')){ commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
+      if(side==='L' && stt.top!=null && !c.classList.contains('mseat')) return; // 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기] 버튼으로
       if(confirm(`${g}모둠 ${side==='L'?'왼쪽':'오른쪽'} 묶음(${[t.m,...t.e].map(n=>byNo(n)?byNo(n).name:n).join(', ')})을 비울까요?`)) commit(()=>{ delete S.seats[t.m]; });
       return;
     }
