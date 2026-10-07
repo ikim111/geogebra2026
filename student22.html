@@ -98,6 +98,13 @@
   .qnum{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;padding:0 6px;border-radius:12px;background:var(--blue);color:#fff;font-size:12.5px;}
   .qnum.ck{background:#607d8b;} .qnum.tc{background:#5c6bc0;}
   .qstage .ai-fb{margin-top:10px;}
+  .calc-tool{border:1px solid #c5cae9;background:#f5f6ff;border-radius:10px;padding:10px 12px;margin:8px 0 12px;}
+  .calc-tool .ct-hd{font-weight:bold;color:#283593;margin-bottom:6px;} .calc-tool .ct-hd small{font-weight:normal;color:#777;margin-left:6px;}
+  .calc-tool .ct-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .calc-tool input{padding:7px 9px;border:1px solid #c5cad1;border-radius:6px;font:inherit;font-size:14px;}
+  .calc-tool #ctName{flex:1 1 200px;} .calc-tool #ctNum,.calc-tool #ctDen{width:110px;}
+  .calc-tool .ct-div{font-size:18px;font-weight:bold;color:#283593;}
+  .calc-tool .ct-out{margin:8px 0;font-size:15px;color:#333;} .calc-tool .ct-out b{color:#1a237e;font-size:16px;} .calc-tool .ct-out.warn{color:#c62828;}
   .qskip{margin:10px 0;padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-size:14px;}
   .qskip button,.qdone-btn{margin-left:8px;padding:5px 10px;border-radius:6px;border:1px solid #66bb6a;background:#fff;color:#2e7d32;font-weight:bold;cursor:pointer;font-family:inherit;font-size:13px;}
   .qdone-row{margin-top:8px;padding:8px 10px;border-radius:8px;background:#e8f5e9;color:#2e7d32;font-size:13.5px;}
@@ -444,9 +451,22 @@
   </div>
   <div class="card">
     <h3>확률 계산하기</h3>
+    <p class="hint">비교·선택형은 <b>확률 2개</b>(예: 홈 승률, 원정 승률), 예측형은 <b>확률 1개</b>를 계산해요. 2부 채점: 분자·분모 수치를 자료에서 찾았는가, 계산식(분수)과 결과를 썼는가.</p>
+    <div class="calc-tool">
+      <div class="ct-hd">🧮 확률 계산 도우미 <small>분자와 분모를 넣으면 분수·소수·%로 계산해 줘요</small></div>
+      <div class="ct-row">
+        <input type="text" id="ctName" placeholder="무엇의 확률? (예: 홈경기 승률)" maxlength="40">
+        <input type="number" id="ctNum" placeholder="분자" min="0" step="any">
+        <span class="ct-div">÷</span>
+        <input type="number" id="ctDen" placeholder="분모" min="0" step="any">
+      </div>
+      <div class="ct-out" id="ctOut">분자와 분모를 넣어 보세요.</div>
+      <button type="button" class="mini-btn" id="ctInsert" disabled>⬇ 아래 계산 칸에 넣기</button>
+    </div>
     <label class="f">확률 계산식과 결과</label>
-    <div class="ex">예) (홈경기 승률) = 45 ÷ 72 = 0.625,  (원정경기 승률) = 42 ÷ 72 ≈ 0.583</div>
-    <textarea data-k="calc" placeholder="step2에서 세운 계산식에 찾은 수치를 넣어 계산해요"></textarea>
+    <div class="ex">예) 홈경기 승률 = 45/72 = 45 ÷ 72 = 0.625 (62.5%)
+예) 원정경기 승률 = 42/72 = 42 ÷ 72 ≈ 0.583 (58.3%)</div>
+    <textarea data-k="calc" placeholder="위 계산 도우미로 계산해 '계산 칸에 넣기'를 누르거나, 직접 적어요 (예: 홈경기 승률 = 45/72 ≈ 0.625 (62.5%))"></textarea>
     <label class="f">계산 결과가 뜻하는 것 (해석)</label>
     <div class="ex">예) 홈경기 승률(62.5%)이 원정경기 승률(약 58.3%)보다 약 4%p 높아, 이 자료로는 홈경기에서 이길 확률이 더 높았다고 할 수 있다.</div>
     <textarea data-k="meaning" placeholder="계산한 확률이 탐구 질문에 대해 무엇을 말해 주는지 적어요"></textarea>
@@ -829,6 +849,30 @@ function paintLinkOk(){
     el.style.color = bl ? '#c62828' : (isUrl(s.link) ? '#2e7d32' : '#e65100'); });
 }
 $('addSrc').addEventListener('click', ()=>{ state.sources.push({what:'',site:'',link:'',analysis:''}); renderSources(); renderAnalysis(); changed(); });
+
+/* 🧮 확률 계산 도우미(step4): 분자 ÷ 분모 → 분수·소수(셋째 자리 반올림)·%(소수 첫째 자리) */
+function calcTool(){
+  const n = parseFloat($('ctNum').value), d = parseFloat($('ctDen').value), out = $('ctOut'), btn = $('ctInsert');
+  btn.disabled = true; out.className = 'ct-out';
+  if(!isFinite(n) || !isFinite(d)){ out.textContent = '분자와 분모를 넣어 보세요.'; return null; }
+  if(d <= 0){ out.className = 'ct-out warn'; out.textContent = '분모는 0보다 커야 해요.'; return null; }
+  if(n < 0){ out.className = 'ct-out warn'; out.textContent = '분자는 0 이상이어야 해요.'; return null; }
+  if(n > d){ out.className = 'ct-out warn'; out.textContent = '⚠️ 확률은 1보다 클 수 없어요. 분자와 분모를 바꿔 넣지 않았는지 확인해요.'; return null; }
+  const p = n / d, r3 = Math.round(p * 1000) / 1000, pc = Math.round(p * 1000) / 10;
+  const eq = Math.abs(p - r3) < 1e-12 ? '=' : '≈';
+  const fmt = x => String(+x.toFixed(6));
+  const line = `${fmt(n)}/${fmt(d)} = ${fmt(n)} ÷ ${fmt(d)} ${eq} ${r3} (${pc}%)`;
+  out.innerHTML = `분수 <b>${esc(fmt(n))}/${esc(fmt(d))}</b> · 소수 <b>${eq==='='?'':'약 '}${r3}</b> · 백분율 <b>${pc}%</b>`;
+  btn.disabled = !!finalLocked; return line;
+}
+['ctNum','ctDen','ctName'].forEach(id=> $(id).addEventListener('input', calcTool));
+$('ctInsert').addEventListener('click', ()=>{
+  const line = calcTool(); if(!line || finalLocked) return;
+  const name = $('ctName').value.trim(), full = (name ? name + ' = ' : '') + line;
+  const ta = document.querySelector('textarea[data-k="calc"]'), cur = (state.f.calc||'').replace(/\s+$/,'');
+  state.f.calc = cur ? cur + '\n' + full : full; ta.value = state.f.calc; autoGrow(ta); changed();
+  $('ctNum').value = ''; $('ctDen').value = ''; $('ctName').value = ''; calcTool();
+});
 
 /* 자료 수집 점검 체크리스트 */
 (function buildDataChecks(){

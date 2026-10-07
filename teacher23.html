@@ -482,6 +482,17 @@ function renderAggregate(){
 /* 탐구 질문 5항목(1부 step1 자기평가와 같은 기준) — AI가 ○△✕로 판단, 점수 = ○0.6·△0.3·✕0 합계 반올림 */
 const Q5 = ["확률을 구하는 질문인가?", "예측형 또는 비교·선택형 질문의 형태인가?", "대상·기간·조건이 정해져 있는가?", "공식 통계·기록으로 답을 구할 수 있는 질문인가?", "자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?"];
 const D3S = ["자료 1이 질문에 맞음", "자료 2가 맞고 다른 정보", "계산에 필요한 수치 모두"];
+const A4S = { '비교·선택형': ['확률1 수치','확률2 수치','확률1 식·결과','확률2 식·결과'], '예측형': ['분자 수치','분모 수치','분수(식)','계산 결과'] };
+const L5S = ['서론 150자','본론 700자','결론 150자','결론에 답','확률 해석'];
+/* 자료 분석·글의 논리: 항목별 1/0 칩 */
+function binChips(k, ai, sc){
+  if(!ai) return '';
+  let names = null, c = '';
+  if(k==='analysis' && typeof ai.achecks==='string' && ai.achecks){ names = A4S[ai.qtype] || A4S['비교·선택형']; c = ai.achecks; }
+  if(k==='logic' && typeof ai.lchecks==='string' && ai.lchecks){ names = L5S; c = ai.lchecks; }
+  if(!names) return '';
+  return `<div class="gr-q">${k==='analysis'?`<span>${esc(ai.qtype||'')}</span>`:''}${names.map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${c[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${sc}점${k==='logic'?' (글자 수 3칸은 프로그램이 셈)':''}</small></div>`;
+}
 const Q5S = ['확률을 구함','예측형·비교선택형','대상·기간·조건','공식 자료로 답','수치로 계산·비교'];
 const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
 const SCORE_MAX = 15;
@@ -528,7 +539,7 @@ function gradeBoxHTML(key, s){
     const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
-    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${qch}${dch}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
+    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${qch}${dch}${binChips(it.k, g.ai, it.ai)}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
   });
   if(g.ai && (g.ai.first || g.ai.status)){
     const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
@@ -546,7 +557,7 @@ async function requestGrade(key){
     const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
-    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
+    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: j.qtype || '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
       total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
