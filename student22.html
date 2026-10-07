@@ -568,6 +568,7 @@ const state = {
   qtype: '',                               // 예측형 / 비교/선택형
   selfChecks: [1,2,3].map(()=>Array(SELF_CHECKS.length).fill('')), // 1·2·3차 질문 자기평가 'O' | '△' | 'X'
   qDone: 0,                                // AI 평가가 모두 ○일 때 학생이 확정한 차수(1·2) — 그 뒤 차수는 건너뜀
+  qDoneQ: '',                              // 확정할 때의 질문(확정 뒤 질문을 고치면 확정이 풀린다)
   planRows: [{need:'', where:''},{need:'', where:''},{need:'', where:''}],
   sources: [{what:'',site:'',link:'',analysis:''},{what:'',site:'',link:'',analysis:''}],
   dataCheck: Array(DATA_CHECKS.length).fill(false)
@@ -662,7 +663,7 @@ function valueOf(id){
   return '';
 }
 function collectData(){
-  return Object.assign({}, state.f, { qtype: state.qtype, selfCheck: state.selfChecks[0].join(''), selfCheck2: state.selfChecks[1].join(''), selfCheck3: state.selfChecks[2].join(''), qDone: state.qDone,
+  return Object.assign({}, state.f, { qtype: state.qtype, selfCheck: state.selfChecks[0].join(''), selfCheck2: state.selfChecks[1].join(''), selfCheck3: state.selfChecks[2].join(''), qDone: state.qDone, qDoneQ: state.qDoneQ,
     planRows: state.planRows, sources: state.sources, dataCheck: state.dataCheck.map(b=>b?1:0).join('') });
 }
 
@@ -692,9 +693,13 @@ function paintSelfCheck(){
   document.querySelectorAll('.ox3').forEach(g => { const a = state.selfChecks[+g.dataset.w - 1], i=+g.dataset.i; g.querySelectorAll('button').forEach(b => b.classList.toggle('on', a[i] === b.dataset.v)); });
 }
 /* 질문 확정(AI 평가 6가지가 모두 ○일 때): 남은 차수 칸을 숨기고 완료 조건에서 뺀다 */
+let __qUnconfirmed = false;
 function paintQStages(){
   [2,3].forEach(w=>{ const el = $('qStage'+w); if(el) el.style.display = stageSkipped(w) ? 'none' : ''; });
   const n = $('qSkipNote');
+  if(!state.qDone && __qUnconfirmed){ n.style.display = ''; n.style.background = '#fff8e1'; n.style.color = '#8a6d00';
+    n.innerHTML = 'ℹ️ 확정한 질문을 고쳐서 <b>확정이 풀렸어요</b>. 고친 질문으로 AI 피드백을 다시 받거나 다음 차수를 이어서 해요.'; return; }
+  n.style.background = ''; n.style.color = '';
   if(state.qDone){ n.style.display = ''; n.innerHTML = `✅ <b>${state.qDone}차 질문으로 확정</b>했어요. (AI 평가가 모두 ○) 남은 차수는 건너뛰어요.<button type="button" data-qdone="0">확정 취소하고 계속 다듬기</button>`; }
   else n.style.display = 'none';
 }
@@ -702,7 +707,7 @@ document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('[data-qdone]'); if(!b || finalLocked) return;
   const w = +b.dataset.qdone;
   if(w && !confirm(`${w}차 질문으로 확정하고 남은 차수를 건너뛸까요? (나중에 취소할 수 있어요)`)) return;
-  state.qDone = w; paintQStages(); AI.paint(); changed();
+  state.qDone = w; state.qDoneQ = w ? v('q'+w) : ''; __qUnconfirmed = false; paintQStages(); AI.paint(); changed();
 });
 $('copyQ3').addEventListener('click', ()=>{
   const q = lastQ(); if(!q){ alert('step1에 적은 탐구 질문이 아직 없어요.'); return; }
@@ -828,7 +833,10 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 let __qHad = '';
 function changed(opts){
   const qHad = [1,2,3].map(w=>v('q'+w)).join('\u0001'); // 질문이 바뀌면 AI 피드백 칸(버튼·확정 가능 여부)을 다시 그린다
-  if(qHad !== __qHad){ try{ paintQFb(1); paintQFb(2); paintQFb(3); __qHad = qHad; }catch(e){} }
+  if(qHad !== __qHad){ try{
+    // 확정한 뒤 그 질문을 고치면 확정을 푼다(AI가 ○로 본 질문과 달라졌으므로)
+    if(state.qDone && v('q'+state.qDone) !== String(state.qDoneQ||'').trim()){ state.qDone = 0; state.qDoneQ = ''; __qUnconfirmed = true; paintQStages(); }
+    paintQFb(1); paintQFb(2); paintQFb(3); paintTeacherFb(false); __qHad = qHad; }catch(e){} }
   TASKS.forEach(t=>{
     const d = isDone(t.id), b = $('badge-'+t.key);
     b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
@@ -926,7 +934,7 @@ function restoreData(d){
   document.querySelectorAll('[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
   state.qtype = d.qtype || '';
   ['selfCheck','selfCheck2','selfCheck3'].forEach((k,j)=>{ if(typeof d[k]==='string') state.selfChecks[j] = SELF_CHECKS.map((_,i)=>{ const c=d[k][i]; return (c==='O'||c==='△'||c==='X')?c:''; }); });
-  state.qDone = (d.qDone===1 || d.qDone===2) ? d.qDone : 0;
+  state.qDone = (d.qDone===1 || d.qDone===2) ? d.qDone : 0; state.qDoneQ = typeof d.qDoneQ==='string' ? d.qDoneQ : (state.qDone ? v('q'+state.qDone) : '');
   if(Array.isArray(d.planRows) && d.planRows.length) state.planRows = d.planRows.map(r=>({need:(r&&r.need)||'', where:(r&&r.where)||''}));
   if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(s=>({what:(s&&s.what)||'', site:(s&&s.site)||'', link:(s&&s.link)||'', analysis:(s&&s.analysis)||''}));
   if(typeof d.dataCheck==='string') state.dataCheck = DATA_CHECKS.map((_,i)=>d.dataCheck[i]==='1');
@@ -1012,7 +1020,8 @@ function paintTeacherFb(isNew){
   const t = TEACHER_FB;
   if(!t || (t.ok!==true && t.ok!==false)){ box.innerHTML = '<div class="tfb-none">질문 다듬기를 마치면 선생님이 확인하고 피드백을 보내 줘요. 피드백이 오면 여기에 바로 나타나요. (기다리는 동안 step2로 넘어가도 돼요)</div>'; return; }
   box.innerHTML = `<span class="tfb-v ${t.ok?'ok':'no'}">${t.ok ? '✅ 이 질문으로 진행해도 좋아요' : '🔁 질문을 다시 생각해 봐요'}</span>`
-    + (t.ok ? '' : '<div class="tfb-m" style="color:#c62828;">→ 고친 질문은 step2의 <b>최종 탐구 질문</b> 칸에 써요.</div>')
+    + (t.ok ? '' : '<div class="tfb-m" style="color:#c62828;">→ 고친 질문은 step2의 <b>최종 탐구 질문</b> 칸에 써요. 선생님이 다시 확인해 줘요.</div>')
+    + (t.ok && t.q && String(t.q).trim() !== lastQ() && String(t.q).trim() !== v('finalQ') ? '<div class="tfb-m" style="color:#e65100;">⚠ 선생님 피드백을 받은 뒤 질문이 바뀌었어요. 선생님이 다시 확인할 수 있어요.</div>' : '')
     + (String(t.comment||'').trim() ? `<div class="tfb-c">${esc(t.comment)}</div>` : '')
     + `<div class="tfb-m">${t.q ? `피드백한 질문: "${esc(t.q)}" · ` : ''}${fmtWhen(t.ts)}</div>`;
   const st = box.closest('.qstage');

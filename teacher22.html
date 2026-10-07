@@ -698,7 +698,9 @@ let qfbFilter = 'todo';
 const qfbRecent = new Set(); // 이번에 보낸 학생은 '피드백할 학생' 보기에서도 바로 사라지지 않게
 const qfbLatest = d => { d = d||{}; const q = d.qDone===1||d.qDone===2 ? d.qDone : 0; if(q && str(d['q'+q])) return [q+'차', str(d['q'+q])]; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
 const qfbOf = s => { const t = s && s.teacherFb; return (t && (t.ok===true || t.ok===false)) ? t : null; };
-function qfbNeeds(s){ const [, q] = qfbLatest(s.data); if(!q) return false; const t = qfbOf(s); return !t || str(t.q) !== q; }
+/* 피드백할 질문: 보통은 step1의 마지막(또는 확정한) 질문. 선생님이 '다시 생각'을 보낸 뒤 학생이 step2 최종 질문을 고쳐 쓰면 그 최종 질문을 다시 확인한다 */
+function qfbTarget(s){ const d = (s&&s.data)||{}, t = qfbOf(s), f = str(d.finalQ); if(t && t.ok===false && f && f !== str(t.q)) return ['최종', f]; return qfbLatest(d); }
+function qfbNeeds(s){ const [, q] = qfbTarget(s); if(!q) return false; const t = qfbOf(s); return !t || str(t.q) !== q; }
 /* step1 AI 피드백 중 w차 질문에 대한 가장 최근 것(target 없는 예전 기록은 1차로 본다) */
 function lastQAi(s, w){ const l = aiLogsOf(s).filter(x=>x.type==='feedback' && x.step===1 && ((x.target==='3차' ? 3 : x.target==='2차' ? 2 : 1)===w)); return l[l.length-1]; }
 const ox = c => c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–'));
@@ -723,10 +725,11 @@ function qStagesHTML(s){
   return h;
 }
 function qfbViewHTML(k, s){
-  const d = s.data || {}, [lab, lq] = qfbLatest(d), t = qfbOf(s);
+  const d = s.data || {}, [lab, lq] = qfbTarget(s), t = qfbOf(s);
   let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${(d.qDone===1||d.qDone===2||str(d.q3)) ? '<b style="color:#2e7d32;">✔ 다듬기 끝</b> · ' : (lq ? '<b style="color:#e65100;">다듬는 중</b> · ' : '')}${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
   if(!lq) h += '<div class="q" style="color:#aaa;">아직 질문을 쓰지 않았어요.</div>';
   else h += qStagesHTML(s);
+  if(str(d.finalQ) && str(d.finalQ) !== qfbLatest(d)[1]) h += `<div class="q${lab==='최종'?' latest':''}"><span class="l">최종</span>${esc(str(d.finalQ))} <small style="color:#888;font-weight:normal;">(step2에서 고쳐 쓴 최종 질문)</small></div>`;
   if(t){
     const when = t.ts ? new Date(t.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     const chg = lq && str(t.q) !== lq;
@@ -778,7 +781,7 @@ document.addEventListener('click', async e=>{
       if(!confirm('보낸 피드백을 지울까요? 학생 화면에서도 사라져요.')) return;
       await ref.set(null); delete s.teacherFb; ta.value = ''; delete ta.dataset.dirty;
     } else {
-      const [, q] = qfbLatest(s.data);
+      const [, q] = qfbTarget(s);
       if(!q){ alert('이 학생은 아직 질문을 쓰지 않았어요.'); return; }
       const fb = { ok: b.dataset.qfbsend==='1', comment: ta.value.trim().slice(0, 500), q, ts: Date.now() };
       await ref.set(fb); s.teacherFb = fb; delete ta.dataset.dirty; qfbRecent.add(k);
