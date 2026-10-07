@@ -664,7 +664,7 @@ function renderView(){
     return;
   }
   const seated = Object.keys(S.seats).length;
-  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="printSheet(false)" title="교탁이 아래 — 교사가 보는 방향">🖨 교사용 인쇄</button><button class="btn" onclick="printSheet(true)" title="교탁이 위 — 학생이 교탁을 보는 방향(위아래 뒤집기)">🖨 학생용 인쇄</button></div></div>
+  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="printSheet(false)" title="교탁이 아래 — 교사가 보는 방향">🖨 교사용 인쇄</button><button class="btn" onclick="printSheet(true)" title="교탁이 위 — 학생이 교탁을 보는 방향(위아래 뒤집기)">🖨 학생용 인쇄</button><button class="btn" id="xlsxOut" onclick="exportXlsx()" title="교사용 자리표를 5~8반 한 시트에 나란히 — 이름 아래 발표 칸(빈칸)">📥 엑셀 저장 (5~8반)</button></div></div>
     <h2 style="display:none;" class="print-only">2학년 ${esc(room)}반 자리표</h2>${boardHTML({big:true})}</div>`;
 }
 
@@ -700,6 +700,68 @@ function printSheet(student){
   window.print();
 }
 window.printSheet = printSheet;
+
+/* 교사용 자리표 엑셀 저장: 선생님 구글 시트('7월 발표')와 같은 모양 — 5~8반을 한 시트에 나란히(반마다 6칸),
+   모둠마다 [위 자리(2칸 합침)] / [멘토][멘티] / [멘티][멘토], 이름 아래 줄은 발표 칸(빈칸). 멘토 = 노랑 */
+const XLSX_ROOMS = ['5','6','7','8'];
+function seatCells(st, g){
+  const nmO = no => { const x = no!=null ? st.roster.find(y=>y.no===no) : null; return x ? x.name : ''; };
+  const at = side => { const k = Object.keys(st.seats).find(m=> st.seats[m].g===g && st.seats[m].s===side); return k!=null ? {m:+k, ...st.seats[k]} : null; };
+  const L = at('L'), R = at('R');
+  return { top: nmO(L&&L.top), Lm: nmO(L&&L.m), Rb: nmO(R&&R.bot), Lb: nmO(L&&L.bot), Rm: nmO(R&&R.m) };
+}
+function loadExcelJS(){
+  if(window.ExcelJS) return Promise.resolve();
+  return new Promise((ok, no)=>{ const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'; sc.onload = ok; sc.onerror = ()=>no(new Error('엑셀 도구를 불러오지 못했어요.')); document.head.appendChild(sc); });
+}
+async function exportXlsx(){
+  const btn = $('xlsxOut'); if(btn){ btn.disabled = true; btn.textContent = '⏳ 만드는 중…'; }
+  try{
+    await loadExcelJS();
+    const states = {};
+    for(const c of XLSX_ROOMS){
+      if(c===room) states[c] = S;
+      else if(db){ const v = (await db.ref('rooms/'+c+SUFFIX).once('value')).val(); states[c] = normalize(v || DEFAULTS[c]); }
+      else states[c] = normalize(DEFAULTS[c]);
+    }
+    const now = new Date(), wb = new ExcelJS.Workbook(), ws = wb.addWorksheet(`${now.getMonth()+1}월 발표`, {pageSetup:{orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:1}});
+    const THIN = {style:'thin', color:{argb:'FF000000'}}, THICK = {style:'medium', color:{argb:'FF000000'}};
+    const YEL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF2CC'}};
+    ws.columns = Array.from({length: XLSX_ROOMS.length*6}, ()=>({width:10}));
+    const put = (r, c, v, o={}) => { const cell = ws.getCell(r, c); cell.value = v; cell.alignment = {horizontal:'center', vertical:'middle'}; cell.font = {size:o.size||12, bold:!!o.bold, name:'맑은 고딕'};
+      if(o.fill) cell.fill = YEL; cell.border = {top:o.bt?THICK:THIN, bottom:o.bb?THICK:THIN, left:o.bl?THICK:THIN, right:o.br?THICK:THIN}; return cell; };
+    const merge = (r1,c1,r2,c2) => ws.mergeCells(r1,c1,r2,c2);
+    XLSX_ROOMS.forEach((rm, k)=>{
+      const st = states[rm], c0 = 1 + k*6;
+      put(1, c0, `2학년 ${rm}반`, {bold:true, size:13, bt:1, bb:1, bl:1, br:1}); for(let j=1;j<6;j++) put(1, c0+j, null, {bt:1, bb:1, br:j===5}); merge(1,c0,1,c0+5);
+      [[6,5,4],[3,2,1]].forEach((gs, band)=>{
+        const r0 = 2 + band*7; // 모둠 머리줄
+        gs.forEach((g, gi)=>{
+          const c = c0 + gi*2, x = seatCells(st, g);
+          put(r0, c, `${g}모둠`, {bold:true, bt:1, bl:1}); put(r0, c+1, null, {bt:1, br:1}); merge(r0,c,r0,c+1);
+          // 위 자리(2칸 합침) + 발표 칸
+          put(r0+1, c, x.top, {bl:1}); put(r0+1, c+1, null, {br:1}); merge(r0+1,c,r0+1,c+1);
+          put(r0+2, c, null, {bl:1}); put(r0+2, c+1, null, {br:1}); merge(r0+2,c,r0+2,c+1);
+          // [멘토][멘티] / [멘티][멘토] — 이름 줄 + 발표 줄
+          [[x.Lm, true, x.Rb, false], [x.Lb, false, x.Rm, true]].forEach(([a, am, b, bm], i)=>{
+            const r = r0 + 3 + i*2, last = i===1;
+            put(r, c, a, {fill:am, bl:1}); put(r, c+1, b, {fill:bm, br:1});
+            put(r+1, c, null, {fill:am, bl:1, bb:last}); put(r+1, c+1, null, {fill:bm, br:1, bb:last});
+          });
+        });
+      });
+      const rd = 17; put(rd, c0+2, '교탁', {bold:true, bt:1, bb:1, bl:1, br:1}); put(rd, c0+3, null, {bt:1, bb:1, br:1}); merge(rd,c0+2,rd,c0+3);
+      ws.getCell(19, c0).value = '업데이트 시간'; ws.getCell(19, c0).font = {size:10, name:'맑은 고딕'};
+    });
+    for(let r=1;r<=17;r++) ws.getRow(r).height = 22;
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download = `자리배치_5-8반_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.xlsx`;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }catch(err){ alert('엑셀 저장에 실패했어요: ' + err.message); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = '📥 엑셀 저장 (5~8반)'; } }
+}
+window.exportXlsx = exportXlsx;
 
 /* ---------- 시작 ---------- */
 (function init(){
