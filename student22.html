@@ -1008,7 +1008,7 @@ function paintQFb(w){
   }
   box.innerHTML = h;
 }
-/* 👩‍🏫 선생님 피드백(teacher22 '⑤ 질문 피드백'에서 보냄): students/{key}/teacherFb = {ok:true|false, comment, q, ts} */
+/* 👩‍🏫 선생님 피드백(teacher22 ② 교사용 뷰 step1에서 보냄): students/{key}/teacherFb = {ok:true|false, comment, q, ts} */
 let TEACHER_FB = null, TFB_SEEN = false;
 function setTeacherFb(v){
   const prevTs = TEACHER_FB && TEACHER_FB.ts; TEACHER_FB = (v && typeof v==='object') ? v : null;

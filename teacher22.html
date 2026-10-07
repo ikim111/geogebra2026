@@ -82,9 +82,13 @@
   .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
   .tab-panel{display:none;padding-top:16px;}
   /* ---- ④ AI 대화 ---- */
-  .qfb-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:12px;}
-  .qfb-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
-  .qfb-card.sent-ok{border-color:#a5d6a7;} .qfb-card.sent-no{border-color:#ef9a9a;}
+  .qfb-card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);border-left:4px solid #e0e0e0;padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
+  .qfb-card .stgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;}
+  .qfb-card .ctl{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;}
+  .qfb-card .ctl textarea{flex:1 1 320px;min-height:40px;}
+  .qfb-card .ctl .btns{flex:0 1 auto;}
+  .qfb-card .nm .live{color:var(--red);font-weight:bold;font-size:11.5px;margin-left:6px;}
+  .qfb-card.sent-ok{border-left-color:#66bb6a;} .qfb-card.sent-no{border-left-color:#ef5350;}
   .qfb-card .nm{font-weight:bold;color:#311b92;display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
   .qfb-card .nm small{font-weight:normal;color:#888;font-size:12px;}
   .qfb-card .q{font-size:13.5px;line-height:1.55;}
@@ -312,7 +316,6 @@
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
       <button class="tab-btn" data-tab="student">③ 학생용</button>
       <button class="tab-btn" data-tab="aichat">④ AI 대화</button>
-      <button class="tab-btn" data-tab="qfb">⑤ 질문 피드백</button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
@@ -342,9 +345,16 @@
         <div id="teacherTaskTrack" class="pace-track"></div>
         <div id="teacherTaskLabel" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
       </div>
+      <div class="panel ac-bar" id="qfbBar" style="display:none;">
+        <b style="color:#311b92;">👩‍🏫 질문 피드백</b>
+        <span class="seg"><button type="button" class="on" data-qfbf="all">전체</button><button type="button" data-qfbf="todo">피드백할 학생만</button></span>
+        <span id="qfbCount" style="font-size:13px;color:#555;"></span>
+        <span style="font-size:12.5px;color:#888;flex:1;min-width:200px;">학생마다 1·2·3차 (질문 → 🙋 자기평가 → 🤖 AI 피드백)을 보고, 판정과 (선택) 코멘트를 보내면 학생 화면에 바로 나타나요.</span>
+      </div>
       <div class="teacher-col">
         <div class="teacher-col-title">✏️ 선택한 step에서 학생들이 적은 내용 (● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
+        <div id="qfbList" class="text-answer-list" style="display:none;"></div>
       </div>
     </div>
 
@@ -361,15 +371,6 @@
         <div class="panel ac-list" id="acList"></div>
         <div class="panel ac-conv" id="acConv"><div class="text-answer-empty">왼쪽에서 학생을 고르면 대화가 보여요.</div></div>
       </div>
-    </div>
-
-    <div id="tab-qfb" class="tab-panel">
-      <div class="panel ac-bar">
-        <span class="seg"><button type="button" class="on" data-qfbf="todo">피드백할 학생</button><button type="button" data-qfbf="all">전체</button></span>
-        <span id="qfbCount" style="font-size:13px;color:#555;"></span>
-        <span style="font-size:12.5px;color:#888;flex:1;min-width:200px;">step1 질문에 피드백을 보내면 학생 화면 '선생님 피드백' 칸에 바로 나타나요. 주관식은 선택이에요. 학생은 1·2·3차마다 질문 → 자기평가 → AI 피드백을 하고, AI 평가가 모두 ○이면 일찍 확정할 수 있어요.</span>
-      </div>
-      <div id="qfbList" class="qfb-list"></div>
     </div>
 
     <div id="tab-student" class="tab-panel">
@@ -501,7 +502,7 @@ function activityDetailHTML(s, id){
     h += '<h4>질문 다듬기 (질문 → 자기평가 → AI 피드백)</h4>' + (str(d.q1) ? qStagesHTML(s) : '<div class="v none" style="font-size:13px;">(아직 질문 없음)</div>');
     h += kvRow('질문 선정 동기', d.motive);
     const tf = qfbOf(s);
-    h += '<h4>👩‍🏫 선생님 피드백</h4>' + (tf ? kvRow(tf.ok?'✅ 진행 가능':'🔁 다시 생각', (str(tf.comment)||'(말 없음)') + (tf.q?`  — 피드백한 질문: ${tf.q}`:'')) : '<div class="v none" style="font-size:13px;">아직 보내지 않았어요. (⑤ 질문 피드백 탭에서 보낼 수 있어요)</div>');
+    h += '<h4>👩‍🏫 선생님 피드백</h4>' + (tf ? kvRow(tf.ok?'✅ 진행 가능':'🔁 다시 생각', (str(tf.comment)||'(말 없음)') + (tf.q?`  — 피드백한 질문: ${tf.q}`:'')) : '<div class="v none" style="font-size:13px;">아직 보내지 않았어요. (② 교사용 뷰에서 step1을 고르면 보낼 수 있어요)</div>');
   } else if(id===2){
     h += kvRow('최종 탐구 질문', d.finalQ);
     h += '<h4>탐구 계획</h4>' + kvRow('1. 조사·결론', d.plan1) + kvRow('2. 확률 계산식', d.plan2) + kvRow('3. 변수·한계·보정', d.plan3);
@@ -690,11 +691,11 @@ document.getElementById('acExcelBtn').addEventListener('click', ()=>{
   const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
   XLSX.writeFile(wb, `확률탐구_AI사용기록_${currentRoomName||''}반_${ymd}.xlsx`);
 });
-/* ---------- ⑤ 질문 피드백: step1 탐구 질문에 선생님 피드백 보내기 ----------
+/* ---------- 질문 피드백(② 교사용 뷰 step1): step1 탐구 질문에 선생님 피드백 보내기 ----------
    students/{key}/teacherFb = {ok:true(이 질문으로 진행)|false(다시 생각), comment(선택), q(피드백한 질문), ts}
    student22.html step1 '선생님 피드백' 칸에 실시간으로 나타난다. 학생 화면은 15초마다 접속 신호를 보내므로
    카드는 내용이 바뀐 부분만 다시 그리고, 선생님이 쓰는 중인 글상자는 건드리지 않는다. */
-let qfbFilter = 'todo';
+let qfbFilter = 'all';
 const qfbRecent = new Set(); // 이번에 보낸 학생은 '피드백할 학생' 보기에서도 바로 사라지지 않게
 const qfbLatest = d => { d = d||{}; const q = d.qDone===1||d.qDone===2 ? d.qDone : 0; if(q && str(d['q'+q])) return [q+'차', str(d['q'+q])]; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
 const qfbOf = s => { const t = s && s.teacherFb; return (t && (t.ok===true || t.ok===false)) ? t : null; };
@@ -709,7 +710,7 @@ const oxCls = c => c==='O'?'o':(c==='△'?'t':(c==='X'?'x':''));
 function qStagesHTML(s){
   const d = s.data || {}, done = (d.qDone===1||d.qDone===2) ? d.qDone : 0, [lab] = qfbLatest(d);
   const chipRow = (c) => SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(c[i])}" title="${esc(x)}">${i+1}${ox(c[i])}</span>`).join('');
-  let h = '';
+  let h = '<div class="stgs">';
   [1,2,3].forEach(w=>{
     if(done && w > done) return;
     const q = str(d['q'+w]), sc = str(d[w===1?'selfCheck':'selfCheck'+w]), af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
@@ -721,12 +722,13 @@ function qStagesHTML(s){
         + (af.good||[]).map(t=>`<div class="g">👍 ${esc(t)}</div>`).join('') + (af.fix||[]).map(t=>`<div class="f">🔧 ${esc(t)}</div>`).join('') : '')
       + '</div></div>';
   });
+  h += '</div>';
   if(done) h += `<div class="done-tag">✔ AI 평가가 모두 ○여서 ${done}차 질문으로 확정했어요</div>`;
   return h;
 }
 function qfbViewHTML(k, s){
   const d = s.data || {}, [lab, lq] = qfbTarget(s), t = qfbOf(s);
-  let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${(d.qDone===1||d.qDone===2||str(d.q3)) ? '<b style="color:#2e7d32;">✔ 다듬기 끝</b> · ' : (lq ? '<b style="color:#e65100;">다듬는 중</b> · ' : '')}${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
+  let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}${s.currentTaskId===1?'<span class="live">● 지금 보는 중</span>':''}</span><small>${(d.qDone===1||d.qDone===2||str(d.q3)) ? '<b style="color:#2e7d32;">✔ 다듬기 끝</b> · ' : (lq ? '<b style="color:#e65100;">다듬는 중</b> · ' : '')}${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
   if(!lq) h += '<div class="q" style="color:#aaa;">아직 질문을 쓰지 않았어요.</div>';
   else h += qStagesHTML(s);
   if(str(d.finalQ) && str(d.finalQ) !== qfbLatest(d)[1]) h += `<div class="q${lab==='최종'?' latest':''}"><span class="l">최종</span>${esc(str(d.finalQ))} <small style="color:#888;font-weight:normal;">(step2에서 고쳐 쓴 최종 질문)</small></div>`;
@@ -737,8 +739,9 @@ function qfbViewHTML(k, s){
   }
   return h;
 }
+/* ② 교사용 뷰에서 step1을 고르면 학생 글 목록 대신 이 '질문 피드백' 목록(1단)을 보여 준다 */
 function renderQfbTab(){
-  const panel = document.getElementById('tab-qfb'); if(!panel || !panel.classList.contains('active')) return;
+  const panel = document.getElementById('tab-teacher'); if(!panel || !panel.classList.contains('active') || selectedTaskId!==1) return;
   const list = document.getElementById('qfbList');
   const all = Object.keys(allStudents).map(k=>({k, s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s));
   const need = all.filter(x=>qfbNeeds(x.s));
@@ -753,8 +756,8 @@ function renderQfbTab(){
     let card = list.querySelector(`.qfb-card[data-k="${CSS.escape(k)}"]`);
     if(!card){
       card = document.createElement('div'); card.className = 'qfb-card'; card.dataset.k = k;
-      card.innerHTML = `<div class="qv"></div><textarea class="qc" placeholder="(선택) 학생에게 남길 말 — 예: 대상과 기간을 더 분명히 정해 보자"></textarea>
-        <div class="btns"><button type="button" class="ok" data-qfbsend="1">✅ 이 질문으로 진행</button><button type="button" class="no" data-qfbsend="0">🔁 다시 생각해 보기</button><button type="button" class="del" data-qfbdel title="보낸 피드백 지우기">취소</button></div>`;
+      card.innerHTML = `<div class="qv"></div><div class="ctl"><textarea class="qc" placeholder="(선택) 학생에게 남길 말 — 예: 대상과 기간을 더 분명히 정해 보자"></textarea>
+        <div class="btns"><button type="button" class="ok" data-qfbsend="1">✅ 이 질문으로 진행</button><button type="button" class="no" data-qfbsend="0">🔁 다시 생각해 보기</button><button type="button" class="del" data-qfbdel title="보낸 피드백 지우기">취소</button></div></div>`;
       card.querySelector('.qc').addEventListener('input', e=>{ e.target.dataset.dirty = '1'; });
     }
     const v = card.querySelector('.qv'), html = qfbViewHTML(k, s);
@@ -1363,6 +1366,11 @@ function renderTeacherView(){
   if(!textWrap) return;
   if(!document.getElementById('teacherTaskTrack').children.length) buildTeacherTaskTrack();
   if(labelEl) labelEl.textContent = taskLabelOf(selectedTaskId);
+  const isQ = selectedTaskId===1;
+  document.getElementById('qfbBar').style.display = isQ ? '' : 'none';
+  document.getElementById('qfbList').style.display = isQ ? '' : 'none';
+  textWrap.style.display = isQ ? 'none' : '';
+  if(isQ){ textWrap.textContent=''; renderQfbTab(); return; }
   textWrap.textContent='';
   const keys = Object.keys(allStudents);
   if(keys.length===0){
@@ -1406,7 +1414,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='teacher') renderTeacherView();
     if(btn.dataset.tab==='student') ensurePreviewLoaded();
     if(btn.dataset.tab==='aichat') renderAiChatTab();
-    if(btn.dataset.tab==='qfb') renderQfbTab();
   });
 });
 

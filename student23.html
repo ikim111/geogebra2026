@@ -152,7 +152,7 @@
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
     <h1>23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
-    <p class="gate-sub">[2] 질문·계획·자료 탐구에서 준비한 개요와 자료를 바탕으로 보고서를 완성해 제출해요 — 김형준 선생님</p>
+    <p class="gate-sub">1부 탐구 준비에서 준비한 개요와 자료를 바탕으로 보고서를 완성해 제출해요 — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;color:#e65100;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
@@ -196,7 +196,7 @@
 <section class="task" id="task-r1" data-task-id="1">
 
   <details class="ref" id="refBox" open>
-    <summary>📝 내가 준비한 개요와 자료 ([2] 질문·계획·자료 탐구에서 작성)</summary>
+    <summary>📝 내가 준비한 개요와 자료 (1부 탐구 준비에서 작성)</summary>
     <div class="rbody" id="refBody"><span style="color:#999;">불러오는 중…</span></div>
   </details>
 
@@ -240,7 +240,7 @@
       <div class="sec-head"><span class="lab">[자료 출처]<small>2개 이상 · 글자 수에는 들어가지 않아요</small></span><span class="cnt" id="cnt-src">0개</span></div>
       <ul class="tips"><li>본론에서 사용한 자료의 <b>기관·자료 이름</b>과 <b>링크(https://…)</b>를 적어요.</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
       <div class="src-rows" id="srcRows"></div>
-      <div class="src-btns"><button type="button" id="addSrcRow">＋ 출처 추가</button><button type="button" id="loadPrepSrc">⬇ [2]에서 모은 자료 불러오기</button></div>
+      <div class="src-btns"><button type="button" id="addSrcRow">＋ 출처 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료 불러오기</button></div>
     </div>
   </div>
 </section>
@@ -382,10 +382,10 @@ $('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; stat
 $('loadPrepSrc').addEventListener('click', ()=>{
   if(finalLockedNow()) return;
   const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim())) : [];
-  if(!src.length){ alert('[2] 질문·계획·자료 탐구에 적은 자료가 없어요.'); return; }
+  if(!src.length){ alert('1부 탐구 준비에 적은 자료가 없어요.'); return; }
   const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
   const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim() }));
-  if(!add.length){ alert('[2]의 자료가 이미 모두 들어 있어요.'); return; }
+  if(!add.length){ alert('1부에서 모은 자료가 이미 모두 들어 있어요.'); return; }
   state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim()).concat(add);
   renderSources(); changed();
 });
@@ -419,7 +419,7 @@ function changed(opts){
 function renderPrep(d){
   prepData = d;
   const box = $('refBody');
-  if(!d){ box.innerHTML = '<span style="color:#999;">[2] 질문·계획·자료 탐구에 적은 내용이 없어요. 그것부터 먼저 해 보세요.</span>'; return; }
+  if(!d){ box.innerHTML = '<span style="color:#999;">1부 탐구 준비에 적은 내용이 없어요. 그것부터 먼저 해 보세요.</span>'; return; }
   const row = (k,v)=>{ const t=String(v||'').trim(); return `<div class="ol"><span class="k">${k}</span><span class="v${t?'':' none'}">${t?esc(t):'(비어 있음)'}</span></div>`; };
   let h = row('탐구 질문', d.finalQ || ((d.qDone===1||d.qDone===2) && d['q'+d.qDone]) || d.q3 || d.q2 || d.q1) + row('제목', d.oTitle) + row('서론', d.oIntro) + row('본론', d.oBody) + row('결론', d.oConcl)
     + row('확률 계산', d.calc) + row('계산 해석', d.meaning);
@@ -656,7 +656,7 @@ showPage(0);
 if(PREVIEW_MODE){
   $('previewBanner').style.display = 'block';
   $('gateScreen').style.display = 'none'; $('appScreen').style.display = 'block';
-  showPage(0); renderPrep({finalQ:'(미리보기) 학생이 [2]에 적은 탐구 질문이 여기에 보여요'});
+  showPage(0); renderPrep({finalQ:'(미리보기) 학생이 1부에 적은 탐구 질문이 여기에 보여요'});
   function reportPreviewHeight(){ if(window.parent && window.parent !== window) window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin); }
   window.addEventListener('message', (e)=>{
     if(e.origin !== window.location.origin) return;
