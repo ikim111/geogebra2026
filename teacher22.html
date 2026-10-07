@@ -93,6 +93,12 @@
   .qfb-card .chips{font-size:12px;color:#666;}
   .qfb-card .chips .chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:9px;margin:1px 2px;background:#f0f2f5;color:#555;}
   .qfb-card .chips .chip.o{background:#e8f1fc;color:#1565c0;} .qfb-card .chips .chip.t{background:#fff8e1;color:#b07800;} .qfb-card .chips .chip.x{background:#ffebee;color:#c62828;}
+  .qfb-card .stg{border-left:3px solid #c5cae9;padding:2px 0 2px 8px;display:flex;flex-direction:column;gap:4px;}
+  .qfb-card .done-tag,.rec .done-tag{font-size:12.5px;color:#2e7d32;background:#e8f5e9;border-radius:6px;padding:4px 8px;}
+  .rec .stg{border-left:3px solid #c5cae9;padding:4px 0 4px 10px;margin:6px 0;font-size:13.5px;}
+  .rec .stg .l{display:inline-block;min-width:34px;font-weight:bold;color:#888;font-size:12px;}
+  .rec .stg .latest{font-weight:bold;color:#0d47a1;}
+  .rec .aif{background:#f7f5fc;border-radius:6px;padding:4px 8px;font-size:12.5px;margin-top:3px;} .rec .aif .g{color:#2e7d32;} .rec .aif .f{color:#e65100;} .rec .aif .old{color:#999;font-size:11.5px;}
   .qfb-card .aif{background:#f7f5fc;border-radius:6px;padding:5px 8px;font-size:12.5px;line-height:1.5;}
   .qfb-card .aif .g{color:#2e7d32;} .qfb-card .aif .f{color:#e65100;} .qfb-card .aif .old{color:#999;font-size:11.5px;}
   .qfb-card .st{font-size:12.5px;padding:5px 8px;border-radius:6px;background:#f5f5f5;}
@@ -361,7 +367,7 @@
       <div class="panel ac-bar">
         <span class="seg"><button type="button" class="on" data-qfbf="todo">피드백할 학생</button><button type="button" data-qfbf="all">전체</button></span>
         <span id="qfbCount" style="font-size:13px;color:#555;"></span>
-        <span style="font-size:12.5px;color:#888;flex:1;min-width:200px;">step1 질문에 피드백을 보내면 학생 화면 '선생님 피드백' 칸에 바로 나타나요. 주관식은 선택이에요. 학생은 피드백을 기다리지 않고 3차 질문을 쓸 수 있어요.</span>
+        <span style="font-size:12.5px;color:#888;flex:1;min-width:200px;">step1 질문에 피드백을 보내면 학생 화면 '선생님 피드백' 칸에 바로 나타나요. 주관식은 선택이에요. 학생은 1·2·3차마다 질문 → 자기평가 → AI 피드백을 하고, AI 평가가 모두 ○이면 일찍 확정할 수 있어요.</span>
       </div>
       <div id="qfbList" class="qfb-list"></div>
     </div>
@@ -491,11 +497,9 @@ function activityDetailHTML(s, id){
   let h = '<div class="rec">';
   if(id===1){
     h += '<h4>질문 주제</h4>' + kvRow('최근 관심사', d.topicInterest) + kvRow('진로', d.topicCareer) + kvRow('취미', d.topicHobby);
-    h += '<h4>탐구 질문</h4>' + kvRow('유형', d.qtype) + kvRow('주제', d.subject) + kvRow('1차 질문', d.q1) + kvRow('2차 질문', d.q2) + kvRow('3차 질문', d.q3) + kvRow('질문 선정 동기', d.motive);
-    const sc = str(d.selfCheck);
-    h += '<h4>체크리스트 (자기 평가)</h4><div>' + SELF_CHECKS.map((t,i)=>{ const c=sc[i]; const cls=c==='O'?'o':(c==='△'?'t':(c==='X'?'x':'')); const m=c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–')); return `<span class="chip ${cls}" title="${esc(t)}">${i+1}. ${m}</span>`; }).join('') + '</div>';
-    [1,2].forEach(w=>{ const af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
-      if(ac) h += `<h4>체크리스트 AI평가 (${w}차 질문)</h4><div>` + SELF_CHECKS.map((t,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(t)}">${i+1}. ${ox(ac[i])}</span>`).join('') + '</div>'; });
+    h += '<h4>탐구 질문</h4>' + kvRow('유형', d.qtype) + kvRow('주제', d.subject);
+    h += '<h4>질문 다듬기 (질문 → 자기평가 → AI 피드백)</h4>' + (str(d.q1) ? qStagesHTML(s) : '<div class="v none" style="font-size:13px;">(아직 질문 없음)</div>');
+    h += kvRow('질문 선정 동기', d.motive);
     const tf = qfbOf(s);
     h += '<h4>👩‍🏫 선생님 피드백</h4>' + (tf ? kvRow(tf.ok?'✅ 진행 가능':'🔁 다시 생각', (str(tf.comment)||'(말 없음)') + (tf.q?`  — 피드백한 질문: ${tf.q}`:'')) : '<div class="v none" style="font-size:13px;">아직 보내지 않았어요. (⑤ 질문 피드백 탭에서 보낼 수 있어요)</div>');
   } else if(id===2){
@@ -692,26 +696,37 @@ document.getElementById('acExcelBtn').addEventListener('click', ()=>{
    카드는 내용이 바뀐 부분만 다시 그리고, 선생님이 쓰는 중인 글상자는 건드리지 않는다. */
 let qfbFilter = 'todo';
 const qfbRecent = new Set(); // 이번에 보낸 학생은 '피드백할 학생' 보기에서도 바로 사라지지 않게
-const qfbLatest = d => { d = d||{}; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
+const qfbLatest = d => { d = d||{}; const q = d.qDone===1||d.qDone===2 ? d.qDone : 0; if(q && str(d['q'+q])) return [q+'차', str(d['q'+q])]; return str(d.q3) ? ['3차', str(d.q3)] : str(d.q2) ? ['2차', str(d.q2)] : str(d.q1) ? ['1차', str(d.q1)] : ['', '']; };
 const qfbOf = s => { const t = s && s.teacherFb; return (t && (t.ok===true || t.ok===false)) ? t : null; };
 function qfbNeeds(s){ const [, q] = qfbLatest(s.data); if(!q) return false; const t = qfbOf(s); return !t || str(t.q) !== q; }
-/* step1 AI 피드백 중 w차 질문에 대한 가장 최근 것(target 없는 예전 기록은 1차, '3차'는 2차로 본다) */
-function lastQAi(s, w){ const l = aiLogsOf(s).filter(x=>x.type==='feedback' && x.step===1 && (((x.target==='2차'||x.target==='3차') ? 2 : 1)===w)); return l[l.length-1]; }
+/* step1 AI 피드백 중 w차 질문에 대한 가장 최근 것(target 없는 예전 기록은 1차로 본다) */
+function lastQAi(s, w){ const l = aiLogsOf(s).filter(x=>x.type==='feedback' && x.step===1 && ((x.target==='3차' ? 3 : x.target==='2차' ? 2 : 1)===w)); return l[l.length-1]; }
 const ox = c => c==='O'?'○':(c==='△'?'△':(c==='X'?'✕':'–'));
 const oxCls = c => c==='O'?'o':(c==='△'?'t':(c==='X'?'x':''));
+/* 1·2·3차마다: 학생 질문 → 학생 자기평가 → 그 질문에 대한 AI 피드백 (확정해서 건너뛴 차수는 뺀다) */
+function qStagesHTML(s){
+  const d = s.data || {}, done = (d.qDone===1||d.qDone===2) ? d.qDone : 0, [lab] = qfbLatest(d);
+  const chipRow = (c) => SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(c[i])}" title="${esc(x)}">${i+1}${ox(c[i])}</span>`).join('');
+  let h = '';
+  [1,2,3].forEach(w=>{
+    if(done && w > done) return;
+    const q = str(d['q'+w]), sc = str(d[w===1?'selfCheck':'selfCheck'+w]), af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
+    if(w>1 && !q && !af) return;
+    h += `<div class="stg"><div class="q${w+'차'===lab?' latest':''}"><span class="l">${w}차</span>${q ? esc(q) : '<span style="color:#aaa;">(아직 안 씀)</span>'}</div>`
+      + `<div class="chips">🙋 자기평가 ${sc.replace(/[^O△X]/g,'') ? chipRow(sc) : '<span style="color:#aaa;">안 함</span>'}</div>`
+      + `<div class="aif"><div class="chips">🤖 AI ${ac ? chipRow(ac) : '<span style="color:#aaa;">아직 안 받음</span>'}</div>`
+      + (af ? (af.q && af.q !== q ? `<div class="old">(피드백 받을 때 질문: ${esc(af.q)})</div>` : '')
+        + (af.good||[]).map(t=>`<div class="g">👍 ${esc(t)}</div>`).join('') + (af.fix||[]).map(t=>`<div class="f">🔧 ${esc(t)}</div>`).join('') : '')
+      + '</div></div>';
+  });
+  if(done) h += `<div class="done-tag">✔ AI 평가가 모두 ○여서 ${done}차 질문으로 확정했어요</div>`;
+  return h;
+}
 function qfbViewHTML(k, s){
   const d = s.data || {}, [lab, lq] = qfbLatest(d), t = qfbOf(s);
-  const sc = str(d.selfCheck);
-  let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
-  [['1차','q1'],['2차','q2'],['3차','q3']].forEach(([l,f])=>{ const v = str(d[f]); if(v) h += `<div class="q${l===lab?' latest':''}"><span class="l">${l}</span>${esc(v)}</div>`; });
+  let h = `<div class="nm"><span>${esc(displayName(k, s.name, s.number))}</span><small>${(d.qDone===1||d.qDone===2||str(d.q3)) ? '<b style="color:#2e7d32;">✔ 다듬기 끝</b> · ' : (lq ? '<b style="color:#e65100;">다듬는 중</b> · ' : '')}${esc(str(d.qtype)||'유형 안 고름')}${str(d.subject)?' · '+esc(str(d.subject)):''}</small></div>`;
   if(!lq) h += '<div class="q" style="color:#aaa;">아직 질문을 쓰지 않았어요.</div>';
-  h += `<div class="chips">자기평가 ${SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(sc[i])}" title="${esc(x)}">${i+1}${ox(sc[i])}</span>`).join('')}</div>`;
-  [1,2].forEach(w=>{ const af = lastQAi(s, w), ac = af && typeof af.checks==='string' ? af.checks : '';
-    if(!af && w===2) return;
-    h += `<div class="aif"><div class="chips">🤖 ${w}차 AI ${ac ? SELF_CHECKS.map((x,i)=>`<span class="chip ${oxCls(ac[i])}" title="${esc(x)}">${i+1}${ox(ac[i])}</span>`).join('') : '<span style="color:#aaa;">아직 안 받음</span>'}</div>`
-      + (af ? (af.q && af.q !== str(d['q'+w]) ? `<div class="old">(피드백 받을 때 질문: ${esc(af.q)})</div>` : '')
-        + (af.good||[]).map(t=>`<div class="g">👍 ${esc(t)}</div>`).join('') + (af.fix||[]).map(t=>`<div class="f">🔧 ${esc(t)}</div>`).join('') : '')
-      + '</div>'; });
+  else h += qStagesHTML(s);
   if(t){
     const when = t.ts ? new Date(t.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     const chg = lq && str(t.q) !== lq;

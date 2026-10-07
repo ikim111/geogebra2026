@@ -4,7 +4,7 @@
 //
 // 요청 형식(POST, JSON): { step: 1~5, data: student22.html의 data }
 // 응답 형식(JSON): { good:[문장], fix:[문장], model }
-//   step1: 요청에 which:1|2(1차/2차 질문)를 함께 보내면 그 질문만 평가한다.
+//   step1: 요청에 which:1|2|3(1·2·3차 질문)을 함께 보내면 그 질문만 평가한다(자기평가도 그 차수 것: selfCheck/selfCheck2/selfCheck3).
 //          응답에 추가로 { checks:['O'|'△'|'X' ×6], target:'1차'|'2차' } — 체크리스트 6항목 AI평가
 const { bodyOf, callOpenAI, parseJSON, bannedSourceKind, STUDENT_AI_RULES, RECOMMENDED_SITES } = require('./_report-common');
 
@@ -26,7 +26,7 @@ const STEPS = {
     (공식 통계나 기록을 바탕으로 확률을 구할 수 있는 사건인가? 너무 막연하거나, 개인의 마음·취향처럼 셀 수 없는 것이거나, 관련 기록이 있을 수 없는 질문은 아닌가? 앞으로 일어날 일을 예측하는 질문도 지난 기록으로 확률을 구할 수 있으면 괜찮다.)
 ※ 지금은 질문을 만드는 단계이다. "자료를 찾아보세요", "기록을 조사해 보세요"처럼 자료 조사를 하라는 말은 하지 않는다.
 ※ 질문 선정 동기, 체크리스트 자기 평가는 참고만 하고 평가하지 않는다.
-※ good·fix는 아래 "평가할 질문" 하나에 대해서만 쓴다. 2차 질문을 평가할 때는 1차보다 나아진 점이 있으면 좋은 점으로 말해 준다.`,
+※ good·fix는 아래 "평가할 질문" 하나에 대해서만 쓴다. 2차·3차 질문을 평가할 때는 앞 차수보다 나아진 점이 있으면 좋은 점으로 말해 준다.`,
     text: d => `관심사: ${S(d.topicInterest) || '-'} / 진로: ${S(d.topicCareer) || '-'} / 취미: ${S(d.topicHobby) || '-'}
 질문 유형: ${S(d.qtype) || '(안 고름)'}
 주제: ${S(d.subject) || '-'}
@@ -112,10 +112,11 @@ module.exports = async (req, res) => {
   const b = bodyOf(req);
   const st = STEPS[parseInt(b.step, 10)];
   if (!st) { res.status(400).json({ error: 'step이 올바르지 않습니다.' }); return; }
-  const d = (b.data && typeof b.data === 'object') ? b.data : {};
+  let d = (b.data && typeof b.data === 'object') ? b.data : {};
   const isStep1 = parseInt(b.step, 10) === 1;
   const w = parseInt(b.which, 10);
-  const [tLabel, tQ] = (w === 1 || w === 2) ? [w + '차', S(d['q' + w])] : latestQ(d);
+  const [tLabel, tQ] = (w === 1 || w === 2 || w === 3) ? [w + '차', S(d['q' + w])] : latestQ(d);
+  if (isStep1 && (w === 2 || w === 3)) d = Object.assign({}, d, { selfCheck: d['selfCheck' + w] || '' }); // 그 차수의 자기평가
   const prompt = `너는 중학교 2학년 학생의 확률 탐구 글쓰기(수행평가) 준비를 도와주는 AI 피드백 도우미이다.
 학생이 지금 "${st.name}" 단계에 적은 내용을 아래 확인 기준에 비추어 보고 피드백한다.
 피드백이란 잘한 점은 칭찬하고, 아쉬운 점은 보완하라고 알려 주는 것이다.

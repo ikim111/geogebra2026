@@ -98,6 +98,9 @@
   .qnum{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;padding:0 6px;border-radius:12px;background:var(--blue);color:#fff;font-size:12.5px;}
   .qnum.ck{background:#607d8b;} .qnum.tc{background:#5c6bc0;}
   .qstage .ai-fb{margin-top:10px;}
+  .qskip{margin:10px 0;padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-size:14px;}
+  .qskip button,.qdone-btn{margin-left:8px;padding:5px 10px;border-radius:6px;border:1px solid #66bb6a;background:#fff;color:#2e7d32;font-weight:bold;cursor:pointer;font-family:inherit;font-size:13px;}
+  .qdone-row{margin-top:8px;padding:8px 10px;border-radius:8px;background:#e8f5e9;color:#2e7d32;font-size:13.5px;}
   .aichk{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px;}
   .aichk span{font-size:12.5px;padding:3px 8px;border-radius:12px;background:#f0f2f5;color:#555;}
   .aichk span b{margin-left:3px;} .aichk .o{background:#e8f1fc;color:#1565c0;} .aichk .t{background:#fff8e1;color:#9a6b00;} .aichk .x{background:#ffebee;color:#c62828;}
@@ -309,19 +312,26 @@
     <input type="text" data-k="subject" placeholder="위에서 고른 주제를 한 줄로 적어 보세요">
     <p class="hint" style="margin-top:10px;">유형: <b id="qtypeView">(위에서 골라 주세요)</b> — 질문을 점점 더 구체적으로 다듬어 보세요.</p>
     <div class="ex">예) 1차 야구는 홈에서 더 잘할까? → 2차 KIA는 홈과 원정 중 어디서 더 많이 이길까? → 3차 2024년 정규시즌 KIA 타이거즈는 홈경기와 원정경기 중 어디에서 이길 확률이 더 높았을까?</div>
-    <p class="hint" style="margin-top:12px;">아래 순서대로 진행해요: <b>1차 질문</b> → 체크리스트 자기평가 → <b>1차 AI 피드백</b> → <b>2차 질문</b> → <b>2차 AI 피드백</b> → <b>선생님 피드백</b> → <b>3차 질문</b></p>
-    <div class="qstage"><div class="qhd"><span class="qnum">1차</span>처음 떠오른 질문</div>
+    <p class="hint" style="margin-top:12px;">1차 → 2차 → 3차마다 <b>질문 쓰기 → 체크리스트 자기평가 → AI 피드백</b> 순서로 해요. 3차까지 마치면 선생님이 확인하고 피드백을 보내 줘요.<br>
+      <small style="color:#777;">AI 피드백에서 6가지가 모두 ○이면 그 질문으로 <b>확정</b>하고 남은 차수를 건너뛸 수 있어요.</small></p>
+    <div class="qstage" id="qStage1"><div class="qhd"><span class="qnum">1차</span>처음 떠오른 질문</div>
       <textarea data-k="q1" placeholder="처음 떠오른 질문을 적어요"></textarea>
-      <div class="chkstage"><div class="qhd" style="margin-top:10px;"><span class="qnum ck">✔</span>체크리스트 자기평가 <small>내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라요</small></div>
-        <table class="chk" id="selfCheckTable"></table></div>
+      <div class="chkstage"><div class="qhd" style="margin-top:10px;"><span class="qnum ck">✔</span>1차 질문 자기평가 <small>내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라요</small></div>
+        <table class="chk" id="selfCheckTable1"></table></div>
       <div class="ai-fb" id="aiFbQ1"></div></div>
-    <div class="qstage"><div class="qhd"><span class="qnum">2차</span>AI 피드백을 보고 다듬은 질문</div>
+    <div class="qstage" id="qStage2"><div class="qhd"><span class="qnum">2차</span>1차 AI 피드백을 보고 다듬은 질문</div>
       <textarea data-k="q2" placeholder="1차 AI 피드백을 보고 질문을 다듬어요"></textarea>
+      <div class="chkstage"><div class="qhd" style="margin-top:10px;"><span class="qnum ck">✔</span>2차 질문 자기평가 <small>내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라요</small></div>
+        <table class="chk" id="selfCheckTable2"></table></div>
       <div class="ai-fb" id="aiFbQ2"></div></div>
+    <div class="qstage" id="qStage3"><div class="qhd"><span class="qnum">3차</span>2차 AI 피드백을 보고 더 다듬은 질문</div>
+      <textarea data-k="q3" placeholder="2차 AI 피드백을 보고 질문을 더 다듬어요"></textarea>
+      <div class="chkstage"><div class="qhd" style="margin-top:10px;"><span class="qnum ck">✔</span>3차 질문 자기평가 <small>내 질문을 스스로 점검해 ○ / △ / ✕ 를 골라요</small></div>
+        <table class="chk" id="selfCheckTable3"></table></div>
+      <div class="ai-fb" id="aiFbQ3"></div></div>
+    <div class="qskip" id="qSkipNote" style="display:none;"></div>
     <div class="qstage tstage"><div class="qhd"><span class="qnum tc">👩‍🏫</span>선생님 피드백</div>
       <div id="teacherFbBox"></div></div>
-    <div class="qstage"><div class="qhd"><span class="qnum">3차</span>선생님 피드백을 보고 더 다듬은 질문</div>
-      <textarea data-k="q3" placeholder="선생님 피드백을 반영해 다듬어요 (피드백을 기다리지 않고 먼저 써도 돼요)"></textarea></div>
     <label class="f">질문 선정 동기 <span class="need">* 보고서 서론에 쓰여요</span></label>
     <textarea data-k="motive" placeholder="왜 이 질문을 탐구하고 싶은지 적어 보세요."></textarea>
   </div>
@@ -556,14 +566,16 @@ const DATA_CHECKS = [
 const state = {
   f: {},                                   // data-k 입력칸들의 값
   qtype: '',                               // 예측형 / 비교/선택형
-  selfCheck: Array(SELF_CHECKS.length).fill(''), // 'O' | '△' | 'X'
+  selfChecks: [1,2,3].map(()=>Array(SELF_CHECKS.length).fill('')), // 1·2·3차 질문 자기평가 'O' | '△' | 'X'
+  qDone: 0,                                // AI 평가가 모두 ○일 때 학생이 확정한 차수(1·2) — 그 뒤 차수는 건너뜀
   planRows: [{need:'', where:''},{need:'', where:''},{need:'', where:''}],
   sources: [{what:'',site:'',link:'',analysis:''},{what:'',site:'',link:'',analysis:''}],
   dataCheck: Array(DATA_CHECKS.length).fill(false)
 };
 const $ = id => document.getElementById(id);
 const v = k => (state.f[k] || '').trim();
-const lastQ = () => v('q3') || v('q2') || v('q1');
+const lastQ = () => state.qDone ? v('q'+state.qDone) : (v('q3') || v('q2') || v('q1'));
+const stageSkipped = w => !!state.qDone && state.qDone < w;
 const isUrl = s => /^https?:\/\/\S+\.\S+/i.test((s||'').trim());
 /* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
    블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
@@ -610,9 +622,12 @@ function missing(id){
   if(id===1){
     if(!v('topicInterest') && !v('topicCareer') && !v('topicHobby')) m.push('질문 주제');
     if(!state.qtype) m.push('질문 유형');
-    if(!v('q1')) m.push('1차 탐구 질문');
+    [1,2,3].forEach(w=>{
+      if(stageSkipped(w)) return;
+      if(!v('q'+w)) m.push(`${w}차 질문`);
+      if(state.selfChecks[w-1].some(c=>!c)) m.push(`${w}차 자기평가`);
+    });
     if(!v('motive')) m.push('질문 선정 동기');
-    if(state.selfCheck.some(c=>!c)) m.push('체크리스트 자기 평가');
   } else if(id===2){
     if(!v('finalQ')) m.push('최종 탐구 질문');
     if(!v('plan1') || !v('plan2') || !v('plan3')) m.push('탐구 계획 1~3');
@@ -647,7 +662,7 @@ function valueOf(id){
   return '';
 }
 function collectData(){
-  return Object.assign({}, state.f, { qtype: state.qtype, selfCheck: state.selfCheck.join(''),
+  return Object.assign({}, state.f, { qtype: state.qtype, selfCheck: state.selfChecks[0].join(''), selfCheck2: state.selfChecks[1].join(''), selfCheck3: state.selfChecks[2].join(''), qDone: state.qDone,
     planRows: state.planRows, sources: state.sources, dataCheck: state.dataCheck.map(b=>b?1:0).join('') });
 }
 
@@ -664,16 +679,31 @@ function paintQtype(){
   $('qtypeView').textContent = state.qtype || '(위에서 골라 주세요)';
 }
 (function buildSelfCheck(){
-  $('selfCheckTable').innerHTML = `<tr><th></th><th>점검 내용</th><th>자기평가</th></tr>` + SELF_CHECKS.map((t,i)=>
-    `<tr><td class="n">${i+1}</td><td>${t}</td><td class="sel"><span class="ox3" data-i="${i}">
-      <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td></tr>`).join('');
+  [1,2,3].forEach(w=>{
+    $('selfCheckTable'+w).innerHTML = `<tr><th></th><th>점검 내용</th><th>자기평가</th></tr>` + SELF_CHECKS.map((t,i)=>
+      `<tr><td class="n">${i+1}</td><td>${t}</td><td class="sel"><span class="ox3" data-w="${w}" data-i="${i}">
+        <button type="button" class="o" data-v="O">○</button><button type="button" class="t" data-v="△">△</button><button type="button" class="x" data-v="X">✕</button></span></td></tr>`).join('');
+  });
   document.querySelectorAll('.ox3 button').forEach(b => b.addEventListener('click', ()=>{
-    const i = +b.parentNode.dataset.i; state.selfCheck[i] = state.selfCheck[i] === b.dataset.v ? '' : b.dataset.v; paintSelfCheck(); changed();
+    const a = state.selfChecks[+b.parentNode.dataset.w - 1], i = +b.parentNode.dataset.i; a[i] = a[i] === b.dataset.v ? '' : b.dataset.v; paintSelfCheck(); changed();
   }));
 })();
 function paintSelfCheck(){
-  document.querySelectorAll('.ox3').forEach(g => { const i=+g.dataset.i; g.querySelectorAll('button').forEach(b => b.classList.toggle('on', state.selfCheck[i] === b.dataset.v)); });
+  document.querySelectorAll('.ox3').forEach(g => { const a = state.selfChecks[+g.dataset.w - 1], i=+g.dataset.i; g.querySelectorAll('button').forEach(b => b.classList.toggle('on', a[i] === b.dataset.v)); });
 }
+/* 질문 확정(AI 평가 6가지가 모두 ○일 때): 남은 차수 칸을 숨기고 완료 조건에서 뺀다 */
+function paintQStages(){
+  [2,3].forEach(w=>{ const el = $('qStage'+w); if(el) el.style.display = stageSkipped(w) ? 'none' : ''; });
+  const n = $('qSkipNote');
+  if(state.qDone){ n.style.display = ''; n.innerHTML = `✅ <b>${state.qDone}차 질문으로 확정</b>했어요. (AI 평가가 모두 ○) 남은 차수는 건너뛰어요.<button type="button" data-qdone="0">확정 취소하고 계속 다듬기</button>`; }
+  else n.style.display = 'none';
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('[data-qdone]'); if(!b || finalLocked) return;
+  const w = +b.dataset.qdone;
+  if(w && !confirm(`${w}차 질문으로 확정하고 남은 차수를 건너뛸까요? (나중에 취소할 수 있어요)`)) return;
+  state.qDone = w; paintQStages(); AI.paint(); changed();
+});
 $('copyQ3').addEventListener('click', ()=>{
   const q = lastQ(); if(!q){ alert('step1에 적은 탐구 질문이 아직 없어요.'); return; }
   const t = document.querySelector('[data-k="finalQ"]'); t.value = q; state.f.finalQ = q; autoGrow(t); changed();
@@ -797,8 +827,8 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 /* ---------- 상태가 바뀔 때마다: 배지·진행률·남은 할 일 표시 + 저장 ---------- */
 let __qHad = '';
 function changed(opts){
-  const qHad = (v('q1')?'1':'0') + (v('q2')?'1':'0'); // 1차·2차 질문이 생기거나 지워지면 AI 피드백 버튼을 다시 그린다
-  if(qHad !== __qHad){ try{ paintQFb(1); paintQFb(2); __qHad = qHad; }catch(e){} }
+  const qHad = [1,2,3].map(w=>v('q'+w)).join('\u0001'); // 질문이 바뀌면 AI 피드백 칸(버튼·확정 가능 여부)을 다시 그린다
+  if(qHad !== __qHad){ try{ paintQFb(1); paintQFb(2); paintQFb(3); __qHad = qHad; }catch(e){} }
   TASKS.forEach(t=>{
     const d = isDone(t.id), b = $('badge-'+t.key);
     b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
@@ -895,7 +925,8 @@ function restoreData(d){
   if(!d) return;
   document.querySelectorAll('[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
   state.qtype = d.qtype || '';
-  if(typeof d.selfCheck==='string') state.selfCheck = SELF_CHECKS.map((_,i)=>{ const c=d.selfCheck[i]; return (c==='O'||c==='△'||c==='X')?c:''; });
+  ['selfCheck','selfCheck2','selfCheck3'].forEach((k,j)=>{ if(typeof d[k]==='string') state.selfChecks[j] = SELF_CHECKS.map((_,i)=>{ const c=d[k][i]; return (c==='O'||c==='△'||c==='X')?c:''; }); });
+  state.qDone = (d.qDone===1 || d.qDone===2) ? d.qDone : 0;
   if(Array.isArray(d.planRows) && d.planRows.length) state.planRows = d.planRows.map(r=>({need:(r&&r.need)||'', where:(r&&r.where)||''}));
   if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(s=>({what:(s&&s.what)||'', site:(s&&s.site)||'', link:(s&&s.link)||'', analysis:(s&&s.analysis)||''}));
   if(typeof d.dataCheck==='string') state.dataCheck = DATA_CHECKS.map((_,i)=>d.dataCheck[i]==='1');
@@ -907,7 +938,7 @@ function restoreData(d){
   paintAll(); changed({noSave:true});
 }
 function paintAll(){
-  paintQtype(); paintSelfCheck(); paintTeacherFb(false); renderSources(); renderAnalysis(); paintDataChecks();
+  paintQtype(); paintSelfCheck(); paintQStages(); paintTeacherFb(false); renderSources(); renderAnalysis(); paintDataChecks();
   document.querySelectorAll('textarea[data-k]').forEach(autoGrow);
 }
 
@@ -944,15 +975,15 @@ const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.
 /* step1: 1차·2차 질문 아래에 각각 AI 피드백(체크리스트 6항목 ○△✕ + 좋은 점·개선 아이디어). 횟수는 1차·2차 합쳐 하루 5번.
    기록: {type:'feedback', step:1, target:'1차'|'2차', q:평가한 질문, checks:'O△X…', good, fix} (target이 없는 예전 기록은 1차로 본다) */
 const CHK_SHORT = ['확률과 관련', '주제·유형에 적합', '충분히 구체적', '자료 수집 가능', '단순 사실 확인 이상', '윤리적'];
-const qTargetOf = l => (l.target==='2차' || l.target==='3차') ? 2 : 1;
+const qTargetOf = l => l.target==='3차' ? 3 : l.target==='2차' ? 2 : 1;
 function paintQFb(w){
   const box = $('aiFbQ'+w); if(!box) return;
   const all = AI.fbOf(1), mine = all.filter(l=> qTargetOf(l)===w), last = mine[mine.length-1];
   const left = fbMax() - AI.today(all).length, off = AI.offReason(), noQ = !v('q'+w);
-  let h = `<div class="hd"><span><b>🤖 ${w}차 질문 AI 피드백</b><small>${w}차 질문을 체크리스트 6가지로 평가하고 좋은 점·개선 아이디어를 알려 줘요 · 오늘 남은 횟수(1차·2차 합쳐) ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
+  let h = `<div class="hd"><span><b>🤖 ${w}차 질문 AI 피드백</b><small>${w}차 질문을 체크리스트 6가지로 평가하고 좋은 점·개선 아이디어를 알려 줘요 · 오늘 남은 횟수(1·2·3차 합쳐) ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
     <button type="button" class="ai-btn" data-fb="1" data-fbq="${w}" ${(off || left<=0 || AI.busy || noQ) ? 'disabled' : ''}>${AI.busy===1 && AI.busyQ===w ? '🤖 살펴보는 중…' : `🤖 ${w}차 질문 피드백 받기`}</button></div>`;
   if(off) h += `<div class="ai-off">${off}</div>`;
-  else if(left<=0) h += `<div class="ai-off">오늘 질문 만들기 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
+  else if(left<=0) h += `<div class="ai-off">오늘 질문 만들기(1·2·3차) AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요! (꼭 필요하면 선생님께 말씀드려요)</div>`;
   else if(noQ) h += `<div class="ai-off">먼저 ${w}차 질문을 써요.</div>`;
   if(last){
     const c = typeof last.checks==='string' ? last.checks : '';
@@ -961,7 +992,11 @@ function paintQFb(w){
     (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
     if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">개선 아이디어</span><span>${esc(t)}</span></div>`);
     else h += `<div class="row none"><span class="tag">개선 아이디어</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
-    h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.</div></div>`;
+    h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.</div>`;
+    // 6가지 모두 ○이고 지금 질문 그대로이면 확정할 수 있다(3차는 마지막이라 확정 불필요)
+    if(w<3 && c==='OOOOOO' && String(last.q||'').trim()===v('q'+w) && state.qDone!==w)
+      h += `<div class="qdone-row">🎉 6가지가 모두 ○예요! 이 질문으로 확정하고 남은 차수를 건너뛸 수 있어요.<button type="button" class="qdone-btn" data-qdone="${w}">✅ ${w}차 질문으로 확정</button></div>`;
+    h += `</div>`;
   }
   box.innerHTML = h;
 }
@@ -975,8 +1010,9 @@ function setTeacherFb(v){
 function paintTeacherFb(isNew){
   const box = $('teacherFbBox'); if(!box) return;
   const t = TEACHER_FB;
-  if(!t || (t.ok!==true && t.ok!==false)){ box.innerHTML = '<div class="tfb-none">아직 선생님 피드백이 없어요. 기다리지 않고 3차 질문을 먼저 써도 돼요. 피드백이 오면 여기에 바로 나타나요.</div>'; return; }
+  if(!t || (t.ok!==true && t.ok!==false)){ box.innerHTML = '<div class="tfb-none">질문 다듬기를 마치면 선생님이 확인하고 피드백을 보내 줘요. 피드백이 오면 여기에 바로 나타나요. (기다리는 동안 step2로 넘어가도 돼요)</div>'; return; }
   box.innerHTML = `<span class="tfb-v ${t.ok?'ok':'no'}">${t.ok ? '✅ 이 질문으로 진행해도 좋아요' : '🔁 질문을 다시 생각해 봐요'}</span>`
+    + (t.ok ? '' : '<div class="tfb-m" style="color:#c62828;">→ 고친 질문은 step2의 <b>최종 탐구 질문</b> 칸에 써요.</div>')
     + (String(t.comment||'').trim() ? `<div class="tfb-c">${esc(t.comment)}</div>` : '')
     + `<div class="tfb-m">${t.q ? `피드백한 질문: "${esc(t.q)}" · ` : ''}${fmtWhen(t.ts)}</div>`;
   const st = box.closest('.qstage');
@@ -984,7 +1020,7 @@ function paintTeacherFb(isNew){
 }
 const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
 function paintStepFb(n){
-  if(n===1){ paintQFb(1); paintQFb(2); return; }
+  if(n===1){ paintQFb(1); paintQFb(2); paintQFb(3); return; }
   const box = $('aiFb'+n); if(!box) return;
   const used = AI.fbOf(n), last = used[used.length-1], left = fbMax() - AI.today(used).length, off = AI.offReason();
   let h = `<div class="hd"><span><b>🤖 AI 피드백</b><small>지금 step을 채점 기준에 맞게 잘 하고 있는지 알려 줘요 · 오늘 남은 횟수 ${Math.max(0,left)}/${fbMax()}${bonusFb()?` (선생님 추가 +${bonusFb()})`:''}</small></span>
