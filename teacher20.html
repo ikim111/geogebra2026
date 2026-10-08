@@ -698,7 +698,7 @@ function renderView(){
     return;
   }
   const seated = Object.keys(S.seats).length;
-  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="printSheet(false)" title="교탁이 아래 — 교사가 보는 방향">🖨 교사용 인쇄</button><button class="btn" onclick="printSheet(true)" title="교탁이 위 — 학생이 교탁을 보는 방향(위아래 뒤집기)">🖨 학생용 인쇄</button><button class="btn" id="xlsxOut" onclick="exportXlsx()" title="교사용 자리표를 5~8반 한 시트에 나란히 — 이름 아래 발표 칸(빈칸)">📥 엑셀 저장 (5~8반)</button></div></div>
+  $('t-view').innerHTML = `<div class="panel"><div class="row no-print" style="justify-content:space-between;margin-bottom:8px;"><h2 style="margin:0;">2학년 ${esc(room)}반 자리표</h2><div class="row"><span class="hint">자리 정한 팀 ${seated}/${S.teams.length}</span><button class="btn" onclick="printSheet(false)" title="교탁이 아래 — 교사가 보는 방향">🖨 교사용 인쇄</button><button class="btn" onclick="printSheet(true)" title="교탁이 위 — 학생이 교탁을 보는 방향(위아래 뒤집기)">🖨 학생용 인쇄</button><button class="btn" id="xlsxOut" onclick="exportXlsx()" title="교사용 자리표를 ${xlsxLabel()} 한 시트에 나란히 — 이름 아래 발표 칸(빈칸)">📥 엑셀 저장 (${xlsxLabel()})</button></div></div>
     <h2 style="display:none;" class="print-only">2학년 ${esc(room)}반 자리표</h2>${boardHTML({big:true})}</div>`;
 }
 
@@ -735,9 +735,11 @@ function printSheet(student){
 }
 window.printSheet = printSheet;
 
-/* 교사용 자리표 엑셀 저장: 선생님 구글 시트('7월 발표')와 같은 모양 — 5~8반을 한 시트에 나란히(반마다 6칸),
+/* 교사용 자리표 엑셀 저장: 선생님 구글 시트('7월 발표')와 같은 모양 — 네 반(1~4·5~8·9~12)을 한 시트에 나란히(반마다 6칸),
    모둠마다 [위 자리(2칸 합침)] / [멘토][멘티] / [멘티][멘토], 이름 아래 줄은 발표 칸(빈칸). 멘토 = 노랑 */
-const XLSX_ROOMS = ['5','6','7','8'];
+// 지금 보고 있는 반이 속한 네 반 묶음(1~4 · 5~8 · 9~12)을 한 시트에 나란히
+const xlsxRooms = () => { const n = +room || 5, a = Math.floor((n-1)/4)*4 + 1; return [a, a+1, a+2, a+3].map(String); };
+const xlsxLabel = () => { const r = xlsxRooms(); return `${r[0]}~${r[3]}반`; };
 function seatCells(st, g){
   const nmO = no => { const x = no!=null ? st.roster.find(y=>y.no===no) : null; return x ? x.name : ''; };
   const at = side => { const k = Object.keys(st.seats).find(m=> st.seats[m].g===g && st.seats[m].s===side); return k!=null ? {m:+k, ...st.seats[k]} : null; };
@@ -753,6 +755,7 @@ async function exportXlsx(){
   try{
     await loadExcelJS();
     const states = {};
+    const XLSX_ROOMS = xlsxRooms();
     for(const c of XLSX_ROOMS){
       if(c===room) states[c] = S;
       else if(db){ const v = (await db.ref('rooms/'+c+SUFFIX).once('value')).val(); states[c] = normalize(v || DEFAULTS[c]); }
@@ -793,10 +796,10 @@ async function exportXlsx(){
     for(let r=1;r<=17;r++) ws.getRow(r).height = 22;
     const buf = await wb.xlsx.writeBuffer();
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-    a.download = `자리배치_5-8반_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.xlsx`;
+    a.download = `자리배치_${XLSX_ROOMS[0]}-${XLSX_ROOMS[3]}반_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.xlsx`;
     document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }catch(err){ alert('엑셀 저장에 실패했어요: ' + err.message); }
-  finally{ if(btn){ btn.disabled = false; btn.textContent = '📥 엑셀 저장 (5~8반)'; } }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = `📥 엑셀 저장 (${xlsxLabel()})`; } }
 }
 window.exportXlsx = exportXlsx;
 
