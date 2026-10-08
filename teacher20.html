@@ -78,7 +78,6 @@
   .group .gt{background:#455a64;color:#fff;text-align:center;font-weight:bold;font-size:14px;padding:4px;position:relative;}
   .gswap{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;border-radius:6px;background:#fff;color:#1a237e;font-size:12px;font-weight:bold;padding:2px 8px;cursor:pointer;}
   .gswap:hover{background:#ffe082;}
-  .mini{border:1px solid #f0a500;background:#fff8e1;color:#8a5a00;border-radius:10px;font-size:11px;padding:0 6px;cursor:pointer;margin-left:4px;}
   .seat{border:1px solid #cfd8dc;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px;font-weight:bold;padding:4px;line-height:1.25;}
   .seat.mseat{background:var(--mentor);}
   .seat.top{min-height:40px;background:#fafafa;}
@@ -291,6 +290,7 @@ let db = null, ref = null, fbReady = false;
 let pairSel = { mentor:null, mentees:[] };
 let tab = 'roster';
 let seatPick = null; // 자리 고르기에서 선생님이 직접 고른 팀(멘토 번호)
+let pairPick = null; // 짝 정하기에서 선생님이 목록에서 직접 고른 학생(번호) — 결석 등으로 순서를 바꿀 때
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -303,9 +303,7 @@ function normalize(v){
     if(s.s==='L' || s.s==='R') seats[k] = {g:+s.g, s:s.s, top: s.top!=null ? +s.top : null, bot: s.bot!=null ? +s.bot : null};
     else { const tm = teams.find(t=>t.m===+k) || {e:[]}; seats[k] = tm.e.length>=2 ? {g:+s.g, s:'L', top:tm.e[1], bot:tm.e[0]} : {g:+s.g, s:(+s.r?'R':'L'), top:null, bot:tm.e[0]!=null?tm.e[0]:null}; } // 예전 형식 변환
   });
-  // 결석 등으로 차례를 미룬 학생(skip: 학생 번호) · 팀(seatSkip: 멘토 번호) — 남은 차례가 모두 끝나면 다시 돌아온다
-  const arr = a => (Array.isArray(a) ? a : Object.values(a||{})).map(Number).filter(Boolean);
-  return { roster, teams, seats, mode: v.mode==='pair' || v.mode==='seat' ? v.mode : '', skip: arr(v.skip), seatSkip: arr(v.seatSkip) };
+  return { roster, teams, seats, mode: v.mode==='pair' || v.mode==='seat' ? v.mode : '' };
 }
 /* 12등 동점자: 아직 정하지 않은 동점자(tie)가 있으면 짝 정하기를 막는다 */
 const tiePending = () => S.roster.filter(x=>x.tie);
@@ -322,7 +320,7 @@ function teamColor(t){ const k = S.teams.indexOf(t); return `hsl(${HUES[k%HUES.l
 function save(){
   if(!ref){ $('saveState').textContent = '⚠️ 저장 안 됨(연결 실패)'; return; }
   $('saveState').textContent = '저장 중…';
-  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, mode:S.mode||'', skip:S.skip||[], seatSkip:S.seatSkip||[], ts: Date.now() })
+  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, mode:S.mode||'', ts: Date.now() })
     .then(()=> $('saveState').textContent = '✔ 저장됨')
     .catch(()=> $('saveState').textContent = '⚠️ 저장 실패');
 }
@@ -496,14 +494,14 @@ document.addEventListener('click', e=>{
 });
 
 /* ② 짝 정하기 */
-function currentTurn(){ const left = order().filter(x=> !teamOf(x.no)), sk = S.skip||[]; return left.find(x=> !sk.includes(x.no)) || left[0] || null; } // 미룬 학생은 맨 뒤로
-const skipBtn = (id, skipped, label) => skipped
-  ? `<p class="hint" style="margin-top:8px;">⏭ 결석 등으로 미뤘던 차례예요. 오늘 없으면 선생님이 대신 골라 주세요.</p>`
-  : `<button class="btn" id="${id}" title="결석 등으로 지금 고를 수 없을 때 — 맨 뒤로 미루고 다음으로 넘어가요">⏭ ${label}</button>`;
+function currentTurn(){
+  if(pairPick!=null){ const x = order().find(y=>y.no===pairPick); if(x && !teamOf(x.no)) return x; pairPick = null; }
+  return order().find(x=> !teamOf(x.no)) || null;
+}
 function renderPair(){
   const o = order(), cur = currentTurn();
   if(cur && pairSel.mentor===null && pairSel.mentees.length===0) pairSel.cur = cur.no;
-  let list = o.map((x,k)=>{ const tm = teamOf(x.no); return `<div class="it ${tm?'done':''} ${cur&&cur.no===x.no?'cur':''}"><span class="rk">${k+1}</span><span class="badge ${x.mentor?'m':'e'}">${x.mentor?'멘토':'멘티'}</span><span class="nm">${esc(x.no+' '+x.name)}${tm?' ✓':''}${!tm && (S.skip||[]).includes(x.no) ? ` <button class="mini" data-unskip="${x.no}" title="눌러서 원래 차례로 되돌리기">⏭ 미룸 ↩</button>` : ''}</span><span class="sc">${x.score}</span></div>`; }).join('');
+  let list = o.map((x,k)=>{ const tm = teamOf(x.no); return `<div class="it ${tm?'done':''} ${cur&&cur.no===x.no?'cur':''}" ${tm?'':`data-pp="${x.no}" style="cursor:pointer;" title="눌러서 이 학생이 먼저 고르기"`}><span class="rk">${k+1}</span><span class="badge ${x.mentor?'m':'e'}">${x.mentor?'멘토':'멘티'}</span><span class="nm">${esc(x.no+' '+x.name)}${tm?' ✓':''}</span><span class="sc">${x.score}</span></div>`; }).join('');
   let main = '';
   if(!S.roster.length) main = `<div class="notice">먼저 ① 명단을 넣어 주세요.</div>`;
   else if(tiePending().length) main = `<div class="notice">⚠️ 12등 동점자(${tiePending().map(x=>esc(x.no+' '+x.name)).join(', ')}) 중 멘토 1명을 ① 명단 화면에서 먼저 골라 주세요.</div>`;
@@ -519,7 +517,7 @@ function renderPair(){
         <div class="what">함께할 <b>멘티를 1명 또는 2명</b> 골라요.</div>
         <div class="lbl">남은 멘티</div><div class="cands">${freeMentees.map(x=>`<button class="cand ${pairSel.mentees.includes(x.no)?'sel':''}" data-pe="${x.no}" ${!pairSel.mentees.includes(x.no)&&pairSel.mentees.length>=maxPick?'disabled':''}>${esc(x.no+' '+x.name)}<small>${x.score}</small></button>`).join('') || '<span class="hint">남은 멘티가 없어요. 아래 팀 목록에서 조정해 주세요.</span>'}</div>
         ${maxPick<2 && freeMentees.length ? `<p class="hint">${threes>=6 ? '3명 팀이 벌써 6팀(모둠마다 1팀)이라' : `팀이 없는 다른 멘토 ${freeMentors.length}명도 멘티가 있어야 해서`} 지금은 <b>1명</b>만 고를 수 있어요.</p>` : ''}
-        <div class="row" style="margin-top:10px;"><button class="btn primary" id="pairOk" ${pairSel.mentees.length?'':'disabled'}>✅ 확정 (${pairSel.mentees.map(nm).join(', ')||'멘티를 골라요'})</button>${skipBtn('skipTurn', (S.skip||[]).includes(cur.no), '결석 — 다음 학생으로')}</div></div>`;
+        <div class="row" style="margin-top:10px;"><button class="btn primary" id="pairOk" ${pairSel.mentees.length?'':'disabled'}>✅ 확정 (${pairSel.mentees.map(nm).join(', ')||'멘티를 골라요'})</button>${pairPick!=null ? `<button class="btn" id="pairPickReset">↩ 원래 순서로</button>` : ''}</div></div>`;
     } else {
       // 남은 멘티가 팀 없는 멘토 수보다 적으면, 이 학생은 팀 없는 멘토만 고를 수 있다
       const mustNew = freeMentees.length < freeMentors.length;
@@ -535,7 +533,7 @@ function renderPair(){
         <div class="lbl">함께할 멘티 (선택)</div><div class="cands">${freeMentees.map(x=>`<button class="cand ${pairSel.mentees.includes(x.no)?'sel':''}" data-pe="${x.no}" ${(pairSel.mentor==null || (room2<1 && !pairSel.mentees.includes(x.no)) || (!pairSel.mentees.includes(x.no) && pairSel.mentees.length>=1))?'disabled':''}>${esc(x.no+' '+x.name)}<small>${x.score}</small></button>`).join('') || '<span class="hint">남은 멘티가 없어요.</span>'}</div>
         ${mustNew ? '<p class="hint">팀이 없는 멘토가 남아 있어서, 아직 팀이 없는 멘토만 고를 수 있어요.</p>' : ''}
         ${pairSel.mentor!=null && room2<1 ? `<p class="hint">${tmSel && tmSel.e.length>=1 ? '이 멘토의 팀은 이미 2명이라 멘티를 더 고를 수 없어요.' : '팀이 없는 다른 멘토도 멘티가 있어야 해서 멘티를 더 고를 수 없어요.'}</p>` : ''}
-        <div class="row" style="margin-top:10px;"><button class="btn primary" id="pairOk" ${pairSel.mentor!=null?'':'disabled'}>✅ 확정</button>${skipBtn('skipTurn', (S.skip||[]).includes(cur.no), '결석 — 다음 학생으로')}</div></div>`;
+        <div class="row" style="margin-top:10px;"><button class="btn primary" id="pairOk" ${pairSel.mentor!=null?'':'disabled'}>✅ 확정</button>${pairPick!=null ? `<button class="btn" id="pairPickReset">↩ 원래 순서로</button>` : ''}</div></div>`;
     }
   }
   main += `<div class="row no-print" style="margin:10px 0;"><button class="btn" id="undoBtn" ${undoStack.length?'':'disabled'}>↶ 되돌리기</button><button class="btn danger" id="resetPairs">짝 모두 지우기</button></div>`;
@@ -543,8 +541,10 @@ function renderPair(){
       const free = o.filter(x=>!x.mentor && !teamOf(x.no));
       return `<div class="team" style="--c:${teamColor(t)}"><div class="hd"><span>${t.e.length+1}명</span></div><span class="chip m">${esc(nm(t.m))}<button data-rmt="${t.m}" title="팀 지우기">×</button></span>${t.e.map(n=>`<span class="chip">${esc(nm(n))}<button data-rme="${t.m}:${n}" title="빼기">×</button></span>`).join('')}
         ${t.e.length<2 && free.length ? `<br><select data-addto="${t.m}"><option value="">＋ 멘티 넣기</option>${free.map(x=>`<option value="${x.no}">${esc(x.no+' '+x.name)}</option>`).join('')}</select>` : ''}</div>`; }).join('') || '<span class="hint">아직 정해진 팀이 없어요.</span>'}</div></div>`;
-  $('t-pair').innerHTML = `<div class="pair-wrap"><div class="panel order"><h2>차례 (발표 많은 순)</h2>${list}</div><div>${main}</div></div>`;
+  $('t-pair').innerHTML = `<div class="pair-wrap"><div class="panel order"><h2>차례 (발표 많은 순)</h2><p class="hint" style="margin:-4px 0 6px;">학생을 누르면 그 학생이 먼저 골라요.</p>${list}</div><div>${main}</div></div>`;
 }
+/* 차례 목록에서 학생을 누르면 그 학생이 먼저 고른다(결석·순서 바꾸기) */
+document.addEventListener('click', e=>{ if(tab!=='pair') return; const it = e.target.closest && e.target.closest('[data-pp]'); if(!it) return; pairPick = +it.dataset.pp; pairSel = {mentor:null, mentees:[]}; renderPair(); });
 document.addEventListener('click', e=>{
   const t = e.target.closest ? e.target.closest('button') : null; if(!t || tab!=='pair') return;
   const cur = currentTurn();
@@ -555,10 +555,9 @@ document.addEventListener('click', e=>{
       if(cur.mentor){ S.teams.push({m:cur.no, e:pairSel.mentees.slice(0,2)}); }
       else { let tm = teamOf(pairSel.mentor); if(!tm){ tm = {m:pairSel.mentor, e:[]}; S.teams.push(tm); } tm.e.push(cur.no, ...pairSel.mentees.slice(0,1)); tm.e = tm.e.slice(0,2); }
       pairSel = {mentor:null, mentees:[]};
-    }); return;
+    }); pairPick = null; renderPair(); return;
   }
-  if(t.id==='skipTurn' && cur){ pairSel = {mentor:null, mentees:[]}; commit(()=>{ S.skip = (S.skip||[]).filter(n=>n!==cur.no).concat(cur.no); }); return; }
-  if(t.dataset.unskip){ const n = +t.dataset.unskip; pairSel = {mentor:null, mentees:[]}; commit(()=>{ S.skip = (S.skip||[]).filter(x=>x!==n); }); return; }
+  if(t.id==='pairPickReset'){ pairPick = null; pairSel = {mentor:null, mentees:[]}; renderPair(); return; }
   if(t.dataset.rmt){ const m = +t.dataset.rmt; if(!confirm(`${nm(m)} 팀을 지울까요? (팀의 멘티도 다시 고를 수 있게 돼요)`)) return; commit(()=>{ S.teams = S.teams.filter(x=>x.m!==m); delete S.seats[m]; }); return; }
   if(t.dataset.rme){ const [m,n] = t.dataset.rme.split(':').map(Number); commit(()=>{ const tm = teamOf(m); tm.e = tm.e.filter(x=>x!==n); }); return; }
   if(t.id==='resetPairs'){ if(!confirm('짝(팀)과 자리를 모두 지울까요?')) return; commit(()=>{ S.teams=[]; S.seats={}; }); pairSel={mentor:null,mentees:[]}; return; }
@@ -579,7 +578,7 @@ const GROUPS_TOP = [6,5,4], GROUPS_BOTTOM = [3,2,1];
 let pendingL = null; // 3명 팀이 왼쪽 묶음을 골랐을 때 자리판에 미리 보여 주는 중 {g, top, bot} — 멘티 위·아래를 바꾼 뒤 확정
 function teamOrder(){ const rk = rankMap(); return S.teams.slice().sort((a,b)=> Math.min(rk[a.m], ...a.e.map(n=>rk[n])) - Math.min(rk[b.m], ...b.e.map(n=>rk[n]))); }
 function setAt(g, side){ const k = Object.keys(S.seats).find(m=> S.seats[m].g===g && S.seats[m].s===side); return k!=null ? S.teams.find(t=>t.m===+k) : null; }
-function curSeatTeam(){ if(seatPick!=null){ const t = S.teams.find(x=>x.m===seatPick); if(t && !S.seats[t.m]) return t; seatPick = null; } const left = teamOrder().filter(t=> !S.seats[t.m]), sk = S.seatSkip||[]; return left.find(t=> !sk.includes(t.m)) || left[0] || null; }
+function curSeatTeam(){ if(seatPick!=null){ const t = S.teams.find(x=>x.m===seatPick); if(t && !S.seats[t.m]) return t; seatPick = null; } return teamOrder().find(t=> !S.seats[t.m]) || null; }
 /* 2명 팀이 왼쪽 묶음을 너무 많이 차지하면 뒤 차례 3명 팀이 앉을 곳이 없어지므로 막는다 */
 function leftReserved(t){ const freeL = [1,2,3,4,5,6].filter(g=>!setAt(g,'L')).length; const need3 = S.teams.filter(x=> x!==t && x.e.length>=2 && !S.seats[x.m]).length; return freeL <= need3; }
 function canSit(t, g, side){ if(!t || setAt(g,side)) return false; if(side==='R' && t.e.length>=2) return false; if(side==='L' && t.e.length<2 && leftReserved(t)) return false; return true; }
@@ -609,7 +608,7 @@ function renderSeat(){
   const cur = curSeatTeam(), to = teamOrder();
   const unteamed = order().filter(x=>!teamOf(x.no)).length;
   const label = st => st ? `${st.g}모둠 ${st.s==='L'?'왼쪽':'오른쪽'}` : '';
-  let side = `<div class="panel order"><h2>팀 차례</h2>${to.map((t,k)=>`<div class="it ${S.seats[t.m]?'done':''} ${cur&&cur.m===t.m?'cur':''}" style="cursor:pointer;" data-st="${t.m}"><span class="rk">${k+1}</span><span style="width:10px;height:10px;border-radius:50%;background:${teamColor(t)};display:inline-block;"></span><span class="nm">${esc([t.m,...t.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))}${!S.seats[t.m] && (S.seatSkip||[]).includes(t.m) ? ` <button class="mini" data-unseatskip="${t.m}" title="눌러서 원래 차례로 되돌리기">⏭ 미룸 ↩</button>` : ''}</span>${S.seats[t.m]?`<span class="sc" style="width:auto;">${label(S.seats[t.m])}</span>`:''}</div>`).join('') || '<span class="hint">먼저 ② 짝을 정해요.</span>'}</div>`;
+  let side = `<div class="panel order"><h2>팀 차례</h2>${to.map((t,k)=>`<div class="it ${S.seats[t.m]?'done':''} ${cur&&cur.m===t.m?'cur':''}" style="cursor:pointer;" data-st="${t.m}"><span class="rk">${k+1}</span><span style="width:10px;height:10px;border-radius:50%;background:${teamColor(t)};display:inline-block;"></span><span class="nm">${esc([t.m,...t.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))}</span>${S.seats[t.m]?`<span class="sc" style="width:auto;">${label(S.seats[t.m])}</span>`:''}</div>`).join('') || '<span class="hint">먼저 ② 짝을 정해요.</span>'}</div>`;
   let top = '';
   if(unteamed) top += `<div class="notice">아직 팀이 없는 학생이 ${unteamed}명 있어요. ② 짝 정하기를 먼저 마치면 좋아요.</div>`;
   if(cur && pendingL){
@@ -621,7 +620,7 @@ function renderSeat(){
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요. 다른 팀이 먼저 고르게 하려면 왼쪽 '팀 차례' 목록에서 그 팀을 눌러요.<br>
     ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있어요. 누르면 바로 앉고, 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기]로 바꿔요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} </div>
     <div class="row" style="margin-top:8px;align-items:center;">
-      ${seatPick!=null ? `<button class="btn" id="pickReset">↩ 원래 순서로</button>` : skipBtn('skipSeat', (S.seatSkip||[]).includes(cur.m), '결석 — 다음 팀으로')}
+      ${seatPick!=null ? `<button class="btn" id="pickReset">↩ 원래 순서로</button>` : ''}
     </div>
     ${seatPick!=null ? `<p class="hint" style="margin-top:4px;">선생님이 고른 팀이 먼저 고르는 중이에요. 자리를 정하면 다시 원래 순서(발표 많은 순)로 돌아가요.</p>` : ''}</div>`;
   else if(S.teams.length) top += `<div class="ok-msg">🎉 모든 팀의 자리가 정해졌어요. ④ 자리표에서 크게 볼 수 있어요.</div>`;
@@ -636,7 +635,6 @@ document.addEventListener('mouseover', e=>{
 });
 document.addEventListener('click', e=>{
   if(tab!=='seat') return;
-  const us = e.target.closest && e.target.closest('[data-unseatskip]'); if(us){ const m = +us.dataset.unseatskip; commit(()=>{ S.seatSkip = (S.seatSkip||[]).filter(x=>x!==m); }); return; }
   const st = e.target.closest && e.target.closest('[data-st]'); if(st){ const m = +st.dataset.st; if(!S.seats[m]){ seatPick = m; pendingL = null; renderSeat(); } return; }
   const b0 = e.target.closest && e.target.closest('button');
   if(pendingL && b0 && (b0.id==='swapL' || (b0.dataset.gswap && +b0.dataset.gswap===pendingL.g))){ pendingL = Object.assign({}, pendingL, {top:pendingL.bot, bot:pendingL.top}); renderSeat(); return; }
@@ -647,7 +645,6 @@ document.addEventListener('click', e=>{
   }
   if(b0 && b0.dataset.gswap && !pendingL){ const t = setAt(+b0.dataset.gswap,'L'); if(t && S.seats[t.m].top!=null) commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
   if(b0 && b0.id==='pickReset'){ seatPick = null; renderSeat(); return; }
-  if(b0 && b0.id==='skipSeat'){ const cur = curSeatTeam(); if(cur) commit(()=>{ S.seatSkip = (S.seatSkip||[]).filter(n=>n!==cur.m).concat(cur.m); }); return; }
   if(b0 && b0.id==='cancelL'){ pendingL = null; renderSeat(); return; }
   const c = e.target.closest && e.target.closest('.board.live .seat[data-g]');
   if(c){
