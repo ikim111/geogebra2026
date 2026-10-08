@@ -76,7 +76,11 @@
   .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
   .group{border:2px solid #455a64;border-radius:10px;overflow:hidden;background:#fff;}
   .group .gt{background:#455a64;color:#fff;text-align:center;font-weight:bold;font-size:14px;padding:4px;position:relative;}
-  .gswap{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;border-radius:6px;background:#fff;color:#1a237e;font-size:12px;font-weight:bold;padding:2px 8px;cursor:pointer;}
+  .gsw{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;gap:3px;}
+  .gsix{position:absolute;left:4px;top:50%;transform:translateY(-50%);border:1px solid #fff;border-radius:6px;background:transparent;color:#fff;font-size:11px;padding:1px 6px;cursor:pointer;}
+  .gsix:hover{background:#ffe082;color:#333;}
+  .ggrid .seat.top6{min-height:40px;background:#fafafa;} .big .seat.top6{min-height:54px;}
+  .gswap{border:0;border-radius:6px;background:#fff;color:#1a237e;font-size:12px;font-weight:bold;padding:2px 8px;cursor:pointer;}
   .gswap:hover{background:#ffe082;}
   .seat{border:1px solid #cfd8dc;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px;font-weight:bold;padding:4px;line-height:1.25;}
   .seat.mseat{background:var(--mentor);}
@@ -303,7 +307,9 @@ function normalize(v){
     if(s.s==='L' || s.s==='R') seats[k] = {g:+s.g, s:s.s, top: s.top!=null ? +s.top : null, bot: s.bot!=null ? +s.bot : null};
     else { const tm = teams.find(t=>t.m===+k) || {e:[]}; seats[k] = tm.e.length>=2 ? {g:+s.g, s:'L', top:tm.e[1], bot:tm.e[0]} : {g:+s.g, s:(+s.r?'R':'L'), top:null, bot:tm.e[0]!=null?tm.e[0]:null}; } // 예전 형식 변환
   });
-  return { roster, teams, seats, mode: v.mode==='pair' || v.mode==='seat' ? v.mode : '' };
+  // six = 6명 모둠 번호 목록(기본은 모두 5명 모둠). 6명 모둠은 위 칸이 둘로 나뉘어 오른쪽 묶음에도 3명 팀이 앉는다
+  const six = (Array.isArray(v.six) ? v.six : Object.values(v.six||{})).map(Number).filter(g=>g>=1&&g<=6);
+  return { roster, teams, seats, mode: v.mode==='pair' || v.mode==='seat' ? v.mode : '', six };
 }
 /* 12등 동점자: 아직 정하지 않은 동점자(tie)가 있으면 짝 정하기를 막는다 */
 const tiePending = () => S.roster.filter(x=>x.tie);
@@ -320,7 +326,7 @@ function teamColor(t){ const k = S.teams.indexOf(t); return `hsl(${HUES[k%HUES.l
 function save(){
   if(!ref){ $('saveState').textContent = '⚠️ 저장 안 됨(연결 실패)'; return; }
   $('saveState').textContent = '저장 중…';
-  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, mode:S.mode||'', ts: Date.now() })
+  ref.set({ roster:S.roster, teams:S.teams, seats:S.seats, mode:S.mode||'', six:S.six||[], ts: Date.now() })
     .then(()=> $('saveState').textContent = '✔ 저장됨')
     .catch(()=> $('saveState').textContent = '⚠️ 저장 실패');
 }
@@ -494,6 +500,8 @@ document.addEventListener('click', e=>{
 });
 
 /* ② 짝 정하기 */
+const isSix = g => (S.six||[]).includes(g);
+const MAX3 = () => 6 + (S.six||[]).length; // 3명 팀이 앉을 수 있는 묶음 수 = 왼쪽 6개 + 6명 모둠의 오른쪽
 function currentTurn(){
   if(pairPick!=null){ const x = order().find(y=>y.no===pairPick); if(x && !teamOf(x.no)) return x; pairPick = null; }
   return order().find(x=> !teamOf(x.no)) || null;
@@ -512,21 +520,21 @@ function renderPair(){
     const freeMentors = o.filter(x=> x.mentor && !teamOf(x.no) && x.no!==cur.no);
     if(cur.mentor){
       const threes = S.teams.filter(t=>t.e.length>=2).length; // 3명 팀은 모둠 왼쪽 묶음에만 앉으므로 최대 6팀
-      const maxPick = threes>=6 ? 1 : Math.max(1, Math.min(2, freeMentees.length - freeMentors.length));
+      const maxPick = threes>=MAX3() ? 1 : Math.max(1, Math.min(2, freeMentees.length - freeMentors.length));
       main = `<div class="turn"><div class="who">지금 차례: ${esc(cur.no+' '+cur.name)} <span class="badge m">멘토</span> <span style="font-size:15px;color:#666;">발표 ${cur.score}</span></div>
         <div class="what">함께할 <b>멘티를 1명 또는 2명</b> 골라요.</div>
         <div class="lbl">남은 멘티</div><div class="cands">${freeMentees.map(x=>`<button class="cand ${pairSel.mentees.includes(x.no)?'sel':''}" data-pe="${x.no}" ${!pairSel.mentees.includes(x.no)&&pairSel.mentees.length>=maxPick?'disabled':''}>${esc(x.no+' '+x.name)}<small>${x.score}</small></button>`).join('') || '<span class="hint">남은 멘티가 없어요. 아래 팀 목록에서 조정해 주세요.</span>'}</div>
-        ${maxPick<2 && freeMentees.length ? `<p class="hint">${threes>=6 ? '3명 팀이 벌써 6팀(모둠마다 1팀)이라' : `팀이 없는 다른 멘토 ${freeMentors.length}명도 멘티가 있어야 해서`} 지금은 <b>1명</b>만 고를 수 있어요.</p>` : ''}
+        ${maxPick<2 && freeMentees.length ? `<p class="hint">${threes>=MAX3() ? `3명 팀이 벌써 ${MAX3()}팀(3명이 앉을 수 있는 묶음 수)이라` : `팀이 없는 다른 멘토 ${freeMentors.length}명도 멘티가 있어야 해서`} 지금은 <b>1명</b>만 고를 수 있어요.</p>` : ''}
         <div class="row" style="margin-top:10px;"><button class="btn primary" id="pairOk" ${pairSel.mentees.length?'':'disabled'}>✅ 확정 (${pairSel.mentees.map(nm).join(', ')||'멘티를 골라요'})</button>${pairPick!=null ? `<button class="btn" id="pairPickReset">↩ 원래 순서로</button>` : ''}</div></div>`;
     } else {
       // 남은 멘티가 팀 없는 멘토 수보다 적으면, 이 학생은 팀 없는 멘토만 고를 수 있다
       const mustNew = freeMentees.length < freeMentors.length;
-      const full3 = S.teams.filter(t=>t.e.length>=2).length >= 6;
+      const full3 = S.teams.filter(t=>t.e.length>=2).length >= MAX3();
       const mentorsOpen = o.filter(x=> x.mentor && (()=>{ const tm = teamOf(x.no); return mustNew ? !tm : (!tm || (tm.e.length<1 || (tm.e.length<2 && !full3))); })());
       const tmSel = pairSel.mentor!=null ? teamOf(pairSel.mentor) : null;
       const leftMentors = freeMentors.length - (pairSel.mentor!=null && !tmSel ? 1 : 0);
       const threes2 = S.teams.filter(t=>t.e.length>=2).length;
-      const room2 = pairSel.mentor!=null ? Math.min(2 - (tmSel ? tmSel.e.length : 0) - 1, freeMentees.length - leftMentors, threes2>=6 ? 0 : 1) : 0;
+      const room2 = pairSel.mentor!=null ? Math.min(2 - (tmSel ? tmSel.e.length : 0) - 1, freeMentees.length - leftMentors, threes2>=MAX3() ? 0 : 1) : 0;
       main = `<div class="turn"><div class="who">지금 차례: ${esc(cur.no+' '+cur.name)} <span class="badge e">멘티</span> <span style="font-size:15px;color:#666;">발표 ${cur.score}</span></div>
         <div class="what"><b>멘토 1명</b>을 골라요. 원하면 함께할 <b>멘티 1명</b>을 더 고를 수 있어요(한 팀은 최대 3명).</div>
         <div class="lbl">멘토 (자리가 남은 멘토만)</div><div class="cands">${mentorsOpen.map(x=>{ const tm = teamOf(x.no); return `<button class="cand m ${pairSel.mentor===x.no?'sel':''}" data-pm="${x.no}">${esc(x.no+' '+x.name)}<small>${tm?'멘티 '+tm.e.map(n=>byNo(n)?byNo(n).name:n).join('·'):'비어 있음'}</small></button>`; }).join('') || '<span class="hint">자리가 남은 멘토가 없어요. 아래 팀 목록에서 직접 넣어 주세요.</span>'}</div>
@@ -580,13 +588,16 @@ function teamOrder(){ const rk = rankMap(); return S.teams.slice().sort((a,b)=> 
 function setAt(g, side){ const k = Object.keys(S.seats).find(m=> S.seats[m].g===g && S.seats[m].s===side); return k!=null ? S.teams.find(t=>t.m===+k) : null; }
 function curSeatTeam(){ if(seatPick!=null){ const t = S.teams.find(x=>x.m===seatPick); if(t && !S.seats[t.m]) return t; seatPick = null; } return teamOrder().find(t=> !S.seats[t.m]) || null; }
 /* 2명 팀이 왼쪽 묶음을 너무 많이 차지하면 뒤 차례 3명 팀이 앉을 곳이 없어지므로 막는다 */
-function leftReserved(t){ const freeL = [1,2,3,4,5,6].filter(g=>!setAt(g,'L')).length; const need3 = S.teams.filter(x=> x!==t && x.e.length>=2 && !S.seats[x.m]).length; return freeL <= need3; }
-function canSit(t, g, side){ if(!t || setAt(g,side)) return false; if(side==='R' && t.e.length>=2) return false; if(side==='L' && t.e.length<2 && leftReserved(t)) return false; return true; }
-function whyNot(t, g, side){ if(setAt(g,side)) return '이미 찬 자리'; if(side==='R' && t && t.e.length>=2) return '3명 팀은 왼쪽 묶음(멘티 위·아래 자리)만 앉을 수 있어요'; if(side==='L' && t && t.e.length<2 && leftReserved(t)) return '남은 왼쪽 묶음은 아직 자리를 고르지 않은 3명 팀 몫이에요. 오른쪽 묶음을 골라요.'; return ''; }
+/* 3명이 앉을 수 있는 묶음 = 왼쪽 묶음 전부 + 6명 모둠의 오른쪽 묶음 */
+const fits3 = (g, side) => side==='L' || isSix(g);
+/* 2명 팀이 3명 묶음을 너무 많이 차지하면 뒤 차례 3명 팀이 앉을 곳이 없어지므로 막는다 */
+function reserved3(t){ let free3 = 0; [1,2,3,4,5,6].forEach(g=>{ if(!setAt(g,'L')) free3++; if(isSix(g) && !setAt(g,'R')) free3++; }); const need3 = S.teams.filter(x=> x!==t && x.e.length>=2 && !S.seats[x.m]).length; return free3 <= need3; }
+function canSit(t, g, side){ if(!t || setAt(g,side)) return false; if(t.e.length>=2 && !fits3(g,side)) return false; if(t.e.length<2 && fits3(g,side) && reserved3(t)) return false; return true; }
+function whyNot(t, g, side){ if(setAt(g,side)) return '이미 찬 자리'; if(t && t.e.length>=2 && !fits3(g,side)) return '3명 팀은 왼쪽 묶음(또는 6명 모둠의 오른쪽 묶음)에만 앉을 수 있어요'; if(t && t.e.length<2 && fits3(g,side) && reserved3(t)) return '남은 3명 자리 묶음은 아직 자리를 고르지 않은 3명 팀 몫이에요. 2명 자리 묶음(5명 모둠의 오른쪽)을 골라요.'; return ''; }
 function cell(no, cls, t, g, side, opts){
   const x = no!=null ? byNo(no) : null, it = opts && opts.interactive;
   const st = it ? (setAt(g,side) ? 'ok' : (canSit(opts.cur,g,side) ? 'ok' : 'no')) : '';
-  const tip = it ? (setAt(g,side) ? (side==='L' && S.seats[setAt(g,side).m].top!=null && cls!=='mseat' ? '멘티 자리는 모둠 제목줄의 [멘티 자리 바꾸기]로 바꿔요. 비우려면 노란 자리를 눌러요' : '누르면 이 묶음을 비울 수 있어요') : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
+  const tip = it ? (setAt(g,side) ? (S.seats[setAt(g,side).m].top!=null && cls!=='mseat' ? '멘티 자리는 모둠 제목줄의 [↕ 멘티 바꾸기]로 바꿔요. 비우려면 노란 자리를 눌러요' : '누르면 이 묶음을 비울 수 있어요') : (opts.cur ? (canSit(opts.cur,g,side) ? '여기에 앉기' : whyNot(opts.cur,g,side)) : '')) : '';
   return `<div class="seat ${cls} ${x?'filled':''} ${st}" style="${t?`--c:${teamColor(t)}`:''}" ${it?`data-g="${g}" data-s="${side}" title="${tip}"`:''}>${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
 function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 멘티 칸은 누르면 위·아래가 서로 바뀐다
@@ -594,13 +605,15 @@ function pvCell(no, cls, t, g, swap){ // 미리보기 칸(흐리게 깜박임). 
   return `<div class="seat ${cls} preview ${swap?'swap':''}" style="--c:${teamColor(t)}" >${x ? esc(x.name)+`<small>${x.no}번</small>` : ''}</div>`;
 }
 function groupHTML(g, opts){
-  const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
-  const pv = opts && opts.interactive && pendingL && pendingL.g===g && opts.cur ? pendingL : null;
-  const canSwap = opts && opts.interactive && (pv || (L && Ls.top!=null));
-  return `<div class="group"><div class="gt">${g}모둠${canSwap?`<button class="gswap no-print" data-gswap="${g}" title="누를 때마다 멘티 위·아래 자리가 바뀌어요">↕ 멘티 자리 바꾸기</button>`:''}</div><div class="ggrid">`
-    + (pv ? pvCell(pv.top,'top',opts.cur,g,true) : cell(L?Ls.top:null,'top',L,g,'L',opts))
-    + (pv ? pvCell(opts.cur.m,'mseat',opts.cur,g,false) : cell(L?L.m:null,'mseat',L,g,'L',opts)) + cell(R?Rs.bot:null,'',R,g,'R',opts)
-    + (pv ? pvCell(pv.bot,'',opts.cur,g,true) : cell(L?Ls.bot:null,'',L,g,'L',opts)) + cell(R?R.m:null,'mseat',R,g,'R',opts)
+  const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {}, six = isSix(g), it = opts && opts.interactive;
+  const swL = it && L && Ls.top!=null, swR = it && six && R && Rs.top!=null;
+  const sw = (side, label) => `<button class="gswap no-print" data-gswap="${g}:${side}" title="누를 때마다 멘티 위·아래 자리가 바뀌어요">↕ ${label}</button>`;
+  const swaps = swL && swR ? sw('L','왼쪽')+sw('R','오른쪽') : swL ? sw('L','멘티 바꾸기') : swR ? sw('R','멘티 바꾸기') : '';
+  const sixBtn = it ? `<button class="gsix no-print" data-gsix="${g}" title="${six?'눌러서 5명 모둠으로(위 칸 합치기)':'눌러서 6명 모둠으로(위 칸 나누기 — 오른쪽 묶음에도 3명 팀)'}">${six?'5명으로':'6명으로'}</button>` : '';
+  return `<div class="group"><div class="gt">${sixBtn}${g}모둠${six?'·6명':''}<span class="gsw">${swaps}</span></div><div class="ggrid">`
+    + (six ? cell(L?Ls.top:null,'top6',L,g,'L',opts) + cell(R?Rs.top:null,'top6',R,g,'R',opts) : cell(L?Ls.top:null,'top',L,g,'L',opts))
+    + cell(L?L.m:null,'mseat',L,g,'L',opts) + cell(R?Rs.bot:null,'',R,g,'R',opts)
+    + cell(L?Ls.bot:null,'',L,g,'L',opts) + cell(R?R.m:null,'mseat',R,g,'R',opts)
     + `</div></div>`;
 }
 function boardHTML(opts){ return `<div class="board ${opts&&opts.big?'big':''} ${opts&&opts.interactive?'live':''}">${GROUPS_TOP.map(g=>groupHTML(g,opts)).join('')}${GROUPS_BOTTOM.map(g=>groupHTML(g,opts)).join('')}<div class="teacher-desk">교탁</div></div>`; }
@@ -614,18 +627,18 @@ function renderSeat(){
   if(cur && pendingL){
     top += `<div class="turn no-print"><div class="who">${pendingL.g}모둠 왼쪽 묶음 — 이렇게 앉을까요?</div>
       <div class="what">자리판에 <b>깜박이는 이름</b>으로 미리 보여 줘요. 멘토 ${esc(nm(cur.m))}는 노란 자리, <b>위 자리</b> ${esc(nm(pendingL.top))}, <b>아래 자리</b> ${esc(nm(pendingL.bot))}.<br>
-      [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
+      [↕ 멘티 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
       <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 멘티 자리 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
     <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요. 다른 팀이 먼저 고르게 하려면 왼쪽 '팀 차례' 목록에서 그 팀을 눌러요.<br>
-    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있어요. 누르면 바로 앉고, 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기]로 바꿔요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} </div>
+    ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)이나 <b>6명 모둠의 오른쪽 묶음</b>에 앉을 수 있어요. 누르면 바로 앉고, 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 바꾸기]로 바꿔요.' : '2명 팀은 어느 묶음이든 앉을 수 있어요(멘티는 아래 자리, 위 자리는 비워요).'} </div>
     <div class="row" style="margin-top:8px;align-items:center;">
       ${seatPick!=null ? `<button class="btn" id="pickReset">↩ 원래 순서로</button>` : ''}
     </div>
     ${seatPick!=null ? `<p class="hint" style="margin-top:4px;">선생님이 고른 팀이 먼저 고르는 중이에요. 자리를 정하면 다시 원래 순서(발표 많은 순)로 돌아가요.</p>` : ''}</div>`;
   else if(S.teams.length) top += `<div class="ok-msg">🎉 모든 팀의 자리가 정해졌어요. ④ 자리표에서 크게 볼 수 있어요.</div>`;
   top += `<div class="row no-print" style="margin:8px 0;"><button class="btn" id="undoBtn2" ${undoStack.length?'':'disabled'}>↶ 되돌리기</button><button class="btn danger" id="resetSeats">자리 모두 지우기</button></div>`;
-  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 3명 팀은 모둠 제목줄의 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
+  $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 모둠 제목줄 왼쪽 [6명으로]를 누르면 그 모둠만 위 칸이 둘로 나뉘어 6명 모둠이 돼요(오른쪽 묶음에도 3명 팀). 3명 팀은 모둠 제목줄의 [↕ 멘티 바꾸기]를 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
 }
 /* 같은 묶음 자리를 함께 강조 */
 document.addEventListener('mouseover', e=>{
@@ -643,7 +656,16 @@ document.addEventListener('click', e=>{
     if(!cur || setAt(pv.g,'L') || !cur.e.includes(pv.top) || !cur.e.includes(pv.bot)){ renderSeat(); return; }
     commit(()=>{ S.seats[cur.m] = {g:pv.g, s:'L', top:pv.top, bot:pv.bot}; }); seatPick = null; return;
   }
-  if(b0 && b0.dataset.gswap && !pendingL){ const t = setAt(+b0.dataset.gswap,'L'); if(t && S.seats[t.m].top!=null) commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
+  if(b0 && b0.dataset.gswap && !pendingL){ const [g, side] = b0.dataset.gswap.split(':'); const t = setAt(+g, side||'L'); if(t && S.seats[t.m].top!=null) commit(()=>{ const x = S.seats[t.m]; [x.top, x.bot] = [x.bot, x.top]; }); return; }
+  if(b0 && b0.dataset.gsix){
+    const g = +b0.dataset.gsix;
+    if(isSix(g)){ // 6명 → 5명: 오른쪽 묶음에 3명 팀이 앉아 있으면 먼저 비워야 한다
+      const R = setAt(g,'R'); if(R && S.seats[R.m].top!=null){ alert(`${g}모둠 오른쪽 묶음에 3명 팀이 앉아 있어요. 먼저 그 묶음을 비운 뒤 5명으로 바꿔 주세요.`); return; }
+      const threes = S.teams.filter(t=>t.e.length>=2).length; if(threes > MAX3()-1 && !confirm(`지금 3명 팀이 ${threes}팀인데, 5명으로 바꾸면 3명 팀이 앉을 수 있는 묶음이 ${MAX3()-1}개가 돼요. 그래도 바꿀까요?`)) return;
+      commit(()=>{ S.six = (S.six||[]).filter(x=>x!==g); });
+    } else commit(()=>{ S.six = (S.six||[]).concat(g).sort(); });
+    return;
+  }
   if(b0 && b0.id==='pickReset'){ seatPick = null; renderSeat(); return; }
   if(b0 && b0.id==='cancelL'){ pendingL = null; renderSeat(); return; }
   const c = e.target.closest && e.target.closest('.board.live .seat[data-g]');
@@ -651,15 +673,15 @@ document.addEventListener('click', e=>{
     const g = +c.dataset.g, side = c.dataset.s, t = setAt(g,side), cur = curSeatTeam();
     if(t){
       const stt = S.seats[t.m];
-      if(side==='L' && stt.top!=null && !c.classList.contains('mseat')) return; // 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기] 버튼으로
+      if(side==='L' && stt.top!=null && !c.classList.contains('mseat')) return; // 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 바꾸기] 버튼으로
       if(confirm(`${g}모둠 ${side==='L'?'왼쪽':'오른쪽'} 묶음(${[t.m,...t.e].map(n=>byNo(n)?byNo(n).name:n).join(', ')})을 비울까요?`)) commit(()=>{ delete S.seats[t.m]; });
       return;
     }
     if(!cur) return;
     if(!canSit(cur,g,side)){ const w = whyNot(cur,g,side); if(w && w!=='이미 찬 자리') alert(w); return; }
-    // 3명 팀도 누르면 바로 앉는다(위 자리 = 첫 멘티). 위·아래는 모둠 제목줄 [↕ 멘티 자리 바꾸기]로 바꾼다
-    if(side==='L' && cur.e.length>=2){ commit(()=>{ S.seats[cur.m] = {g, s:'L', top:cur.e[0], bot:cur.e[1]}; }); seatPick = null; return; }
-    commit(()=>{ S.seats[cur.m] = side==='L' ? {g, s:'L', top:null, bot:cur.e[0]} : {g, s:'R', bot:cur.e[0]}; }); seatPick = null; return;
+    // 3명 팀도 누르면 바로 앉는다(위 자리 = 첫 멘티). 위·아래는 모둠 제목줄 [↕ 멘티 바꾸기]로 바꾼다
+    if(cur.e.length>=2){ commit(()=>{ S.seats[cur.m] = {g, s:side, top:cur.e[0], bot:cur.e[1]}; }); seatPick = null; return; }
+    commit(()=>{ S.seats[cur.m] = {g, s:side, top:null, bot:cur.e[0]}; }); seatPick = null; return;
   }
   if(!b0) return;
   if(b0.id==='undoBtn2'){ pendingL = null; undo(); return; }
@@ -685,8 +707,8 @@ function sheetHTML(student){
   const nmOnly = n => n!=null && byNo(n) ? esc(byNo(n).name) : '';
   const grp = g => { // 모둠 하나 → 3줄 [{n, m(멘토), span}]
     const L = setAt(g,'L'), R = setAt(g,'R'), Ls = L ? S.seats[L.m] : {}, Rs = R ? S.seats[R.m] : {};
-    const top = [{n:L?Ls.top:null, span:2}], mid = [{n:L?L.m:null, m:1}, {n:R?Rs.bot:null}], bot = [{n:L?Ls.bot:null}, {n:R?R.m:null, m:1}];
-    return student ? [bot.slice().reverse(), mid.slice().reverse(), top] : [top, mid, bot];
+    const top = isSix(g) ? [{n:L?Ls.top:null}, {n:R?Rs.top:null}] : [{n:L?Ls.top:null, span:2}], mid = [{n:L?L.m:null, m:1}, {n:R?Rs.bot:null}], bot = [{n:L?Ls.bot:null}, {n:R?R.m:null, m:1}];
+    return student ? [bot.slice().reverse(), mid.slice().reverse(), top.slice().reverse()] : [top, mid, bot];
   };
   const band = gs => {
     let h = '<tr>' + gs.map(g=>`<td class="h gl gr" colspan="2">${g}모둠</td>`).join('') + '</tr>';
@@ -720,7 +742,7 @@ function seatCells(st, g){
   const nmO = no => { const x = no!=null ? st.roster.find(y=>y.no===no) : null; return x ? x.name : ''; };
   const at = side => { const k = Object.keys(st.seats).find(m=> st.seats[m].g===g && st.seats[m].s===side); return k!=null ? {m:+k, ...st.seats[k]} : null; };
   const L = at('L'), R = at('R');
-  return { top: nmO(L&&L.top), Lm: nmO(L&&L.m), Rb: nmO(R&&R.bot), Lb: nmO(L&&L.bot), Rm: nmO(R&&R.m) };
+  return { six: (st.six||[]).includes(g), Rt: nmO(R&&R.top), top: nmO(L&&L.top), Lm: nmO(L&&L.m), Rb: nmO(R&&R.bot), Lb: nmO(L&&L.bot), Rm: nmO(R&&R.m) };
 }
 function loadExcelJS(){
   if(window.ExcelJS) return Promise.resolve();
@@ -751,9 +773,12 @@ async function exportXlsx(){
         gs.forEach((g, gi)=>{
           const c = c0 + gi*2, x = seatCells(st, g);
           put(r0, c, `${g}모둠`, {bold:true, bt:1, bl:1}); put(r0, c+1, null, {bt:1, br:1}); merge(r0,c,r0,c+1);
-          // 위 자리(2칸 합침) + 발표 칸
-          put(r0+1, c, x.top, {bl:1}); put(r0+1, c+1, null, {br:1}); merge(r0+1,c,r0+1,c+1);
-          put(r0+2, c, null, {bl:1}); put(r0+2, c+1, null, {br:1}); merge(r0+2,c,r0+2,c+1);
+          // 위 자리(5명 모둠: 2칸 합침 / 6명 모둠: 왼쪽·오른쪽 두 자리) + 발표 칸
+          if(x.six){ put(r0+1, c, x.top, {bl:1}); put(r0+1, c+1, x.Rt, {br:1}); put(r0+2, c, null, {bl:1}); put(r0+2, c+1, null, {br:1}); }
+          else {
+            put(r0+1, c, x.top, {bl:1}); put(r0+1, c+1, null, {br:1}); merge(r0+1,c,r0+1,c+1);
+            put(r0+2, c, null, {bl:1}); put(r0+2, c+1, null, {br:1}); merge(r0+2,c,r0+2,c+1);
+          }
           // [멘토][멘티] / [멘티][멘토] — 이름 줄 + 발표 줄
           [[x.Lm, true, x.Rb, false], [x.Lb, false, x.Rm, true]].forEach(([a, am, b, bm], i)=>{
             const r = r0 + 3 + i*2, last = i===1;
