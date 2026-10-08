@@ -618,13 +618,9 @@ function renderSeat(){
       [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌어요. 다른 왼쪽 묶음을 누르면 그쪽으로 옮겨요.</div>
       <div class="row" style="margin-top:6px;"><button class="btn" id="swapL">↕ 멘티 자리 바꾸기</button><button class="btn primary" id="confirmL">✔ 확정</button><button class="btn" id="cancelL">취소</button></div></div>`;
   } else if(cur) top += `<div class="turn no-print"><div class="who">지금 차례: ${esc([cur.m,...cur.e].map(n=>byNo(n)?byNo(n).name:n).join(' · '))} <span style="font-size:15px;color:#666;">(${cur.e.length+1}명)</span></div>
-    <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요.<br>
+    <div class="what">원하는 모둠의 <b>세로 묶음</b>을 눌러요. 멘토는 노란 자리에 앉아요. 다른 팀이 먼저 고르게 하려면 왼쪽 '팀 차례' 목록에서 그 팀을 눌러요.<br>
     ${cur.e.length>=2 ? '3명 팀은 <b>왼쪽 묶음</b>(멘토 + 멘티 위·아래 자리)만 앉을 수 있어요. 누르면 바로 앉고, 멘티 위·아래는 모둠 제목줄의 [↕ 멘티 자리 바꾸기]로 바꿔요.' : '2명 팀은 왼쪽 묶음(멘티는 아래 자리, 위 자리는 비워요)이나 오른쪽 묶음 어디든 앉을 수 있어요.'} </div>
     <div class="row" style="margin-top:8px;align-items:center;">
-      <select id="pickTeam" style="padding:6px 8px;border:1px solid #c5cad1;border-radius:6px;font-size:14px;max-width:420px;" title="학생 이름이나 팀을 고르면 그 팀이 먼저 자리를 골라요">
-        <option value="">🔀 다른 팀 먼저 고르기 (학생 이름·팀 선택)</option>
-        ${to.filter(t=>!S.seats[t.m] && t.m!==cur.m).map(t=>`<option value="${t.m}">${esc([t.m,...t.e].map(n=>byNo(n)?byNo(n).no+' '+byNo(n).name:n).join(' · '))}</option>`).join('')}
-      </select>
       ${seatPick!=null ? `<button class="btn" id="pickReset">↩ 원래 순서로</button>` : skipBtn('skipSeat', (S.seatSkip||[]).includes(cur.m), '결석 — 다음 팀으로')}
     </div>
     ${seatPick!=null ? `<p class="hint" style="margin-top:4px;">선생님이 고른 팀이 먼저 고르는 중이에요. 자리를 정하면 다시 원래 순서(발표 많은 순)로 돌아가요.</p>` : ''}</div>`;
@@ -633,7 +629,6 @@ function renderSeat(){
   $('t-seat').innerHTML = `<div class="board-wrap">${side}<div>${top}<div class="panel">${boardHTML({interactive:true, cur})}<p class="hint" style="margin-top:8px;">모둠마다 왼쪽 묶음 = 위 자리·노랑(멘토)·아래 자리, 오른쪽 묶음 = 멘티·노랑(멘토). 노란 자리가 멘토 자리예요. 3명 팀은 모둠 제목줄의 [↕ 멘티 자리 바꾸기]를 누를 때마다 위·아래 자리가 바뀌고, 멘토(노란 자리)를 누르면 묶음을 비울 수 있어요.</p></div></div></div>`;
 }
 /* 같은 묶음 자리를 함께 강조 */
-document.addEventListener('change', e=>{ if(e.target.id!=='pickTeam' || !e.target.value) return; seatPick = +e.target.value; pendingL = null; renderSeat(); });
 document.addEventListener('mouseover', e=>{
   const c = e.target.closest && e.target.closest('.board.live .seat[data-g]');
   document.querySelectorAll('.board.live .seat.hov').forEach(x=>x.classList.remove('hov'));
