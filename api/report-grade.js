@@ -82,7 +82,8 @@ module.exports = async (req, res) => {
   const rep = parseReport(req.body);
   if (rep.empty) { res.status(400).json({ error: '채점할 보고서 내용이 비어 있습니다.' }); return; }
   const prompt = PROMPT.replace('{{학생보고서}}', () => rep.report);
-  const r = await callOpenAI(prompt, { maxTokens: 6000, responseFormat: RESPONSE_FORMAT });
+  // 2부 채점은 정확도가 중요해서 생각 수준을 '중간'으로(1부 피드백·도우미는 '낮음' 그대로) — 선생님 결정 2026-10-11
+  const r = await callOpenAI(prompt, { maxTokens: 12000, responseFormat: RESPONSE_FORMAT, effort: 'medium' });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
   if (!j) { res.status(502).json({ error: 'AI 채점 결과를 해석하지 못했어요.', raw: String(r.text).slice(0, 500) }); return; }

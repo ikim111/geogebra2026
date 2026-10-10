@@ -184,7 +184,7 @@ function parseReport(raw) {
   return { empty: !intro && !body && !concl, counts, report, sources };
 }
 
-/* OpenAI Chat Completions 호출. 추론 모델이면 추론을 '낮음'으로(빠르고 싸게).
+/* OpenAI Chat Completions 호출. 추론 모델이면 추론을 '낮음'으로(빠르고 싸게). opts.effort로 바꿀 수 있다(2부 채점은 'medium').
    reasoning_effort나 response_format을 지원하지 않는 모델이면(400) 그 옵션을 빼고 다시 시도한다.
    반환: { ok:true, text, model } 또는 { ok:false, status, error, detail } */
 async function callOpenAI(promptOrMessages, opts) {
@@ -198,7 +198,7 @@ async function callOpenAI(promptOrMessages, opts) {
     headers: { 'content-type': 'application/json', 'authorization': `Bearer ${apiKey}` },
     body: JSON.stringify(Object.assign(
       { model, messages: Array.isArray(promptOrMessages) ? promptOrMessages : [{ role: 'user', content: promptOrMessages }], max_completion_tokens: opts.maxTokens || 6000 },
-      useEffort ? { reasoning_effort: 'low' } : {},
+      useEffort ? { reasoning_effort: opts.effort || 'low' } : {},
       useFormat ? { response_format: opts.responseFormat } : {}
     ))
   });
