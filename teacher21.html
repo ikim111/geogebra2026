@@ -444,10 +444,10 @@ function renderStages(){
       b.addEventListener('click', ()=> setStage(no));
       box.appendChild(b);
     }
-    if(state==='past'){
-      const b = document.createElement('button'); b.className = 'stg-back';
-      b.textContent = `↩ ${no}단계로 돌아가기`;
-      b.addEventListener('click', ()=>{ if(confirm(`${no}단계로 돌아갈까요?\n${no}단계보다 앞서 간 학생은 ${no}단계의 마지막 활동으로 돌아가요. (쓴 답은 그대로 남고, 이미 공개한 것은 계속 공개돼요)`)) setStage(no); });
+    if(state==='past'){   // 지난 단계도 같은 버튼으로 다시 열 수 있다(잘못 눌렀을 때 되돌리기)
+      const b = document.createElement('button'); b.className = 'stg-go';
+      b.textContent = `▶ ${no}단계 열기`;
+      b.addEventListener('click', ()=> setStage(no));
       box.appendChild(b);
     }
     if(state==='now') tipText = st.tip;
