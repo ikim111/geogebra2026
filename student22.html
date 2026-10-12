@@ -581,8 +581,9 @@
     <div id="boxView"></div>
     <div class="big-question" style="margin-top:12px;">전반기와 후반기 모두 A의 타율이 더 높은데, 시즌 전체 타율은 왜 B가 더 높을까요? 표의 타수를 살펴보고 설명해 보세요.</div>
     <textarea id="a8Text" placeholder="A는 전반기에 ~타수, 후반기에 ~타수를 쳤고, ~"></textarea>
+    <div class="aifb" id="aifb22b"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
-      <span class="note" id="why7">✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)</span>
+      <span class="note" id="why7">✏️ 내 생각을 쓰고 AI 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」 버튼이 켜져요.</span>
       <button class="btn concept-btn" id="a8Btn" disabled>💡 정리 보기</button>
     </div>
     <div class="concept" id="concept8">
@@ -758,7 +759,7 @@ function isDone(id){
   if(id===4) return calc4Ok() && len(state.s5Reason)>=MIN_TEXT;
   if(id===5) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
   if(id===6) return batOk();
-  if(id===7) return len(state.a8Text)>=MIN_TEXT;
+  if(id===7) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
   return false;
 }
 /* 교사 화면 요약·구글 설문에 쓰는 한 줄 값 */
@@ -791,7 +792,7 @@ function collectData(){
     s5a: state.s5a, s5b: state.s5b, s5Reason: state.s5Reason,
     vote: state.vote || null, voteReason: state.voteReason,
     bat: Object.assign({}, state.bat),
-    a8Text: state.a8Text, a8Concept: state.a8Concept, aiFb: AIFB, aiReq: AIFB_REQ || null
+    a8Text: state.a8Text, a8Concept: state.a8Concept, aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData()
   };
 }
 /* 반 전체에 보여 줄 작은 기록(share/{종류}/{학생키}) — 값이 바뀔 때만 쓴다. */
@@ -822,9 +823,14 @@ let AIFB = [];
 let AIFB_REQ = 0;                       // 기회를 다 쓴 학생이 선생님께 요청한 시각(data.aiReq)
 let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(control/aiBonus/{학생키} = {n, ts})
 const aifbMax = () => AIFB_MAX + (+AIFB_BONUS.n || 0);
-const aifbUsed = () => AIFB.filter(e=>e && !e.skip).length;
+/* 한 화면에 피드백 칸이 여러 개일 때: key='main'은 data.aiFb(AIFB), 그 밖은 data['aiFb_'+key](AIFB_SETS[key]) */
+const AIFB_SETS = {};
+const aifbList = key => (!key || key==='main') ? AIFB : (AIFB_SETS[key] || (AIFB_SETS[key] = []));
+const aifbUsed = key => aifbList(key).filter(e=>e && !e.skip).length;
 /* 마지막으로 받은 AI 피드백에 보완할 점이 없으면 통과 */
-function aifbPassed(){ for(let i=AIFB.length-1;i>=0;i--){ const e=AIFB[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+/* collectData에 넣을 추가 칸들 { aiFb_p7: [...] } */
+function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['aiFb_'+k] = AIFB_SETS[k]; }); return o; }
 /* 선생님이 기회를 더 주면 바로 반영(접속 뒤 control/aiBonus/{내 키}를 구독) */
 (function aifbWatch(){
   const t = setInterval(()=>{
@@ -848,20 +854,21 @@ function aifbHTML(e){
 }
 /* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
 function aifbMount(box, opt){
+  const key = opt.key || 'main', L = () => aifbList(key);
   box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
   const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
-  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = AIFB.filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
   req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
   let busy = false, fails = 0;
   const paint = () => {
-    const n = aifbUsed(), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
+    const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
     const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
     btn.disabled = busy || out_ || aifbLocked() || short;
     req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
     req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
     left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
       : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${mx-n}번)` : `남은 횟수 ${mx-n}번 · 다 쓴 뒤에 받아 보세요.`;
-    if(!busy) out.innerHTML = aifbHTML(AIFB[AIFB.length-1]);
+    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); }
   };
   btn.addEventListener('click', async ()=>{
     if(btn.disabled) return;
@@ -871,14 +878,15 @@ function aifbMount(box, opt){
         body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
       const j = await r.json().catch(()=>({}));
       if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
-      AIFB.push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      L().push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
       busy = false; paint();
       if(typeof aifbOnChange==='function') aifbOnChange();
       if(typeof refreshAll==='function') refreshAll({now:true});
     }catch(e){
       busy = false; fails++;
-      if(fails >= 2 && !AIFB.length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
-        AIFB.push({ t: Date.now(), skip: true }); paint();
+      if(fails >= 2 && !L().length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        L().push({ t: Date.now(), skip: true }); paint();
+        if(typeof aifbOnChange==='function') aifbOnChange();
         if(typeof refreshAll==='function') refreshAll({now:true});
         return;
       }
@@ -889,11 +897,17 @@ function aifbMount(box, opt){
   (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
   box._paint = paint; paint();
 }
-function aifbRestore(d){ AIFB_REQ = +(d && d.aiReq) || 0; const v = d && d.aiFb; AIFB = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : []; document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+function aifbRestore(d){
+  const arr = v => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  AIFB_REQ = +(d && d.aiReq) || 0; AIFB = arr(d && d.aiFb);
+  Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
+  document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
 aifbMount($('aifb22'), { unit:22, minLen:10, inputs:[$('s5Reason')], answer: ()=>$('s5Reason').value,
   ctx: ()=>{ const f = state.f; const big = state.runs.length ? state.runs.reduce((x,y)=> y.n>=x.n ? y : x) : null;
     return `처음 내 분배: A ${state.s1a||'-'}만 원 : B ${state.s1b||'-'}만 원\n학생이 계산한 값: 모든 경우의 수 ${f.tot||'-'}, A 우승 경우 ${f.aw||'-'}, P(A)=${f.pa||'-'}, P(B)=${f.pb||'-'}, 공정한 상금 A ${f.ma||'-'} : B ${f.mb||'-'}`
       + (big ? `\n컴퓨터 시뮬레이션 ${big.n}번: A 우승 상대도수 ${(big.a/big.n).toFixed(3)}` : ''); } });
+aifbMount($('aifb22b'), { key:'p7', unit:'22b', minLen:10, inputs:[$('a8Text')], answer: ()=>$('a8Text').value,
+  ctx: ()=>'[표] 선수 A: 전반기 10타수 5안타(타율 0.50), 후반기 40타수 12안타(타율 0.30), 시즌 전체 50타수 17안타(타율 0.34)\n선수 B: 전반기 40타수 16안타(타율 0.40), 후반기 10타수 2안타(타율 0.20), 시즌 전체 50타수 18안타(타율 0.36)' });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -1428,9 +1442,12 @@ $('a8Text').addEventListener('input', ()=>check8());
 $('a8Btn').addEventListener('click', ()=>{ state.a8Concept = true; $('concept8').classList.add('show'); refreshAll({now:true}); $('concept8').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 function check8(opts){
   state.a8Text = $('a8Text').value;
-  const ok = isDone(7);
-  $('a8Btn').disabled = !ok;
-  $('why7').textContent = ok ? '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.' : '✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)';
+  const ok = isDone(7), open = aifbPassed('p7') || !!REVEAL.simpson;
+  $('a8Btn').disabled = !(ok && open);
+  $('why7').textContent = len(state.a8Text) < MIN_TEXT ? '✏️ 위 칸에 내 생각을 먼저 써 보세요.'
+    : !aifbList('p7').length ? '🤖 「AI 피드백 받기」를 눌러 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」가 켜져요.'
+    : !open ? '✅ 완료! AI 피드백에 「보완할 점」이 남아 있어요. 내 글을 고친 뒤 다시 받아 보세요. (선생님이 정리를 공개해도 켜져요)'
+    : '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.';
   $('why7').className = 'note' + (ok?' ok':'');
   if(state.a8Concept) $('concept8').classList.add('show');
   refreshAll(opts);
@@ -1438,7 +1455,8 @@ function check8(opts){
 
 /* ------------------------- 공유·공개가 바뀔 때 ------------------------- */
 function onShareChanged(){ renderSplit(); renderClassSim(); renderVote(); }
-function onRevealChanged(){ renderSplit(); renderVote(); }
+function onRevealChanged(){ renderSplit(); renderVote(); check8({noSave:true}); }
+function aifbOnChange(){ check8({noSave:true}); }
 function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===6) renderVote(); }
 
 /* 처음 화면 */

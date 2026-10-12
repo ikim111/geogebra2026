@@ -482,9 +482,14 @@ let AIFB = [];
 let AIFB_REQ = 0;                       // 기회를 다 쓴 학생이 선생님께 요청한 시각(data.aiReq)
 let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(control/aiBonus/{학생키} = {n, ts})
 const aifbMax = () => AIFB_MAX + (+AIFB_BONUS.n || 0);
-const aifbUsed = () => AIFB.filter(e=>e && !e.skip).length;
+/* 한 화면에 피드백 칸이 여러 개일 때: key='main'은 data.aiFb(AIFB), 그 밖은 data['aiFb_'+key](AIFB_SETS[key]) */
+const AIFB_SETS = {};
+const aifbList = key => (!key || key==='main') ? AIFB : (AIFB_SETS[key] || (AIFB_SETS[key] = []));
+const aifbUsed = key => aifbList(key).filter(e=>e && !e.skip).length;
 /* 마지막으로 받은 AI 피드백에 보완할 점이 없으면 통과 */
-function aifbPassed(){ for(let i=AIFB.length-1;i>=0;i--){ const e=AIFB[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+/* collectData에 넣을 추가 칸들 { aiFb_p7: [...] } */
+function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['aiFb_'+k] = AIFB_SETS[k]; }); return o; }
 /* 선생님이 기회를 더 주면 바로 반영(접속 뒤 control/aiBonus/{내 키}를 구독) */
 (function aifbWatch(){
   const t = setInterval(()=>{
@@ -508,20 +513,21 @@ function aifbHTML(e){
 }
 /* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
 function aifbMount(box, opt){
+  const key = opt.key || 'main', L = () => aifbList(key);
   box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
   const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
-  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = AIFB.filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
   req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
   let busy = false, fails = 0;
   const paint = () => {
-    const n = aifbUsed(), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
+    const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
     const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
     btn.disabled = busy || out_ || aifbLocked() || short;
     req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
     req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
     left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
       : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${mx-n}번)` : `남은 횟수 ${mx-n}번 · 다 쓴 뒤에 받아 보세요.`;
-    if(!busy) out.innerHTML = aifbHTML(AIFB[AIFB.length-1]);
+    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); }
   };
   btn.addEventListener('click', async ()=>{
     if(btn.disabled) return;
@@ -531,14 +537,15 @@ function aifbMount(box, opt){
         body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
       const j = await r.json().catch(()=>({}));
       if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
-      AIFB.push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      L().push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
       busy = false; paint();
       if(typeof aifbOnChange==='function') aifbOnChange();
       if(typeof refreshAll==='function') refreshAll({now:true});
     }catch(e){
       busy = false; fails++;
-      if(fails >= 2 && !AIFB.length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
-        AIFB.push({ t: Date.now(), skip: true }); paint();
+      if(fails >= 2 && !L().length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        L().push({ t: Date.now(), skip: true }); paint();
+        if(typeof aifbOnChange==='function') aifbOnChange();
         if(typeof refreshAll==='function') refreshAll({now:true});
         return;
       }
@@ -549,7 +556,11 @@ function aifbMount(box, opt){
   (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
   box._paint = paint; paint();
 }
-function aifbRestore(d){ AIFB_REQ = +(d && d.aiReq) || 0; const v = d && d.aiFb; AIFB = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : []; document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+function aifbRestore(d){
+  const arr = v => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  AIFB_REQ = +(d && d.aiReq) || 0; AIFB = arr(d && d.aiFb);
+  Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
+  document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
 aifbMount($('aifb23'), { unit:23, minLen:10, inputs:[$('myExpr'), $('myVal'), $('myWhy')], answer: ()=>$('myWhy').value,
   ctx: ()=>`찾은 표현: ${$('myExpr').value.trim()||'-'}\n학생이 나타낸 확률: ${$('myVal').value.trim()||'-'}` });
 /* ---------- 실시간 확인 (Firebase) ---------- */
