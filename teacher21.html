@@ -464,7 +464,7 @@ function setStage(no){
 let conceptOpen = false;
 document.getElementById('conceptReveal').addEventListener('click', ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
-  if(!conceptOpen && !confirm('학생들에게 개념 확인을 열까요?\n(마지막 질문에 20자 이상 답하고 AI 피드백을 받은 학생만 「개념 확인하기」를 누를 수 있어요)')) return;
+  if(!conceptOpen && !confirm('학생들에게 개념 확인을 열까요?\n(마지막 질문에 10자 이상 답하고 AI 피드백을 받은 학생만 「개념 확인하기」를 누를 수 있어요)')) return;
   controlRef.child('reveal').update({concept: !conceptOpen});
 });
 document.getElementById('stageFree').addEventListener('click', ()=>{ if(confirm('단계 제한을 풀까요? 학생들이 모든 활동을 자유롭게 할 수 있어요.')) setStage(null); });

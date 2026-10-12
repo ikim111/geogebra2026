@@ -476,7 +476,7 @@
 
   <div class="card">
     <div class="big-question">동전을 던지는 횟수가 많아질수록 앞면이 나온 상대도수에는 어떤 변화가 나타나는가?</div>
-    <textarea id="finalAnswer" placeholder="표와 그래프를 보고 내 생각을 적어 보세요. (20자 이상)"></textarea>
+    <textarea id="finalAnswer" placeholder="표와 그래프를 보고 내 생각을 적어 보세요. (10자 이상)"></textarea>
     <div class="aifb" id="aifb21"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
       <span class="note" id="why4">1,000번과 10,000번 실험을 모두 하고 내 생각을 적으면 개념을 확인할 수 있어요.</span>
@@ -547,7 +547,7 @@ const ACTIVITY_SUFFIX = '__prob21'; // teacher21.html과 반드시 동일해야 
 const UNIT_LABEL = '21. 동전을 계속 던지면 어떻게 될까?';
 const UNIT_NO = 21;
 const MIN_TEXT = 5; // 서술형 최소 글자 수
-const FINAL_MIN = 20; // 활동 4 마지막 질문은 대충 쓰지 않도록 20자 이상 + AI 피드백 1번 이상(AI 사용 연습)
+const FINAL_MIN = 10; // 활동 4 마지막 질문은 대충 쓰지 않도록 20자 이상 + AI 피드백 1번 이상(AI 사용 연습)
 const SIM_NS = [10, 100, 1000, 10000]; // 활동 4 시뮬레이션 횟수
 const CUSTOM_MAX = 100000;             // 직접 입력 최대 횟수(너무 크면 오래 걸리므로 제한)
 const CUSTOM_KEEP = 8;                 // 결과표에 남겨 둘 직접 실험 개수
