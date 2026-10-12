@@ -889,7 +889,7 @@ function renderPrevRef(){
 }
 /* 불러오기(선생님 결정 2026-10-07): 서론·본론·결론은 앞 내용을 모아 불러올 수 있다. 제목은 직접.
    결론의 '처음 예상과 비교'·'더 알아보고 싶은 점'은 빈 줄로 들어가고, 학생이 직접 채워야 step5가 완료된다(missing 5).
-   칸이 비어 있으면 채우고, 이미 쓴 내용이 있으면 물어보고 아래에 덧붙인다 */
+   칸이 비어 있으면 채우고, 이미 쓴 내용이 있으면 '최신 내용으로 바꾸기(되돌리기 가능)' 또는 '아래에 덧붙이기'를 묻는다 */
 function sourceLines(){
   return state.sources.filter(x=> x.what.trim() || x.site.trim() || x.link.trim())
     .map((x,i)=>`• 자료 ${i+1}: ${x.what.trim() || x.site.trim()}${x.site.trim() && x.what.trim() ? ' — ' + x.site.trim() : ''}${x.link.trim() ? ' (' + x.link.trim() + ')' : ''}`).join('\n');
@@ -901,11 +901,24 @@ function loadOutline(k, quiet){
   const ta = document.querySelector(`textarea[data-k="${k}"]`); const cur = (state.f[k]||'').trim();
   if(cur){
     if(quiet) return false;
-    if(cur.includes(text)){ alert('이미 불러온 내용이 들어 있어요.'); return false; }
-    if(!confirm('이 칸에 이미 쓴 내용이 있어요. 불러온 내용을 아래에 덧붙일까요?')) return false;
-    state.f[k] = cur + '\n' + text;
+    if(cur === text){ alert('이미 최신 내용이 들어 있어요.'); return false; }
+    // 앞 step을 고친 뒤 다시 불러오는 경우가 많아서 '바꾸기'를 먼저 묻는다(2026-10-12). 지운 내용은 ↶ 되돌리기로 살릴 수 있다
+    if(confirm('이 칸의 내용을 앞에서 쓴 최신 내용으로 바꿀까요?\n(지금 칸에 고쳐 쓴 내용은 지워져요. 바꾼 뒤 [↶ 되돌리기]로 되살릴 수 있어요)\n\n취소를 누르면 아래에 덧붙일지 물어봐요.')){
+      outlineUndo[k] = state.f[k]; state.f[k] = text; showOutlineUndo(k);
+    } else {
+      if(!confirm('불러온 내용을 지금 내용 아래에 덧붙일까요?')) return false;
+      state.f[k] = cur + '\n' + text;
+    }
   } else state.f[k] = text;
   ta.value = state.f[k]; autoGrow(ta); changed(); return true;
+}
+const outlineUndo = {};
+function showOutlineUndo(k){
+  const ta = document.querySelector(`textarea[data-k="${k}"]`); if(!ta) return;
+  let u = document.getElementById('undo-'+k);
+  if(!u){ u = document.createElement('button'); u.type='button'; u.id='undo-'+k; u.className='mini-btn'; u.style.margin='4px 0'; ta.insertAdjacentElement('afterend', u); }
+  u.textContent = '↶ 되돌리기 (바꾸기 전 내용으로)'; u.style.display='';
+  u.onclick = ()=>{ if(outlineUndo[k]==null) return; state.f[k] = outlineUndo[k]; outlineUndo[k] = null; ta.value = state.f[k]; autoGrow(ta); changed(); u.style.display='none'; };
 }
 document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('[data-load]'); if(!b) return;
