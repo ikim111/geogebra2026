@@ -439,7 +439,7 @@ function setStage(no){
   if(no==null){ upd.stage = null; upd.minTaskId = null; upd.maxTaskId = null; }
   else {
     const st = STAGES[no-1];
-    upd.stage = no; upd.minTaskId = null; upd.maxTaskId = st.max || null;
+    upd.stage = no; upd.minTaskId = null; upd.maxTaskId = st.max || ((typeof TASK_LABELS!=="undefined" && TASK_LABELS.length) ? Math.max(...TASK_LABELS.map(t=>t.id)) : null);
     STAGES.slice(0, no).forEach(s=> Object.keys(s.reveal||{}).forEach(k=>{ upd['reveal/'+k] = true; }));
   }
   controlRef.update(upd);

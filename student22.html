@@ -246,6 +246,30 @@
   .legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:4px 0;}
   .legend2 span{display:inline-flex;align-items:center;gap:5px;} .legend2 i{display:inline-block;width:18px;height:3px;border-radius:2px;}
   .chart2-svg{width:100%;height:auto;display:block;}
+  .recall{background:#fffbe6;border:1px solid #ffe08a;border-radius:10px;padding:10px 14px;font-size:15.5px;margin:6px 0 12px;}
+  .recall .score{margin-top:6px;gap:18px;}
+  .custom-n{display:inline-flex;align-items:center;gap:6px;font-size:15px;margin-left:6px;white-space:nowrap;}
+  .custom-n input{width:96px !important;flex:0 0 auto;padding:7px 8px;font-size:15px;border:1px solid #c5cad1;border-radius:8px;font-family:inherit;text-align:right;}
+  .custom-n .btn{padding:8px 14px;font-size:15px;white-space:nowrap;width:auto;}
+  .board-wrap{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:10px;}
+  .board-box{flex:0 0 auto;width:420px;max-width:100%;}
+  .board-box canvas{width:100%;height:auto;display:block;border-radius:6px;background:#eceff3;image-rendering:pixelated;}
+  .board-side{flex:1;min-width:230px;}
+  .vbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-variant-numeric:tabular-nums;}
+  .vbar .vl{width:56px;font-weight:bold;font-size:14px;} .vbar .vl.A{color:var(--blue);} .vbar .vl.B{color:var(--orange);}
+  .vbar .vt{flex:1;height:22px;background:#eceff3;border-radius:5px;overflow:hidden;}
+  .vbar .vt i{display:block;height:100%;width:0;background:#1e88e5;} .vbar .vt i.B{background:#f57c00;}
+  .vbar b{width:56px;text-align:right;font-size:16px;}
+  .ms-h{font-size:13px;color:var(--ink2);margin:12px 0 4px;font-weight:bold;}
+  .ms{display:flex;flex-direction:column;gap:3px;font-size:14px;font-variant-numeric:tabular-nums;}
+  .ms div{display:flex;align-items:center;gap:8px;}
+  .ms div span.k{width:92px;color:var(--ink2);text-align:right;}
+  .ms div span.t{flex:1;position:relative;height:12px;background:#f1f3f6;border-radius:6px;}
+  .ms div span.t i{position:absolute;top:-2px;width:4px;height:16px;border-radius:2px;background:#1e88e5;transform:translateX(-2px);}
+  .ms div b{width:52px;text-align:right;}
+  table.simtable tr.viewing td{background:#fff8e1;}
+  table.simtable .vbtn{border:1px solid #c5cad1;background:#fff;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  table.simtable .vbtn:hover{border-color:var(--blue);color:var(--blue);}
 </style></style>
 </head>
 <body>
@@ -381,19 +405,22 @@
       <button class="btn" data-n="100" disabled>100번</button>
       <button class="btn" data-n="1000" disabled>1,000번 *</button>
       <button class="btn" data-n="10000" disabled>10,000번 *</button>
+      <span class="custom-n">직접 입력 <input type="text" inputmode="numeric" id="customN" autocomplete="off" placeholder="예) 5000">번 <button class="btn" id="customGo" disabled>실행</button></span>
     </div>
+    <div class="error" id="customErr"></div>
     <div class="run-panel2" id="runPanel" style="display:none;">
-      <div class="rp-top"><b id="rpTitle"></b><button class="sbtn2" id="rpSkip">⏩ 바로 결과 보기</button></div>
+      <div class="rp-top"><b id="rpTitle"></b><span><button class="sbtn2" id="rpReplay" style="display:none;">▶ 과정 다시 보기</button> <button class="sbtn2" id="rpSkip">⏩ 바로 결과 보기</button></span></div>
       <div class="rp-nums"><div>진행한 경기<b id="rpN">0</b></div><div>A 우승<b id="rpA">0</b></div><div>B 우승<b id="rpB">0</b></div><div>A가 우승한 상대도수<b id="rpRel">-</b></div></div>
-      <div class="rp-bar"><i id="rpBar"></i></div>
-      <div class="rp-strip" id="rpStrip"></div>
-    </div>
-    <div class="chart2" id="chartBox" style="display:none;">
-      <div class="chart2-head"><b>경기 횟수에 따른 A 우승 상대도수</b>
-        <span class="rtabs" id="rangeTabs"><button data-r="100">100</button><button data-r="1000">1,000</button><button data-r="10000" class="on">10,000</button></span></div>
-      <div class="legend2" id="legend2"></div>
-      <svg id="autoChart" viewBox="0 0 640 280" class="chart2-svg"></svg>
-      <p class="note" style="margin:4px 0 0;">가로: 경기한 횟수 · 세로: 그때까지 A가 우승한 상대도수</p>
+      <div class="board-wrap">
+        <div class="board-box"><canvas id="board"></canvas>
+          <div class="note" id="boardCap" style="margin-top:4px;"></div></div>
+        <div class="board-side">
+          <div class="vbar"><span class="vl A">A 우승</span><div class="vt"><i id="barA"></i></div><b id="barAv">-</b></div>
+          <div class="vbar"><span class="vl B">B 우승</span><div class="vt"><i id="barB" class="B"></i></div><b id="barBv">-</b></div>
+          <div class="ms-h">📍 경기가 쌓일 때마다 A 우승 상대도수</div>
+          <div class="ms" id="rpMs"></div>
+        </div>
+      </div>
     </div>
     <table class="simtable" id="autoTable" style="margin-top:12px;"></table>
     <div id="treeBox" style="display:none;">
@@ -403,7 +430,7 @@
       <div class="flowbar" id="flowBar"></div>
       <div class="flowcap" id="flowCap"></div>
     </div>
-    <p class="note" style="margin:6px 0 0;"><span style="color:var(--orange);">*</span> 1,000번과 10,000번은 꼭 해 보세요.</p>
+    <p class="note" style="margin:6px 0 0;"><span style="color:var(--orange);">*</span> 1,000번과 10,000번은 꼭 해 보세요. 실험한 결과는 표에 차례로 쌓이고, 「보기」를 누르면 그때의 결과판을 다시 볼 수 있어요.</p>
   </div>
   <div class="card">
     <div class="big-question">A가 우승하는 상대도수는 어떤 값에 가까워지나요? 이 결과로 보면 상금을 어떻게 나누는 것이 공정할까요?</div>
@@ -417,6 +444,13 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">상금 분배 ④</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>경우의 수로 따져 보자</h2>
+    <div class="recall">
+      <div>🏆 상금 <b>64만 원</b> · <b>먼저 3번 이기는 사람</b>이 우승 · 한 경기에서 A와 B가 이길 확률은 같아요.</div>
+      <div class="score" style="margin-top:6px;">
+        <span class="pl">A <i class="win on"></i><i class="win on"></i><i class="win"></i> 2승 → <b>1번만</b> 더 이기면 우승</span>
+        <span class="pl">B <i class="win onB"></i><i class="win"></i><i class="win"></i> 1승 → <b>2번</b> 더 이겨야 우승</span>
+      </div>
+    </div>
     <p class="hint">이미 3경기를 했으니 남은 경기는 <b>4경기</b>와 <b>5경기</b>예요.
       우승자가 먼저 정해지더라도 <b>5경기까지 모두 한다고 생각</b>하고, 두 경기의 승자를 차례로 나열해 봅시다.</p>
     <div class="adder">
@@ -451,31 +485,19 @@
       그래서 경우의 수로 확률을 구할 수 있어요. 이 문제는 1654년 수학자 <b>파스칼</b>과 <b>페르마</b>가 편지를 주고받으며 해결했고, 확률 이론이 시작된 계기로 알려져 있어요.</div>
     </div>
   </div>
-  <div class="why" id="why4">경우를 모두 나열하고 확률과 상금을 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
-</section>
-
-<!-- ===================== 활동 5: 다시 생각하기 ===================== -->
-<section class="task activity" id="task-a5" data-task-id="5">
-  <div class="card">
-    <div class="act-head"><span class="act-tag">상금 분배 ⑤</span><span class="badge pending" id="badge-a5">미완료</span></div>
-    <h2>다시 생각해 보자</h2>
+  <div class="card" id="a4Re">
+    <h3>✍️ 다시 생각해 보기</h3>
     <div class="kvline" id="my1Line5"></div>
-    <div class="question">지금 다시 나눈다면 상금 64만 원을 어떻게 나누겠어요?</div>
-    <div class="money">
-      <span>A가 받을 돈 <input type="text" inputmode="decimal" id="s5a" autocomplete="off"> 만 원</span>
-      <span>B가 받을 돈 <input type="text" inputmode="decimal" id="s5b" autocomplete="off"> 만 원</span>
-    </div>
-    <div class="sumline" id="s5Sum"></div>
-    <p class="hint"><b>처음 생각과 비교해서 무엇이 달라졌나요? 왜 이렇게 나누는 것이 공정한가요?</b></p>
+    <p class="hint"><b>처음 내 생각과 비교해서 무엇이 달라졌나요? 왜 이렇게 나누는 것이 공정한가요?</b></p>
     <textarea id="s5Reason" placeholder="처음에는 ~라고 생각했는데, ~"></textarea>
   </div>
-  <div class="why" id="why5">다시 나눈 몫(합계 64만 원)과 이유를 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why4">경우를 모두 나열하고 확률과 상금을 바르게 구한 뒤, 처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 6: 타자 영입 — 예상 ===================== -->
-<section class="task activity" id="task-a6" data-task-id="6">
+<section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>어떤 타자를 영입할까?</h2>
     <p class="hint">프로야구팀에서 새로운 타자 한 명을 영입하려고 해요. 후보는 선수 A와 선수 B예요.<br>
       <span class="note">타율 = (안타 수) ÷ (타수) — 타석에서 공을 친 횟수 중 안타를 친 비율이에요.</span></p>
@@ -493,13 +515,13 @@
     <p class="hint" style="margin-top:12px;"><b>그렇게 예상한 이유</b></p>
     <textarea id="voteReason" placeholder="왜 그렇게 생각했나요?"></textarea>
   </div>
-  <div class="why" id="why6">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why5">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 7: 실제 기록으로 계산 ===================== -->
-<section class="task activity" id="task-a7" data-task-id="7">
+<section class="task activity" id="task-a6" data-task-id="6">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a7">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a6">미완료</span></div>
     <h2>실제 기록을 확인해 보자</h2>
     <p class="hint">빈칸에 시즌 전체 타수와 안타 수, 타율을 구해 써 보세요. 타율은 소수(0.○○)나 분수로 써요.</p>
     <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.25도 돼요)</div>
@@ -522,13 +544,13 @@
     <div class="waitbox" id="voteWait">⏳ 위의 타율을 모두 구하면 우리 반의 예상 결과가 여기에 나타나요.</div>
     <div class="bars" id="voteBars" style="display:none;"></div>
   </div>
-  <div class="why" id="why7">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why6">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 8: 왜 그럴까? ===================== -->
-<section class="task activity" id="task-a8" data-task-id="8">
+<section class="task activity" id="task-a7" data-task-id="7">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a8">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>왜 예상과 다른 결과가 나왔을까?</h2>
     <div class="howread">
       <b>📖 그림 읽는 법</b>
@@ -543,7 +565,7 @@
     <div class="big-question" style="margin-top:12px;">전반기와 후반기 모두 A의 타율이 더 높은데, 시즌 전체 타율은 왜 B가 더 높을까요? 표의 타수를 살펴보고 설명해 보세요.</div>
     <textarea id="a8Text" placeholder="A는 전반기에 ~타수, 후반기에 ~타수를 쳤고, ~"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
-      <span class="note" id="why8">✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)</span>
+      <span class="note" id="why7">✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)</span>
       <button class="btn concept-btn" id="a8Btn" disabled>💡 정리 보기</button>
     </div>
     <div class="concept" id="concept8">
@@ -610,17 +632,16 @@ const TASKS = [
   {id:2, key:'a2', title:'상금 분배 ② 반 친구들은 어떻게 나눴을까?'},
   {id:3, key:'a3', title:'상금 분배 ③ 남은 경기를 이어서 해 보자'},
   {id:4, key:'a4', title:'상금 분배 ④ 경우의 수로 따져 보자'},
-  {id:5, key:'a5', title:'상금 분배 ⑤ 다시 생각해 보자'},
-  {id:6, key:'a6', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
-  {id:7, key:'a7', title:'타자 영입 ② 실제 기록으로 계산하기'},
-  {id:8, key:'a8', title:'타자 영입 ③ 왜 예상과 다를까?'}
+  {id:5, key:'a5', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
+  {id:6, key:'a6', title:'타자 영입 ② 실제 기록으로 계산하기'},
+  {id:7, key:'a7', title:'타자 영입 ③ 왜 예상과 다를까?'}
 ];
 
 /* 학생 한 명의 활동 상태(메모리). Firebase에는 collectData()로 저장한다. */
 const state = {
   s1a:'', s1b:'', s1Reason:'',
   a2Text:'', sawSplit:false,
-  games:[], playing:false, running:null, auto:{100:null, 1000:null, 10000:null}, a3Text:'',
+  games:[], playing:false, running:null, runs:[], viewing:-1, a3Text:'',
   outs:[], f:{tot:'', aw:'', pa:'', pb:'', ma:'', mb:''},
   s5a:'', s5b:'', s5Reason:'',
   vote:null, voteReason:'',
@@ -702,7 +723,7 @@ const F_CHECK = {
 };
 const fieldsOk = () => Object.keys(F_CHECK).every(k=>F_CHECK[k](state.f[k]));
 
-/* ---------- 타자 영입(활동 7) ---------- */
+/* ---------- 타자 영입(활동 6) ---------- */
 const BAT_CHECK = {
   aT: v => parseNum(v)===50, aH: v => parseNum(v)===17,
   aV: v => { const r=parseRel(v); return r.value!==undefined && Math.abs(r.value-0.34)<0.0006; },
@@ -712,15 +733,15 @@ const BAT_CHECK = {
 const batOk = () => Object.keys(BAT_CHECK).every(k=>BAT_CHECK[k](state.bat[k]));
 
 /* ---------- 완료 판정 (활동별) ---------- */
+const calc4Ok = () => outsOk() && fieldsOk();
 function isDone(id){
   if(id===1) return splitOf(state.s1a, state.s1b).ok && len(state.s1Reason)>=MIN_TEXT;
   if(id===2) return state.sawSplit && len(state.a2Text)>=MIN_TEXT;
-  if(id===3) return state.games.length>=10 && !!state.auto[1000] && !!state.auto[10000] && len(state.a3Text)>=MIN_TEXT;
-  if(id===4) return outsOk() && fieldsOk();
-  if(id===5) return splitOf(state.s5a, state.s5b).ok && len(state.s5Reason)>=MIN_TEXT;
-  if(id===6) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
-  if(id===7) return batOk();
-  if(id===8) return len(state.a8Text)>=MIN_TEXT;
+  if(id===3) return state.games.length>=10 && hasRun(1000) && hasRun(10000) && len(state.a3Text)>=MIN_TEXT;
+  if(id===4) return calc4Ok() && len(state.s5Reason)>=MIN_TEXT;
+  if(id===5) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
+  if(id===6) return batOk();
+  if(id===7) return len(state.a8Text)>=MIN_TEXT;
   return false;
 }
 /* 교사 화면 요약·구글 설문에 쓰는 한 줄 값 */
@@ -731,17 +752,16 @@ function valueOf(id){
   if(id===3){
     const parts = [];
     if(state.games.length) parts.push(`직접 ${state.games.length}회 중 A 우승 ${gamesA()}회`);
-    AUTO_NS.forEach(n=>{ const r=state.auto[n]; if(r) parts.push(`${fmtInt(n)}번: ${relDec(r.a,n)}`); });
+    state.runs.forEach(r=> parts.push(`${fmtInt(r.n)}번: ${relDec(r.a,r.n)}`));
     return (parts.length?`[${parts.join(' · ')}]`:'') + (len(state.a3Text)?`\n${state.a3Text.trim()}`:'');
   }
   if(id===4){
     if(!state.outs.length && !Object.values(state.f).some(Boolean)) return '';
     return `경우: ${state.outs.map(o=>o.s+'→'+(o.w||'?')).join(', ')||'-'}\n경우의 수 ${state.f.tot||'-'}, A 우승 ${state.f.aw||'-'}, P(A)=${state.f.pa||'-'}, P(B)=${state.f.pb||'-'}, 상금 A ${state.f.ma||'-'} : B ${state.f.mb||'-'}`;
   }
-  if(id===5) return (state.s5a||state.s5b||len(state.s5Reason)) ? sp(state.s5a,state.s5b) + ` (처음: ${sp(state.s1a,state.s1b)})` + (len(state.s5Reason)?`\n이유: ${state.s5Reason.trim()}`:'') : '';
-  if(id===6) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
-  if(id===7){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
-  if(id===8) return state.a8Text.trim();
+  if(id===5) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
+  if(id===6){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
+  if(id===7) return state.a8Text.trim();
   return '';
 }
 function collectData(){
@@ -749,7 +769,7 @@ function collectData(){
     s1a: state.s1a, s1b: state.s1b, s1Reason: state.s1Reason,
     a2Text: state.a2Text, sawSplit: state.sawSplit,
     games: state.games.join(','),
-    auto100: state.auto[100], auto1000: state.auto[1000], auto10000: state.auto[10000], a3Text: state.a3Text,
+    runs: state.runs.map(r=>({n:r.n, seed:r.seed, a:r.a, a1:r.a1, ba:r.ba})), a3Text: state.a3Text,
     outs: state.outs.map(o=>o.s+(o.w||'_')).join(','), f: Object.assign({}, state.f),
     s5a: state.s5a, s5b: state.s5b, s5Reason: state.s5Reason,
     vote: state.vote || null, voteReason: state.voteReason,
@@ -944,13 +964,11 @@ function renderMyFirst(){
   const html = sp.ok ? `📝 내가 처음 나눈 방법: <b>A ${fmtM(sp.a)}만 원 : B ${fmtM(sp.b)}만 원</b>` : '';
   $('my1Line').innerHTML = html; $('my1Line5').innerHTML = html;
 }
-function check5(opts){
-  state.s5a = $('s5a').value; state.s5b = $('s5b').value; state.s5Reason = $('s5Reason').value;
-  sumLine('s5Sum', state.s5a, state.s5b);
-  setWhy(5, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, '다시 나눈 몫(합계 64만 원)과 이유를 쓰면 타자 영입 활동으로 넘어갈 수 있어요.');
-  refreshAll(opts);
+function check5(opts){   // 활동 4 아래 「다시 생각해 보기」(처음 생각과 비교)
+  state.s5Reason = $('s5Reason').value;
+  check4(opts);
 }
-['s5a','s5b','s5Reason'].forEach(id => $(id).addEventListener('input', ()=>check5()));
+$('s5Reason').addEventListener('input', ()=>check5());
 
 /* ------------------------- 활동 2: 반 친구들의 생각 ------------------------- */
 let splitFilter = '*';
@@ -1017,24 +1035,25 @@ function renderPlay(){
   if(!n) paintScore(0,0);
   const ok = n >= 10;
   document.querySelectorAll('#autoBtns button').forEach(b=> b.disabled = !ok || state.playing || !!state.running);
-  $('autoHint').textContent = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. (다시 누르면 새로 해요)' : `직접 10번을 해 보면 버튼이 켜져요. (지금 ${n}번)`;
+  $('customN').disabled = !ok;
+  $('autoHint').textContent = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. 경기 한 번이 결과판의 칸 하나예요.' : `직접 10번을 해 보면 버튼이 켜져요. (지금 ${n}번)`;
   renderAutoTable();
 }
 function renderAutoTable(){
   const rows = [];
   const n = state.games.length;
   if(n) rows.push(`<tr><td class="n">직접 ${n}회</td><td>${gamesA()}</td><td>${n-gamesA()}</td><td class="rel">${relDec(gamesA(), n)}</td></tr>`);
-  AUTO_NS.forEach(k=>{ const r=state.auto[k]; if(r) rows.push(`<tr${k>=1000?' class="req"':''}><td class="n">${fmtInt(k)}번</td><td>${fmtInt(r.a)}</td><td>${fmtInt(k-r.a)}</td><td class="rel">${relDec(r.a, k)}</td></tr>`); });
-  $('autoTable').innerHTML = rows.length ? `<tr><th>횟수</th><th>A 우승</th><th>B 우승</th><th>A가 우승한 상대도수</th></tr>` + rows.join('') : '';
+  if(n) rows[0] = rows[0].replace('</tr>', '<td></td></tr>');
+  state.runs.forEach((r,i)=> rows.push(`<tr class="${(r.n===1000||r.n===10000)?'req':''}${i===state.viewing?' viewing':''}"><td class="n">컴퓨터 ${fmtInt(r.n)}번</td><td>${fmtInt(r.a)}</td><td>${fmtInt(r.n-r.a)}</td><td class="rel">${relDec(r.a, r.n)}</td><td><button class="vbtn" data-run="${i}">${i===state.viewing?'보는 중':'보기'}</button></td></tr>`));
+  $('autoTable').innerHTML = rows.length ? `<tr><th>횟수</th><th>A 우승</th><th>B 우승</th><th>A가 우승한 상대도수</th><th>결과판</th></tr>` + rows.join('') : '';
   renderTree();
-  if(AUTO_NS.some(n=>state.auto[n])){ $('chartBox').style.display = 'block'; drawChart(); }
 }
 /* 경기 흐름 나무: 가장 많이 한 컴퓨터 실험을 4경기 → 5경기로 갈라지는 나무와 띠그래프로 보여준다. */
 function renderTree(){
-  const k = [10000, 1000, 100].find(n=>state.auto[n]);
-  $('treeBox').style.display = k ? 'block' : 'none';
-  if(!k) return;
-  const r = state.auto[k], b4 = r.n - r.a1;
+  let r = null; state.runs.forEach(x=>{ if(!r || x.n >= r.n) r = x; });
+  $('treeBox').style.display = r ? 'block' : 'none';
+  if(!r) return;
+  const k = r.n, b4 = r.n - r.a1;
   const p = x => relDec(x, r.n);
   $('treeNote').textContent = `컴퓨터로 한 ${fmtInt(k)}번의 경기가 어떻게 갈라졌는지 볼까요?`;
   const box = (x, y, w, h, fill, stroke, l1, l2, l3) => `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
@@ -1051,76 +1070,128 @@ function renderTree(){
     ${box(270,20,160,72,'#e8f1fc',BL, fmtInt(r.a1)+'번', '전체의 약 '+p(r.a1), ['🏆 A 우승', BL])}
     ${box(270,165,160,70,'#fff6ef',OR, fmtInt(b4)+'번', '전체의 약 '+p(b4))}
     ${box(560,112,190,68,'#e8f1fc',BL, fmtInt(r.ba)+'번', '전체의 약 '+p(r.ba), ['🏆 A 우승', BL])}
-    ${box(560,200,190,68,'#fff1e6',OR, fmtInt(r.bb)+'번', '전체의 약 '+p(r.bb), ['🏆 B 우승', OR])}
+    ${box(560,200,190,68,'#fff1e6',OR, fmtInt((r.n-r.a1-r.ba))+'번', '전체의 약 '+p((r.n-r.a1-r.ba)), ['🏆 B 우승', OR])}
   </svg>`;
   const w = x => (x/r.n*100).toFixed(2)+'%';
-  $('flowBar').innerHTML = `<div style="width:${w(r.a1)};background:#1565c0;">4경기에서 A 우승</div><div style="width:${w(r.ba)};background:#64b5f6;">5경기에서 A 우승</div><div style="width:${w(r.bb)};background:#e65100;">B 우승</div>`;
+  $('flowBar').innerHTML = `<div style="width:${w(r.a1)};background:#1565c0;">4경기에서 A 우승</div><div style="width:${w(r.ba)};background:#64b5f6;">5경기에서 A 우승</div><div style="width:${w((r.n-r.a1-r.ba))};background:#e65100;">B 우승</div>`;
   $('flowCap').innerHTML = `A 우승 = <span style="color:#1565c0;">${fmtInt(r.a1)}</span> + <span style="color:#1e88e5;">${fmtInt(r.ba)}</span> = ${fmtInt(r.a)}번 → 전체의 약 ${p(r.a1)} + ${p(r.ba)} ≈ <b>${p(r.a)}</b>
     <div class="note" style="font-weight:normal;margin-top:2px;">A는 4경기에서 <b>절반</b>쯤 바로 우승하고, 나머지 절반 중에서 또 <b>절반</b>쯤은 5경기에서 우승해요.</div>`;
 }
-/* 컴퓨터 시뮬레이션: 결과를 바로 보여주지 않고, 경기가 진행되는 모습(진행 수·상대도수·그래프)을 몇 초 동안 보여준다 */
-const RUN_MS = {100: 2600, 1000: 4200, 10000: 5600};
-const RUN_POW = {100: 1, 1000: 1.8, 10000: 2.4};
-const RUN_COL = {100: '#4a3aa7', 1000: '#eb6834', 10000: '#2a78d6'};
-let chartRange = 10000;
-$('autoBtns').addEventListener('click', e=>{
-  const b = e.target.closest('button'); if(!b || b.disabled || finalLocked || state.running) return;
-  const n = +b.dataset.n, r = simulateGames(n, newSeed());
-  state.running = {n, r, t0: performance.now(), k: 0};
-  delete state.auto[n];
-  if(chartRange < n) setRange(n);
+/* 컴퓨터 시뮬레이션: 결과판(칸 하나 = 경기 한 번)이 A(파랑)·B(주황)로 차례로 채워지는 과정을 보여준다.
+   실험할 때마다 결과가 state.runs에 차례로 쌓이고(최대 12번), 표의 「보기」로 그때의 결과판을 다시 볼 수 있다.
+   저장은 {n, seed, a, a1, ba}만 하고, 결과판은 seed로 똑같이 다시 만든다. */
+const MAX_RUNS = 12, MAX_N = 100000;
+const hasRun = n => state.runs.some(r=>r.n===n);
+const runFull = {};   // seed → simulateGames 결과(그림용 캐시)
+function fullOf(run){ const key = run.n+'_'+run.seed; return runFull[key] || (runFull[key] = simulateGames(run.n, run.seed>>>0)); }
+function gridOf(n){
+  if(n===1000) return {cols:40, rows:25};
+  const cols = Math.ceil(Math.sqrt(n)); return {cols, rows: Math.ceil(n/cols)};
+}
+const runMs = n => n<=100 ? 3000 : n<=1000 ? 4500 : n<=10000 ? 6000 : 7000;
+const runPow = n => n<=100 ? 1 : n<=1000 ? 1.5 : 2;
+let boardCtx = null, boardDrawn = 0, boardG = null;
+function setupBoard(n){
+  const cv = $('board'), g = gridOf(n);
+  const cs = Math.max(2, Math.min(42, Math.floor(840/g.cols)));
+  cv.width = g.cols*cs; cv.height = g.rows*cs;
+  boardCtx = cv.getContext('2d'); boardDrawn = 0; boardG = {cols:g.cols, rows:g.rows, cs, gap: cs>=8 ? Math.max(1, Math.round(cs*0.08)) : 0};
+  boardCtx.fillStyle = '#ffffff'; boardCtx.fillRect(0,0,cv.width,cv.height);
+  boardCtx.fillStyle = '#e3e6ea';
+  for(let i=0;i<n;i++){ const x=(i%g.cols)*cs, y=Math.floor(i/g.cols)*cs; boardCtx.fillRect(x+boardG.gap, y+boardG.gap, cs-boardG.gap*2||cs, cs-boardG.gap*2||cs); }
+  $('boardCap').textContent = `칸 하나가 경기 한 번이에요. (${fmtInt(g.cols)}칸 × ${fmtInt(g.rows)}줄${g.cols*g.rows>n?', 마지막 줄은 일부만':''}) 🟦 A 우승 · 🟧 B 우승`;
+}
+function paintBoardTo(r, k){
+  const {cols, cs, gap} = boardG, w = cs-gap*2||cs;
+  for(let i=boardDrawn;i<k;i++){
+    boardCtx.fillStyle = r.seq[i] ? '#1e88e5' : '#f57c00';
+    boardCtx.fillRect((i%cols)*cs+gap, Math.floor(i/cols)*cs+gap, w, w);
+  }
+  boardDrawn = Math.max(boardDrawn, k);
+}
+function milestones(n){ const m = []; for(let x=10; x<n; x*=10) m.push(x); m.push(n); return m; }
+function paintPanel(r, k){
+  const a = k ? r.cum[k-1] : 0, n = r.n;
+  $('rpN').textContent = k<n ? `${fmtInt(k)} / ${fmtInt(n)}` : fmtInt(n);
+  $('rpA').textContent = fmtInt(a); $('rpB').textContent = fmtInt(k-a);
+  $('rpRel').textContent = k ? relDec(a, k) : '-';
+  $('barA').style.width = k ? (a/k*100)+'%' : '0'; $('barB').style.width = k ? ((k-a)/k*100)+'%' : '0';
+  $('barAv').textContent = k ? relDec(a,k) : '-'; $('barBv').textContent = k ? relDec(k-a,k) : '-';
+  paintBoardTo(r, k);
+  $('rpMs').innerHTML = milestones(n).filter(m=>m<=k).map(m=>{ const v = r.cum[m-1]/m;
+    return `<div><span class="k">${fmtInt(m)}번까지</span><span class="t"><i style="left:${(v*100).toFixed(1)}%"></i></span><b>${relDec(r.cum[m-1], m)}</b></div>`; }).join('');
+}
+function startRun(n){
+  if(finalLocked || state.running || state.playing) return;
+  const seed = newSeed(), r = simulateGames(n, seed);
+  runFull[n+'_'+seed] = r;
+  state.running = {n, r, seed, t0: performance.now(), k: 0, replay:false};
+  beginAnim(`컴퓨터가 남은 경기를 ${fmtInt(n)}번 하는 중…`);
+}
+function beginAnim(title){
+  const R = state.running;
   document.querySelectorAll('#autoBtns button').forEach(x=> x.disabled = true); updateNavButtons();
-  $('runPanel').style.display = 'block'; $('chartBox').style.display = 'block';
-  $('rpTitle').textContent = `컴퓨터가 남은 경기를 ${fmtInt(n)}번 하는 중…`;
+  $('runPanel').style.display = 'block'; $('rpSkip').style.display = ''; $('rpReplay').style.display = 'none';
+  $('rpTitle').textContent = title;
+  setupBoard(R.n); paintPanel(R.r, 0);
   requestAnimationFrame(runStep);
+}
+$('autoBtns').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-n]'); if(!b || b.disabled) return;
+  $('customErr').textContent = ''; startRun(+b.dataset.n);
 });
+function customGo(){
+  const v = String($('customN').value).replace(/[,\s]/g,''); const n = +v;
+  if(!/^\d+$/.test(v) || n < 1 || n > MAX_N){ $('customErr').textContent = `1부터 ${fmtInt(MAX_N)}까지의 자연수를 입력하세요.`; return; }
+  $('customErr').textContent = ''; startRun(n);
+}
+$('customGo').addEventListener('click', customGo);
+$('customN').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); if(!$('customGo').disabled) customGo(); } });
+$('customN').addEventListener('input', ()=>{ $('customGo').disabled = !(state.games.length>=10) || !!state.running || !String($('customN').value).trim(); });
 function runStep(now){
   const R = state.running; if(!R) return;
-  const f = Math.min(1, (now - R.t0) / RUN_MS[R.n]);
-  R.k = Math.max(R.k, Math.min(R.n, Math.round(R.n * Math.pow(f, RUN_POW[R.n]))));
-  paintRun();
+  const f = Math.min(1, (now - R.t0) / (R.replay ? runMs(R.n)*0.8 : runMs(R.n)));
+  R.k = Math.max(R.k, Math.min(R.n, Math.round(R.n * Math.pow(f, runPow(R.n)))));
+  paintPanel(R.r, R.k);
   if(f >= 1 || R.k >= R.n) finishRun(); else requestAnimationFrame(runStep);
 }
-function paintRun(){
-  const R = state.running; if(!R) return;
-  const k = R.k, a = k ? R.r.cum[k-1] : 0;
-  $('rpN').textContent = `${fmtInt(k)} / ${fmtInt(R.n)}`; $('rpA').textContent = fmtInt(a); $('rpB').textContent = fmtInt(k-a);
-  $('rpRel').textContent = k ? relDec(a, k) : '-';
-  $('rpBar').style.width = (k/R.n*100) + '%';
-  const from = Math.max(0, k-26);
-  $('rpStrip').innerHTML = Array.from(R.r.seq.slice(from, k)).map(v=>`<span class="${v?'A':'B'}">${v?'A':'B'}</span>`).join('');
-  drawChart();
+function addRun(run){
+  state.runs.push(run);
+  while(state.runs.length > MAX_RUNS){
+    // 오래된 것부터 지우되, 1,000번·10,000번의 마지막 기록은 남긴다
+    const i = state.runs.findIndex((x,j)=> !((x.n===1000||x.n===10000) && !state.runs.some((y,l)=>l!==j && y.n===x.n)));
+    state.runs.splice(i<0?0:i, 1);
+  }
+  return state.runs.length-1;
 }
 function finishRun(){
   const R = state.running; if(!R) return;
-  R.k = R.n; state.running = null; state.auto[R.n] = R.r;
-  $('rpTitle').textContent = `✅ ${fmtInt(R.n)}번 완료!`;
-  $('rpN').textContent = fmtInt(R.n); $('rpA').textContent = fmtInt(R.r.a); $('rpB').textContent = fmtInt(R.n-R.r.a);
-  $('rpRel').textContent = relDec(R.r.a, R.n); $('rpBar').style.width = '100%';
-  renderPlay(); renderAutoTable(); drawChart(); check3(); updateNavButtons();
+  R.k = R.n; state.running = null;
+  if(R.replay){ state.viewing = R.idx; }
+  else { state.viewing = addRun({n:R.n, seed:R.seed, a:R.r.a, a1:R.r.a1, ba:R.r.ba}); }
+  showRunDone(R.r);
+  renderPlay(); check3(); updateNavButtons();
 }
-$('rpSkip').addEventListener('click', ()=>{ if(state.running){ state.running.k = state.running.n; finishRun(); } });
-function setRange(r){ chartRange = r; document.querySelectorAll('#rangeTabs button').forEach(b=> b.classList.toggle('on', +b.dataset.r===r)); drawChart(); }
-$('rangeTabs').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setRange(+b.dataset.r); });
-function drawChart(){
-  const W = 640, H = 280, L = 46, Rr = 14, T = 12, Bm = 32, pw = W-L-Rr, ph = H-T-Bm;
-  const X = n => L + n/chartRange*pw, Y = v => T + (1-v)*ph;
-  let g = '';
-  for(let i=0;i<=5;i++){ const v = i/5; g += `<line x1="${L}" y1="${Y(v)}" x2="${W-Rr}" y2="${Y(v)}" stroke="#eceef1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#52514e">${v.toFixed(1)}</text>`; }
-  for(let i=0;i<=4;i++){ const n = chartRange*i/4; g += `<text x="${X(n)}" y="${H-10}" text-anchor="middle" font-size="12" fill="#52514e">${fmtInt(Math.round(n))}</text>`; }
-  g += `<line x1="${L}" y1="${T}" x2="${L}" y2="${T+ph}" stroke="#9aa0a6"/><line x1="${L}" y1="${T+ph}" x2="${W-Rr}" y2="${T+ph}" stroke="#9aa0a6"/>`;
-  const series = AUTO_NS.filter(n=>state.auto[n]).map(n=>({n, r:state.auto[n], k:n}));
-  if(state.running) series.push({n:state.running.n, r:state.running.r, k:state.running.k});
-  series.forEach(s=>{
-    const k = Math.min(s.k, chartRange); if(k < 1) return;
-    const step = Math.max(1, Math.floor(k/500)); let d = '';
-    for(let i=1;i<=k;i+=step) d += (d?'L':'M') + `${X(i).toFixed(1)},${Y(s.r.cum[i-1]/i).toFixed(1)}`;
-    d += `L${X(k).toFixed(1)},${Y(s.r.cum[k-1]/k).toFixed(1)}`;
-    g += `<path d="${d}" fill="none" stroke="${RUN_COL[s.n]}" stroke-width="2.2" stroke-linejoin="round"/>`;
-  });
-  $('autoChart').innerHTML = g;
-  $('legend2').innerHTML = series.map(s=>`<span><i style="background:${RUN_COL[s.n]}"></i>${fmtInt(s.n)}번</span>`).join('');
+function showRunDone(r){
+  paintPanel(r, r.n);
+  $('rpTitle').textContent = `✅ 컴퓨터 ${fmtInt(r.n)}번 결과` + (state.viewing>=0 ? ` (${state.viewing+1}번째 실험)` : '');
+  $('rpSkip').style.display = 'none'; $('rpReplay').style.display = '';
 }
+function viewRun(i){
+  if(state.running) return;
+  const run = state.runs[i]; if(!run) return;
+  state.viewing = i; const r = fullOf(run);
+  $('runPanel').style.display = 'block';
+  setupBoard(r.n); showRunDone(r); renderAutoTable();
+}
+$('autoTable').addEventListener('click', e=>{ const b = e.target.closest('button[data-run]'); if(b) viewRun(+b.dataset.run); });
+$('rpSkip').addEventListener('click', ()=>{ if(state.running){ paintPanel(state.running.r, state.running.n); finishRun(); } });
+$('rpReplay').addEventListener('click', ()=>{
+  if(state.running || finalLocked) return;
+  const run = state.runs[state.viewing]; if(!run) return;
+  state.running = {n:run.n, r:fullOf(run), seed:run.seed, t0: performance.now(), k:0, replay:true, idx:state.viewing};
+  beginAnim(`${state.viewing+1}번째 실험(${fmtInt(run.n)}번)을 처음부터 다시 보는 중…`);
+});
 function renderClassSim(){
   const all = shareOf('sim'); let n=0, a=0, cnt=0;
   Object.keys(all).forEach(k=>{ const v=all[k]; if(v && v.n>0){ n+=+v.n; a+=+v.a; cnt++; } });
@@ -1131,7 +1202,7 @@ function renderClassSim(){
 function check3(opts){
   state.a3Text = $('a3Text').value;
   const need = [];
-  if(state.games.length<10) need.push('직접 10번'); if(!state.auto[1000]) need.push('1,000번'); if(!state.auto[10000]) need.push('10,000번');
+  if(state.games.length<10) need.push('직접 10번'); if(!hasRun(1000)) need.push('1,000번'); if(!hasRun(10000)) need.push('10,000번');
   if(len(state.a3Text)<MIN_TEXT) need.push('내 생각 쓰기');
   setWhy(3, '✅ 완료! '+NEXT, `남은 것: ${need.join(', ')}`);
   refreshAll(opts);
@@ -1189,12 +1260,12 @@ function renderFields(){
     const v = state.f[k];
     $('m_'+k).innerHTML = (!ok || !String(v).trim()) ? '' : (F_CHECK[k](v) ? '<span class="ok">✅</span>' : '<span class="bad">❌</span>');
   });
-  $('concept4').classList.toggle('show', isDone(4));
-  $('areaBox').style.display = isDone(4) ? 'block' : 'none';
+  $('concept4').classList.toggle('show', calc4Ok());
+  $('areaBox').style.display = calc4Ok() ? 'block' : 'none';
 }
 Object.keys(F_CHECK).forEach(k=> $('f_'+k).addEventListener('input', ()=>{ state.f[k] = $('f_'+k).value; renderFields(); check4(); }));
 function check4(opts){
-  setWhy(4, '✅ 완료! '+NEXT, outsOk() ? '확률과 상금을 바르게 구하면 다음으로 넘어갈 수 있어요.' : '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.');
+  setWhy(4, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, !outsOk() ? '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.' : !fieldsOk() ? '확률과 상금을 바르게 구해 보세요.' : '맨 아래 「다시 생각해 보기」에 처음 생각과 비교해 써 보세요.');
   refreshAll(opts);
 }
 
@@ -1214,7 +1285,7 @@ document.querySelectorAll('#voteRow .choice').forEach(b=> b.addEventListener('cl
 $('voteReason').addEventListener('input', ()=>check6());
 function check6(opts){
   state.voteReason = $('voteReason').value;
-  setWhy(6, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(5, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 
@@ -1233,7 +1304,7 @@ function check7(opts){
       <p style="margin:10px 0 0;font-size:16px;font-weight:bold;">➡ 시즌 전체 타율은 <span style="color:var(--orange);">선수 B</span>가 더 높아요! <span class="note" style="font-weight:normal;">(내 예상: ${esc(pred)} — ${state.vote==='B'?'예상이 맞았어요 🎯':'예상과 달랐어요 😮'})</span></p>`;
   }
   lockVote(); renderVote();
-  setWhy(7, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
+  setWhy(6, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 function renderVote(){
@@ -1261,10 +1332,10 @@ $('a8Text').addEventListener('input', ()=>check8());
 $('a8Btn').addEventListener('click', ()=>{ state.a8Concept = true; $('concept8').classList.add('show'); refreshAll({now:true}); $('concept8').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 function check8(opts){
   state.a8Text = $('a8Text').value;
-  const ok = isDone(8);
+  const ok = isDone(7);
   $('a8Btn').disabled = !ok;
-  $('why8').textContent = ok ? '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.' : '✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)';
-  $('why8').className = 'note' + (ok?' ok':'');
+  $('why7').textContent = ok ? '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.' : '✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)';
+  $('why7').className = 'note' + (ok?' ok':'');
   if(state.a8Concept) $('concept8').classList.add('show');
   refreshAll(opts);
 }
@@ -1272,7 +1343,7 @@ function check8(opts){
 /* ------------------------- 공유·공개가 바뀔 때 ------------------------- */
 function onShareChanged(){ renderSplit(); renderClassSim(); renderVote(); }
 function onRevealChanged(){ renderSplit(); renderVote(); }
-function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===7) renderVote(); }
+function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===6) renderVote(); }
 
 /* 처음 화면 */
 function initActivity(){
@@ -1287,11 +1358,15 @@ function restoreData(d){
   setv('s1a', d.s1a); setv('s1b', d.s1b); setv('s1Reason', d.s1Reason);
   state.sawSplit = !!d.sawSplit; state.a2Text = d.a2Text || ''; setv('a2Text', state.a2Text);
   state.games = (typeof d.games==='string' && d.games) ? d.games.split(',').filter(g=>/^(A|BA|BB)$/.test(g)) : [];
-  AUTO_NS.forEach(n=>{ const r = d['auto'+n]; state.auto[n] = (r && r.seed!=null) ? simulateGames(n, r.seed>>>0) : null; });
+  state.runs = [];
+  const okRun = r => r && r.seed!=null && r.n>=1 && r.n<=MAX_N;
+  if(Array.isArray(d.runs) || (d.runs && typeof d.runs==='object')) Object.values(d.runs).forEach(r=>{ if(okRun(r)){ const f = simulateGames(+r.n, r.seed>>>0); state.runs.push({n:f.n, seed:f.seed, a:f.a, a1:f.a1, ba:f.ba}); } });
+  else AUTO_NS.forEach(n=>{ const r = d['auto'+n]; if(r && r.seed!=null){ const f = simulateGames(n, r.seed>>>0); state.runs.push({n, seed:f.seed, a:f.a, a1:f.a1, ba:f.ba}); } });
+  state.viewing = -1;
   setv('a3Text', d.a3Text);
   state.outs = (typeof d.outs==='string' && d.outs) ? d.outs.split(',').filter(x=>/^[AB]{2}[AB_]$/.test(x)).map(x=>({s:x.slice(0,2), w:x[2]==='_'?'':x[2]})) : [];
   Object.keys(state.f).forEach(k=>{ state.f[k] = (d.f && d.f[k]) || ''; setv('f_'+k, state.f[k]); });
-  setv('s5a', d.s5a); setv('s5b', d.s5b); setv('s5Reason', d.s5Reason);
+  setv('s5Reason', d.s5Reason);
   if(d.vote) setVote(d.vote); setv('voteReason', d.voteReason);
   Object.keys(state.bat).forEach(k=>{ state.bat[k] = (d.bat && d.bat[k]) || ''; setv(k, state.bat[k]); });
   setv('a8Text', d.a8Text); state.a8Concept = !!d.a8Concept;

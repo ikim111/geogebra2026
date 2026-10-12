@@ -347,22 +347,26 @@ const CONFIG = {
 const STAGES = [
   {t:'내 생각', d:'상금 64만 원을 어떻게 나눌까? (활동 1)', tasks:[1], max:1, reveal:{},
    tip:'충분히 생각하게 하고, 대부분 제출하면 다음 단계를 열어요. (다음 단계를 열면 친구들의 생각이 자동으로 공개돼요)'},
-  {t:'상금 분배 탐구', d:'친구 생각 보기 → 남은 경기 시뮬레이션 → 경우의 수 → 다시 생각 (활동 2~5)', tasks:[2,3,4,5], max:5, reveal:{split:true},
+  {t:'상금 분배 탐구', d:'친구 생각 보기 → 남은 경기 시뮬레이션 → 경우의 수·다시 생각 (활동 2~4)', tasks:[2,3,4], max:4, reveal:{split:true},
    tip:'💬 "똑같이 나누기와 2:1 나누기, 어느 쪽이 더 공정할까?" — 시뮬레이션 뒤에는 경기 흐름 나무로 1/2 + 1/4 = 3/4를 짚어 주세요.'},
-  {t:'타자 영입', d:'예상 → 실제 타율 계산 → 왜 그럴까 (활동 6~8)', tasks:[6,7,8], max:null, reveal:{},
+  {t:'타자 영입', d:'예상 → 실제 타율 계산 → 왜 그럴까 (활동 5~7)', tasks:[5,6,7], max:null, reveal:{},
    tip:'💬 "두 시기 모두 A가 높은데 왜 전체는 B가 높을까?" — 계산을 마친 학생에게는 반 예상 결과가 자동으로 보여요.'}
 ];
 const TASK_LABELS = [
   {id:1, key:'a1', label:'상금 분배 ① 내 생각'},
   {id:2, key:'a2', label:'상금 분배 ② 친구들의 생각'},
   {id:3, key:'a3', label:'상금 분배 ③ 남은 경기 시뮬레이션'},
-  {id:4, key:'a4', label:'상금 분배 ④ 경우의 수'},
-  {id:5, key:'a5', label:'상금 분배 ⑤ 다시 생각하기'},
-  {id:6, key:'a6', label:'타자 영입 ① 예상'},
-  {id:7, key:'a7', label:'타자 영입 ② 실제 타율 계산'},
-  {id:8, key:'a8', label:'타자 영입 ③ 왜 그럴까'}
+  {id:4, key:'a4', label:'상금 분배 ④ 경우의 수·다시 생각'},
+  {id:5, key:'a5', label:'타자 영입 ① 예상'},
+  {id:6, key:'a6', label:'타자 영입 ② 실제 타율 계산'},
+  {id:7, key:'a7', label:'타자 영입 ③ 왜 그럴까'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
+/* 컴퓨터 시뮬레이션 기록: 새 형식(runs 배열) 또는 예전 형식(auto100/1000/10000) */
+function runsOf(d){
+  if(d && d.runs) return Object.values(d.runs).filter(r=>r && r.n>0 && r.a!=null).map(r=>({n:+r.n, a:+r.a}));
+  return [100,1000,10000].filter(n=>d && d['auto'+n]).map(n=>({n, a:+d['auto'+n].a}));
+}
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
 
@@ -396,21 +400,21 @@ function activityDetailHTML(s, id){
     const g = gamesOf(d); if(!g.length && !d.a3Text) return '';
     const a = g.filter(x=>winnerOf(x)==='A').length;
     return kv('직접 한 경기', g.length ? `${g.length}회 중 A 우승 ${a}회 (${relDec(a,g.length)})` : '-')
-      + [100,1000,10000].map(n=>{ const r=d['auto'+n]; return r ? kv(fmtInt(n)+'번', `A 우승 ${fmtInt(r.a)}회 → ${relDec(r.a,n)}`) : ''; }).join('')
+      + runsOf(d).map(r=> kv('컴퓨터 '+fmtInt(r.n)+'번', `A 우승 ${fmtInt(r.a)}회 → ${relDec(r.a,r.n)}`)).join('')
       + textBox(d.a3Text);
   }
   if(id===4){
     const o = (typeof d.outs==='string' && d.outs) ? d.outs.split(',') : []; const f = d.f || {};
-    if(!o.length && !Object.values(f).some(Boolean)) return '';
+    if(!o.length && !Object.values(f).some(Boolean) && !d.s5Reason) return '';
     return kv('나열한 경우', o.length ? o.map(x=>`${x.slice(0,2)}→${x[2]==='_'?'?':x[2]}`).join(', ') : '-')
       + kv('모든 경우의 수 / A 우승', `${esc(f.tot||'-')} / ${esc(f.aw||'-')}`)
       + kv('P(A) / P(B)', `${esc(f.pa||'-')} / ${esc(f.pb||'-')}`)
-      + kv('공정한 상금', sp(f.ma, f.mb));
+      + kv('공정한 상금', sp(f.ma, f.mb))
+      + (d.s5Reason ? kv('처음 생각', sp(d.s1a,d.s1b)) + textBox(d.s5Reason) : '');
   }
-  if(id===5){ if(!d.s5a && !d.s5b && !d.s5Reason) return ''; return kv('처음', sp(d.s1a,d.s1b)) + kv('다시', sp(d.s5a,d.s5b)) + textBox(d.s5Reason); }
-  if(id===6){ if(!d.vote && !d.voteReason) return ''; return kv('예상', esc(d.vote ? (d.vote==='같다'?'같다':'선수 '+d.vote) : '-')) + textBox(d.voteReason); }
-  if(id===7){ const b=d.bat||{}; if(!Object.values(b).some(Boolean)) return ''; return kv('선수 A', `${esc(b.aT||'-')}타수 ${esc(b.aH||'-')}안타 · 타율 ${esc(b.aV||'-')}`) + kv('선수 B', `${esc(b.bT||'-')}타수 ${esc(b.bH||'-')}안타 · 타율 ${esc(b.bV||'-')}`); }
-  if(id===8){ if(!d.a8Text) return ''; return textBox(d.a8Text) + kv('정리 보기', d.a8Concept?'✅':'아직'); }
+  if(id===5){ if(!d.vote && !d.voteReason) return ''; return kv('예상', esc(d.vote ? (d.vote==='같다'?'같다':'선수 '+d.vote) : '-')) + textBox(d.voteReason); }
+  if(id===6){ const b=d.bat||{}; if(!Object.values(b).some(Boolean)) return ''; return kv('선수 A', `${esc(b.aT||'-')}타수 ${esc(b.aH||'-')}안타 · 타율 ${esc(b.aV||'-')}`) + kv('선수 B', `${esc(b.bT||'-')}타수 ${esc(b.bH||'-')}안타 · 타율 ${esc(b.bV||'-')}`); }
+  if(id===7){ if(!d.a8Text) return ''; return textBox(d.a8Text) + kv('정리 보기', d.a8Concept?'✅':'아직'); }
   return '';
 }
 function renderAggregate(){ renderStages(); /* 22번은 상단 합계 패널 대신 ② 교사용 뷰의 집계(taskAggregateHTML)를 쓴다 */ }
@@ -429,21 +433,20 @@ function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
   if(id===1 || id===2) return box('처음 나눈 방법 (반 전체)' + (id===2 ? (reveal.split?' — 🔓 학생에게 공개 중':' — 🔒 아직 공개 안 함') : ''), splitAgg('s1'));
-  if(id===5) return box('다시 나눈 방법 (반 전체)', splitAgg('s5'));
   if(id===3){
     let n=0, a=0, people=0; const big=[];
-    ss.forEach(d=>{ const g=gamesOf(d); if(g.length){ people++; n+=g.length; a+=g.filter(x=>winnerOf(x)==='A').length; } if(d.auto10000) big.push(d.auto10000.a/10000); });
+    ss.forEach(d=>{ const g=gamesOf(d); if(g.length){ people++; n+=g.length; a+=g.filter(x=>winnerOf(x)==='A').length; } { const r10 = runsOf(d).filter(r=>r.n===10000).pop(); if(r10) big.push(r10.a/10000); } });
     return box('남은 경기 시뮬레이션', n ? `직접 한 경기(반 전체): <b>${fmtInt(n)}회</b> 중 A 우승 <b>${fmtInt(a)}회</b> → 상대도수 <b>${relDec(a,n)}</b> (${people}명)` + (big.length ? `<br>10,000번 시뮬레이션 ${big.length}명 평균: <b>${(big.reduce((x,y)=>x+y,0)/big.length).toFixed(3)}</b>` : '') : '아직 경기한 학생이 없어요.');
   }
   if(id===4){
     const done = Object.values(allStudents).filter(s=>s.progress&&s.progress.a4&&s.progress.a4.done).length;
     return box('경우의 수', `완료 <b>${done}명</b> / ${Object.keys(allStudents).length}명 — 정답: AA·AB·BA → A 우승, BB → B 우승, P(A)=3/4, 48 : 16`);
   }
-  if(id===6 || id===7){
+  if(id===5 || id===6){
     const v = ss.filter(d=>d.vote);
     const rows = [['A','선수 A'],['B','선수 B (실제 결과)'],['같다','같다']].map(([k,l])=>({label:l, n:v.filter(d=>d.vote===k).length, answer:k==='B'}));
-    const done7 = Object.values(allStudents).filter(s=>s.progress&&s.progress.a7&&s.progress.a7.done).length;
-    return box('예상 투표' + (reveal.vote?' — 🔓 학생에게 공개 중':' — 🔒 아직 공개 안 함'), (v.length ? barsHTML(rows, v.length) : '아직 예상한 학생이 없어요.') + (id===7 ? `<div style="margin-top:6px;">타율 계산 완료 <b>${done7}명</b></div>` : ''));
+    const done7 = Object.values(allStudents).filter(s=>s.progress&&s.progress.a6&&s.progress.a6.done).length;
+    return box('예상 투표' + (reveal.vote?' — 🔓 학생에게 공개 중':' — 🔒 아직 공개 안 함'), (v.length ? barsHTML(rows, v.length) : '아직 예상한 학생이 없어요.') + (id===6 ? `<div style="margin-top:6px;">타율 계산 완료 <b>${done7}명</b></div>` : ''));
   }
   return '';
 }
@@ -507,7 +510,7 @@ function setStage(no){
   if(no==null){ upd.stage = null; upd.minTaskId = null; upd.maxTaskId = null; }
   else {
     const st = STAGES[no-1];
-    upd.stage = no; upd.minTaskId = null; upd.maxTaskId = st.max || null;
+    upd.stage = no; upd.minTaskId = null; upd.maxTaskId = st.max || ((typeof TASK_LABELS!=="undefined" && TASK_LABELS.length) ? Math.max(...TASK_LABELS.map(t=>t.id)) : null);
     STAGES.slice(0, no).forEach(s=> Object.keys(s.reveal||{}).forEach(k=>{ upd['reveal/'+k] = true; }));
   }
   controlRef.update(upd);
