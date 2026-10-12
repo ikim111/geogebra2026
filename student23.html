@@ -188,6 +188,7 @@
   .chk-field{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
   .chk-field label{min-width:110px;font-weight:bold;}
   @media (max-width:640px){ .exin{flex-direction:column;} .exin span{padding-top:0;} .nlwrap{padding:96px 18px 40px;} }
+  .fractip{display:inline-block;background:#f3f0ff;border:1px solid #c9bff0;color:#3d2e86;border-radius:8px;padding:6px 12px;font-size:14.5px;margin:4px 0 8px;}
 </style></style>
 </head>
 <body>
@@ -279,8 +280,9 @@
     <p class="hint">일상생활에서는 어떤 일이 일어날 가능성을 여러 가지 말로 표현해요. 각 표현에 나타난 가능성을 <b>확률</b>로 나타내 보세요.</p>
     <ol class="howto">
       <li>아래 표현 카드를 누른 뒤, 수직선 위를 누르면 그 자리에 놓여요. 놓은 표시는 끌어서 옮길 수 있어요.</li>
-      <li>정확한 값은 <b>확률 칸</b>에 분수나 소수로 써요. (예: 3/4, 0.75) 칸에 쓰면 표시도 그 자리로 옮겨져요.</li>
+      <li>정확한 값은 <b>확률 칸</b>에 분수나 소수로 써요. 칸에 쓰면 표시도 그 자리로 옮겨져요.</li>
     </ol>
+    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.75, 백분율 75%도 돼요)</div>
     <div class="nlwrap">
       <div class="nl" id="nl"><div class="nlbar"></div><div id="nlTicks"></div><div id="nlMarks"></div></div>
     </div>
@@ -316,6 +318,7 @@
     <p class="hint">우리 주변에서 확률(가능성)과 관련된 표현을 하나 찾아, 그 의미를 확률로 나타내 보세요.<br>
       <span class="note">예: 속담, 사자성어, 일기 예보, 광고, 친구들끼리 쓰는 말 …</span></p>
     <div class="chk-field"><label>일상 표현</label><input type="text" id="myExpr" style="width:320px;text-align:left;" placeholder="예) 일기 예보: 내일 비 올 확률 30%"></div>
+    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.3, 백분율 30%도 돼요)</div>
     <div class="chk-field"><label>확률</label><input type="text" id="myVal" style="width:140px;" placeholder="분수나 소수"> <span class="mark" id="myValMsg"></span></div>
     <p class="hint"><b>이렇게 나타낸 이유 (표현의 뜻)</b></p>
     <textarea id="myWhy" placeholder="이 표현은 ~라는 뜻이라서 확률을 ~로 나타냈다."></textarea>

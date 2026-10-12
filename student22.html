@@ -198,6 +198,38 @@
   table.simtable td.rel{font-weight:bold;}
   table.simtable tr.req td.n::after{content:' *';color:var(--orange);}
   .big-question{font-size:19px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
+  .ag{display:inline-flex;align-items:center;gap:6px;margin-right:10px;}
+  .pick{border:2px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 14px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .pick.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  table.outt{width:100%;border-collapse:collapse;margin:12px 0 8px;font-size:15.5px;text-align:center;}
+  table.outt th, table.outt td{border:1px solid #cfd4da;padding:8px 6px;}
+  table.outt th{background:#eceef1;font-size:14px;}
+  table.outt td.gm b{display:inline-block;min-width:54px;padding:3px 8px;border-radius:12px;}
+  table.outt td.gm b.A{background:#e8f1fc;color:var(--blue);} table.outt td.gm b.B{background:#fff1e6;color:var(--orange);}
+  table.outt td.gm .sc{display:block;font-size:13px;color:var(--ink2);margin-top:3px;}
+  .wpick{display:inline-flex;align-items:center;gap:6px;border:2px solid #c5cad1;background:#fff;border-radius:18px;padding:5px 12px;margin:2px 3px;cursor:pointer;font-family:inherit;font-size:15px;font-weight:bold;color:var(--ink2);}
+  .wpick .rd{width:16px;height:16px;border-radius:50%;border:2px solid #9aa0a6;display:inline-block;}
+  .wpick.on{border-color:var(--ink);color:var(--ink);background:#f1f3f6;}
+  .wpick.on .rd{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 45%,#fff 50%);}
+  table.outt .del{border:none;background:none;color:#999;cursor:pointer;font-size:20px;}
+  .flowbar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:8px 0 4px;font-size:13px;font-weight:bold;color:#fff;}
+  .flowbar div{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;}
+  .flowcap{font-size:15px;font-weight:bold;margin-top:4px;}
+  .area{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:4px;max-width:420px;}
+  .area .hd{text-align:center;font-size:13.5px;font-weight:bold;color:var(--ink2);}
+  .area .cell{height:90px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;font-size:15px;color:#fff;}
+  .area .cell small{font-weight:normal;font-size:12.5px;opacity:.95;}
+  .fractip{display:inline-block;background:#f3f0ff;border:1px solid #c9bff0;color:#3d2e86;border-radius:8px;padding:6px 12px;font-size:14.5px;margin:4px 0 8px;}
+  .howread{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:15px;margin:6px 0 12px;}
+  .howread ul{margin:4px 0 8px;padding-left:20px;}
+  .sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1.5px solid;vertical-align:middle;}
+  .sw.h1{background:#1565c0;border-color:#1565c0;} .sw.m1{background:#fff;border-color:#90b8ea;}
+  .pblock{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;}
+  .pblock .ph{font-weight:bold;font-size:16px;margin-bottom:6px;}
+  .pblock .ph span{font-weight:normal;color:var(--ink2);font-size:14.5px;}
+  .prow{display:flex;align-items:center;gap:12px;margin:6px 0;flex-wrap:wrap;}
+  .prow .half{width:56px;font-weight:bold;flex:0 0 auto;}
+  .prow .stat2{font-size:14.5px;white-space:nowrap;font-variant-numeric:tabular-nums;}
 </style></style>
 </head>
 <body>
@@ -335,6 +367,13 @@
       <button class="btn" data-n="10000" disabled>10,000번 *</button>
     </div>
     <table class="simtable" id="autoTable" style="margin-top:12px;"></table>
+    <div id="treeBox" style="display:none;">
+      <h3 style="margin:18px 0 6px;">🌳 왜 이런 값이 나올까? — 경기 흐름 나무</h3>
+      <p class="note" id="treeNote" style="margin:0 0 6px;"></p>
+      <div id="treeSvg"></div>
+      <div class="flowbar" id="flowBar"></div>
+      <div class="flowcap" id="flowCap"></div>
+    </div>
     <p class="note" style="margin:6px 0 0;"><span style="color:var(--orange);">*</span> 1,000번과 10,000번은 꼭 해 보세요.</p>
   </div>
   <div class="card">
@@ -352,23 +391,32 @@
     <p class="hint">이미 3경기를 했으니 남은 경기는 <b>4경기</b>와 <b>5경기</b>예요.
       우승자가 먼저 정해지더라도 <b>5경기까지 모두 한다고 생각</b>하고, 두 경기의 승자를 차례로 나열해 봅시다.</p>
     <div class="adder">
-      4경기 승자 <select id="add4"><option value="A">A</option><option value="B">B</option></select>
-      5경기 승자 <select id="add5"><option value="A">A</option><option value="B">B</option></select>
-      <button class="btn" id="addOut" style="padding:7px 14px;font-size:14.5px;">＋ 경우 추가</button>
+      <span class="ag">4경기 승자 <button class="pick" data-g="4" data-v="A">A</button><button class="pick" data-g="4" data-v="B">B</button></span>
+      <span class="ag">5경기 승자 <button class="pick" data-g="5" data-v="A">A</button><button class="pick" data-g="5" data-v="B">B</button></span>
+      <button class="btn" id="addOut" style="padding:8px 16px;font-size:15px;" disabled>＋ 경우 추가</button>
     </div>
-    <div class="outs" id="outs"></div>
+    <table class="outt" id="outsTable" style="display:none;">
+      <thead><tr><th>경우</th><th>4경기</th><th>5경기</th><th>우승자는? (먼저 3승 하는 사람)</th><th></th></tr></thead>
+      <tbody id="outs"></tbody>
+    </table>
     <div class="error" id="err4"></div>
     <div class="note" id="outsNote">나올 수 있는 경우를 모두 추가하고, 각 경우의 우승자를 골라 보세요.</div>
   </div>
   <div class="card" id="a4Calc">
     <h3>확률로 계산하기</h3>
+    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.25도 돼요)</div>
     <div class="chk-field"><label>모든 경우의 수</label><input type="text" inputmode="numeric" id="f_tot"> 가지 <span class="mark" id="m_tot"></span></div>
     <div class="chk-field"><label>A가 우승하는 경우의 수</label><input type="text" inputmode="numeric" id="f_aw"> 가지 <span class="mark" id="m_aw"></span></div>
     <div class="chk-field"><label>A가 우승할 확률</label><input type="text" id="f_pa"> <span class="mark" id="m_pa"></span></div>
     <div class="chk-field"><label>B가 우승할 확률</label><input type="text" id="f_pb"> <span class="mark" id="m_pb"></span></div>
     <div class="chk-field"><label>공정한 상금: A</label><input type="text" inputmode="decimal" id="f_ma"> 만 원 <span class="mark" id="m_ma"></span></div>
     <div class="chk-field"><label>공정한 상금: B</label><input type="text" inputmode="decimal" id="f_mb"> 만 원 <span class="mark" id="m_mb"></span></div>
-    <p class="note">확률은 분수(3/5)나 소수(0.6)로 써요. 위에서 경우를 모두 맞게 나열해야 ✅가 표시돼요.</p>
+    <p class="note" style="margin-top:0;">위에서 경우를 모두 맞게 나열해야 ✅가 표시돼요.</p>
+    <div id="areaBox" style="display:none;margin-top:14px;">
+      <h3 style="margin:0 0 6px;">🟦 넓이로 보기</h3>
+      <div class="area" id="areaGrid"></div>
+      <p class="note" style="margin:6px 0 0;">네 칸의 크기가 모두 같아요 — 4경기와 5경기에서 A와 B가 이길 확률이 각각 같으니까요.</p>
+    </div>
     <div class="concept" id="concept4">
       <div class="def" style="font-size:16px;">💡 A가 4경기에서 이기면 이미 우승이지만, 5경기까지 한다고 생각하면 <b>AA, AB, BA, BB</b> 네 가지가 모두 <b>똑같은 가능성</b>으로 일어나요.
       그래서 경우의 수로 확률을 구할 수 있어요. 이 문제는 1654년 수학자 <b>파스칼</b>과 <b>페르마</b>가 편지를 주고받으며 해결했고, 확률 이론이 시작된 계기로 알려져 있어요.</div>
@@ -424,7 +472,8 @@
   <div class="card">
     <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>실제 기록을 확인해 보자</h2>
-    <p class="hint">빈칸에 시즌 전체 타수와 안타 수, 타율을 구해 써 보세요. (타율은 소수나 분수로)</p>
+    <p class="hint">빈칸에 시즌 전체 타수와 안타 수, 타율을 구해 써 보세요. 타율은 소수(0.○○)나 분수로 써요.</p>
+    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.25도 돼요)</div>
     <table class="bat">
       <tr><th rowspan="2"></th><th colspan="2">전반기</th><th colspan="2">후반기</th><th colspan="3">시즌 전체</th></tr>
       <tr><th>타수</th><th>안타 수</th><th>타수</th><th>안타 수</th><th>타수</th><th>안타 수</th><th>타율</th></tr>
@@ -452,12 +501,20 @@
   <div class="card">
     <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a8">미완료</span></div>
     <h2>왜 예상과 다른 결과가 나왔을까?</h2>
-    <p class="hint">네모 한 칸이 타석 한 번이에요. 색칠한 칸은 안타예요. <span style="color:#1565c0;font-weight:bold;">■ 전반기</span> <span style="color:#e65100;font-weight:bold;">■ 후반기</span></p>
+    <div class="howread">
+      <b>📖 그림 읽는 법</b>
+      <ul>
+        <li>네모 <b>한 칸</b> = 타석에 <b>한 번</b> 선 것(1타수)</li>
+        <li><span class="sw h1"></span> 색칠한 칸 = <b>안타</b>를 친 타석 · <span class="sw m1"></span> 빈 칸 = 안타를 못 친 타석</li>
+        <li><span style="color:#1565c0;font-weight:bold;">파란색 = 전반기</span>, <span style="color:#e65100;font-weight:bold;">주황색 = 후반기</span></li>
+      </ul>
+      <div>🔍 <b>살펴볼 점:</b> 두 선수는 전반기와 후반기에 각각 몇 번씩 타석에 섰나요? 타율이 <b>높았던 시기</b>에 타석에 더 많이 선 선수는 누구인가요?</div>
+    </div>
     <div id="boxView"></div>
     <div class="big-question" style="margin-top:12px;">전반기와 후반기 모두 A의 타율이 더 높은데, 시즌 전체 타율은 왜 B가 더 높을까요? 표의 타수를 살펴보고 설명해 보세요.</div>
     <textarea id="a8Text" placeholder="A는 전반기에 ~타수, 후반기에 ~타수를 쳤고, ~"></textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
-      <span class="note" id="why8">내 생각을 쓰면 정리를 볼 수 있어요.</span>
+      <span class="note" id="why8">✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)</span>
       <button class="btn concept-btn" id="a8Btn" disabled>💡 정리 보기</button>
     </div>
     <div class="concept" id="concept8">
@@ -594,9 +651,10 @@ function newSeed(){ const u=new Uint32Array(1); crypto.getRandomValues(u); retur
 const winnerOf = g => g==='BB' ? 'B' : 'A';   // 'A'(4경기 A승) · 'BA' · 'BB'
 const AUTO_NS = [100, 1000, 10000];
 function simulateGames(n, seed){
-  const r = mulberry32(seed); let a = 0;
-  for(let i=0;i<n;i++){ if(r() < 0.5) a++; else if(r() < 0.5) a++; }
-  return {n, a, seed};
+  // a1: 4경기에서 A 승(바로 A 우승), ba: 4경기 B 승 → 5경기 A 승(A 우승), bb: B 우승
+  const r = mulberry32(seed); let a1 = 0, ba = 0;
+  for(let i=0;i<n;i++){ if(r() < 0.5) a1++; else if(r() < 0.5) ba++; }
+  return {n, a: a1+ba, seed, a1, ba, bb: n-a1-ba};
 }
 const gamesA = () => state.games.filter(g=>winnerOf(g)==='A').length;
 
@@ -937,6 +995,36 @@ function renderAutoTable(){
   if(n) rows.push(`<tr><td class="n">직접 ${n}회</td><td>${gamesA()}</td><td>${n-gamesA()}</td><td class="rel">${relDec(gamesA(), n)}</td></tr>`);
   AUTO_NS.forEach(k=>{ const r=state.auto[k]; if(r) rows.push(`<tr${k>=1000?' class="req"':''}><td class="n">${fmtInt(k)}번</td><td>${fmtInt(r.a)}</td><td>${fmtInt(k-r.a)}</td><td class="rel">${relDec(r.a, k)}</td></tr>`); });
   $('autoTable').innerHTML = rows.length ? `<tr><th>횟수</th><th>A 우승</th><th>B 우승</th><th>A가 우승한 상대도수</th></tr>` + rows.join('') : '';
+  renderTree();
+}
+/* 경기 흐름 나무: 가장 많이 한 컴퓨터 실험을 4경기 → 5경기로 갈라지는 나무와 띠그래프로 보여준다. */
+function renderTree(){
+  const k = [10000, 1000, 100].find(n=>state.auto[n]);
+  $('treeBox').style.display = k ? 'block' : 'none';
+  if(!k) return;
+  const r = state.auto[k], b4 = r.n - r.a1;
+  const p = x => relDec(x, r.n);
+  $('treeNote').textContent = `컴퓨터로 한 ${fmtInt(k)}번의 경기가 어떻게 갈라졌는지 볼까요?`;
+  const box = (x, y, w, h, fill, stroke, l1, l2, l3) => `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+    <text x="${x+w/2}" y="${y+(l3?22:26)}" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2328">${l1}</text>
+    <text x="${x+w/2}" y="${y+(l3?42:48)}" text-anchor="middle" font-size="14" fill="#52514e">${l2}</text>
+    ${l3?`<text x="${x+w/2}" y="${y+62}" text-anchor="middle" font-size="14" font-weight="bold" fill="${l3[1]}">${l3[0]}</text>`:''}</g>`;
+  const edge = (x1,y1,x2,y2,label,col) => `<path d="M${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="3"/>
+    <text x="${(x1+x2)/2}" y="${(y1+y2)/2 - 8}" text-anchor="middle" font-size="13.5" font-weight="bold" fill="${col}" stroke="#fff" stroke-width="5" paint-order="stroke">${label}</text>`;
+  const BL='#1565c0', OR='#e65100';
+  $('treeSvg').innerHTML = `<svg viewBox="0 0 760 270" style="width:100%;max-width:760px;height:auto;display:block;font-family:inherit;">
+    ${edge(150,135,270,55,'4경기 A 승',BL)}${edge(150,135,270,200,'4경기 B 승',OR)}
+    ${edge(430,200,560,145,'5경기 A 승',BL)}${edge(430,200,560,240,'5경기 B 승',OR)}
+    ${box(10,100,140,70,'#f1f3f6','#9aa0a6','남은 경기', fmtInt(k)+'번')}
+    ${box(270,20,160,72,'#e8f1fc',BL, fmtInt(r.a1)+'번', '전체의 약 '+p(r.a1), ['🏆 A 우승', BL])}
+    ${box(270,165,160,70,'#fff6ef',OR, fmtInt(b4)+'번', '전체의 약 '+p(b4))}
+    ${box(560,112,190,68,'#e8f1fc',BL, fmtInt(r.ba)+'번', '전체의 약 '+p(r.ba), ['🏆 A 우승', BL])}
+    ${box(560,200,190,68,'#fff1e6',OR, fmtInt(r.bb)+'번', '전체의 약 '+p(r.bb), ['🏆 B 우승', OR])}
+  </svg>`;
+  const w = x => (x/r.n*100).toFixed(2)+'%';
+  $('flowBar').innerHTML = `<div style="width:${w(r.a1)};background:#1565c0;">4경기에서 A 우승</div><div style="width:${w(r.ba)};background:#64b5f6;">5경기에서 A 우승</div><div style="width:${w(r.bb)};background:#e65100;">B 우승</div>`;
+  $('flowCap').innerHTML = `A 우승 = <span style="color:#1565c0;">${fmtInt(r.a1)}</span> + <span style="color:#1e88e5;">${fmtInt(r.ba)}</span> = ${fmtInt(r.a)}번 → 전체의 약 ${p(r.a1)} + ${p(r.ba)} ≈ <b>${p(r.a)}</b>
+    <div class="note" style="font-weight:normal;margin-top:2px;">A는 4경기에서 <b>절반</b>쯤 바로 우승하고, 나머지 절반 중에서 또 <b>절반</b>쯤은 5경기에서 우승해요.</div>`;
 }
 $('autoBtns').addEventListener('click', e=>{
   const b = e.target.closest('button'); if(!b || b.disabled || finalLocked) return;
@@ -961,10 +1049,22 @@ function check3(opts){
 $('a3Text').addEventListener('input', ()=>check3());
 
 /* ------------------------- 활동 4: 경우의 수 ------------------------- */
+const PICK = {4:null, 5:null};
+function renderPicks(){
+  document.querySelectorAll('.pick').forEach(b=> b.classList.toggle('on', PICK[b.dataset.g]===b.dataset.v));
+  $('addOut').disabled = !(PICK[4] && PICK[5]);
+}
+document.querySelectorAll('.pick').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; PICK[b.dataset.g] = b.dataset.v; renderPicks(); }));
+const CIRC = ['①','②','③','④','⑤'];
 function renderOuts(){
-  $('outs').innerHTML = state.outs.map((o,i)=>`<div class="out"><span class="seq">4경기 ${o.s[0]} 승 → 5경기 ${o.s[1]} 승</span>
-    <span>우승자:</span><button class="wbtn${o.w==='A'?' on':''}" data-i="${i}" data-w="A">A</button><button class="wbtn${o.w==='B'?' on':''}" data-i="${i}" data-w="B">B</button>
-    <button class="del" data-del="${i}" title="지우기">×</button></div>`).join('');
+  $('outsTable').style.display = state.outs.length ? 'table' : 'none';
+  $('outs').innerHTML = state.outs.map((o,i)=>{
+    let a = 2, b = 1;
+    const cell = w => { if(w==='A') a++; else b++; return `<td class="gm"><b class="${w}">${w} 승</b><span class="sc">A ${a}승 : B ${b}승</span></td>`; };
+    const c4 = cell(o.s[0]), c5 = cell(o.s[1]);
+    const wp = v => `<button class="wpick${o.w===v?' on':''}" data-i="${i}" data-w="${v}"><span class="rd"></span>${v} 우승</button>`;
+    return `<tr><td>${CIRC[i]}</td>${c4}${c5}<td>${wp('A')}${wp('B')}</td><td><button class="del" data-del="${i}" title="지우기">×</button></td></tr>`;
+  }).join('');
   const n = state.outs.length;
   let msg;
   if(outsOk()) msg = '<span class="ok">✅ 나올 수 있는 경우를 모두 바르게 나열했어요!</span>';
@@ -976,18 +1076,20 @@ function renderOuts(){
 }
 $('addOut').addEventListener('click', ()=>{
   if(finalLocked) return;
-  const s = $('add4').value + $('add5').value;
+  if(!(PICK[4] && PICK[5])) return;
+  const s = PICK[4] + PICK[5];
   if(state.outs.some(o=>o.s===s)){ showErr('err4', '이미 추가한 경우예요.'); return; }
   showErr('err4', '');
   state.outs.push({s, w:''});
   state.outs.sort((x,y)=>OUT_ORDER.indexOf(x.s)-OUT_ORDER.indexOf(y.s));
+  PICK[4] = PICK[5] = null; renderPicks();
   renderOuts(); check4();
 });
 $('outs').addEventListener('click', e=>{
   const b = e.target.closest('button'); if(!b || finalLocked) return;
   showErr('err4','');
   if(b.dataset.del!=null){ state.outs.splice(+b.dataset.del, 1); }
-  else if(b.dataset.w){ state.outs[+b.dataset.i].w = b.dataset.w; }
+  else if(b.dataset.w!=null && b.dataset.i!=null){ state.outs[+b.dataset.i].w = b.dataset.w; }
   renderOuts(); check4();
 });
 function showErr(id, msg){ const e = $(id); e.textContent = msg ? '⚠️ ' + msg : ''; e.classList.toggle('show', !!msg); }
@@ -998,12 +1100,19 @@ function renderFields(){
     $('m_'+k).innerHTML = (!ok || !String(v).trim()) ? '' : (F_CHECK[k](v) ? '<span class="ok">✅</span>' : '<span class="bad">❌</span>');
   });
   $('concept4').classList.toggle('show', isDone(4));
+  $('areaBox').style.display = isDone(4) ? 'block' : 'none';
 }
 Object.keys(F_CHECK).forEach(k=> $('f_'+k).addEventListener('input', ()=>{ state.f[k] = $('f_'+k).value; renderFields(); check4(); }));
 function check4(opts){
   setWhy(4, '✅ 완료! '+NEXT, outsOk() ? '확률과 상금을 바르게 구하면 다음으로 넘어갈 수 있어요.' : '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.');
   refreshAll(opts);
 }
+
+(function buildArea(){
+  const cell = (s, bg) => `<div class="cell" style="background:${bg}">${s[0]}${s[1]}<small>4경기 ${s[0]} · 5경기 ${s[1]}</small><small>→ ${winnerOf2(s)} 우승</small></div>`;
+  $('areaGrid').innerHTML = `<div class="hd">4경기 A 승</div><div class="hd">4경기 B 승</div>`
+    + cell('AA','#1565c0') + cell('BA','#64b5f6') + cell('AB','#1565c0') + cell('BB','#e65100');
+})();
 
 /* ------------------------- 활동 6: 타자 영입 예상 ------------------------- */
 function setVote(v){
@@ -1048,13 +1157,15 @@ function renderVote(){
 }
 
 /* ------------------------- 활동 8: 왜 그럴까? ------------------------- */
-function boxRow(name, sub, parts){
-  const cells = parts.map(([n,h,cls])=> Array.from({length:n}, (_,i)=>`<i class="${i<h?'h':'m'}${cls}"></i>`).join('')).join('');
-  return `<div class="abrow"><span class="nm">${name}<small>${sub}</small></span><span class="boxes">${cells}</span></div>`;
+function boxes(n, h, cls){ return `<span class="boxes">${Array.from({length:n}, (_,i)=>`<i class="${i<h?'h':'m'}${cls}"></i>`).join('')}</span>`; }
+function playerBlock(name, f, s){
+  const row = (half, n, h, cls, col) => `<div class="prow"><span class="half" style="color:${col}">${half}</span>${boxes(n,h,cls)}<span class="stat2">${n}타수 ${h}안타 → 타율 ${(h/n).toFixed(2)}</span></div>`;
+  const T = f[0]+s[0], H = f[1]+s[1];
+  return `<div class="pblock"><div class="ph">${name} <span>— 시즌 전체 ${T}타수 ${H}안타 → 타율 ${(H/T).toFixed(2)}</span></div>`
+    + row('전반기', f[0], f[1], 1, '#1565c0') + row('후반기', s[0], s[1], 2, '#e65100') + `</div>`;
 }
 function renderBoxes(){
-  $('boxView').innerHTML = boxRow('선수 A', '50타수 17안타 (0.34)', [[10,5,1],[40,12,2]])
-    + boxRow('선수 B', '50타수 18안타 (0.36)', [[40,16,1],[10,2,2]]);
+  $('boxView').innerHTML = playerBlock('선수 A', [10,5], [40,12]) + playerBlock('선수 B', [40,16], [10,2]);
 }
 $('a8Text').addEventListener('input', ()=>check8());
 $('a8Btn').addEventListener('click', ()=>{ state.a8Concept = true; $('concept8').classList.add('show'); refreshAll({now:true}); $('concept8').scrollIntoView({behavior:'smooth', block:'nearest'}); });
@@ -1062,7 +1173,7 @@ function check8(opts){
   state.a8Text = $('a8Text').value;
   const ok = isDone(8);
   $('a8Btn').disabled = !ok;
-  $('why8').textContent = ok ? '✅ 완료! 「💡 정리 보기」를 눌러 보고, 다 했으면 마지막 화면에서 제출하세요.' : '내 생각을 쓰면 정리를 볼 수 있어요.';
+  $('why8').textContent = ok ? '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.' : '✏️ 위 칸에 내 생각을 먼저 쓰면 「💡 정리 보기」 버튼이 켜져요. (스스로 생각해 본 뒤에 정리를 확인해요)';
   $('why8').className = 'note' + (ok?' ok':'');
   if(state.a8Concept) $('concept8').classList.add('show');
   refreshAll(opts);
