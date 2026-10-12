@@ -451,7 +451,7 @@ const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r
 const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
 
 /* 보고서 내용 지문(글이 바뀌었는지 비교용) */
-function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link+' '+x.ana.join('|')).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link+' '+x.files.length).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
 function activityDetailHTML(s, id, key){
   if(!hasReport(s)) return key ? gradeBoxHTML(key, s) : '';
   const r = repOf(s), tot = totalOf(s);
@@ -461,11 +461,10 @@ function activityDetailHTML(s, id, key){
     h += `<h4><span>[${x.name}]</span><span class="c${short?' short':''}">${n.toLocaleString()}자${x.min?` / ${x.min}자 이상`:''}</span></h4>` +
          `<div class="v${r[x.k].trim()?'':' none'}">${r[x.k].trim()?esc(r[x.k]):'(비어 있음)'}</div>`;
   });
-  const srcs = r.sources, anaN = srcs.reduce((a,x)=>a+x.ana.filter(anaOk).length,0);
-  h += `<h4><span>[자료 출처 · 자료 분석]</span><span class="c${srcs.length<2?' short':''}">자료 ${srcs.length}개 · 분석 ${anaN}개</span></h4>` + (srcs.length
+  const srcs = r.sources;
+  h += `<h4><span>[자료 출처]</span><span class="c${srcs.length<2?' short':''}">자료 ${srcs.length}개</span></h4>` + (srcs.length
     ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li style="margin-bottom:6px;">${bannedSourceKind(x.link, x.name)?`<b style="color:#c62828;">🚫 ${esc(bannedSourceKind(x.link, x.name))}(인정 안 됨)</b> `:''}${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:' <span style="color:#e65100;">(링크 없음 — 자료로 안 셈)</span>'}
-      ${x.files.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">${x.files.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}" style="display:inline-flex;align-items:center;gap:4px;border:1px solid #cfd8dc;border-radius:6px;padding:2px 6px;font-size:12px;color:#1565c0;text-decoration:none;">${/^image\//.test(f.type)?`<img src="${esc(f.url)}" style="height:120px;max-width:200px;object-fit:contain;background:#f5f7f9;border-radius:4px;">`:'📄'}<span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.name||'파일')}</span></a>`).join('')}</div>`:'<div style="font-size:12px;color:#e65100;">(스크린샷 없음 — 자료로 안 셈)</div>'}
-      ${x.ana.length?`<ul style="margin:2px 0;padding-left:16px;">${x.ana.map(t=>`<li style="color:${anaOk(t)?'#222':'#999'};">${esc(t)} ${anaOk(t)?'<span style="color:#2e7d32;font-size:11px;">✅</span>':'<span style="font-size:11px;">(숫자 없음 — 세지 않음)</span>'}</li>`).join('')}</ul>`:'<div style="font-size:12px;color:#999;">(분석 내용 없음)</div>'}</li>`).join('') + '</ol>'
+      ${x.files.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">${x.files.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}" style="display:inline-flex;align-items:center;gap:4px;border:1px solid #cfd8dc;border-radius:6px;padding:2px 6px;font-size:12px;color:#1565c0;text-decoration:none;">${/^image\//.test(f.type)?`<img src="${esc(f.url)}" style="height:120px;max-width:200px;object-fit:contain;background:#f5f7f9;border-radius:4px;">`:'📄'}<span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.name||'파일')}</span></a>`).join('')}</div>`:'<div style="font-size:12px;color:#e65100;">(스크린샷 없음 — 자료로 안 셈)</div>'}</li>`).join('') + '</ol>'
     : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
   return h + (key ? gradeBoxHTML(key, s) : '');
@@ -491,14 +490,15 @@ const Q3S = ['질문을 씀(기본)','확률을 구함','예측형·비교선택
 const D3S = ["자료 1이 질문에 맞음", "자료 2가 맞고 다른 정보", "계산에 필요한 수치 모두"];
 const A4S = { '비교·선택형': ['확률1 수치','확률2 수치','확률1 식·결과','확률2 식·결과'], '예측형': ['분자 수치','분모 수치','분수(식)','계산 결과'] };
 const L5S = ['서론 150자','본론 700자','결론 150자','결론에 답','확률 해석'];
+const A4N = ['자료1 활용','자료2 활용','확률 계산','확률값 해석']; // 2026-10-12: 본론에서 판단
 /* 자료 분석·글의 논리: 항목별 1/0 칩 */
 function binChips(k, ai, sc){
   if(!ai) return '';
   let names = null, c = '';
-  if(k==='analysis') return `<div class="gr-q"><span class="${sc>=4?'o':'x'}">숫자가 들어간 분석 줄 개수로 계산 <b>${sc}점</b></span><small>4개 이상이면 4점 · 프로그램이 셈</small></div>`;
+  if(k==='analysis'){ if(typeof ai.achecks==='string' && ai.achecks.length===4 && !ai.qtype){ names = A4N; c = ai.achecks; } else return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(본론에서 자료1·자료2 활용, 계산, 해석)으로 채점해요.</small></div>`; }
   if(k==='logic' && typeof ai.lchecks==='string' && ai.lchecks){ names = L5S; c = ai.lchecks; }
   if(!names) return '';
-  return `<div class="gr-q">${k==='analysis'?`<span>${esc(ai.qtype||'')}</span>`:''}${names.map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${c[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${sc}점${k==='logic'?' (글자 수 3칸은 프로그램이 셈)':''}</small></div>`;
+  return `<div class="gr-q">${names.map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${c[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${sc}점${k==='logic'?' (글자 수 3칸은 프로그램이 셈)':''}</small></div>`;
 }
 const Q5S = ['확률을 구함','예측형·비교선택형','대상·기간·조건','공식 자료로 답','수치로 계산·비교'];
 const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
@@ -564,7 +564,7 @@ async function requestGrade(key){
     const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
-    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: j.qtype || '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
+    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
       total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;

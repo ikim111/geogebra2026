@@ -52,7 +52,7 @@ const PROMPT_TEMPLATE = `너는 중학교 2학년 학생의 확률·통계 탐�
 - 점수 판단 기준(참고)
   · 탐구 질문(3점): 아래 [채점 기준] 1번의 3항목을 각각 맞으면 1점, 아니면 0점(탐구 질문을 썼으면 기본 1점). 너그럽게 판단한다.
   · 자료 수집(3점): 아래 [채점 기준] 2번의 3항목을 각각 맞으면 1점, 아니면 0점. 블로그·카페·커뮤니티·SNS·위키·지식iN·유튜브·개인 글·AI 글과, 출처 이름·링크·첨부 파일(스크린샷) 중 하나라도 없는 자료는 자료로 세지 않는다. 인정되는 자료가 하나도 없으면 0점.
-  · 자료 분석(4점): 학생이 자료마다 적은 [분석] 줄 가운데 숫자가 들어간 줄의 개수로 프로그램이 정한다(4개 이상이면 4점). AI는 점수를 정하지 않고 피드백만 한다.
+  · 자료 분석(4점): 아래 [채점 기준] 3번의 4항목을 본론을 보고 각각 맞으면 1점, 아니면 0점. 너그럽게 판단한다.
   · 글의 논리(5점): 아래 [채점 기준] 4번의 5항목을 각각 맞으면 1점, 아니면 0점. (1)~(3) 글자 수는 프로그램이 센 값으로 정한다.
 
 
@@ -71,9 +71,11 @@ const PROMPT_TEMPLATE = `너는 중학교 2학년 학생의 확률·통계 탐�
 - (2) 자료 2가 탐구 질문에 맞고, 자료 1과 다른 정보를 주는가? (같은 사이트여도 표나 기간이 다르면 다른 자료, 한 표를 나눠 적으면 1개)
 - (3) 올린 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가? (자료는 2개 이상 필요한 만큼)
 
-3. 자료의 타당한 분석: 4점 (프로그램이 센다)
-- 학생은 [자료 출처] 아래에 자료마다 분석 내용(분자·분모 수치, 계산식과 결과 등)을 한 줄씩 적는다.
-- 숫자가 들어간 분석 줄 1개 = 1점, 최대 4점. 질문 유형을 구분하지 않고, 분모를 자료에서 찾지 않아도 된다(예: 1년 = 365일).
+3. 자료의 타당한 분석: 4점 (본론을 보고 판단한다. 항목마다 1점 또는 0점, 너그럽게)
+- (1) 자료 1에서 찾은 내용(수치)을 본론에 활용했는가?
+- (2) 자료 2에서 찾은 내용(수치)을 본론에 활용했는가?
+- (3) 확률을 어떻게 계산했는지(계산식과 결과) 썼는가? (질문 유형 구분 없이, 분모를 자료에서 찾지 않아도 된다 — 예: 1년 = 365일)
+- (4) 계산한 확률값이 무엇을 뜻하는지 해석했는가? (뜻을 말하려는 시도가 있으면 O)
 
 4. 글의 논리적 완성: 5점 (항목마다 1점 또는 0점)
 - (1) 서론이 150자 이상인가? (2) 본론이 700자 이상인가? (3) 결론이 150자 이상인가? — 보고서 끝에 프로그램이 센 글자 수로 정한다(AI가 판단하지 않는다).
@@ -156,13 +158,10 @@ function parseReport(raw) {
   const title = pick('title'), intro = pick('intro'), body = pick('body'), concl = pick('concl');
   const sources = (Array.isArray(b.sources) ? b.sources : []).slice(0, 15)
     .map(x => ({ name: String((x && x.name) || '').slice(0, 300).trim(), link: String((x && x.link) || '').slice(0, 500).trim(),
-      ana: (Array.isArray(x && x.ana) ? x.ana : []).slice(0, 20).map(a => String(a || '').slice(0, 200).trim()).filter(Boolean),
       files: (Array.isArray(x && x.files) ? x.files : []).length }))
-    .filter(x => x.name || x.link || x.ana.length)
+    .filter(x => x.name || x.link || x.files)
     .map(x => Object.assign(x, { banned: bannedSourceKind(x.link, x.name) }));
   const counts = { title: countChars(title), intro: countChars(intro), body: countChars(body), concl: countChars(concl) };
-  // 자료 분석 점수 = 숫자가 들어간 분석 줄 개수(최대 4) — student23.html의 anaOk와 같게
-  counts.ana = sources.reduce((a, x) => a + x.ana.filter(t => t.length >= 4 && /\d/.test(t)).length, 0);
   counts.total = counts.intro + counts.body + counts.concl;
   const none = '(작성하지 않음)';
   const report =
@@ -170,8 +169,8 @@ function parseReport(raw) {
     `[서론]\n${intro || none}\n\n` +
     `[본론]\n${body || none}\n\n` +
     `[결론]\n${concl || none}\n\n` +
-    `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}${x.banned ? `  ← 프로그램 판단: ${x.banned}(자료로 인정하지 않음)` : ''}${x.files ? ` [첨부 파일 ${x.files}개]` : ''}${x.ana.map(t => `\n   - 분석: ${t}`).join('')}`).join('\n') : none}\n\n` +
-    `(참고 — 프로그램이 센 글자 수, 띄어쓰기 포함: 서론 ${counts.intro}자, 본론 ${counts.body}자, 결론 ${counts.concl}자, 서론+본론+결론 합계 ${counts.total}자 / 숫자가 들어간 분석 줄 ${counts.ana}개)`;
+    `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}${x.banned ? `  ← 프로그램 판단: ${x.banned}(자료로 인정하지 않음)` : ''}${x.files ? ` [첨부 파일 ${x.files}개]` : ' [첨부 파일 없음]'}`).join('\n') : none}\n\n` +
+    `(참고 — 프로그램이 센 글자 수, 띄어쓰기 포함: 서론 ${counts.intro}자, 본론 ${counts.body}자, 결론 ${counts.concl}자, 서론+본론+결론 합계 ${counts.total}자)`;
   return { empty: !intro && !body && !concl, counts, report, sources };
 }
 
