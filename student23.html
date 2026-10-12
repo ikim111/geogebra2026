@@ -267,7 +267,7 @@
       <ul class="tips"><li>자료마다 <b>기관·자료 이름</b>, <b>링크(https://…)</b>, <b>활용한 부분 파일</b>(스크린샷 이미지·PDF, 3개까지·각 10MB)을 올려요.</li>
         <li>자료마다 <b>분석 내용</b>을 [＋ 분석 추가]로 한 줄씩 적어요. 분자·분모 수치, 계산식과 결과처럼 <b>숫자가 들어간 분석</b>을 자료마다 1개 이상, <b>모두 합쳐 4개 이상</b> 적어요. 예) 홈경기 승률 = 홈 승리 45 ÷ 홈경기 72 ≈ 0.625</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
       <div class="src-rows" id="srcRows"></div>
-      <div class="src-btns"><button type="button" id="addSrcRow">＋ 자료 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료 불러오기</button></div>
+      <div class="src-btns"><button type="button" id="addSrcRow">＋ 자료 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료·파일 불러오기</button></div>
     </div>
   </div>
 </section>
@@ -483,8 +483,13 @@ $('loadPrepSrc').addEventListener('click', ()=>{
   const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim())) : [];
   if(!src.length){ alert('1부 탐구 준비에 적은 자료가 없어요.'); return; }
   const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
-  const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files:[], ana:[''] }));
-  if(!add.length){ alert('1부에서 모은 자료가 이미 모두 들어 있어요.'); return; }
+  const filesOf = x => (Array.isArray(x.files) ? x.files : Object.values(x.files||{})).filter(f=>f&&f.url).slice(0,MAX_FILES).map(f=>({url:f.url, name:f.name||'파일', type:f.type||'', size:f.size||0}));
+  // 이미 들어 있는 자료(같은 링크)는 1부에서 올린 파일만 더해 준다
+  let merged = 0;
+  src.forEach(x=>{ const l = String(x.link||'').trim(); if(!l || !have.has(l)) return; const cur = state.sources.find(y=>y.link.trim()===l); const urls = new Set((cur.files||[]).map(f=>f.url));
+    filesOf(x).forEach(f=>{ if(!urls.has(f.url) && (cur.files||[]).length < MAX_FILES){ cur.files = (cur.files||[]).concat(f); merged++; } }); });
+  const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files: filesOf(x), ana:[''] }));
+  if(!add.length){ if(merged){ renderSources(); changed(); alert(`1부에서 올린 파일 ${merged}개를 불러왔어요.`); } else alert('1부에서 모은 자료가 이미 모두 들어 있어요.'); return; }
   state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim() || (x.files||[]).length || (x.ana||[]).some(a=>a.trim())).concat(add);
   renderSources(); changed();
 });

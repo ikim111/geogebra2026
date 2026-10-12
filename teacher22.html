@@ -518,7 +518,8 @@ function activityDetailHTML(s, id){
     src.forEach((x,i)=>{
       const bk = bannedSourceKind(x.link, x.site);
       h += `<div class="src"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}><b>📎 자료 ${i+1}</b>${bk?` <span style="color:#c62828;font-size:12px;font-weight:bold;">🚫 ${esc(bk)} — 자료로 인정 안 됨</span>`:''}` + kvRow('사용할 내용', x.what) + kvRow('출처', x.site) +
-        `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div></div>`;
+        `<div class="row2"><span class="k">링크</span><span class="v">${safeLink(x.link)}</span></div>` +
+        ((fs=> fs.length ? `<div class="row2"><span class="k">파일</span><span class="v" style="display:flex;flex-wrap:wrap;gap:6px;">${fs.map(f=>`<a href="${esc(str(f.url))}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;border:1px solid #cfd8dc;border-radius:6px;padding:2px 6px;font-size:12px;color:#1565c0;text-decoration:none;">${/^image\//.test(str(f.type))?`<img src="${esc(str(f.url))}" style="height:48px;max-width:96px;object-fit:cover;border-radius:4px;">`:'📄'}${esc(str(f.name)||'파일')}</a>`).join('')}</span></div>` : '')((Array.isArray(x.files)?x.files:Object.values(x.files||{})).filter(f=>f&&f.url))) + '</div>';
     });
     const dc = str(d.dataCheck);
     h += '<h4>자료 수집 점검</h4><div>' + DATA_CHECKS.map((t,i)=>`<span class="chip ${dc[i]==='1'?'o':''}">${dc[i]==='1'?'☑':'☐'} ${esc(t)}</span>`).join('') + '</div>';
