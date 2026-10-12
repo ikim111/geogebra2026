@@ -139,6 +139,8 @@
   .dotline .band{position:absolute;top:38px;height:28px;background:rgba(46,125,50,.15);border:2px solid #2e7d32;border-radius:6px;transform:translateX(-50%);min-width:6px;}
   .dotline .bandl{position:absolute;top:0;transform:translateX(-50%);font-size:12.5px;font-weight:bold;color:#2e7d32;white-space:nowrap;background:#e8f5e9;border-radius:6px;padding:1px 6px;}
   .ansnote{font-size:14px;color:#1b5e20;background:#e8f5e9;border-radius:8px;padding:6px 10px;margin:-6px 22px 4px;}
+  .stg-back{margin-top:6px;width:100%;border:1px solid #c5cad1;background:#fff;color:#52514e;border-radius:8px;padding:5px 8px;font-size:12.5px;cursor:pointer;font-family:inherit;}
+  .stg-back:hover{border-color:#1565c0;color:#1565c0;}
   .stagebox{margin-top:10px;background:#f3f6ff;border:1px solid #c5cae9;border-radius:10px;padding:10px 12px;}
   .stage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:14.5px;color:#1a237e;}
   .stage-head .pause{padding:5px 10px;font-size:12.5px;}
@@ -493,6 +495,12 @@ function renderStages(){
       const b = document.createElement('button'); b.className = 'stg-go';
       b.textContent = stageNow==null ? '▶ 수업 시작' : `▶ ${no}단계 열기`;
       b.addEventListener('click', ()=> setStage(no));
+      box.appendChild(b);
+    }
+    if(state==='past'){
+      const b = document.createElement('button'); b.className = 'stg-back';
+      b.textContent = `↩ ${no}단계로 돌아가기`;
+      b.addEventListener('click', ()=>{ if(confirm(`${no}단계로 돌아갈까요?\n${no}단계보다 앞서 간 학생은 ${no}단계의 마지막 활동으로 돌아가요. (쓴 답은 그대로 남고, 이미 공개한 것은 계속 공개돼요)`)) setStage(no); });
       box.appendChild(b);
     }
     if(state==='now') tipText = st.tip;
