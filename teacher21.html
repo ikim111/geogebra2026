@@ -230,7 +230,8 @@
       </div>
       <div class="stagebox" id="stagePanel">
         <div class="stage-head"><b>📋 수업 진행 도우미</b><span id="stageState" class="stage-state"></span>
-          <button class="pause" id="stageFree" style="margin-left:auto;">🔓 단계 해제</button></div>
+          <button class="pause" id="conceptReveal" style="margin-left:auto;" title="학생이 마지막 질문에 답하고 AI 피드백을 받은 뒤 「개념 확인하기」를 누를 수 있게 해요">💡 개념 공개</button>
+          <button class="pause" id="stageFree">🔓 단계 해제</button></div>
         <div id="stageList"></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
@@ -379,7 +380,7 @@ function activityDetailHTML(s, id){
       + kv('10,000번 실험', d.sim10000 ? `앞면 ${fmtInt(d.sim10000.heads)}회 → ${relDec(d.sim10000.heads,10000)} (예상 ${esc(d.pred10000Text||'-')})` : '-')
       + (Array.isArray(d.custom) && d.custom.length ? kv('직접 입력 실험', d.custom.map(c=>`${fmtInt(c.n)}번 → ${relDec(c.heads,c.n)}`).join(' · ')) : '')
       + kv('개념 확인', d.conceptShown ? '✅ 확인함' : '아직')
-      + textBox(d.finalAnswer);
+      + textBox(d.finalAnswer) + aiFbHTML(d);
   }
   return '';
 }
@@ -401,13 +402,15 @@ function renderAggregate(){
   renderStages();
 }
 
+const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
 const STAGES = [
   {t:'직접 던지기', d:'동전을 10번 던지고 친구들과 비교하기 (활동 1)', tasks:[1], max:1, reveal:{},
    tip:'대부분 10번을 다 던지면 다음 단계를 열어요. (다음 단계에서 반 전체 결과가 실시간으로 모여요)'},
   {t:'학급 합치기·예상', d:'반 전체 결과 합치기 → 더 많이 던지면? 예상하기 (활동 2~3)', tasks:[2,3], max:3, reveal:{},
    tip:'💬 "10번일 때와 반 전체일 때 상대도수는 어떻게 달랐나요?" — 예상값이 모이면 다음 단계를 열어요.'},
   {t:'시뮬레이션', d:'1,000번·10,000번 시뮬레이션으로 예상 확인하기 → 개념 확인 (활동 4)', tasks:[4], max:null, reveal:{},
-   tip:'💬 "던지는 횟수가 많아질수록 상대도수는 어떻게 되나요?" — 개념(확률의 뜻)을 함께 정리해요.'}
+   tip:'💬 "던지는 횟수가 많아질수록 상대도수는 어떻게 되나요?" — 대부분 AI 피드백까지 받으면 위의 「💡 개념 공개」를 눌러 개념(확률의 뜻)을 함께 정리해요.'}
 ];
 /* ---------- 📋 수업 진행 도우미: 단계 이름·완료 인원을 보고 「다음 단계 열기」 한 번으로 진행 ----------
    단계를 열면 control/stage, maxTaskId(학생이 갈 수 있는 마지막 활동), 필요한 공개(reveal)를 한꺼번에 바꾼다.
@@ -458,6 +461,12 @@ function setStage(no){
   }
   controlRef.update(upd);
 }
+let conceptOpen = false;
+document.getElementById('conceptReveal').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!conceptOpen && !confirm('학생들에게 개념 확인을 열까요?\n(마지막 질문에 20자 이상 답하고 AI 피드백을 받은 학생만 「개념 확인하기」를 누를 수 있어요)')) return;
+  controlRef.child('reveal').update({concept: !conceptOpen});
+});
 document.getElementById('stageFree').addEventListener('click', ()=>{ if(confirm('단계 제한을 풀까요? 학생들이 모든 활동을 자유롭게 할 수 있어요.')) setStage(null); });
 
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
@@ -562,6 +571,8 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       controlRef.on('value', snap=>{
         const c = snap.val() || {};
         stageNow = (c.stage!=null) ? c.stage : null; renderStages();
+        conceptOpen = !!(c.reveal && c.reveal.concept);
+        { const cb = document.getElementById('conceptReveal'); cb.textContent = conceptOpen ? '💡 개념 공개 중 (닫기)' : '💡 개념 공개'; cb.classList.toggle('active', conceptOpen); }
         paused = !!c.paused;
         updatePauseBtn();
         classEnded = !!c.classEnded;

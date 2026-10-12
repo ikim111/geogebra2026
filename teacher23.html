@@ -397,6 +397,8 @@ function parseRel(str){
 }
 const fmtV = v => String(Math.round(v*10000)/10000);
 
+const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
@@ -404,7 +406,7 @@ function activityDetailHTML(s, id){
   if(id===1){ if(!d.ex0 && !d.ex1) return ''; return `<div class="kv">확률 0:</div>${textBox(d.ex0)||'-'}<div class="kv" style="margin-top:6px;">확률 1:</div>${textBox(d.ex1)||'-'}`; }
   if(id===2){ const v=d.vals||{}; if(!Object.values(v).some(Boolean)) return ''; return CARDS.map(c=>kv(c.w, esc(v[c.k]||'-'))).join(''); }
   if(id===3){ if(!d.a3Text && !d.sawLine) return ''; return kv('친구들 자리 봄', d.sawLine?'✅':'아직') + textBox(d.a3Text); }
-  if(id===4){ if(!d.myExpr && !d.myVal && !d.myWhy) return ''; return kv('표현', esc(d.myExpr||'-')) + kv('확률', esc(d.myVal||'-')) + textBox(d.myWhy); }
+  if(id===4){ if(!d.myExpr && !d.myVal && !d.myWhy) return ''; return kv('표현', esc(d.myExpr||'-')) + kv('확률', esc(d.myVal||'-')) + textBox(d.myWhy) + aiFbHTML(d); }
   return '';
 }
 function renderAggregate(){ renderStages(); /* 23번은 상단 합계 패널 대신 ② 교사용 뷰의 모음(taskAggregateHTML)을 쓴다 */ }

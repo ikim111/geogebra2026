@@ -361,6 +361,8 @@ const TASK_LABELS = [
   {id:6, key:'a6', label:'타자 영입 ② 실제 타율 계산'},
   {id:7, key:'a7', label:'타자 영입 ③ 왜 그럴까'}
 ];
+const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 /* 컴퓨터 시뮬레이션 기록: 새 형식(runs 배열) 또는 예전 형식(auto100/1000/10000) */
 function runsOf(d){
@@ -410,7 +412,7 @@ function activityDetailHTML(s, id){
       + kv('모든 경우의 수 / A 우승', `${esc(f.tot||'-')} / ${esc(f.aw||'-')}`)
       + kv('P(A) / P(B)', `${esc(f.pa||'-')} / ${esc(f.pb||'-')}`)
       + kv('공정한 상금', sp(f.ma, f.mb))
-      + (d.s5Reason ? kv('처음 생각', sp(d.s1a,d.s1b)) + textBox(d.s5Reason) : '');
+      + (d.s5Reason ? kv('처음 생각', sp(d.s1a,d.s1b)) + textBox(d.s5Reason) : '') + aiFbHTML(d);
   }
   if(id===5){ if(!d.vote && !d.voteReason) return ''; return kv('예상', esc(d.vote ? (d.vote==='같다'?'같다':'선수 '+d.vote) : '-')) + textBox(d.voteReason); }
   if(id===6){ const b=d.bat||{}; if(!Object.values(b).some(Boolean)) return ''; return kv('선수 A', `${esc(b.aT||'-')}타수 ${esc(b.aH||'-')}안타 · 타율 ${esc(b.aV||'-')}`) + kv('선수 B', `${esc(b.bT||'-')}타수 ${esc(b.bH||'-')}안타 · 타율 ${esc(b.bV||'-')}`); }

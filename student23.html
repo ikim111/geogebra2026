@@ -189,6 +189,19 @@
   .chk-field label{min-width:110px;font-weight:bold;}
   @media (max-width:640px){ .exin{flex-direction:column;} .exin span{padding-top:0;} .nlwrap{padding:96px 18px 40px;} }
   .fractip{display:inline-block;background:#f3f0ff;border:1px solid #c9bff0;color:#3d2e86;border-radius:8px;padding:6px 12px;font-size:14.5px;margin:4px 0 8px;}
+  .aifb{margin-top:10px;border:1px dashed #b39ddb;border-radius:10px;padding:8px 12px;background:#faf8ff;}
+  .aifb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .aifb-btn{background:#5e35b1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-btn:disabled{background:#c5b8e3;cursor:default;}
+  .aifb-left{font-size:13px;color:#6b6f76;}
+  .fb-out{margin-top:6px;font-size:14px;line-height:1.65;}
+  .fb-out:empty{display:none;}
+  .fb-out .row{display:flex;gap:8px;align-items:flex-start;margin:5px 0;}
+  .fb-out .tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-out .good .tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-out .fix .tag{background:#fff3e0;color:#e65100;}
+  .fb-out .none .tag{background:#e3f2fd;color:#1565c0;}
+  .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
 </style></style>
 </head>
 <body>
@@ -322,6 +335,7 @@
     <div class="chk-field"><label>확률</label><input type="text" id="myVal" style="width:140px;" placeholder="분수나 소수"> <span class="mark" id="myValMsg"></span></div>
     <p class="hint"><b>이렇게 나타낸 이유 (표현의 뜻)</b></p>
     <textarea id="myWhy" placeholder="이 표현은 ~라는 뜻이라서 확률을 ~로 나타냈다."></textarea>
+    <div class="aifb" id="aifb23"></div>
   </div>
   <div class="card">
     <h3>우리 반 확률 표현 모음</h3>
@@ -436,7 +450,7 @@ function valueOf(id){
 }
 function collectData(){
   return { ex0: state.ex0, ex1: state.ex1, vals: Object.assign({}, state.vals), a3Text: state.a3Text, sawLine: state.sawLine,
-    myExpr: state.myExpr, myVal: state.myVal, myWhy: state.myWhy };
+    myExpr: state.myExpr, myVal: state.myVal, myWhy: state.myWhy, aiFb: AIFB };
 }
 function shareEntries(){
   const line = {}; CARDS.forEach(c=>{ const v=valOf(state.vals[c.k]); if(v!==null) line[c.k]=v; });
@@ -458,6 +472,59 @@ function pushShare(rt){
 }
 const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
 
+/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 2번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
+const AIFB_MAX = 2;
+const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
+let AIFB = [];
+const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function aifbHTML(e){
+  if(!e) return '';
+  if(e.skip) return `<div class="row none"><span class="tag">알림</span><span>AI에 연결되지 않아 이번에는 건너뛰었어요.</span></div>`;
+  const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
+  const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
+          : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
+  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.</div>`;
+}
+/* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
+function aifbMount(box, opt){
+  box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span></div><div class="fb-out"></div>`;
+  const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out');
+  let busy = false, fails = 0;
+  const paint = () => {
+    const n = AIFB.length, short = opt.answer().trim().length < opt.minLen;
+    btn.disabled = busy || n >= AIFB_MAX || aifbLocked() || short;
+    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : n >= AIFB_MAX ? '피드백을 2번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.'
+      : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${AIFB_MAX-n}번)` : `남은 횟수 ${AIFB_MAX-n}번 · 다 쓴 뒤에 받아 보세요.`;
+    if(!busy) out.innerHTML = aifbHTML(AIFB[AIFB.length-1]);
+  };
+  btn.addEventListener('click', async ()=>{
+    if(btn.disabled) return;
+    busy = true; paint(); out.innerHTML = '';
+    try{
+      const r = await fetch('/api/practice-feedback', { method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
+      AIFB.push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      busy = false; paint();
+      if(typeof refreshAll==='function') refreshAll({now:true});
+    }catch(e){
+      busy = false; fails++;
+      if(fails >= 2 && !AIFB.length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        AIFB.push({ t: Date.now(), skip: true }); paint();
+        if(typeof refreshAll==='function') refreshAll({now:true});
+        return;
+      }
+      paint();
+      out.innerHTML = `<div class="row fix"><span class="tag">알림</span><span>AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요. (횟수는 줄지 않았어요)</span></div>`;
+    }
+  });
+  (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
+  box._paint = paint; paint();
+}
+function aifbRestore(d){ const v = d && d.aiFb; AIFB = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : []; document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+aifbMount($('aifb23'), { unit:23, minLen:10, inputs:[$('myExpr'), $('myVal'), $('myWhy')], answer: ()=>$('myWhy').value,
+  ctx: ()=>`찾은 표현: ${$('myExpr').value.trim()||'-'}\n학생이 나타낸 확률: ${$('myVal').value.trim()||'-'}` });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -744,7 +811,7 @@ function restoreData(d){
   setv('ex0', d.ex0); setv('ex1', d.ex1);
   CARDS.forEach(c=>{ state.vals[c.k] = (d.vals && d.vals[c.k]) || ''; setv('v_'+c.k, state.vals[c.k]); });
   state.sawLine = !!d.sawLine; state.a3Text = d.a3Text || ''; setv('a3Text', state.a3Text);
-  setv('myExpr', d.myExpr); setv('myVal', d.myVal); setv('myWhy', d.myWhy);
+  setv('myExpr', d.myExpr); setv('myVal', d.myVal); setv('myWhy', d.myWhy); aifbRestore(d);
   check1({noSave:true}); check2({noSave:true}); renderLines(); check4({noSave:true});
 }
 

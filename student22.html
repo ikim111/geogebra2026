@@ -270,6 +270,19 @@
   table.simtable tr.viewing td{background:#fff8e1;}
   table.simtable .vbtn{border:1px solid #c5cad1;background:#fff;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
   table.simtable .vbtn:hover{border-color:var(--blue);color:var(--blue);}
+  .aifb{margin-top:10px;border:1px dashed #b39ddb;border-radius:10px;padding:8px 12px;background:#faf8ff;}
+  .aifb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .aifb-btn{background:#5e35b1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-btn:disabled{background:#c5b8e3;cursor:default;}
+  .aifb-left{font-size:13px;color:#6b6f76;}
+  .fb-out{margin-top:6px;font-size:14px;line-height:1.65;}
+  .fb-out:empty{display:none;}
+  .fb-out .row{display:flex;gap:8px;align-items:flex-start;margin:5px 0;}
+  .fb-out .tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-out .good .tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-out .fix .tag{background:#fff3e0;color:#e65100;}
+  .fb-out .none .tag{background:#e3f2fd;color:#1565c0;}
+  .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
 </style></style>
 </head>
 <body>
@@ -490,6 +503,7 @@
     <div class="kvline" id="my1Line5"></div>
     <p class="hint"><b>처음 내 생각과 비교해서 무엇이 달라졌나요? 왜 이렇게 나누는 것이 공정한가요?</b></p>
     <textarea id="s5Reason" placeholder="처음에는 ~라고 생각했는데, ~"></textarea>
+    <div class="aifb" id="aifb22"></div>
   </div>
   <div class="why" id="why4">경우를 모두 나열하고 확률과 상금을 바르게 구한 뒤, 처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
 </section>
@@ -774,7 +788,7 @@ function collectData(){
     s5a: state.s5a, s5b: state.s5b, s5Reason: state.s5Reason,
     vote: state.vote || null, voteReason: state.voteReason,
     bat: Object.assign({}, state.bat),
-    a8Text: state.a8Text, a8Concept: state.a8Concept
+    a8Text: state.a8Text, a8Concept: state.a8Concept, aiFb: AIFB
   };
 }
 /* 반 전체에 보여 줄 작은 기록(share/{종류}/{학생키}) — 값이 바뀔 때만 쓴다. */
@@ -798,6 +812,61 @@ function pushShare(rt){
 }
 const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
 
+/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 2번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
+const AIFB_MAX = 2;
+const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
+let AIFB = [];
+const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function aifbHTML(e){
+  if(!e) return '';
+  if(e.skip) return `<div class="row none"><span class="tag">알림</span><span>AI에 연결되지 않아 이번에는 건너뛰었어요.</span></div>`;
+  const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
+  const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
+          : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
+  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.</div>`;
+}
+/* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
+function aifbMount(box, opt){
+  box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span></div><div class="fb-out"></div>`;
+  const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out');
+  let busy = false, fails = 0;
+  const paint = () => {
+    const n = AIFB.length, short = opt.answer().trim().length < opt.minLen;
+    btn.disabled = busy || n >= AIFB_MAX || aifbLocked() || short;
+    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : n >= AIFB_MAX ? '피드백을 2번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.'
+      : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${AIFB_MAX-n}번)` : `남은 횟수 ${AIFB_MAX-n}번 · 다 쓴 뒤에 받아 보세요.`;
+    if(!busy) out.innerHTML = aifbHTML(AIFB[AIFB.length-1]);
+  };
+  btn.addEventListener('click', async ()=>{
+    if(btn.disabled) return;
+    busy = true; paint(); out.innerHTML = '';
+    try{
+      const r = await fetch('/api/practice-feedback', { method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
+      AIFB.push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      busy = false; paint();
+      if(typeof refreshAll==='function') refreshAll({now:true});
+    }catch(e){
+      busy = false; fails++;
+      if(fails >= 2 && !AIFB.length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        AIFB.push({ t: Date.now(), skip: true }); paint();
+        if(typeof refreshAll==='function') refreshAll({now:true});
+        return;
+      }
+      paint();
+      out.innerHTML = `<div class="row fix"><span class="tag">알림</span><span>AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요. (횟수는 줄지 않았어요)</span></div>`;
+    }
+  });
+  (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
+  box._paint = paint; paint();
+}
+function aifbRestore(d){ const v = d && d.aiFb; AIFB = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : []; document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+aifbMount($('aifb22'), { unit:22, minLen:10, inputs:[$('s5Reason')], answer: ()=>$('s5Reason').value,
+  ctx: ()=>{ const f = state.f; const big = state.runs.length ? state.runs.reduce((x,y)=> y.n>=x.n ? y : x) : null;
+    return `처음 내 분배: A ${state.s1a||'-'}만 원 : B ${state.s1b||'-'}만 원\n학생이 계산한 값: 모든 경우의 수 ${f.tot||'-'}, A 우승 경우 ${f.aw||'-'}, P(A)=${f.pa||'-'}, P(B)=${f.pb||'-'}, 공정한 상금 A ${f.ma||'-'} : B ${f.mb||'-'}`
+      + (big ? `\n컴퓨터 시뮬레이션 ${big.n}번: A 우승 상대도수 ${(big.a/big.n).toFixed(3)}` : ''); } });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -1366,7 +1435,7 @@ function restoreData(d){
   setv('a3Text', d.a3Text);
   state.outs = (typeof d.outs==='string' && d.outs) ? d.outs.split(',').filter(x=>/^[AB]{2}[AB_]$/.test(x)).map(x=>({s:x.slice(0,2), w:x[2]==='_'?'':x[2]})) : [];
   Object.keys(state.f).forEach(k=>{ state.f[k] = (d.f && d.f[k]) || ''; setv('f_'+k, state.f[k]); });
-  setv('s5Reason', d.s5Reason);
+  setv('s5Reason', d.s5Reason); aifbRestore(d);
   if(d.vote) setVote(d.vote); setv('voteReason', d.voteReason);
   Object.keys(state.bat).forEach(k=>{ state.bat[k] = (d.bat && d.bat[k]) || ''; setv(k, state.bat[k]); });
   setv('a8Text', d.a8Text); state.a8Concept = !!d.a8Concept;
