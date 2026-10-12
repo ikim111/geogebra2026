@@ -266,8 +266,9 @@
       <div class="sec-head"><span class="lab">[자료 출처 · 자료 분석]<small>자료 2개 이상(필요한 만큼) · 글자 수에는 들어가지 않아요</small></span><span><span class="cnt" id="cnt-src">0개</span> <span class="cnt" id="cnt-ana">분석 0개</span></span></div>
       <ul class="tips"><li>자료마다 <b>기관·자료 이름</b>, <b>링크</b>(자료를 만든 기관의 첫 화면 주소도 OK), <b>활용한 부분 스크린샷·PDF</b>(여러 개 가능·각 10MB)를 <b style="color:#c62828;">모두 꼭</b> 남겨요.</li>
         <li>자료마다 <b>분석 내용</b>을 [＋ 분석 추가]로 한 줄씩 적어요. 분자·분모 수치, 계산식과 결과처럼 <b>숫자가 들어간 분석</b>을 자료마다 1개 이상, <b>모두 합쳐 4개 이상</b> 적어요. 예) 홈경기 승률 = 홈 승리 45 ÷ 홈경기 72 ≈ 0.625</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
+      <div id="autoImportNote" style="display:none;margin:6px 0;font-size:13px;color:#2e7d32;background:#e8f5e9;border-radius:6px;padding:6px 10px;"></div>
       <div class="src-rows" id="srcRows"></div>
-      <div class="src-btns"><button type="button" id="addSrcRow">＋ 자료 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료·파일 불러오기</button></div>
+      <div class="src-btns"><button type="button" id="addSrcRow">＋ 자료 추가</button><button type="button" id="loadPrepSrc">↻ 1부 자료 다시 불러오기</button></div>
     </div>
   </div>
 </section>
@@ -346,7 +347,7 @@ function missing(){
 const isDone = () => missing().length === 0;
 const valueOf = () => `${state.f.title.trim() ? '제목: '+state.f.title.trim()+' · ' : ''}서론 ${cnt('intro')}자 · 본론 ${cnt('body')}자 · 결론 ${cnt('concl')}자 · 합계 ${totalCount()}자`;
 function collectData(){ return { title: state.f.title, intro: state.f.intro, body: state.f.body, concl: state.f.concl, total: totalCount(),
-  sources: state.sources.map(x=>({name:x.name, link:x.link, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
+  prepImported: !!state.prepImported, sources: state.sources.map(x=>({name:x.name, link:x.link, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
 
 /* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
    블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
@@ -479,21 +480,38 @@ function paintSrcOk(){
 }
 function finalLockedNow(){ return document.body.classList.contains('final-locked'); }
 $('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.push(newSrc()); renderSources(); changed(); });
-$('loadPrepSrc').addEventListener('click', ()=>{
-  if(finalLockedNow()) return;
-  const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim())) : [];
-  if(!src.length){ alert('1부 탐구 준비에 적은 자료가 없어요.'); return; }
+/* 1부(22번) 자료 → 2부 자료 카드로 복사. 같은 링크가 이미 있으면 1부 파일만 더한다. 반환: {added, merged} */
+function importPrep(){
+  const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim() || (x.files && Object.keys(x.files).length))) : [];
+  if(!src.length) return null;
   const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
   const filesOf = x => (Array.isArray(x.files) ? x.files : Object.values(x.files||{})).filter(f=>f&&f.url).slice(0,MAX_FILES).map(f=>({url:f.url, name:f.name||'파일', type:f.type||'', size:f.size||0}));
-  // 이미 들어 있는 자료(같은 링크)는 1부에서 올린 파일만 더해 준다
   let merged = 0;
   src.forEach(x=>{ const l = String(x.link||'').trim(); if(!l || !have.has(l)) return; const cur = state.sources.find(y=>y.link.trim()===l); const urls = new Set((cur.files||[]).map(f=>f.url));
     filesOf(x).forEach(f=>{ if(!urls.has(f.url) && (cur.files||[]).length < MAX_FILES){ cur.files = (cur.files||[]).concat(f); merged++; } }); });
-  const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files: filesOf(x), ana:[''] }));
-  if(!add.length){ if(merged){ renderSources(); changed(); alert(`1부에서 올린 파일 ${merged}개를 불러왔어요.`); } else alert('1부에서 모은 자료가 이미 모두 들어 있어요.'); return; }
-  state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim() || (x.files||[]).length || (x.ana||[]).some(a=>a.trim())).concat(add);
-  renderSources(); changed();
+  const add = src.filter(x=> { const l = String(x.link||'').trim(); return !l || !have.has(l); })
+    .filter(x=> !state.sources.some(y=> !y.link.trim() && y.name.trim() && y.name.trim()===[String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', ')))
+    .map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files: filesOf(x), ana:[''] }));
+  if(add.length) state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim() || (x.files||[]).length || (x.ana||[]).some(a=>a.trim())).concat(add);
+  return { added: add.length, merged };
+}
+$('loadPrepSrc').addEventListener('click', ()=>{
+  if(finalLockedNow()) return;
+  const r = importPrep();
+  if(!r){ alert('1부 탐구 준비에 적은 자료가 없어요.'); return; }
+  if(!r.added && !r.merged){ alert('1부에서 모은 자료와 파일이 이미 모두 들어 있어요.'); return; }
+  state.prepImported = true; renderSources(); changed();
+  alert(`1부에서 자료 ${r.added}개${r.merged?`, 파일 ${r.merged}개`:''}를 불러왔어요.`);
 });
+/* 2부를 처음 열 때(자료 칸이 비어 있으면) 1부 자료를 자동으로 한 번 불러온다 — 2026-10-12 선생님 결정 */
+function tryAutoImport(){
+  if(state.prepImported || !prepData || !RT.restored || finalLockedNow()) return;
+  const empty = state.sources.every(x=> !x.name.trim() && !x.link.trim() && !(x.files||[]).length && !(x.ana||[]).some(a=>a.trim()));
+  if(!empty){ state.prepImported = true; return; }
+  const r = importPrep(); if(!r || !r.added) return;
+  state.prepImported = true; renderSources(); changed();
+  const n = $('autoImportNote'); if(n){ n.textContent = `✅ 1부에서 찾은 자료 ${r.added}개(링크·스크린샷)를 불러왔어요. 빠진 것만 채우고, 자료마다 분석을 적어요.`; n.style.display = 'block'; }
+}
 
 function autoGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 document.querySelectorAll('textarea[data-k]').forEach(el=>{
@@ -537,6 +555,7 @@ function renderPrep(d){
   }
   box.innerHTML = h;
   renderSecOutlines(d);
+  tryAutoImport();
 }
 /* 서론·본론·결론 칸 바로 위에 그 부분의 개요(1부 step5)를 보여 준다 — 위아래로 왔다 갔다 하지 않게 */
 function renderSecOutlines(d){
@@ -622,6 +641,7 @@ const RT = {
       if(existing && existing.data) restoreData(existing.data); // 저장된 내용을 먼저 되살린 뒤에 저장 시작
       if(existing && existing.submitted) applyFinalLock(true);
       this.restored = true;
+      tryAutoImport();
       this.studentRef.update({ name, number: number||null,
         joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
         lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
@@ -671,6 +691,7 @@ const RT = {
 };
 function restoreData(d){
   if(!d) return;
+  state.prepImported = !!d.prepImported;
   document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
   const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
   if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'',
