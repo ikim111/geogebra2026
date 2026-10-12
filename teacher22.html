@@ -126,19 +126,23 @@
   .stage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:14.5px;color:#1a237e;}
   .stage-head .pause{padding:5px 10px;font-size:12.5px;}
   .stage-state{font-size:12.5px;color:#555;}
-  .stg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid #dfe3f0;border-radius:8px;padding:6px 10px;margin-top:5px;font-size:13.5px;}
+  .stg-row{display:flex;gap:8px;}
+  .stg{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;background:#fff;border:1px solid #dfe3f0;border-radius:8px;padding:7px 9px;font-size:13px;}
   .stg.now{border:2px solid #1565c0;background:#f7faff;}
   .stg.past{opacity:.7;}
-  .stg-no{font-weight:bold;color:#1a237e;white-space:nowrap;width:68px;}
-  .stg-t{font-weight:bold;white-space:nowrap;}
-  .stg-d{flex:1;min-width:120px;color:#666;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .stg-c{font-size:12.5px;color:#555;white-space:nowrap;}
-  .stg-bar{width:90px;height:8px;background:#e8eaf0;border-radius:6px;overflow:hidden;}
+  .stg-h{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;}
+  .stg-no{font-weight:bold;color:#1a237e;white-space:nowrap;}
+  .stg-t{font-weight:bold;}
+  .stg-d{color:#666;font-size:12px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .stg-m{display:flex;align-items:center;gap:6px;margin-top:auto;}
+  .stg-c{font-size:12px;color:#555;white-space:nowrap;}
+  .stg-bar{flex:1;height:7px;background:#e8eaf0;border-radius:6px;overflow:hidden;}
   .stg-bar i{display:block;height:100%;background:#2e7d32;}
-  .stg-tip{flex-basis:100%;font-size:13px;color:#0d47a1;background:#e8f0fe;border-radius:6px;padding:5px 9px;}
-  .stg-go{background:#1565c0;color:#fff;font-weight:bold;font-size:13px;padding:6px 12px;}
+  .stg-tip{font-size:13px;color:#0d47a1;background:#e8f0fe;border-radius:6px;padding:5px 9px;margin-top:6px;}
+  .stg-go{background:#1565c0;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;margin-top:3px;}
   details.manual{margin-top:10px;font-size:13px;color:#666;}
   details.manual summary{cursor:pointer;}
+  @media (max-width:640px){ .stg-row{flex-direction:column;} }
 </style>
 </head>
 <body>
@@ -470,26 +474,30 @@ function stageDoneCount(st){
 function renderStages(){
   const wrap = document.getElementById('stageList'); if(!wrap) return;
   wrap.textContent = '';
+  const rowEl = document.createElement('div'); rowEl.className = 'stg-row';
+  let tipText = '';
   STAGES.forEach((st, i)=>{
     const no = i+1;
     const state = stageNow==null ? 'idle' : (no < stageNow ? 'past' : (no===stageNow ? 'now' : 'future'));
     const c = stageDoneCount(st);
     const pct = c.total ? Math.round(c.done/c.total*100) : 0;
-    const row = document.createElement('div'); row.className = 'stg '+state;
+    const box = document.createElement('div'); box.className = 'stg '+state; box.title = st.d;
     const icon = state==='past' ? '✅' : (state==='now' ? '▶' : '⬜');
-    row.innerHTML = `<span class="stg-no">${icon} ${no}단계</span><span class="stg-t">${esc(st.t)}</span><span class="stg-d">${esc(st.d)}</span>
-      <span class="stg-c">${c.done}/${c.total}명</span><span class="stg-bar"><i style="width:${pct}%"></i></span>`;
+    box.innerHTML = `<div class="stg-h"><span class="stg-no">${icon} ${no}단계</span><span class="stg-t">${esc(st.t)}</span></div>
+      <div class="stg-d">${esc(st.d)}</div>
+      <div class="stg-m"><span class="stg-bar"><i style="width:${pct}%"></i></span><span class="stg-c">${c.done}/${c.total}명</span></div>`;
     const isNext = (stageNow==null && no===1) || (stageNow!=null && no===stageNow+1);
     if(isNext){
       const b = document.createElement('button'); b.className = 'stg-go';
-      b.textContent = stageNow==null ? '▶ 수업 시작' : '▶ 열기';
-      b.title = stageNow==null ? '1단계로 수업을 시작해요' : `${no}단계를 열어요`;
+      b.textContent = stageNow==null ? '▶ 수업 시작' : `▶ ${no}단계 열기`;
       b.addEventListener('click', ()=> setStage(no));
-      row.appendChild(b);
+      box.appendChild(b);
     }
-    if(state==='now'){ const tip = document.createElement('div'); tip.className = 'stg-tip'; tip.textContent = st.tip; row.appendChild(tip); }
-    wrap.appendChild(row);
+    if(state==='now') tipText = st.tip;
+    rowEl.appendChild(box);
   });
+  wrap.appendChild(rowEl);
+  if(tipText){ const tip = document.createElement('div'); tip.className = 'stg-tip'; tip.textContent = tipText; wrap.appendChild(tip); }
   const st = document.getElementById('stageState');
   if(st) st.textContent = stageNow==null ? '지금: 단계 없음 (학생이 모든 활동을 자유롭게 할 수 있어요)' : `지금: ${stageNow}단계 — 학생은 ${STAGES[stageNow-1].max ? '활동 '+STAGES[stageNow-1].max+'까지' : '끝까지'} 할 수 있어요`;
 }

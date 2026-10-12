@@ -230,6 +230,22 @@
   .prow{display:flex;align-items:center;gap:12px;margin:6px 0;flex-wrap:wrap;}
   .prow .half{width:56px;font-weight:bold;flex:0 0 auto;}
   .prow .stat2{font-size:14.5px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .run-panel2{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:12px 0 8px;}
+  .rp-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;}
+  .sbtn2{border:1px solid #c5cad1;background:#fff;border-radius:16px;padding:4px 12px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .rp-nums{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;font-variant-numeric:tabular-nums;}
+  .rp-nums div{font-size:13px;color:var(--ink2);} .rp-nums b{display:block;font-size:22px;color:var(--ink);}
+  .rp-bar{height:8px;background:#e3e6ea;border-radius:5px;overflow:hidden;margin:8px 0 6px;} .rp-bar i{display:block;height:100%;width:0;background:var(--blue);}
+  .rp-strip{display:flex;gap:3px;overflow:hidden;height:22px;}
+  .rp-strip span{flex:0 0 auto;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:bold;display:inline-flex;align-items:center;justify-content:center;}
+  .rp-strip .A{background:#e8f1fc;color:var(--blue);border:1.5px solid #90b8ea;} .rp-strip .B{background:#fff1e6;color:var(--orange);border:1.5px solid #f3b183;}
+  .chart2{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;background:#fff;}
+  .chart2-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;}
+  .rtabs{display:flex;gap:4px;} .rtabs button{border:1px solid #c5cad1;background:#fff;border-radius:14px;padding:3px 10px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .rtabs button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:4px 0;}
+  .legend2 span{display:inline-flex;align-items:center;gap:5px;} .legend2 i{display:inline-block;width:18px;height:3px;border-radius:2px;}
+  .chart2-svg{width:100%;height:auto;display:block;}
 </style></style>
 </head>
 <body>
@@ -365,6 +381,19 @@
       <button class="btn" data-n="100" disabled>100번</button>
       <button class="btn" data-n="1000" disabled>1,000번 *</button>
       <button class="btn" data-n="10000" disabled>10,000번 *</button>
+    </div>
+    <div class="run-panel2" id="runPanel" style="display:none;">
+      <div class="rp-top"><b id="rpTitle"></b><button class="sbtn2" id="rpSkip">⏩ 바로 결과 보기</button></div>
+      <div class="rp-nums"><div>진행한 경기<b id="rpN">0</b></div><div>A 우승<b id="rpA">0</b></div><div>B 우승<b id="rpB">0</b></div><div>A가 우승한 상대도수<b id="rpRel">-</b></div></div>
+      <div class="rp-bar"><i id="rpBar"></i></div>
+      <div class="rp-strip" id="rpStrip"></div>
+    </div>
+    <div class="chart2" id="chartBox" style="display:none;">
+      <div class="chart2-head"><b>경기 횟수에 따른 A 우승 상대도수</b>
+        <span class="rtabs" id="rangeTabs"><button data-r="100">100</button><button data-r="1000">1,000</button><button data-r="10000" class="on">10,000</button></span></div>
+      <div class="legend2" id="legend2"></div>
+      <svg id="autoChart" viewBox="0 0 640 280" class="chart2-svg"></svg>
+      <p class="note" style="margin:4px 0 0;">가로: 경기한 횟수 · 세로: 그때까지 A가 우승한 상대도수</p>
     </div>
     <table class="simtable" id="autoTable" style="margin-top:12px;"></table>
     <div id="treeBox" style="display:none;">
@@ -591,7 +620,7 @@ const TASKS = [
 const state = {
   s1a:'', s1b:'', s1Reason:'',
   a2Text:'', sawSplit:false,
-  games:[], playing:false, auto:{100:null, 1000:null, 10000:null}, a3Text:'',
+  games:[], playing:false, running:null, auto:{100:null, 1000:null, 10000:null}, a3Text:'',
   outs:[], f:{tot:'', aw:'', pa:'', pb:'', ma:'', mb:''},
   s5a:'', s5b:'', s5Reason:'',
   vote:null, voteReason:'',
@@ -652,9 +681,10 @@ const winnerOf = g => g==='BB' ? 'B' : 'A';   // 'A'(4경기 A승) · 'BA' · 'B
 const AUTO_NS = [100, 1000, 10000];
 function simulateGames(n, seed){
   // a1: 4경기에서 A 승(바로 A 우승), ba: 4경기 B 승 → 5경기 A 승(A 우승), bb: B 우승
-  const r = mulberry32(seed); let a1 = 0, ba = 0;
-  for(let i=0;i<n;i++){ if(r() < 0.5) a1++; else if(r() < 0.5) ba++; }
-  return {n, a: a1+ba, seed, a1, ba, bb: n-a1-ba};
+  // cum[i]: i+1번째 경기까지 A가 우승한 횟수(그래프·애니메이션용, 저장하지 않고 씨앗으로 다시 만든다)
+  const r = mulberry32(seed); let a1 = 0, ba = 0; const cum = new Int32Array(n), seq = new Uint8Array(n);
+  for(let i=0;i<n;i++){ if(r() < 0.5){ a1++; seq[i]=1; } else if(r() < 0.5){ ba++; seq[i]=1; } cum[i] = a1+ba; }
+  return {n, a: a1+ba, seed, a1, ba, bb: n-a1-ba, cum, seq};
 }
 const gamesA = () => state.games.filter(g=>winnerOf(g)==='A').length;
 
@@ -986,7 +1016,7 @@ function renderPlay(){
   if(n) $('playStat').innerHTML = `<div class="result-row"><div class="stat"><div class="k">A 우승</div><div class="v">${a}회</div></div><div class="stat"><div class="k">B 우승</div><div class="v">${n-a}회</div></div><div class="stat"><div class="k">A가 우승한 상대도수</div><div class="v frac">${relText(a,n)}</div></div></div>`;
   if(!n) paintScore(0,0);
   const ok = n >= 10;
-  document.querySelectorAll('#autoBtns button').forEach(b=> b.disabled = !ok || state.playing);
+  document.querySelectorAll('#autoBtns button').forEach(b=> b.disabled = !ok || state.playing || !!state.running);
   $('autoHint').textContent = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. (다시 누르면 새로 해요)' : `직접 10번을 해 보면 버튼이 켜져요. (지금 ${n}번)`;
   renderAutoTable();
 }
@@ -997,6 +1027,7 @@ function renderAutoTable(){
   AUTO_NS.forEach(k=>{ const r=state.auto[k]; if(r) rows.push(`<tr${k>=1000?' class="req"':''}><td class="n">${fmtInt(k)}번</td><td>${fmtInt(r.a)}</td><td>${fmtInt(k-r.a)}</td><td class="rel">${relDec(r.a, k)}</td></tr>`); });
   $('autoTable').innerHTML = rows.length ? `<tr><th>횟수</th><th>A 우승</th><th>B 우승</th><th>A가 우승한 상대도수</th></tr>` + rows.join('') : '';
   renderTree();
+  if(AUTO_NS.some(n=>state.auto[n])){ $('chartBox').style.display = 'block'; drawChart(); }
 }
 /* 경기 흐름 나무: 가장 많이 한 컴퓨터 실험을 4경기 → 5경기로 갈라지는 나무와 띠그래프로 보여준다. */
 function renderTree(){
@@ -1027,11 +1058,69 @@ function renderTree(){
   $('flowCap').innerHTML = `A 우승 = <span style="color:#1565c0;">${fmtInt(r.a1)}</span> + <span style="color:#1e88e5;">${fmtInt(r.ba)}</span> = ${fmtInt(r.a)}번 → 전체의 약 ${p(r.a1)} + ${p(r.ba)} ≈ <b>${p(r.a)}</b>
     <div class="note" style="font-weight:normal;margin-top:2px;">A는 4경기에서 <b>절반</b>쯤 바로 우승하고, 나머지 절반 중에서 또 <b>절반</b>쯤은 5경기에서 우승해요.</div>`;
 }
+/* 컴퓨터 시뮬레이션: 결과를 바로 보여주지 않고, 경기가 진행되는 모습(진행 수·상대도수·그래프)을 몇 초 동안 보여준다 */
+const RUN_MS = {100: 2600, 1000: 4200, 10000: 5600};
+const RUN_POW = {100: 1, 1000: 1.8, 10000: 2.4};
+const RUN_COL = {100: '#4a3aa7', 1000: '#eb6834', 10000: '#2a78d6'};
+let chartRange = 10000;
 $('autoBtns').addEventListener('click', e=>{
-  const b = e.target.closest('button'); if(!b || b.disabled || finalLocked) return;
-  const n = +b.dataset.n; state.auto[n] = simulateGames(n, newSeed());
-  renderAutoTable(); check3();
+  const b = e.target.closest('button'); if(!b || b.disabled || finalLocked || state.running) return;
+  const n = +b.dataset.n, r = simulateGames(n, newSeed());
+  state.running = {n, r, t0: performance.now(), k: 0};
+  delete state.auto[n];
+  if(chartRange < n) setRange(n);
+  document.querySelectorAll('#autoBtns button').forEach(x=> x.disabled = true); updateNavButtons();
+  $('runPanel').style.display = 'block'; $('chartBox').style.display = 'block';
+  $('rpTitle').textContent = `컴퓨터가 남은 경기를 ${fmtInt(n)}번 하는 중…`;
+  requestAnimationFrame(runStep);
 });
+function runStep(now){
+  const R = state.running; if(!R) return;
+  const f = Math.min(1, (now - R.t0) / RUN_MS[R.n]);
+  R.k = Math.max(R.k, Math.min(R.n, Math.round(R.n * Math.pow(f, RUN_POW[R.n]))));
+  paintRun();
+  if(f >= 1 || R.k >= R.n) finishRun(); else requestAnimationFrame(runStep);
+}
+function paintRun(){
+  const R = state.running; if(!R) return;
+  const k = R.k, a = k ? R.r.cum[k-1] : 0;
+  $('rpN').textContent = `${fmtInt(k)} / ${fmtInt(R.n)}`; $('rpA').textContent = fmtInt(a); $('rpB').textContent = fmtInt(k-a);
+  $('rpRel').textContent = k ? relDec(a, k) : '-';
+  $('rpBar').style.width = (k/R.n*100) + '%';
+  const from = Math.max(0, k-26);
+  $('rpStrip').innerHTML = Array.from(R.r.seq.slice(from, k)).map(v=>`<span class="${v?'A':'B'}">${v?'A':'B'}</span>`).join('');
+  drawChart();
+}
+function finishRun(){
+  const R = state.running; if(!R) return;
+  R.k = R.n; state.running = null; state.auto[R.n] = R.r;
+  $('rpTitle').textContent = `✅ ${fmtInt(R.n)}번 완료!`;
+  $('rpN').textContent = fmtInt(R.n); $('rpA').textContent = fmtInt(R.r.a); $('rpB').textContent = fmtInt(R.n-R.r.a);
+  $('rpRel').textContent = relDec(R.r.a, R.n); $('rpBar').style.width = '100%';
+  renderPlay(); renderAutoTable(); drawChart(); check3(); updateNavButtons();
+}
+$('rpSkip').addEventListener('click', ()=>{ if(state.running){ state.running.k = state.running.n; finishRun(); } });
+function setRange(r){ chartRange = r; document.querySelectorAll('#rangeTabs button').forEach(b=> b.classList.toggle('on', +b.dataset.r===r)); drawChart(); }
+$('rangeTabs').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setRange(+b.dataset.r); });
+function drawChart(){
+  const W = 640, H = 280, L = 46, Rr = 14, T = 12, Bm = 32, pw = W-L-Rr, ph = H-T-Bm;
+  const X = n => L + n/chartRange*pw, Y = v => T + (1-v)*ph;
+  let g = '';
+  for(let i=0;i<=5;i++){ const v = i/5; g += `<line x1="${L}" y1="${Y(v)}" x2="${W-Rr}" y2="${Y(v)}" stroke="#eceef1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#52514e">${v.toFixed(1)}</text>`; }
+  for(let i=0;i<=4;i++){ const n = chartRange*i/4; g += `<text x="${X(n)}" y="${H-10}" text-anchor="middle" font-size="12" fill="#52514e">${fmtInt(Math.round(n))}</text>`; }
+  g += `<line x1="${L}" y1="${T}" x2="${L}" y2="${T+ph}" stroke="#9aa0a6"/><line x1="${L}" y1="${T+ph}" x2="${W-Rr}" y2="${T+ph}" stroke="#9aa0a6"/>`;
+  const series = AUTO_NS.filter(n=>state.auto[n]).map(n=>({n, r:state.auto[n], k:n}));
+  if(state.running) series.push({n:state.running.n, r:state.running.r, k:state.running.k});
+  series.forEach(s=>{
+    const k = Math.min(s.k, chartRange); if(k < 1) return;
+    const step = Math.max(1, Math.floor(k/500)); let d = '';
+    for(let i=1;i<=k;i+=step) d += (d?'L':'M') + `${X(i).toFixed(1)},${Y(s.r.cum[i-1]/i).toFixed(1)}`;
+    d += `L${X(k).toFixed(1)},${Y(s.r.cum[k-1]/k).toFixed(1)}`;
+    g += `<path d="${d}" fill="none" stroke="${RUN_COL[s.n]}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  });
+  $('autoChart').innerHTML = g;
+  $('legend2').innerHTML = series.map(s=>`<span><i style="background:${RUN_COL[s.n]}"></i>${fmtInt(s.n)}번</span>`).join('');
+}
 function renderClassSim(){
   const all = shareOf('sim'); let n=0, a=0, cnt=0;
   Object.keys(all).forEach(k=>{ const v=all[k]; if(v && v.n>0){ n+=+v.n; a+=+v.a; cnt++; } });
