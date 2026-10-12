@@ -350,6 +350,7 @@ function missing(){
 const isDone = () => missing().length === 0;
 const valueOf = () => `${state.f.title.trim() ? '제목: '+state.f.title.trim()+' · ' : ''}서론 ${cnt('intro')}자 · 본론 ${cnt('body')}자 · 결론 ${cnt('concl')}자 · 합계 ${totalCount()}자`;
 function collectData(){ return { title: state.f.title, intro: state.f.intro, body: state.f.body, concl: state.f.concl, total: totalCount(),
+  integrity: state.ig ? { paste: state.ig.paste, big: state.ig.big.slice(-30), away: state.ig.away, awayMs: state.ig.awayMs } : null,
   prepImported: !!state.prepImported, sources: state.sources.map(x=>({name:x.name, link:x.link, from1: x.from1==null ? null : x.from1, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
 
 /* ---------- 자료로 인정하지 않는 출처 판별 (studentpa2·studentpa3·teacherpa2·teacherpa3·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
@@ -521,7 +522,55 @@ function tryAutoImport(){
 
 function autoGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 document.querySelectorAll('textarea[data-k]').forEach(el=>{
-  el.addEventListener('input', ()=>{ state.f[el.dataset.k] = el.value; autoGrow(el); changed(); });
+  el.addEventListener('input', ()=>{ noteBigInsert(el); state.f[el.dataset.k] = el.value; autoGrow(el); changed(); });
+});
+
+/* ---------- 복사·붙여넣기 막기 + 기록 (2026-10-12 선생님 결정: 2부 보고서 칸만) ----------
+   제목·서론·본론·결론 칸에서 붙여넣기·끌어다 놓기·오른쪽 클릭 메뉴를 막는다. 완벽히 막을 수는 없으므로
+   의심 흔적을 data.integrity에 남겨 teacherpa3.html에 보여준다(점수에는 영향 없음, 선생님 판단용).
+   - paste: 붙여넣기(끌어다 놓기 포함) 시도 횟수
+   - big: 한 번에 많은 글자(BIG_INSERT자 이상)가 들어온 기록 [{k, n, at, t(앞부분)}] — 음성 입력·자동완성도 걸릴 수 있음
+   - away/awayMs: 글을 쓰는 중 다른 탭·앱으로 나간 횟수와 시간(참고용) */
+const BIG_INSERT = 40;
+const SEC_NAME = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
+state.ig = { paste:0, big:[], away:0, awayMs:0 };
+function igToast(msg){
+  let t = document.getElementById('igToast');
+  if(!t){ t = document.createElement('div'); t.id = 'igToast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#c62828;color:#fff;font-weight:bold;padding:10px 18px;border-radius:10px;z-index:10000;box-shadow:0 3px 12px rgba(0,0,0,.3);font-size:15px;max-width:90vw;text-align:center;';
+    document.body.appendChild(t); }
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(igToast._t); igToast._t = setTimeout(()=>{ t.style.display = 'none'; }, 2600);
+}
+function blockPaste(e){
+  e.preventDefault();
+  state.ig.paste++; changed();
+  igToast('✋ 보고서 칸에는 붙여넣을 수 없어요. 내 생각을 직접 입력해 주세요.');
+}
+const prevLen = new WeakMap();
+function noteBigInsert(el){
+  const before = prevLen.has(el) ? prevLen.get(el) : String(state.f[el.dataset.k]||'').length;
+  const after = el.value.length; prevLen.set(el, after);
+  const n = after - before;
+  if(n >= BIG_INSERT){
+    const end = el.selectionEnd || after, start = Math.max(0, end - n);
+    state.ig.big.push({k: el.dataset.k, n, at: Date.now(), t: el.value.slice(start, end).slice(0, 80)});
+    if(state.ig.big.length > 30) state.ig.big.shift();
+  }
+}
+document.querySelectorAll('textarea[data-k]').forEach(el=>{
+  prevLen.set(el, el.value.length);
+  el.addEventListener('paste', blockPaste);
+  el.addEventListener('drop', blockPaste);
+  el.addEventListener('beforeinput', e=>{ if(e.inputType==='insertFromPaste' || e.inputType==='insertFromDrop' || e.inputType==='insertFromPasteAsQuotation') blockPaste(e); });
+  el.addEventListener('contextmenu', e=> e.preventDefault());
+  el.addEventListener('focus', ()=> prevLen.set(el, el.value.length));
+});
+let awaySince = null;
+document.addEventListener('visibilitychange', ()=>{
+  if(!CURRENT_PROFILE || finalLocked) return;
+  if(document.visibilityState==='hidden'){ awaySince = Date.now(); }
+  else if(awaySince){ const ms = Date.now() - awaySince; awaySince = null; if(ms >= 3000){ state.ig.away++; state.ig.awayMs += ms; changed(); } }
 });
 window.addEventListener('resize', ()=> document.querySelectorAll('textarea[data-k]').forEach(autoGrow));
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -698,7 +747,8 @@ const RT = {
 function restoreData(d){
   if(!d) return;
   state.prepImported = !!d.prepImported;
-  document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
+  document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } prevLen.set(el, el.value.length); });
+  if(d.integrity){ const g=d.integrity; state.ig = { paste:+g.paste||0, big: Array.isArray(g.big)?g.big:(g.big&&typeof g.big==='object'?Object.values(g.big):[]), away:+g.away||0, awayMs:+g.awayMs||0 }; }
   const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
   if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'', from1: (x && Number.isInteger(x.from1)) ? x.from1 : null,
     files: arr(x&&x.files).filter(f=>f&&f.url).slice(0,MAX_FILES), ana: (a=> a.length ? a : [''])(arr(x&&x.ana).map(String)) }));

@@ -452,10 +452,24 @@ const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.tri
 
 /* 보고서 내용 지문(글이 바뀌었는지 비교용) */
 function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link+' '+x.files.length).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+/* 붙여넣기 막기 기록(studentpa3의 data.integrity) — 점수와 무관, 선생님 판단용 */
+const SEC_KO = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
+function igOf(s){ const g=(s&&s.data&&s.data.integrity)||{}; return { paste:+g.paste||0, big: arrOf(g.big).filter(Boolean), away:+g.away||0, awayMs:+g.awayMs||0 }; }
+const igFlag = s => { const g=igOf(s); return g.paste>0 || g.big.length>0; };
+function igHTML(s){
+  const g = igOf(s);
+  if(!g.paste && !g.big.length && !g.away) return '';
+  const min = Math.round(g.awayMs/60000);
+  let h = `<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:7px 10px;margin:6px 0;font-size:13px;color:#7a4300;">
+    ⚠️ <b>붙여넣기 시도 ${g.paste}회</b> · <b>한꺼번에 입력 ${g.big.length}회</b> · 다른 화면으로 나감 ${g.away}회${g.away?` (약 ${min<1?'1분 미만':min+'분'})`:''}
+    <span style="color:#999;">— 참고용(음성 입력·자동완성도 '한꺼번에 입력'에 걸릴 수 있어요)</span>`;
+  if(g.big.length) h += '<ul style="margin:4px 0 0;padding-left:18px;">' + g.big.slice(-8).map(b=>`<li>${fmtTime(b.at)} ${SEC_KO[b.k]||''} ${+b.n||0}자: “${esc(b.t||'')}${(+b.n||0)>80?'…':''}”</li>`).join('') + '</ul>';
+  return h + '</div>';
+}
 function activityDetailHTML(s, id, key){
   if(!hasReport(s)) return key ? gradeBoxHTML(key, s) : '';
   const r = repOf(s), tot = totalOf(s);
-  let h = `<div class="rep"><div class="tot">서론+본론+결론 <b style="color:${tot>=TOTAL_MIN?'#2e7d32':'#e65100'};">${tot.toLocaleString()}자</b> / ${TOTAL_MIN}자 이상 · ${s.submitted?'<b style="color:#2e7d32;">✅ 제출함</b>':'<span style="color:#e65100;">미제출</span>'}</div>`;
+  let h = igHTML(s) + `<div class="rep"><div class="tot">서론+본론+결론 <b style="color:${tot>=TOTAL_MIN?'#2e7d32':'#e65100'};">${tot.toLocaleString()}자</b> / ${TOTAL_MIN}자 이상 · ${s.submitted?'<b style="color:#2e7d32;">✅ 제출함</b>':'<span style="color:#e65100;">미제출</span>'}</div>`;
   SECS.forEach(x=>{
     const n = countChars(r[x.k]), short = x.min && n < x.min;
     h += `<h4><span>[${x.name}]</span><span class="c${short?' short':''}">${n.toLocaleString()}자${x.min?` / ${x.min}자 이상`:''}</span></h4>` +
@@ -1009,6 +1023,7 @@ function renderGrid(){
       const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
       tdName.appendChild(sd);
     }
+    if(igFlag(s)){ const g=igOf(s); const w=document.createElement('span'); w.textContent=' ⚠️'; w.title=`붙여넣기 시도 ${g.paste}회 · 한꺼번에 입력 ${g.big.length}회 (보고서 칸에서 자세히 보기)`; tdName.appendChild(w); }
     tr.appendChild(tdName);
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
