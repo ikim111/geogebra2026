@@ -139,21 +139,21 @@
   .dotline .band{position:absolute;top:38px;height:28px;background:rgba(46,125,50,.15);border:2px solid #2e7d32;border-radius:6px;transform:translateX(-50%);min-width:6px;}
   .dotline .bandl{position:absolute;top:0;transform:translateX(-50%);font-size:12.5px;font-weight:bold;color:#2e7d32;white-space:nowrap;background:#e8f5e9;border-radius:6px;padding:1px 6px;}
   .ansnote{font-size:14px;color:#1b5e20;background:#e8f5e9;border-radius:8px;padding:6px 10px;margin:-6px 22px 4px;}
-  .stagebox{margin-top:12px;background:#f3f6ff;border:1px solid #c5cae9;border-radius:10px;padding:12px 14px;}
-  .stage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:15px;color:#1a237e;}
-  .stage-state{font-size:13px;color:#555;}
-  .stg{background:#fff;border:1px solid #dfe3f0;border-radius:10px;padding:10px 12px;margin-top:8px;}
-  .stg.now{border:2px solid #1565c0;box-shadow:0 1px 4px rgba(21,101,192,.15);}
-  .stg.past{opacity:.75;}
-  .stg-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .stg-no{font-weight:bold;color:#1a237e;white-space:nowrap;}
-  .stg-t{font-weight:bold;font-size:15.5px;}
-  .stg-c{margin-left:auto;font-size:13px;color:#555;white-space:nowrap;}
-  .stg-bar{width:140px;height:10px;background:#e8eaf0;border-radius:6px;overflow:hidden;}
+  .stagebox{margin-top:10px;background:#f3f6ff;border:1px solid #c5cae9;border-radius:10px;padding:10px 12px;}
+  .stage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:14.5px;color:#1a237e;}
+  .stage-head .pause{padding:5px 10px;font-size:12.5px;}
+  .stage-state{font-size:12.5px;color:#555;}
+  .stg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid #dfe3f0;border-radius:8px;padding:6px 10px;margin-top:5px;font-size:13.5px;}
+  .stg.now{border:2px solid #1565c0;background:#f7faff;}
+  .stg.past{opacity:.7;}
+  .stg-no{font-weight:bold;color:#1a237e;white-space:nowrap;width:68px;}
+  .stg-t{font-weight:bold;white-space:nowrap;}
+  .stg-d{flex:1;min-width:120px;color:#666;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stg-c{font-size:12.5px;color:#555;white-space:nowrap;}
+  .stg-bar{width:90px;height:8px;background:#e8eaf0;border-radius:6px;overflow:hidden;}
   .stg-bar i{display:block;height:100%;background:#2e7d32;}
-  .stg-d{font-size:13.5px;color:#555;margin-top:4px;}
-  .stg-tip{font-size:13.5px;color:#0d47a1;background:#e8f0fe;border-radius:6px;padding:6px 10px;margin-top:6px;}
-  .stg-go{margin-top:8px;background:#1565c0;color:#fff;font-weight:bold;font-size:14.5px;padding:9px 18px;}
+  .stg-tip{flex-basis:100%;font-size:13px;color:#0d47a1;background:#e8f0fe;border-radius:6px;padding:5px 9px;}
+  .stg-go{background:#1565c0;color:#fff;font-weight:bold;font-size:13px;padding:6px 12px;}
   details.manual{margin-top:10px;font-size:13px;color:#666;}
   details.manual summary{cursor:pointer;}
 </style>
@@ -477,16 +477,17 @@ function renderStages(){
     const pct = c.total ? Math.round(c.done/c.total*100) : 0;
     const row = document.createElement('div'); row.className = 'stg '+state;
     const icon = state==='past' ? '✅' : (state==='now' ? '▶' : '⬜');
-    row.innerHTML = `<div class="stg-top"><span class="stg-no">${icon} ${no}단계</span><span class="stg-t">${esc(st.t)}</span>
-        <span class="stg-c">완료 ${c.done}/${c.total}명</span><span class="stg-bar"><i style="width:${pct}%"></i></span></div>
-      <div class="stg-d">${esc(st.d)}</div>${state==='now' ? `<div class="stg-tip">${esc(st.tip)}</div>` : ''}`;
+    row.innerHTML = `<span class="stg-no">${icon} ${no}단계</span><span class="stg-t">${esc(st.t)}</span><span class="stg-d">${esc(st.d)}</span>
+      <span class="stg-c">${c.done}/${c.total}명</span><span class="stg-bar"><i style="width:${pct}%"></i></span>`;
     const isNext = (stageNow==null && no===1) || (stageNow!=null && no===stageNow+1);
     if(isNext){
       const b = document.createElement('button'); b.className = 'stg-go';
-      b.textContent = stageNow==null ? '▶ 1단계로 수업 시작' : `▶ ${no}단계 열기`;
+      b.textContent = stageNow==null ? '▶ 수업 시작' : '▶ 열기';
+      b.title = stageNow==null ? '1단계로 수업을 시작해요' : `${no}단계를 열어요`;
       b.addEventListener('click', ()=> setStage(no));
       row.appendChild(b);
     }
+    if(state==='now'){ const tip = document.createElement('div'); tip.className = 'stg-tip'; tip.textContent = st.tip; row.appendChild(tip); }
     wrap.appendChild(row);
   });
   const st = document.getElementById('stageState');
