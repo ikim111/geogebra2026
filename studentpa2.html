@@ -246,6 +246,7 @@
   .chat-in button{border:none;background:#00897b;color:#fff;font-weight:bold;border-radius:8px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit;}
   .chat-in button:disabled{background:#a7d3cd;cursor:not-allowed;}
   .todo.ok{color:var(--green);font-weight:bold;}
+  .chat-watch{font-size:12.5px;font-weight:bold;color:#8d6e00;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:5px 10px;margin:6px 0;}
 </style>
 </head>
 <body>
@@ -525,6 +526,7 @@
         <div class="chat-rules">질문을 만들거나 자료를 찾다가 막막할 때 물어보세요. AI 도우미는 <b>답을 대신 알려 주지 않고</b>, 스스로 생각할 수 있게 힌트를 줘요.<br>
           예) "어떤 주제로 질문을 만들지 모르겠어요", "교통사고 자료는 어디서 찾아요?", "확률은 어떻게 구해요?"<br>
           ※ 대화 내용은 선생님이 볼 수 있어요.</div>
+        <div class="chat-watch">👀 AI와 나눈 대화는 선생님이 모두 볼 수 있어요. 수업에 필요한 것만 물어봐요.</div>
         <div class="chat-log" id="chatLog"></div>
         <div class="chat-in"><textarea id="chatInput" rows="1" maxlength="500" placeholder="AI 도우미에게 물어볼 내용을 적어요 (Enter: 보내기, Shift+Enter: 줄바꿈)"></textarea><button type="button" id="chatSend">보내기</button></div>
         <div class="ai-off" id="chatOff"></div>
@@ -1215,6 +1217,27 @@ function paintChat(){
   $('chatSend').disabled = dis; $('chatInput').disabled = !!off || left<=0;
   $('chatOff').textContent = off || (left<=0 ? `오늘 AI 도우미 질문 ${chatMax()}번을 모두 썼어요. 꼭 필요하면 선생님께 말씀드려요.` : '');
 }
+/* ---------- AI 도우미 이상 사용 표시(2026-10-12) — 학생에게는 보이지 않고 teacherpa2.html에 ⚠️로 표시 ----------
+   서버(AI) 판정(api/chat-help.js의 flag) + 낱말 검사 + 도배 검사를 합친다. 유형: ghost(대신 써 달라기) offtopic(딴소리)
+   abuse(욕설·비꼬기) jailbreak(AI 규칙 깨기) spam(도배) — teacherpa2.html의 FLAG_NAME과 같게. */
+const FLAG_WORDS = {
+  ghost: /(대신|그냥|다)\s*(써|작성|만들어|정해|계산해|찾아)\s*(줘|주세요|줄래|달라)|답\s*(만|좀)?\s*(알려|말해)\s*(줘|주세요)|(개요|질문|서론|본론|결론|보고서)\s*(좀)?\s*(써|만들어|정해)\s*(줘|주세요)/,
+  abuse: /(시발|씨발|ㅅㅂ|ㅆㅂ|병신|ㅂㅅ|존나|ㅈㄴ|좆|개새|꺼져|닥쳐|미친|멍청|바보|ㅗ)/,
+  jailbreak: /(규칙|지시|프롬프트|설정)\s*(을|를)?\s*(무시|잊어|어겨)|선생님\s*몰래|너는\s*이제부터|지금부터\s*너는|역할\s*(을|를)?\s*바꿔|탈옥|jailbreak|ignore\s+(all|previous)/i
+};
+function chatFlags(q, aiFlag){
+  const f = new Set();
+  if(aiFlag && aiFlag!=='none') f.add(aiFlag);
+  Object.keys(FLAG_WORDS).forEach(k=>{ if(FLAG_WORDS[k].test(q)) f.add(k); });
+  const prev = AI.chats();
+  const norm = t => String(t||'').replace(/\s+/g,'');
+  const letters = (q.match(/[가-힣a-zA-Z0-9]/g)||[]).length;
+  if(prev.slice(-5).some(c=> norm(c.q) && norm(c.q)===norm(q))) f.add('spam');               // 같은 질문 반복
+  if(q.length>=4 && letters/q.length < 0.4) f.add('spam');                                   // 의미 없는 글자
+  if(/^[ㄱ-ㅎㅏ-ㅣ\s.!?~]+$/.test(q) && q.replace(/\s/g,'').length>=3) f.add('spam');          // ㅋㅋㅋ, ㅇㅇㅇ 같은 자모만
+  if(prev.filter(c=> Date.now()-(c.ts||0) < 60000).length >= 3) f.add('spam');               // 1분에 4번째 질문
+  return [...f];
+}
 async function sendChat(){
   const inp = $('chatInput'), q = inp.value.trim();
   if(!q || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= chatMax()) return;
@@ -1226,7 +1249,9 @@ async function sendChat(){
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.reply) throw new Error(j.error || ('HTTP '+res.status));
     const w = collectData();
-    AI.log({ type:'chat', q, a:j.reply, ctx: [w.finalQ||w.q3||w.q2||w.q1||'', w.subject||''].join(' ').slice(0,300) });
+    const flags = chatFlags(q, j.flag);
+    AI.log(Object.assign({ type:'chat', q, a:j.reply, ctx: [w.finalQ||w.q3||w.q2||w.q1||'', w.subject||''].join(' ').slice(0,300) },
+      flags.length ? { flags, flagWhy: j.flag && j.flag!=='none' ? (j.flagWhy||'') : '' } : {}));
   }catch(err){ inp.value = q; alert('AI 도우미가 답하지 못했어요. 잠시 후 다시 보내 보세요.\n('+(err.message||err)+')'); }
   AI.busy = false; AI.pendingQ = ''; paintChat(); TASKS.forEach(t=>paintStepFb(t.id));
 }

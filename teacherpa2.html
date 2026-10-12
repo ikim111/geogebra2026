@@ -118,6 +118,13 @@
   .seg button{border:none;border-radius:0;background:#fff;color:#555;padding:7px 12px;font-size:13px;}
   .seg button.on{background:#5e35b1;color:#fff;font-weight:bold;}
   .ac-feed{max-height:220px;overflow-y:auto;padding:6px 10px;}
+  .ac-flag{max-height:220px;overflow-y:auto;padding:6px 10px;border:1px solid #ffb74d;background:#fffaf2;}
+  .ac-flag .it{display:flex;gap:8px;align-items:baseline;padding:5px 4px;border-bottom:1px solid #f3e0c4;cursor:pointer;font-size:13px;}
+  .ac-flag .it:hover{background:#fff3e0;}
+  .ac-flag .t{color:#999;white-space:nowrap;} .ac-flag .n{font-weight:bold;white-space:nowrap;}
+  .flagchip{display:inline-block;background:#ffe0b2;color:#a64500;border-radius:10px;padding:0 7px;font-size:11.5px;font-weight:bold;margin-right:3px;white-space:nowrap;}
+  .msg.me.flagged{outline:2px solid #ff9800;}
+  #flagToast{position:fixed;right:18px;bottom:18px;z-index:100001;background:#e65100;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:bold;box-shadow:0 3px 12px rgba(0,0,0,.3);cursor:pointer;display:none;max-width:360px;}
   .ac-feed .it{display:flex;gap:8px;align-items:baseline;padding:5px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13.5px;}
   .ac-feed .it:hover{background:#f7f4fd;}
   .ac-feed .t{color:#999;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;}
@@ -365,6 +372,8 @@
         <input type="search" id="acSearch" placeholder="🔍 대화 검색 (예: 숙제, 답 알려줘)" style="flex:1;min-width:180px;">
         <button type="button" class="pause" id="acExcelBtn">📥 엑셀 다운로드</button>
       </div>
+      <div class="teacher-col-title">⚠️ 확인 필요 <span style="font-weight:normal;color:#999;">(AI 도우미를 이상하게 쓴 것 같은 질문 · 누르면 그 학생 대화로 · 학생 화면에는 안 보여요)</span></div>
+      <div class="panel ac-flag" id="acFlag"></div>
       <div class="teacher-col-title">⚡ 실시간 질문 흐름 <span style="font-weight:normal;color:#999;">(최근 질문이 위로 · 누르면 그 학생 대화로)</span></div>
       <div class="panel ac-feed" id="acFeed"></div>
       <div class="ac-main">
@@ -594,6 +603,26 @@ function openAiLog(key){
   document.getElementById('tdmTextWrap').innerHTML = h;
   document.getElementById('taskDetailOverlay').style.display='flex';
 }
+/* ---------- ⚠️ AI 도우미 이상 사용 표시(studentpa2.html chatFlags·api/chat-help.js flag와 같은 유형) ---------- */
+const FLAG_NAME = { ghost:'대신 써 달라기', offtopic:'딴소리', abuse:'욕설·비꼬기', jailbreak:'AI 규칙 깨기', spam:'도배' };
+const flagsOf = l => (Array.isArray(l && l.flags) ? l.flags : (l && l.flags && typeof l.flags==='object' ? Object.values(l.flags) : [])).filter(f=>FLAG_NAME[f]);
+const flagChips = l => flagsOf(l).map(f=>`<span class="flagchip">${FLAG_NAME[f]}</span>`).join('');
+const flaggedChats = s => aiLogsOf(s).filter(l=> l.type==='chat' && flagsOf(l).length);
+const __flagSeen = new Set(); let __flagInit = false;
+function checkNewFlags(){
+  const fresh = [];
+  Object.keys(allStudents).forEach(k=>{ const s=allStudents[k]||{}; flaggedChats(s).forEach(l=>{ const id=k+'|'+l.ts; if(!__flagSeen.has(id)){ __flagSeen.add(id); if(__flagInit) fresh.push({k,s,l}); } }); });
+  __flagInit = true;
+  if(!fresh.length) return;
+  const f = fresh[fresh.length-1];
+  let t = document.getElementById('flagToast');
+  if(!t){ t = document.createElement('div'); t.id='flagToast'; document.body.appendChild(t);
+    t.addEventListener('click', ()=>{ t.style.display='none'; acSel = t.dataset.k; document.querySelector('.tab-btn[data-tab="aichat"]').click(); renderAiChatTab(); }); }
+  t.dataset.k = f.k;
+  t.innerHTML = `⚠️ ${esc(displayName(f.k,f.s.name,f.s.number))} — ${flagsOf(f.l).map(x=>FLAG_NAME[x]).join(', ')}${fresh.length>1?` 외 ${fresh.length-1}건`:''}<div style="font-weight:normal;font-size:12.5px;margin-top:3px;">“${esc(String(f.l.q||'').slice(0,60))}” · 누르면 대화 보기</div>`;
+  t.style.display = 'block'; clearTimeout(checkNewFlags._t); checkNewFlags._t = setTimeout(()=>{ t.style.display='none'; }, 9000);
+}
+
 /* ---------- ④ AI 대화: 실시간 질문 흐름 + 학생별 대화(말풍선) + 검색 + 엑셀 ---------- */
 let acRange = 'today', acSel = null;
 const acDay = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
@@ -620,6 +649,12 @@ let __acLastSel = null;
 function renderAiChatTab(){
   const panel = document.getElementById('tab-aichat'); if(!panel || !panel.classList.contains('active')) return;
   const keys = Object.keys(allStudents);
+  // ⚠️ 확인 필요(오늘만/전체 범위만 따르고 검색과는 무관)
+  const today0 = acDay(Date.now()), fl = [];
+  keys.forEach(k=>{ const s=allStudents[k]||{}; flaggedChats(s).forEach(l=>{ if(acRange!=='today' || acDay(l.ts)===today0) fl.push({k,s,l}); }); });
+  fl.sort((a,b)=>(b.l.ts||0)-(a.l.ts||0));
+  acSet('acFlag', fl.length ? fl.map(f=>`<div class="it" data-acsel="${esc(f.k)}"><span class="t">${esc(acRange==='today'?acTime(f.l.ts):acDate(f.l.ts)+' '+acTime(f.l.ts))}</span><span class="n">${esc(displayName(f.k,f.s.name,f.s.number))}</span><span>${flagChips(f.l)}${esc(String(f.l.q||'').slice(0,90))}${f.l.flagWhy?` <span style="color:#999;">(${esc(f.l.flagWhy)})</span>`:''}</span></div>`).join('')
+    : '<div class="text-answer-empty" style="padding:10px;">✅ 확인이 필요한 질문이 없어요.</div>');
   // ⚡ 실시간 질문 흐름(챗봇 질문만, 최신 40개)
   const feed = [];
   keys.forEach(k=>{ const s=allStudents[k]||{}; acEntries(s).forEach(l=>{ if(l.type==='chat') feed.push({k, s, l}); }); });
@@ -646,7 +681,7 @@ function renderAiChatTab(){
       ${(+bo.fb||+bo.chat)?`<button type="button" data-bonus="reset" class="rs">추가 취소</button>`:''}</div>`, lastDay = '';
   es.forEach(l=>{
     const d = acDay(l.ts); if(d!==lastDay){ h += `<div class="day">${esc(acDate(l.ts))}</div>`; lastDay = d; }
-    if(l.type==='chat') h += `<div class="msg me">${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
+    if(l.type==='chat') h += `<div class="msg me${flagsOf(l).length?' flagged':''}">${flagsOf(l).length?`<div>${flagChips(l)}</div>`:''}${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
     else h += `<div class="fbk"><b>🤖 AI 피드백 · step${l.step}</b> <span style="color:#999;font-size:11.5px;">${esc(acTime(l.ts))}</span>${(l.good||[]).map(t=>`<div>👍 ${acHl(t)}</div>`).join('')}${(l.fix||[]).length?l.fix.map(t=>`<div>🔧 ${acHl(t)}</div>`).join(''):'<div>🔧 보완할 점 없음</div>'}</div>`;
   });
   if(!es.length) h += `<div class="text-answer-empty">${acRange==='today'?'오늘 기록이 없어요. "전체"를 눌러 보세요.':'기록이 없어요.'}</div>`;
@@ -681,7 +716,7 @@ document.getElementById('acExcelBtn').addEventListener('click', ()=>{
   Object.keys(allStudents).map(k=>({k,s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s)).forEach(({s})=>{
     aiLogsOf(s).forEach(l=>{
       const when = l.ts ? new Date(l.ts).toLocaleString('ko-KR') : '';
-      if(l.type==='chat') rows.push([s.number||'', s.name||'', when, '💬 AI 도우미', l.q||'', l.a||'']);
+      if(l.type==='chat') rows.push([s.number||'', s.name||'', when, '💬 AI 도우미'+(flagsOf(l).length?' ⚠️'+flagsOf(l).map(f=>FLAG_NAME[f]).join(','):''), l.q||'', l.a||'']);
       else rows.push([s.number||'', s.name||'', when, `🤖 AI 피드백 step${l.step}`, l.snap||'', [].concat((l.good||[]).map(t=>'잘한 점: '+t), (l.fix||[]).length ? l.fix.map(t=>'보완할 점: '+t) : ['보완할 점: 없음']).join('\n')]);
     });
   });
@@ -793,7 +828,7 @@ document.addEventListener('click', async e=>{
   }catch(err){ alert('보내지 못했어요. 인터넷 연결을 확인해 주세요.\n('+(err.message||err)+')'); return; }
   renderQfbTab();
 });
-function onStudentsUpdated(){ renderAiChatTab(); renderQfbTab(); }
+function onStudentsUpdated(){ checkNewFlags(); renderAiChatTab(); renderQfbTab(); }
 /* 요약 패널: step별 완료 인원 */
 function renderAggregate(){
   const panel=document.getElementById('aggPanel'); if(!panel) return;
@@ -1137,6 +1172,7 @@ function renderGrid(){
       const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
       tdName.appendChild(sd);
     }
+    { const nf = flaggedChats(s).length; if(nf){ const w=document.createElement('span'); w.textContent=` ⚠️${nf}`; w.style.cssText='color:#e65100;font-size:12px;'; w.title=`AI 도우미 확인 필요 ${nf}건 (④ AI 대화 탭에서 보기)`; tdName.appendChild(w); } }
     tr.appendChild(tdName);
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
