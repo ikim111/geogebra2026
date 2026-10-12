@@ -69,7 +69,10 @@ JSON 하나만 출력한다: {"good":["잘한 점"], "fix":["보완할 점"]}
 
 ${ctx ? `[학생 화면의 참고 정보]\n${ctx}\n\n` : ''}[학생이 쓴 글]
 ${answer || '(비어 있음)'}`;
-  const r = await callOpenAI(prompt, { maxTokens: 2000, responseFormat: RESPONSE_FORMAT });
+  // 비용 절약: 수업 연습용은 생각을 최소로(minimal) 하고 답을 짧게 받는다.
+  // Vercel 환경변수 OPENAI_PRACTICE_MODEL에 더 싼 모델 ID를 넣으면 이 연습용에만 그 모델을 쓴다(비우면 OPENAI_MODEL과 같은 모델).
+  const r = await callOpenAI(prompt, { maxTokens: 1500, effort: 'minimal', responseFormat: RESPONSE_FORMAT,
+    model: (process.env.OPENAI_PRACTICE_MODEL || '').trim() || undefined });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
   if (!j) { res.status(502).json({ error: 'AI 피드백을 해석하지 못했어요.' }); return; }

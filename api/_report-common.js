@@ -181,22 +181,22 @@ async function callOpenAI(promptOrMessages, opts) {
   opts = opts || {};
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return { ok: false, status: 500, error: 'OPENAI_API_KEY가 설정되지 않았습니다. Vercel 프로젝트 환경변수를 확인해주세요.' };
-  const model = (process.env.OPENAI_MODEL || DEFAULT_MODEL).trim();
-  let useEffort = true, useFormat = !!opts.responseFormat;
+  const model = (opts.model || process.env.OPENAI_MODEL || DEFAULT_MODEL).trim();
+  let useEffort = true, useFormat = !!opts.responseFormat, effort = opts.effort || 'low';
   const call = () => fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'authorization': `Bearer ${apiKey}` },
     body: JSON.stringify(Object.assign(
       { model, messages: Array.isArray(promptOrMessages) ? promptOrMessages : [{ role: 'user', content: promptOrMessages }], max_completion_tokens: opts.maxTokens || 6000 },
-      useEffort ? { reasoning_effort: opts.effort || 'low' } : {},
+      useEffort ? { reasoning_effort: effort } : {},
       useFormat ? { response_format: opts.responseFormat } : {}
     ))
   });
   try {
     let r = await call();
-    for (let i = 0; i < 2 && r.status === 400; i++) {
+    for (let i = 0; i < 3 && r.status === 400; i++) {
       const t = await r.text();
-      if (useEffort && /reasoning/i.test(t)) useEffort = false;
+      if (useEffort && /reasoning/i.test(t)) { if (effort === 'minimal') effort = 'low'; else useEffort = false; } // minimal을 지원하지 않으면 low로
       else if (useFormat && /response_format|json_schema/i.test(t)) useFormat = false;
       else return { ok: false, status: 502, error: 'OpenAI API 호출 실패', detail: t.slice(0, 1000) };
       r = await call();
