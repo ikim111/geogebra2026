@@ -472,8 +472,8 @@ function pushShare(rt){
 }
 const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
 
-/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 2번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
-const AIFB_MAX = 2;
+/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 3번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
+const AIFB_MAX = 3;
 const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
 let AIFB = [];
 const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -493,7 +493,7 @@ function aifbMount(box, opt){
   const paint = () => {
     const n = AIFB.length, short = opt.answer().trim().length < opt.minLen;
     btn.disabled = busy || n >= AIFB_MAX || aifbLocked() || short;
-    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : n >= AIFB_MAX ? '피드백을 2번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.'
+    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : n >= AIFB_MAX ? '피드백을 3번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.'
       : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${AIFB_MAX-n}번)` : `남은 횟수 ${AIFB_MAX-n}번 · 다 쓴 뒤에 받아 보세요.`;
     if(!busy) out.innerHTML = aifbHTML(AIFB[AIFB.length-1]);
   };
