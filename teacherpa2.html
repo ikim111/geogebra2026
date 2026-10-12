@@ -399,7 +399,7 @@
    공지·일시정지·수업 종료, 미리보기)을 쓰고, 과제는 step1~5 다섯 개다.
    - 학생이 적은 내용(data)을 step별로 읽기 좋게 보여준다.
    - 🤖 학생 AI 사용 기록(students/{key}/aiLog) 보기, 학생 AI 켜기/끄기(control/aiOff).
-     mgmt에서 23번을 열면 aiOff가 자동으로 true가 되고, 여기서 다시 켤 수 있다. (이상 사용 감지는 나중에 추가 예정)
+     mgmt에서 25번을 열면 aiOff가 자동으로 true가 되고, 여기서 다시 켤 수 있다. (이상 사용 감지는 나중에 추가 예정)
    반드시 아래 두 가지를 studentpa2.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -415,7 +415,7 @@ const FIREBASE_CONFIG = {
 };
 const ACTIVITY_SUFFIX = '__prob32'; // studentpa2.html과 반드시 동일해야 함
 // ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
-const UNIT_LABEL = '22. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구';
+const UNIT_LABEL = '24. 확률 탐구 글쓰기 ① 질문·계획·자료 탐구';
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
   ENTRY_UNIT: 'entry.926486903',
@@ -562,7 +562,7 @@ function renderAiAgg(){
   const btn = document.getElementById('aiToggleBtn');
   btn.textContent = aiOff ? '🤖 학생 AI 켜기' : '🤖 학생 AI 끄기';
   btn.classList.toggle('off', aiOff);
-  document.getElementById('aiState').textContent = aiOff ? '🔒 지금 학생 AI가 꺼져 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)' : '🟢 학생이 AI 피드백·도우미를 쓸 수 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)';
+  document.getElementById('aiState').textContent = aiOff ? '🔒 지금 학생 AI가 꺼져 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)' : '🟢 학생이 AI 피드백·도우미를 쓸 수 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)';
 }
 document.getElementById('aiToggleBtn').addEventListener('click', ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }

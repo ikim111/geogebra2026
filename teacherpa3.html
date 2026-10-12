@@ -379,7 +379,7 @@ const FIREBASE_CONFIG = {
 };
 const ACTIVITY_SUFFIX = '__prob33'; // studentpa3.html과 반드시 동일해야 함
 // ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
-const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
+const UNIT_LABEL = '25. 확률 탐구 글쓰기 ② 보고서 제출';
 const CONFIG = {
   GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
   ENTRY_UNIT: 'entry.926486903',
@@ -655,8 +655,8 @@ function refreshOpenModal(){
 function onStudentsUpdated(){ refreshOpenModal(); }
 
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
-/* 🤖 1부(22번) 학생 AI 켜기/끄기 — teacherpa2와 같은 값(rooms/{반}__prob32/control/aiOff)을 쓴다.
-   mgmt에서 23번을 열면 자동으로 꺼지고, 여기서 다시 켤 수 있다. */
+/* 🤖 1부(24번) 학생 AI 켜기/끄기 — teacherpa2와 같은 값(rooms/{반}__prob32/control/aiOff)을 쓴다.
+   mgmt에서 25번을 열면 자동으로 꺼지고, 여기서 다시 켤 수 있다. */
 const AI22_SUFFIX = '__prob32';
 let ai22Ref = null, ai22Off = false;
 function renderAi22(){
@@ -665,7 +665,7 @@ function renderAi22(){
   const btn = document.getElementById('ai22ToggleBtn');
   btn.textContent = ai22Off ? '🤖 1부 학생 AI 켜기' : '🤖 1부 학생 AI 끄기';
   btn.classList.toggle('off', ai22Off);
-  document.getElementById('ai22State').textContent = ai22Off ? '🔒 꺼져 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)' : '🟢 켜져 있어요 — 학생이 1부 화면에서 AI를 쓸 수 있어요.';
+  document.getElementById('ai22State').textContent = ai22Off ? '🔒 꺼져 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)' : '🟢 켜져 있어요 — 학생이 1부 화면에서 AI를 쓸 수 있어요.';
 }
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
@@ -930,8 +930,8 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
 
 document.getElementById('ai22ToggleBtn').addEventListener('click', ()=>{
   if(!ai22Ref){ alert('먼저 반에 접속해주세요.'); return; }
-  if(!ai22Off && !confirm('이 반 학생들의 1부(22번) AI 피드백·AI 도우미를 끌까요?')) return;
-  if(ai22Off && !confirm('1부(22번) 학생 AI를 다시 켤까요?\n※ 2부 보고서를 쓰는 중이면 학생이 다른 탭에서 1부 AI를 쓸 수 있어요.')) return;
+  if(!ai22Off && !confirm('이 반 학생들의 1부(24번) AI 피드백·AI 도우미를 끌까요?')) return;
+  if(ai22Off && !confirm('1부(24번) 학생 AI를 다시 켤까요?\n※ 2부 보고서를 쓰는 중이면 학생이 다른 탭에서 1부 AI를 쓸 수 있어요.')) return;
   ai22Ref.set(!ai22Off);
 });
 document.getElementById('changeRoomBtn').addEventListener('click', ()=>{

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>23. 말 속에서 확률 찾기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
+    --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
+    --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6; --scustom:#1f2328;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #gateMsg{display:none;text-align:center;font-size:12.5px;color:#0052a3;background:#e8f0fe;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .activity, body.app-paused #pagerNav button, body.app-paused .submit-panel button{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .activity .card{ pointer-events:none !important; opacity:.65; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+
+  /* ---- 공통 카드·입력 ---- */
+  .card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .act-tag{display:inline-block;font-size:12px;font-weight:bold;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .activity h2{margin:0 0 4px;font-size:20px;}
+  .activity h3{margin:0 0 10px;font-size:17px;}
+  .question{font-size:17.5px;font-weight:bold;background:var(--blue-soft);border-left:5px solid var(--blue);padding:10px 14px;border-radius:6px;margin:10px 0 14px;}
+  .hint{font-size:14px;color:var(--ink2);margin:4px 0 10px;}
+  .note{font-size:13px;color:var(--muted);}
+  .why{font-size:13.5px;color:var(--muted);text-align:right;margin:2px 4px 14px;}
+  .why.ok{color:var(--green);font-weight:bold;}
+
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.concept-btn{background:var(--green);}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-size:17px;font-weight:bold;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .choice.selected{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .choice:disabled{cursor:default;}
+
+  .result-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .result-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .stat .k{font-size:13px;color:var(--ink2);}
+  .stat .v{font-size:22px;font-weight:bold;}
+  .frac{font-variant-numeric:tabular-nums;}
+  .friends{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .friends span{background:#f1f3f6;border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:14px;font-weight:bold;font-variant-numeric:tabular-nums;}
+
+  .activity textarea, .activity input[type=text]{font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;width:100%;}
+  .activity textarea{resize:vertical;min-height:84px;}
+  .activity textarea:focus, .activity input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .field label{min-width:250px;font-weight:bold;}
+  .activity .field input{width:150px;text-align:right;}
+  .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
+  .error.show{display:block;}
+  .live-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px;}
+  .live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  .live-stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;}
+  .live-stats .stat .v{font-size:24px;}
+  .friends span.me{background:#e8f1fc;border-color:#90b8ea;color:#1565c0;}
+  .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .compare .stat{text-align:center;}
+  .compare .stat .v{font-size:26px;}
+
+  .concept{display:none;border:2px solid var(--green);background:var(--green-soft);border-radius:12px;padding:16px 18px;margin-top:14px;}
+  .concept.show{display:block;}
+  .concept .def{font-size:18px;font-weight:bold;line-height:1.7;}
+  .concept .def b{color:var(--green);}
+  @media (max-width:640px){ .field label{min-width:0;} }
+  /* ---- 23번 활동 ---- */
+  .waitbox{background:#f4f6f8;border:1px dashed #c5cad1;border-radius:10px;padding:18px;text-align:center;color:var(--ink2);font-size:15px;}
+  .big-question{font-size:18px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
+  .ok{color:var(--green);font-weight:bold;} .bad{color:var(--warn);font-weight:bold;}
+  .mark{font-weight:bold;font-size:14px;}
+  table.extable{width:100%;border-collapse:collapse;font-size:15.5px;}
+  table.extable th, table.extable td{border:1px solid #cfd4da;padding:8px 10px;}
+  table.extable th{background:#eceef1;}
+  .z{color:#6a1b9a;font-weight:bold;} .o{color:#00695c;font-weight:bold;}
+  td.ex{color:var(--ink2);}
+  .exin{display:flex;gap:10px;align-items:flex-start;margin:8px 0;}
+  .exin span{width:130px;flex:0 0 auto;padding-top:9px;}
+  .activity .exin textarea{min-height:52px;}
+  .excols{display:flex;gap:14px;flex-wrap:wrap;}
+  .excols > div{flex:1;min-width:260px;}
+  .exh{font-size:15px;margin-bottom:6px;}
+  .exlist{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto;}
+  .exlist div{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14.5px;white-space:pre-wrap;word-break:break-word;}
+  .exlist div.me{border-color:#f3b183;background:#fff6ef;}
+  .howto{font-size:14px;color:var(--ink2);margin:0 0 6px;padding-left:20px;}
+  /* 수직선 */
+  .nlwrap{padding:96px 28px 40px;background:#fafbfc;border:1px solid var(--line);border-radius:10px;margin:10px 0 14px;}
+  .nl{position:relative;height:24px;touch-action:none;cursor:pointer;}
+  .nlbar{position:absolute;left:0;right:0;top:10px;height:4px;background:#1f2328;border-radius:2px;}
+  .tk{position:absolute;top:7px;width:2px;height:10px;background:#9aa0a6;transform:translateX(-1px);}
+  .tk.M{top:2px;height:20px;background:#1f2328;}
+  .tk.h{top:5px;height:14px;background:#6b7280;}
+  .tl{position:absolute;top:26px;transform:translateX(-50%);font-weight:bold;font-size:18px;}
+  .pt{position:absolute;top:6px;width:12px;height:12px;border-radius:50%;transform:translateX(-50%);border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3);}
+  .mk{position:absolute;transform:translateX(-50%);touch-action:none;cursor:grab;user-select:none;z-index:2;}
+  .mk .chip{display:block;color:#fff;font-weight:bold;font-size:14px;padding:4px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .mk .stem{display:block;width:2px;margin:0 auto;}
+  .mk.sel .chip{outline:3px solid #ffca28;outline-offset:1px;}
+  .exprs{display:flex;flex-direction:column;gap:8px;}
+  .xrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--line);border-radius:10px;padding:8px 12px;background:#fff;cursor:pointer;}
+  .xrow.sel{border-color:#ffca28;background:#fffbe6;}
+  .xrow .card-w{color:#fff;font-weight:bold;border-radius:14px;padding:4px 12px;font-size:15px;white-space:nowrap;}
+  .xrow .q{flex:1;min-width:200px;font-size:15.5px;}
+  .xrow label{font-weight:bold;font-size:14.5px;}
+  .activity .xrow input{width:110px;text-align:right;font-size:16px;}
+  .xrow .mark{min-width:22px;}
+  /* 반 전체 점 그림 */
+  .cl{margin:6px 0 18px;}
+  .cl-h{font-size:15px;margin-bottom:4px;}
+  .cl-h .card-w{color:#fff;font-weight:bold;border-radius:12px;padding:2px 10px;font-size:14px;margin-right:6px;}
+  .dotline{position:relative;height:84px;margin:0 22px;}
+  .dotline .bar{position:absolute;left:0;right:0;top:58px;height:3px;background:#1f2328;}
+  .dotline .tk{top:54px;}
+  .dotline .tk.M{top:51px;height:16px;}
+  .dotline .tl{top:66px;font-size:13px;}
+  .dotline .d{position:absolute;border-radius:50%;transform:translateX(-50%);opacity:.85;color:#fff;font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;}
+  .dotline .d.me{opacity:1;box-shadow:0 0 0 3px #ffca28;z-index:2;}
+  .dotline .band{position:absolute;top:38px;height:28px;background:rgba(46,125,50,.15);border:2px solid #2e7d32;border-radius:6px;transform:translateX(-50%);min-width:6px;}
+  .dotline .bandl{position:absolute;top:0;transform:translateX(-50%);font-size:12.5px;font-weight:bold;color:#2e7d32;white-space:nowrap;background:#e8f5e9;border-radius:6px;padding:1px 6px;}
+  .ansnote{font-size:14px;color:#1b5e20;background:#e8f5e9;border-radius:8px;padding:6px 10px;margin:-6px 22px 4px;}
+  .me-dot{display:inline-block;width:13px;height:13px;border-radius:50%;border:3px solid #ffca28;background:#90a4ae;vertical-align:middle;}
+  .gallery{display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:420px;overflow:auto;}
+  .gallery div{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14.5px;}
+  .gallery div.me{border-color:#f3b183;background:#fff6ef;}
+  .gallery b.v{display:inline-block;min-width:70px;color:var(--blue);}
+  .chk-field{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .chk-field label{min-width:110px;font-weight:bold;}
+  @media (max-width:640px){ .exin{flex-direction:column;} .exin span{padding-top:0;} .nlwrap{padding:96px 18px 40px;} }
+</style></style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>23. 말 속에서 확률 찾기</h1>
+    <p class="gate-sub">일상에서 쓰는 말 속의 가능성을 0부터 1 사이의 확률로 나타내 봅시다 — 김형준 선생님 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">23. 말 속에서 확률 찾기</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+  <div id="gateMsg"></div>
+
+  <div class="wrap" id="pageWrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+
+<!-- ===================== 활동 1: 확률이 0인 사건, 1인 사건 ===================== -->
+<section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 1</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>일상에서 확률 찾기</h2>
+    <p class="hint">우리 주변에서 일어날 확률이 <b>0</b>인 사건과 <b>1</b>인 사건의 예를 찾아 보세요.</p>
+    <table class="extable">
+      <tr><th style="width:150px;"></th><th>예</th></tr>
+      <tr><td class="z">확률이 0인 사건</td><td class="ex">어떤 사람의 생일이 12월 32일일 확률은 0이다.</td></tr>
+      <tr><td class="o">확률이 1인 사건</td><td class="ex">오늘이 월요일일 때, 내일이 화요일일 확률은 1이다.</td></tr>
+    </table>
+    <p class="hint" style="margin-top:14px;"><b>내가 찾은 예</b></p>
+    <div class="exin"><span class="z">확률이 0인 사건</span><textarea id="ex0" rows="2" placeholder="절대로 일어나지 않는 일"></textarea></div>
+    <div class="exin"><span class="o">확률이 1인 사건</span><textarea id="ex1" rows="2" placeholder="반드시 일어나는 일"></textarea></div>
+  </div>
+  <div class="card" id="exCard">
+    <h3>친구들이 찾은 예</h3>
+    <div class="waitbox" id="exWait">⏳ 선생님이 공개하면 친구들이 찾은 예가 여기에 나타나요.</div>
+    <div class="excols" id="exCols" style="display:none;">
+      <div><div class="exh z">확률이 0인 사건</div><div class="exlist" id="exList0"></div></div>
+      <div><div class="exh o">확률이 1인 사건</div><div class="exlist" id="exList1"></div></div>
+    </div>
+  </div>
+  <div class="why" id="why1">두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 2: 말 속의 가능성을 수직선에 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 2</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>말 속에서 확률 찾기</h2>
+    <p class="hint">일상생활에서는 어떤 일이 일어날 가능성을 여러 가지 말로 표현해요. 각 표현에 나타난 가능성을 <b>확률</b>로 나타내 보세요.</p>
+    <ol class="howto">
+      <li>아래 표현 카드를 누른 뒤, 수직선 위를 누르면 그 자리에 놓여요. 놓은 표시는 끌어서 옮길 수 있어요.</li>
+      <li>정확한 값은 <b>확률 칸</b>에 분수나 소수로 써요. (예: 3/4, 0.75) 칸에 쓰면 표시도 그 자리로 옮겨져요.</li>
+    </ol>
+    <div class="nlwrap">
+      <div class="nl" id="nl"><div class="nlbar"></div><div id="nlTicks"></div><div id="nlMarks"></div></div>
+    </div>
+    <div class="exprs" id="exprs"></div>
+    <div class="error" id="err2"></div>
+  </div>
+  <div class="why" id="why2">네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 3: 친구들은 어디에 놓았을까? ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 3</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>친구들은 어디에 놓았을까?</h2>
+    <div class="waitbox" id="lineWait">⏳ 선생님이 공개하면 우리 반 친구들이 놓은 자리가 여기에 나타나요.</div>
+    <div id="lineBox" style="display:none;">
+      <p class="hint">점 하나가 친구 한 명이에요. <span class="me-dot"></span> 표시가 내가 놓은 자리예요.</p>
+      <div id="classLines"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="big-question">친구들과 생각이 가장 많이 달랐던 표현은 무엇인가요? 왜 생각이 달라졌을까요?</div>
+    <textarea id="a3Text" placeholder="친구들의 생각이 공개되면 쓸 수 있어요."></textarea>
+  </div>
+  <div class="why" id="why3">선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 활동 4: 내가 찾은 표현 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">활동 4</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>내가 찾은 확률 표현</h2>
+    <p class="hint">우리 주변에서 확률(가능성)과 관련된 표현을 하나 찾아, 그 의미를 확률로 나타내 보세요.<br>
+      <span class="note">예: 속담, 사자성어, 일기 예보, 광고, 친구들끼리 쓰는 말 …</span></p>
+    <div class="chk-field"><label>일상 표현</label><input type="text" id="myExpr" style="width:320px;text-align:left;" placeholder="예) 일기 예보: 내일 비 올 확률 30%"></div>
+    <div class="chk-field"><label>확률</label><input type="text" id="myVal" style="width:140px;" placeholder="분수나 소수"> <span class="mark" id="myValMsg"></span></div>
+    <p class="hint"><b>이렇게 나타낸 이유 (표현의 뜻)</b></p>
+    <textarea id="myWhy" placeholder="이 표현은 ~라는 뜻이라서 확률을 ~로 나타냈다."></textarea>
+  </div>
+  <div class="card">
+    <h3>우리 반 확률 표현 모음</h3>
+    <div class="waitbox" id="myWait">⏳ 선생님이 공개하면 친구들이 찾은 표현이 여기에 모여요.</div>
+    <div id="myBox" style="display:none;">
+      <div id="myLine"></div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+  </div>
+  <div class="why" id="why4">표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   23. 말 속에서 확률 찾기 (VIII. 확률 — 8.3 확률의 기본 성질 의사소통 활동)
+   student21.html과 같은 틀(게이트·단원 잠금·실시간 저장·일시정지·공지·속도조절·수업 종료·
+   제출/백업·교사용 미리보기)을 scratchpad의 build.py로 가져와 활동 4개를 넣었다.
+   ① 확률이 0·1인 사건의 예 → ② "반반·십중팔구·백발백중·만에 하나"를 0~1 수직선에 놓고 확률값 쓰기
+   → ③ 반 친구들이 놓은 자리(점 그림)와 기준값 → ④ 내가 찾은 확률 표현과 반 전체 모음
+   공유: rooms/{반}__prob23/share/{ex|line|mine}/{학생키}. 공개 여부는 control/reveal/{ex|line|answer|mine}
+   (teacher23.html 버튼). 공개 전에는 학생 화면에 친구들 답이 보이지 않는다.
+   ACTIVITY_SUFFIX는 teacher23.html과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__prob23'; // teacher23.html과 반드시 동일해야 함
+const UNIT_LABEL = '23. 말 속에서 확률 찾기';
+const UNIT_NO = 23;
+const MIN_TEXT = 5;   // 서술형 최소 글자 수
+
+const TASKS = [
+  {id:1, key:'a1', title:'활동 1. 확률이 0인 사건과 1인 사건'},
+  {id:2, key:'a2', title:'활동 2. 말 속의 가능성을 확률로 나타내기'},
+  {id:3, key:'a3', title:'활동 3. 친구들은 어디에 놓았을까?'},
+  {id:4, key:'a4', title:'활동 4. 내가 찾은 확률 표현'}
+];
+/* 표현 카드와 기준값(선생님이 「기준값 공개」를 누르면 활동 3에 표시) */
+const CARDS = [
+  {k:'c1', w:'반반',     q:'“성공할 가능성은 반반이야.”',           col:'#1565c0', lo:0.5,    hi:0.5,    t:'1/2',       m:'둘로 나눈 것 중 하나 — 일어날 가능성과 일어나지 않을 가능성이 같아요.'},
+  {k:'c2', w:'십중팔구', q:'“그건 십중팔구 성공할 거야.”',          col:'#2e7d32', lo:0.8,    hi:0.9,    t:'0.8 ~ 0.9', m:'열 번 중 여덟아홉 번 — 거의 틀림없다는 뜻이에요.'},
+  {k:'c3', w:'백발백중', q:'“나는 백발백중이야.”',                  col:'#e65100', lo:1,      hi:1,      t:'1',         m:'백 번 쏘아 백 번 맞힌다 — 쏘는 대로 다 맞힌다는 뜻이에요.'},
+  {k:'c4', w:'만에 하나', q:'“그런 일이 일어날 가능성은 만에 하나야.”', col:'#6a1b9a', lo:0.0001, hi:0.0001, t:'1/10000',   m:'만 가운데 하나 — 아주 드물지만 0은 아니에요(일어날 수도 있어요).'}
+];
+
+const state = {
+  ex0:'', ex1:'',
+  vals:{c1:'', c2:'', c3:'', c4:''}, sel:'c1',
+  a3Text:'', sawLine:false,
+  myExpr:'', myVal:'', myWhy:''
+};
+let REVEAL = {};
+const SHARE = { all:{}, sent:{} };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const len = s => String(s||'').trim().length;
+function parseRel(str){ // 소수(0.47), 분수(47/100), 백분율(47%)
+  const s = String(str==null?'':str).trim().replace(/\s+/g, '');
+  if(s === '') return {empty:true};
+  let v = NaN;
+  if(/^\d+\/\d+$/.test(s)){ const [a, b] = s.split('/').map(Number); v = b === 0 ? NaN : a / b; }
+  else if(/^\d*\.?\d+%$/.test(s)){ v = parseFloat(s) / 100; }
+  else if(/^\d*\.?\d+$/.test(s)){ v = parseFloat(s); }
+  if(isNaN(v)) return {bad:true};
+  if(v < 0 || v > 1) return {range:true};
+  return {value: v};
+}
+const valOf = t => { const r = parseRel(t); return r.value!==undefined ? r.value : null; };
+const fmtV = v => { if(v===0||v===1) return String(v); const r = Math.round(v*10000)/10000; return String(r); };
+
+function isDone(id){
+  if(id===1) return len(state.ex0)>=MIN_TEXT && len(state.ex1)>=MIN_TEXT;
+  if(id===2) return CARDS.every(c=>valOf(state.vals[c.k])!==null);
+  if(id===3) return state.sawLine && len(state.a3Text)>=MIN_TEXT;
+  if(id===4) return len(state.myExpr)>=2 && valOf(state.myVal)!==null && len(state.myWhy)>=MIN_TEXT;
+  return false;
+}
+function valueOf(id){
+  if(id===1) return (len(state.ex0)||len(state.ex1)) ? `확률 0: ${state.ex0.trim()||'-'}\n확률 1: ${state.ex1.trim()||'-'}` : '';
+  if(id===2) return CARDS.some(c=>state.vals[c.k]) ? CARDS.map(c=>`${c.w} ${state.vals[c.k]||'-'}`).join(' · ') : '';
+  if(id===3) return state.a3Text.trim();
+  if(id===4) return (len(state.myExpr)||len(state.myVal)||len(state.myWhy)) ? `${state.myExpr.trim()||'-'} → ${state.myVal||'-'}` + (len(state.myWhy)?`\n${state.myWhy.trim()}`:'') : '';
+  return '';
+}
+function collectData(){
+  return { ex0: state.ex0, ex1: state.ex1, vals: Object.assign({}, state.vals), a3Text: state.a3Text, sawLine: state.sawLine,
+    myExpr: state.myExpr, myVal: state.myVal, myWhy: state.myWhy };
+}
+function shareEntries(){
+  const line = {}; CARDS.forEach(c=>{ const v=valOf(state.vals[c.k]); if(v!==null) line[c.k]=v; });
+  return {
+    ex: isDone(1) ? {z: state.ex0.trim().slice(0,150), o: state.ex1.trim().slice(0,150)} : null,
+    line: Object.keys(line).length ? line : null,
+    mine: isDone(4) ? {e: state.myExpr.trim().slice(0,80), v: valOf(state.myVal), w: state.myWhy.trim().slice(0,200)} : null
+  };
+}
+function pushShare(rt){
+  if(!rt.shareRef) return;
+  const e = shareEntries();
+  Object.keys(e).forEach(kind=>{
+    const j = JSON.stringify(e[kind]);
+    if(SHARE.sent[kind] === j) return;
+    SHARE.sent[kind] = j;
+    rt.shareRef.child(kind+'/'+rt.studentKey).set(e[kind]);
+  });
+}
+const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.shareRef = this.roomRef.child('share');
+    this.connected = true;
+    this.shareRef.on('value', snap=>{ SHARE.all = snap.val() || {}; onShareChanged(); });
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
+      }
+      // 이전에 저장된 활동 기록을 먼저 되살린 "뒤에"만 저장을 시작한다(빈 상태로 덮어쓰지 않도록).
+      if(existing && existing.data) restoreData(existing.data);
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+      this.pushProgress();
+      refreshAll();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement;
+        $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        $('announceBanner').style.display = 'none';
+      }
+      REVEAL = c.reveal || {}; onRevealChanged();
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing();
+      updateNavButtons();
+      // 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만 전체 제출/취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded){ applyFinalLock(true); this.markSubmitted(true); }
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyFinalLock(classEnded); this.markSubmitted(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>isDone(t.id)).length;
+    pushShare(this);
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  flushPending(){
+    if(this._t){ clearTimeout(this._t); this._t=null; }
+    this.pushProgress();
+  }
+};
+
+/* 상태가 바뀔 때마다 부른다: 배지·진행률·다음 버튼·요약표를 새로 고치고 저장한다. */
+function refreshAll(opts){
+  TASKS.forEach(t=>{
+    const b=$('badge-'+t.key); const d=isDone(t.id);
+    b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  });
+  const done = TASKS.filter(t=>isDone(t.id)).length;
+  $('progressText').textContent = `완료 ${done} / ${TASKS.length}`;
+  $('progressFill').style.width = (done/TASKS.length*100)+'%';
+  updateNavButtons();
+  if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+}
+
+
+function setWhy(id, doneMsg, todoMsg){
+  const el = $('why'+id); const d = isDone(id);
+  el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : '');
+}
+const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
+function showErr(id, msg){ const e = $(id); e.textContent = msg ? '⚠️ ' + msg : ''; e.classList.toggle('show', !!msg); }
+
+/* 점 그림(반 전체): values=[{v, me}], band=기준값 */
+function ticksHTML(){
+  let h = '';
+  for(let i=0;i<=10;i++) h += `<span class="tk${i===0||i===10?' M':(i===5?' h':'')}" style="left:${i*10}%"></span>`;
+  return h + `<span class="tl" style="left:0%">0</span><span class="tl" style="left:100%">1</span>`;
+}
+function dotLineHTML(values, color, band){
+  // 비슷한 값(0.02 간격)끼리 묶어 원 하나로 그리고, 여러 명이면 원을 키우고 인원수를 적는다. 0은 따로 묶는다.
+  const bins = {};
+  values.forEach(x=>{ const key = x.v===0 ? 'z' : String(Math.round(x.v*50)); const b = bins[key] = bins[key] || {sum:0, n:0, me:false}; b.sum += x.v; b.n++; if(x.me) b.me = true; });
+  const dots = Object.values(bins).map(b=>{ const v = b.sum/b.n, sz = 13 + Math.min(b.n, 12)*1.6;
+    return `<span class="d${b.me?' me':''}" style="left:${v*100}%;width:${sz}px;height:${sz}px;top:${58 - sz/2 - 3}px;background:${color}">${b.n>1?b.n:''}</span>`; }).join('');
+  const b = band ? `<span class="band" style="left:${(band.lo+band.hi)/2*100}%;width:calc(${(band.hi-band.lo)*100}% + 8px)"></span><span class="bandl" style="left:${(band.lo+band.hi)/2*100}%">기준 ${esc(band.t)}</span>` : '';
+  return `<div class="dotline"><span class="bar"></span>${ticksHTML()}${b}${dots}</div>`;
+}
+
+/* ------------------------- 활동 1 ------------------------- */
+function check1(opts){
+  state.ex0 = $('ex0').value; state.ex1 = $('ex1').value;
+  setWhy(1, '✅ 완료! '+NEXT, '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+['ex0','ex1'].forEach(id=> $(id).addEventListener('input', ()=>check1()));
+function renderEx(){
+  const show = !!REVEAL.ex;
+  $('exWait').style.display = show ? 'none' : 'block';
+  $('exCols').style.display = show ? 'flex' : 'none';
+  if(!show) return;
+  const all = shareOf('ex'), me = RT.studentKey;
+  const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
+  const list = f => keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${esc(all[k][f])}</div>`).join('') || '<div class="note">아직 없어요.</div>';
+  $('exList0').innerHTML = list('z'); $('exList1').innerHTML = list('o');
+}
+
+/* ------------------------- 활동 2: 수직선 ------------------------- */
+(function buildLine(){
+  $('nlTicks').innerHTML = ticksHTML();
+  $('exprs').innerHTML = CARDS.map(c=>`<div class="xrow" data-k="${c.k}"><span class="card-w" style="background:${c.col}">${c.w}</span><span class="q">${c.q}</span>
+    <label>확률 <input type="text" id="v_${c.k}" autocomplete="off"></label><span class="mark" id="mk_${c.k}"></span></div>`).join('');
+})();
+function renderMarks(){
+  const placed = CARDS.map(c=>({c, v: valOf(state.vals[c.k])})).filter(x=>x.v!==null).sort((a,b)=>a.v-b.v);
+  const lastAt = []; // 높이(층)마다 마지막으로 놓인 위치 — 가까우면 위층으로 올린다
+  $('nlMarks').innerHTML = placed.map(x=>{
+    let lvl = 0; while(lastAt[lvl]!=null && x.v - lastAt[lvl] < 0.13) lvl++;
+    lastAt[lvl] = x.v;
+    const top = -(30 + lvl*30);
+    return `<span class="pt" style="left:${x.v*100}%;background:${x.c.col}"></span>
+      <span class="mk${state.sel===x.c.k?' sel':''}" data-k="${x.c.k}" style="left:${x.v*100}%;top:${top}px;"><span class="chip" style="background:${x.c.col}">${x.c.w}</span><span class="stem" style="height:${-top-24}px;background:${x.c.col}"></span></span>`;
+  }).join('');
+  document.querySelectorAll('.xrow').forEach(r=> r.classList.toggle('sel', r.dataset.k===state.sel));
+}
+function check2(opts){
+  let msg = '';
+  CARDS.forEach(c=>{
+    const t = state.vals[c.k], r = parseRel(t);
+    let m = '';
+    if(r.bad){ m = '<span class="bad">?</span>'; if(!msg) msg = `「${c.w}」: 분수(3/4)나 소수(0.75)로 써 주세요.`; }
+    else if(r.range){ m = '<span class="bad">?</span>'; if(!msg) msg = `「${c.w}」: 확률은 0 이상 1 이하의 수예요.`; }
+    else if(r.value!==undefined) m = '<span class="ok">✓</span>';
+    $('mk_'+c.k).innerHTML = m;
+  });
+  showErr('err2', msg);
+  renderMarks();
+  setWhy(2, '✅ 완료! '+NEXT, '네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+CARDS.forEach(c=> $('v_'+c.k).addEventListener('input', ()=>{ state.vals[c.k] = $('v_'+c.k).value.trim(); state.sel = c.k; check2(); }));
+$('exprs').addEventListener('click', e=>{ const r = e.target.closest('.xrow'); if(!r) return; state.sel = r.dataset.k; renderMarks(); });
+/* 수직선 위를 누르면 고른 카드를 그 자리에 놓고, 놓인 표시는 끌어서 옮긴다(소수 둘째 자리까지). */
+const nl = $('nl');
+function vAt(clientX){ const r = nl.getBoundingClientRect(); return Math.round(Math.min(1, Math.max(0, (clientX - r.left)/r.width))*100)/100; }
+function setVal(k, v){ state.vals[k] = String(v); $('v_'+k).value = state.vals[k]; }
+let drag = null;
+nl.addEventListener('pointerdown', e=>{
+  if(finalLocked || RT.paused) return;
+  const mk = e.target.closest('.mk');
+  if(mk){ drag = mk.dataset.k; state.sel = drag; }
+  else if(state.sel){ drag = state.sel; setVal(drag, vAt(e.clientX)); }
+  else return;
+  nl.setPointerCapture(e.pointerId); e.preventDefault();
+  check2({noSave:true});
+});
+nl.addEventListener('pointermove', e=>{ if(!drag) return; setVal(drag, vAt(e.clientX)); check2({noSave:true}); });
+const endDrag = ()=>{ if(!drag) return; drag = null; check2(); };
+nl.addEventListener('pointerup', endDrag); nl.addEventListener('pointercancel', endDrag);
+
+/* ------------------------- 활동 3: 반 전체 ------------------------- */
+function renderLines(){
+  const show = !!REVEAL.line;
+  if(show && !state.sawLine){ state.sawLine = true; refreshAll(); }
+  $('lineWait').style.display = show ? 'none' : 'block';
+  $('lineBox').style.display = show ? 'block' : 'none';
+  $('a3Text').disabled = !state.sawLine;
+  $('a3Text').placeholder = state.sawLine ? '예) 「○○」은 친구들마다 놓은 자리가 많이 달랐다. 왜냐하면 ~' : '친구들의 생각이 공개되면 쓸 수 있어요.';
+  setWhy(3, '✅ 완료! '+NEXT, state.sawLine ? '내 생각을 쓰면 다음으로 넘어갈 수 있어요.' : '선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.');
+  if(!show) return;
+  const all = shareOf('line'), me = RT.studentKey;
+  $('classLines').innerHTML = CARDS.map(c=>{
+    const vals = Object.keys(all).filter(k=>all[k] && typeof all[k][c.k]==='number').map(k=>({v:all[k][c.k], me:k===me}));
+    return `<div class="cl"><div class="cl-h"><span class="card-w" style="background:${c.col}">${c.w}</span>${c.q} <span class="note">(${vals.length}명)</span></div>
+      ${dotLineHTML(vals, c.col, REVEAL.answer ? c : null)}
+      ${REVEAL.answer ? `<div class="ansnote">기준: <b>${esc(c.t)}</b> — ${esc(c.m)}</div>` : ''}</div>`;
+  }).join('');
+}
+$('a3Text').addEventListener('input', ()=>{ state.a3Text = $('a3Text').value; renderLines(); refreshAll(); });
+
+/* ------------------------- 활동 4: 내가 찾은 표현 ------------------------- */
+function check4(opts){
+  state.myExpr = $('myExpr').value; state.myVal = $('myVal').value.trim(); state.myWhy = $('myWhy').value;
+  const r = parseRel(state.myVal);
+  $('myValMsg').innerHTML = r.empty ? '' : r.bad ? '<span class="bad">분수(3/10)나 소수(0.3), 백분율(30%)로 써 주세요.</span>' : r.range ? '<span class="bad">확률은 0 이상 1 이하예요.</span>' : `<span class="ok">✓ ${fmtV(r.value)}</span>`;
+  setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', '표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.');
+  refreshAll(opts);
+}
+['myExpr','myVal','myWhy'].forEach(id=> $(id).addEventListener('input', ()=>check4()));
+function renderGallery(){
+  const show = !!REVEAL.mine;
+  $('myWait').style.display = show ? 'none' : 'block';
+  $('myBox').style.display = show ? 'block' : 'none';
+  if(!show) return;
+  const all = shareOf('mine'), me = RT.studentKey;
+  const list = Object.keys(all).filter(k=>all[k] && typeof all[k].v==='number').map(k=>Object.assign({key:k}, all[k])).sort((a,b)=>a.v-b.v);
+  $('myLine').outerHTML = `<div id="myLine">${dotLineHTML(list.map(x=>({v:x.v, me:x.key===me})), '#455a64', null)}</div>`;
+  $('gallery').innerHTML = list.length ? list.map(x=>`<div class="${x.key===me?'me':''}"><b class="v">${fmtV(x.v)}</b> “${esc(x.e)}” ${x.key===me?'<span class="note">(나)</span>':''}<div class="note" style="margin-top:2px;">${esc(x.w)}</div></div>`).join('') : '<div class="note">아직 없어요.</div>';
+}
+
+/* ------------------------- 공유·공개가 바뀔 때 ------------------------- */
+function onShareChanged(){ renderEx(); renderLines(); renderGallery(); }
+function onRevealChanged(){ renderEx(); renderLines(); renderGallery(); }
+function onShowPage(taskId){ if(taskId===2) renderMarks(); }
+
+function initActivity(){
+  renderEx(); renderLines(); renderGallery();
+  check1({noSave:true}); check2({noSave:true}); check4({noSave:true});
+}
+function restoreData(d){
+  if(!d) return;
+  const setv = (id, v) => { $(id).value = v || ''; };
+  setv('ex0', d.ex0); setv('ex1', d.ex1);
+  CARDS.forEach(c=>{ state.vals[c.k] = (d.vals && d.vals[c.k]) || ''; setv('v_'+c.k, state.vals[c.k]); });
+  state.sawLine = !!d.sawLine; state.a3Text = d.a3Text || ''; setv('a3Text', state.a3Text);
+  setv('myExpr', d.myExpr); setv('myVal', d.myVal); setv('myWhy', d.myWhy);
+  check1({noSave:true}); check2({noSave:true}); renderLines(); check4({noSave:true});
+}
+
+/* ---------- 화면 잠금 / 공지 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (활동 4개 + 마지막 제출 페이지) ----------
+   다른 단원과 같은 속도조절(교사 min/max) 제한에 더해, 이 단원은 "지금 활동을 끝내야" 다음
+   활동으로 넘어갈 수 있다(탐구 순서를 지키기 위함). 이전 활동으로 돌아가는 것은 자유롭다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+  onShowPage(pageTaskNum(currentPage));
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){ const i = taskIdToPageIdx(RT.maxTaskId); if(i>=0){ showPage(i); return; } }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){ const i = taskIdToPageIdx(RT.minTaskId); if(i>=0) showPage(i); }
+}
+function updateNavButtons(){
+  const prevBtn=$('prevBtn'), nextBtn=$('nextBtn'), pacingMsg=$('pacingMsg'), gateMsg=$('gateMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  const curNum = pageTaskNum(currentPage), nextNum = pageTaskNum(currentPage+1), prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  const notFinished = !PREVIEW_MODE && curNum!=null && curNum<=TASKS.length && !isDone(curNum);
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused || !!state.running;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused || !!state.running;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
+    else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
+    else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+  if(gateMsg){
+    gateMsg.textContent = notFinished ? `✋ 활동 ${curNum}을 마치면 「다음 ▶」 버튼이 켜져요.` : '';
+    gateMsg.style.display = (notFinished && !blockedNext) ? 'block' : 'none';
+  }
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.classNo && obj.name) ? obj : null; }catch(e){ return null; }
+}
+const IDENTITY_KEY = 'ggb_identity_prob23_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.name) ? obj : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none';
+  $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+/* 선생님이 이 단원을 이 반에 열어줬는지 확인한 뒤 시작 화면을 보여준다(오류 시에는 그냥 열어준다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none';
+    $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name;
+      $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    $('profileMissingBox').style.display='none';
+    $('profileBox').style.display='none';
+    $('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length,
+    answers: TASKS.map(t=>({task:t.id, title:t.title, done:isDone(t.id), value:valueOf(t.id)})),
+    data: collectData(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `말속에서확률찾기_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* 처음 화면 */
+initActivity();
+refreshAll({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N이면 게이트 없이 그 활동 화면을 바로 보여준다(Firebase 연결 없음).
+   교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none';
+  $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+</body>
+</html>

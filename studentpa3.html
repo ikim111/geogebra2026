@@ -294,7 +294,7 @@
 
 <script>
 /* ============================================================
-   23. 확률 탐구 글쓰기 ② 보고서 제출 (VIII. 확률 — 수행평가)
+   25. 확률 탐구 글쓰기 ② 보고서 제출 (VIII. 확률 — 수행평가)
    [제목]·[서론]·[본론]·[결론]을 한 화면에서 쓰고 제출한다. 11~22번 단원과 같은 틀(게이트·단원 잠금·
    실시간 저장·일시정지·공지·수업 종료·제출/백업·교사 미리보기)을 쓴다.
    - 글상자는 내용에 맞춰 저절로 늘어난다(안쪽 스크롤 없음).
@@ -318,8 +318,8 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__prob33'; // teacherpa3.html과 반드시 동일해야 함
 // ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
 const PREP_SUFFIX = '__prob32';    // 22번(개요·자료) — 읽기만 한다
-const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
-const UNIT_NO = 23;
+const UNIT_LABEL = '25. 확률 탐구 글쓰기 ② 보고서 제출';
+const UNIT_NO = 25;
 const TASKS = [ {id:1, key:'r1', title:'보고서 작성'} ];
 const SECS = [ {k:'title', min:0}, {k:'intro', min:150}, {k:'body', min:500}, {k:'concl', min:150} ];
 const TOTAL_MIN = 800; // 서론 150·본론 500·결론 150 이상 + 합계 800 이상 (2026-10-12 선생님 결정: 본론 700→500)
@@ -473,7 +473,7 @@ function paintSrcOk(){
 }
 function finalLockedNow(){ return document.body.classList.contains('final-locked'); }
 $('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.push(newSrc()); renderSources(); changed(); });
-/* 1부(22번) 자료 → 2부 자료 카드로 복사. 반환: {added, merged}
+/* 1부(24번) 자료 → 2부 자료 카드로 복사. 반환: {added, merged}
    1부 자료와 2부 카드는 '1부 몇 번째 자료인지(from1)'로 짝짓는다. 같은 사이트 첫 화면 주소처럼 링크가 같아도 다른 자료로 본다.
    예전에 링크만 보고 잘못 합쳐진 스크린샷(다른 1부 자료의 파일)은 제자리 카드로 옮긴다. */
 function importPrep(){
