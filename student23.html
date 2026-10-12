@@ -207,7 +207,7 @@
       <button id="prevBtn" style="display:none;">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div id="totalBar">서론+본론+결론 <b id="totalCnt">0</b>자 / 1000자 이상</div>
+        <div id="totalBar">서론+본론+결론 <b id="totalCnt">0</b>자 / 800자 이상</div>
       </div>
       <button id="nextBtn" style="display:none;">다음 ▶</button>
     </div>
@@ -234,7 +234,7 @@
         <tr><td>적절한 탐구 질문 형성</td><td><ul><li>탐구 질문을 썼는가? <b>(기본 1점)</b></li><li>확률을 구하는 질문인가? <b>(1점)</b></li><li>예측형 또는 비교·선택형 질문의 형태인가? <b>(1점)</b></li></ul></td><td class="pt">3점</td></tr>
         <tr><td>신뢰성 있는 자료 수집</td><td><ul><li>자료 1이 탐구 질문에 맞는 자료인가? (대상·기간·조건이 질문과 맞는가) <b>(1점)</b></li><li>자료 2가 탐구 질문에 맞고, 자료 1과 다른 정보를 주는가? (같은 사이트여도 표나 기간이 다르면 다른 자료, 한 표를 나눠 적으면 1개) <b>(1점)</b></li><li>올린 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가? (자료는 2개 이상, 필요한 만큼) <b>(1점)</b></li></ul><div style="font-size:12px;color:#c62828;margin-top:4px;">🚫 블로그·카페·커뮤니티·SNS·위키·지식iN·유튜브·개인 글·AI 글, 출처 이름·링크·스크린샷 중 하나라도 없는 자료는 자료로 세지 않아요. 인정되는 자료가 하나도 없으면 0점이에요.</div></td><td class="pt">3점</td></tr>
         <tr><td>자료의 타당한 분석</td><td>본론을 보고 확인해요 <b>(각 1점)</b><ul><li>자료 1에서 찾은 내용(수치)을 본론에 활용했는가?</li><li>자료 2에서 찾은 내용(수치)을 본론에 활용했는가?</li><li>확률을 어떻게 계산했는지(계산식과 결과) 썼는가?</li><li>계산한 확률값이 무엇을 뜻하는지 해석했는가?</li></ul></td><td class="pt">4점</td></tr>
-        <tr><td>글의 논리적 완성</td><td><ul><li>서론 150자 이상 <b>(1점)</b></li><li>본론 700자 이상 <b>(1점)</b></li><li>결론 150자 이상 <b>(1점)</b></li><li>결론에 탐구 질문에 대한 답이 있는가? <b>(1점)</b></li><li>확률에 대한 해석이 알맞은가? (예: 0.625 → "10번 중 약 6번". 확률·질문과 상관없는 엉뚱한 결론만 아니면 돼요) <b>(1점)</b></li></ul></td><td class="pt">5점</td></tr>
+        <tr><td>글의 논리적 완성</td><td><ul><li>서론 150자 이상 <b>(1점)</b></li><li>본론 500자 이상 <b>(1점)</b></li><li>결론 150자 이상 <b>(1점)</b></li><li>결론에 탐구 질문에 대한 답이 있는가? <b>(1점)</b></li><li>확률에 대한 해석이 알맞은가? (예: 0.625 → "10번 중 약 6번". 확률·질문과 상관없는 엉뚱한 결론만 아니면 돼요) <b>(1점)</b></li></ul></td><td class="pt">5점</td></tr>
       </table>
     </div>
   </details>
@@ -256,7 +256,7 @@
     </div>
     <div class="sec">
       <div class="olbox" id="ol-body"></div>
-      <div class="sec-head"><span class="lab">[본론 보고서 작성]<small>700자 이상</small></span><span class="cnt" id="cnt-body">0자 / 700자</span></div>
+      <div class="sec-head"><span class="lab">[본론 보고서 작성]<small>500자 이상</small></span><span class="cnt" id="cnt-body">0자 / 500자</span></div>
       <ul class="tips"><li>각 자료에서 탐구 질문과 관련해 알 수 있는 내용을 분석 (자료의 수치를 직접 인용)</li><li>탐구 계획에 따라 확률을 계산</li><li>확률값을 논리적으로 해석</li></ul>
       <textarea data-k="body" style="min-height:180px;"></textarea>
     </div>
@@ -321,8 +321,8 @@ const PREP_SUFFIX = '__prob32';    // 22번(개요·자료) — 읽기만 한다
 const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
 const UNIT_NO = 23;
 const TASKS = [ {id:1, key:'r1', title:'보고서 작성'} ];
-const SECS = [ {k:'title', min:0}, {k:'intro', min:150}, {k:'body', min:700}, {k:'concl', min:150} ];
-const TOTAL_MIN = 1000; // 서론 150·본론 700·결론 150 이상 + 합계 1000 이상 (2026-10-07 선생님 결정)
+const SECS = [ {k:'title', min:0}, {k:'intro', min:150}, {k:'body', min:500}, {k:'concl', min:150} ];
+const TOTAL_MIN = 800; // 서론 150·본론 500·결론 150 이상 + 합계 800 이상 (2026-10-12 선생님 결정: 본론 700→500)
 const newSrc = () => ({ name:'', link:'', files:[], ana:[''] });
 const state = { f:{ title:'', intro:'', body:'', concl:'' }, sources:[newSrc(), newSrc()] };
 const MAX_FILES = 20, MAX_BYTES = 10*1024*1024; // 파일 개수는 사실상 제한 없음(저장 용량 보호용 안전 한도 20)·각 10MB (2026-10-12 선생님 결정)

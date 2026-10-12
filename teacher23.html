@@ -281,7 +281,7 @@
         <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 제출 <b id="aggSub">0</b>명 · 1000자 이상 <b id="aggLong">0</b>명</span>
+        <span>📋 제출 <b id="aggSub">0</b>명 · 800자 이상 <b id="aggLong">0</b>명</span>
       </div>
       <div class="ai-agg" id="ai22Panel" style="display:none;">
         <span>🤖 <b>1부 탐구 준비(22번) 학생 AI</b> <span style="font-size:12px;color:#777;">— AI 피드백·AI 도우미 (2부 보고서 화면에는 AI가 없어요)</span></span>
@@ -440,8 +440,8 @@ function bannedSourceKind(link, name){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const str = x => (typeof x==='string' ? x : '');
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // student23.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
-const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:150}, {k:'body', name:'본론', min:700}, {k:'concl', name:'결론', min:150} ];
-const TOTAL_MIN = 1000; // 서론 150·본론 700·결론 150 이상 + 합계 1000 이상
+const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:150}, {k:'body', name:'본론', min:500}, {k:'concl', name:'결론', min:150} ];
+const TOTAL_MIN = 800; // 서론 150·본론 500·결론 150 이상 + 합계 800 이상 (2026-10-12)
 const arrOf = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const anaOk = t => { const x = String(t||'').trim(); return x.length >= 4 && /\d/.test(x); }; // 숫자가 들어간 분석 줄(student23·api와 같게)
 const srcOf = s => { const d=(s&&s.data)||{}; return arrOf(d.sources).filter(x=>x && (str(x.name).trim()||str(x.link).trim()||arrOf(x.ana).length||arrOf(x.files).length))
@@ -489,7 +489,7 @@ const Q3 = ["탐구 질문을 썼는가? (기본 1점)", "확률을 구하는 �
 const Q3S = ['질문을 씀(기본)','확률을 구함','예측형·비교선택형'];
 const D3S = ["자료 1이 질문에 맞음", "자료 2가 맞고 다른 정보", "계산에 필요한 수치 모두"];
 const A4S = { '비교·선택형': ['확률1 수치','확률2 수치','확률1 식·결과','확률2 식·결과'], '예측형': ['분자 수치','분모 수치','분수(식)','계산 결과'] };
-const L5S = ['서론 150자','본론 700자','결론 150자','결론에 답','확률 해석'];
+const L5S = ['서론 150자','본론 500자','결론 150자','결론에 답','확률 해석'];
 const A4N = ['자료1 활용','자료2 활용','확률 계산','확률값 해석']; // 2026-10-12: 본론에서 판단
 /* 자료 분석·글의 논리: 항목별 1/0 칩 */
 function binChips(k, ai, sc){

@@ -91,8 +91,8 @@ module.exports = async (req, res) => {
   const dchecks = Array.isArray(j.dchecks) && j.dchecks.length ? [0, 1, 2].map(i => j.dchecks[i] === 'O' ? 'O' : 'X') : null;
   const ox = (a, n) => Array.isArray(a) && a.length ? Array.from({ length: n }, (_, i) => a[i] === 'O' ? 'O' : 'X') : null;
   const achecks = ox(j.achecks, 4), lchecks = ox(j.lchecks, 2);
-  // 글의 논리 (1)~(3): 프로그램이 센 글자 수(서론 150·본론 700·결론 150)
-  const lenOK = [rep.counts.intro >= 150, rep.counts.body >= 700, rep.counts.concl >= 150].map(b => b ? 'O' : 'X');
+  // 글의 논리 (1)~(3): 프로그램이 센 글자 수(서론 150·본론 500·결론 150)
+  const lenOK = [rep.counts.intro >= 150, rep.counts.body >= 500, rep.counts.concl >= 150].map(b => b ? 'O' : 'X');
   const lchecks5 = lenOK.concat(lchecks || ['X', 'X']);
   const goodSrc = rep.sources.filter(x => x.name && /^https?:\/\//i.test(x.link) && x.files > 0 && !x.banned).length; // 이름·링크·첨부 파일 모두 있어야 인정(2026-10-12)
   for (const [k, max] of Object.entries(CRITERIA)) {
