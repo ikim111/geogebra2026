@@ -470,6 +470,32 @@ document.querySelectorAll('button.rv').forEach(b=> b.addEventListener('click', (
   controlRef.child('reveal/'+b.dataset.k).set(!reveal[b.dataset.k]);
 }));
 
+/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 control/aiBonus/{학생키}에 기회를 더 준다 ---------- */
+let aiBonusMap = {}, aiBonusWatched = false;
+function renderAiReq(){
+  if(typeof controlRef==='undefined' || !controlRef) return;
+  if(!aiBonusWatched){ aiBonusWatched = true; controlRef.child('aiBonus').on('value', s=>{ aiBonusMap = s.val() || {}; renderAiReq(); }); }
+  let box = document.getElementById('aiReqBox');
+  if(!box){
+    const anchor = document.getElementById('stagePanel'); if(!anchor) return;
+    box = document.createElement('div'); box.id = 'aiReqBox';
+    box.style.cssText = 'display:none;margin:10px 0;border:2px solid #b39ddb;background:#faf8ff;border-radius:12px;padding:10px 14px;';
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    box.addEventListener('click', e=>{
+      const b = e.target.closest('button[data-k]'); if(!b) return;
+      const k = b.dataset.k, cur = aiBonusMap[k] || {};
+      controlRef.child('aiBonus/'+k).set({ n: (+cur.n || 0) + 3, ts: Date.now() });
+    });
+  }
+  const reqs = Object.keys(allStudents||{}).map(k=>({k, s: allStudents[k]})).filter(x=>{
+    const d = x.s && x.s.data; const t = d && +d.aiReq; return t && t > ((aiBonusMap[x.k] && +aiBonusMap[x.k].ts) || 0);
+  });
+  box.style.display = reqs.length ? '' : 'none';
+  box.innerHTML = `<b style="color:#5e35b1;">🙋 AI 피드백 기회를 더 요청한 학생 ${reqs.length}명</b>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">` + reqs.map(x=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #d1c4e9;border-radius:8px;padding:4px 8px;font-size:14px;">${esc((x.s.number||'')+'번 '+(x.s.name||x.k))}
+      <button data-k="${esc(x.k)}" style="border:none;background:#5e35b1;color:#fff;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;">+3번 주기</button></span>`).join('') + `</div>`;
+}
+setInterval(renderAiReq, 2000);
 /* ---------- 📋 수업 진행 도우미: 단계 이름·완료 인원을 보고 「다음 단계 열기」 한 번으로 진행 ----------
    단계를 열면 control/stage, maxTaskId(학생이 갈 수 있는 마지막 활동), 필요한 공개(reveal)를 한꺼번에 바꾼다.
    학생 쪽은 기존 속도조절(maxTaskId) 로직을 그대로 쓰고, stage가 있으면 "다음 단계를 기다려요" 문구를 보여준다. */
