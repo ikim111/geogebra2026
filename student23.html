@@ -118,6 +118,21 @@
   .task .src-row input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
   .src-row .lk small{display:block;font-size:11.5px;margin-top:2px;}
   .src-row .del{border:1px solid #ef9a9a;background:#fff;color:var(--red);border-radius:6px;height:38px;cursor:pointer;font-size:14px;}
+  .src-card{border:1px solid #d6dbe1;border-radius:10px;padding:10px 12px;background:#fbfcfd;}
+  .src-card .sub{margin:8px 0 0 34px;}
+  .src-card .sub .lbl{font-size:12.5px;font-weight:bold;color:var(--ink2);margin-bottom:4px;}
+  .files{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .fchip{display:inline-flex;align-items:center;gap:4px;border:1px solid #c5cad1;background:#fff;border-radius:16px;padding:3px 4px 3px 10px;font-size:12.5px;max-width:260px;}
+  .fchip a{color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
+  .fchip img{width:28px;height:28px;object-fit:cover;border-radius:4px;}
+  .fchip button,.ana-row button{border:0;background:none;color:var(--red);cursor:pointer;font-size:13px;}
+  .fadd{border:1px dashed #90a4ae;background:#fff;border-radius:16px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .fmsg{font-size:12px;color:#e65100;margin-left:6px;}
+  .ana-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
+  .task .ana-row input{flex:1;font-family:inherit;font-size:14px;border:1px solid #c5cad1;border-radius:8px;padding:7px 10px;background:#fff;}
+  .ana-row .ok{font-size:12px;width:56px;text-align:center;}
+  .aadd{border:1px dashed #90a4ae;background:#fff;border-radius:6px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  body.final-locked .fadd,body.final-locked .aadd,body.final-locked .fchip button,body.final-locked .ana-row button{display:none;}
   .src-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
   .src-btns button{border:1px solid #c5cad1;background:#fff;border-radius:6px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--ink2);font-family:inherit;}
   #aiCard{display:none;border:2px solid #7e57c2;}
@@ -212,10 +227,10 @@
     <div class="rbody">
       <table class="rub">
         <tr><th>평가 요소</th><th>점검할 내용</th><th>배점</th></tr>
-        <tr><td>적절한 탐구 질문 형성</td><td><ul><li>확률을 구하는 질문인가?</li><li>예측형 또는 비교·선택형 질문의 형태인가?</li><li>대상·기간·조건이 정해져 있는가?</li><li>공식 통계·기록으로 답을 구할 수 있는 질문인가?</li><li>자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?</li></ul><div style="font-size:12px;color:#777;margin-top:4px;">1부 step1 자기평가와 같은 기준이에요. ○ 2 · △ 1 · ✕ 0을 더해 9~10 → 3점, 5~8 → 2점, 2~4 → 1점, 0~1 → 0점. 단, "확률을 구하는 질문"이 ✕이면 0점이에요.</div></td><td class="pt">3점</td></tr>
-        <tr><td>신뢰성 있는 자료 수집</td><td><ul><li>자료 1이 탐구 질문에 맞는 자료인가? (대상·기간·조건이 질문과 맞는가) <b>(1점)</b></li><li>자료 2가 탐구 질문에 맞고, 자료 1과 다른 정보를 주는가? (같은 사이트여도 표나 기간이 다르면 다른 자료, 한 표를 나눠 적으면 1개) <b>(1점)</b></li><li>두 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가? <b>(1점)</b></li></ul><div style="font-size:12px;color:#c62828;margin-top:4px;">🚫 블로그·카페·커뮤니티·SNS·위키·지식iN·유튜브·개인 글·AI 글, 출처 이름·링크가 없는 자료는 자료로 세지 않아요. 인정되는 자료가 하나도 없으면 0점이에요.</div></td><td class="pt">3점</td></tr>
-        <tr><td>자료의 타당한 분석</td><td><b>비교·선택형</b> (확률 2개)<ul><li>확률 1의 분자·분모가 될 수치를 자료에서 찾아 썼는가? <b>(1점)</b></li><li>확률 2의 분자·분모가 될 수치를 자료에서 찾아 썼는가? <b>(1점)</b></li><li>확률 1의 계산식(분수)과 결과를 썼는가? <b>(1점)</b></li><li>확률 2의 계산식(분수)과 결과를 썼는가? <b>(1점)</b></li></ul><b>예측형</b> (확률 1개)<ul><li>분자가 될 수치를 자료에서 찾아 썼는가? <b>(1점)</b></li><li>분모가 될 수치를 자료에서 찾아 썼는가? <b>(1점)</b></li><li>확률을 분수(계산식)로 나타냈는가? <b>(1점)</b></li><li>계산 결과(소수 또는 %)를 썼는가? <b>(1점)</b></li></ul></td><td class="pt">4점</td></tr>
-        <tr><td>글의 논리적 완성</td><td><ul><li>서론 150자 이상 <b>(1점)</b></li><li>본론 700자 이상 <b>(1점)</b></li><li>결론 150자 이상 <b>(1점)</b></li><li>결론에 탐구 질문에 대한 답이 있는가? <b>(1점)</b></li><li>확률에 대한 해석이 올바른가? (예: 0.625 → "10번 중 약 6번", 자료 범위를 넘어 단정하지 않기) <b>(1점)</b></li></ul></td><td class="pt">5점</td></tr>
+        <tr><td>적절한 탐구 질문 형성</td><td><ul><li>탐구 질문을 썼는가? <b>(기본 1점)</b></li><li>확률을 구하는 질문인가? <b>(1점)</b></li><li>예측형 또는 비교·선택형 질문의 형태인가? <b>(1점)</b></li></ul></td><td class="pt">3점</td></tr>
+        <tr><td>신뢰성 있는 자료 수집</td><td><ul><li>자료 1이 탐구 질문에 맞는 자료인가? (대상·기간·조건이 질문과 맞는가) <b>(1점)</b></li><li>자료 2가 탐구 질문에 맞고, 자료 1과 다른 정보를 주는가? (같은 사이트여도 표나 기간이 다르면 다른 자료, 한 표를 나눠 적으면 1개) <b>(1점)</b></li><li>올린 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가? (자료는 2개 이상, 필요한 만큼) <b>(1점)</b></li></ul><div style="font-size:12px;color:#c62828;margin-top:4px;">🚫 블로그·카페·커뮤니티·SNS·위키·지식iN·유튜브·개인 글·AI 글, 출처 이름·링크가 없는 자료는 자료로 세지 않아요. 인정되는 자료가 하나도 없으면 0점이에요.</div></td><td class="pt">3점</td></tr>
+        <tr><td>자료의 타당한 분석</td><td>[자료 출처 · 자료 분석]에 자료마다 적은 <b>분석 내용</b>(분자·분모 수치, 계산식과 결과 등)을 세요.<ul><li>숫자가 들어간 분석 1줄 = <b>1점</b>, 4줄 이상이면 4점</li><li>자료마다 1줄 이상 적어요. 분모가 자료에 없어도 돼요(예: 1년 = 365일).</li></ul></td><td class="pt">4점</td></tr>
+        <tr><td>글의 논리적 완성</td><td><ul><li>서론 150자 이상 <b>(1점)</b></li><li>본론 700자 이상 <b>(1점)</b></li><li>결론 150자 이상 <b>(1점)</b></li><li>결론에 탐구 질문에 대한 답이 있는가? <b>(1점)</b></li><li>확률에 대한 해석이 알맞은가? (예: 0.625 → "10번 중 약 6번". 확률·질문과 상관없는 엉뚱한 결론만 아니면 돼요) <b>(1점)</b></li></ul></td><td class="pt">5점</td></tr>
       </table>
     </div>
   </details>
@@ -248,10 +263,11 @@
       <textarea data-k="concl"></textarea>
     </div>
     <div class="sec">
-      <div class="sec-head"><span class="lab">[자료 출처]<small>2개 이상 · 글자 수에는 들어가지 않아요</small></span><span class="cnt" id="cnt-src">0개</span></div>
-      <ul class="tips"><li>본론에서 사용한 자료의 <b>기관·자료 이름</b>과 <b>링크(https://…)</b>를 적어요.</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
+      <div class="sec-head"><span class="lab">[자료 출처 · 자료 분석]<small>자료 2개 이상(필요한 만큼) · 글자 수에는 들어가지 않아요</small></span><span><span class="cnt" id="cnt-src">0개</span> <span class="cnt" id="cnt-ana">분석 0개</span></span></div>
+      <ul class="tips"><li>자료마다 <b>기관·자료 이름</b>, <b>링크(https://…)</b>, <b>활용한 부분 파일</b>(스크린샷 이미지·PDF, 3개까지·각 10MB)을 올려요.</li>
+        <li>자료마다 <b>분석 내용</b>을 [＋ 분석 추가]로 한 줄씩 적어요. 분자·분모 수치, 계산식과 결과처럼 <b>숫자가 들어간 분석</b>을 자료마다 1개 이상, <b>모두 합쳐 4개 이상</b> 적어요. 예) 홈경기 승률 = 홈 승리 45 ÷ 홈경기 72 ≈ 0.625</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
       <div class="src-rows" id="srcRows"></div>
-      <div class="src-btns"><button type="button" id="addSrcRow">＋ 출처 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료 불러오기</button></div>
+      <div class="src-btns"><button type="button" id="addSrcRow">＋ 자료 추가</button><button type="button" id="loadPrepSrc">⬇ 1부에서 모은 자료 불러오기</button></div>
     </div>
   </div>
 </section>
@@ -303,7 +319,12 @@ const UNIT_NO = 23;
 const TASKS = [ {id:1, key:'r1', title:'보고서 작성'} ];
 const SECS = [ {k:'title', min:0}, {k:'intro', min:150}, {k:'body', min:700}, {k:'concl', min:150} ];
 const TOTAL_MIN = 1000; // 서론 150·본론 700·결론 150 이상 + 합계 1000 이상 (2026-10-07 선생님 결정)
-const state = { f:{ title:'', intro:'', body:'', concl:'' }, sources:[{name:'',link:''},{name:'',link:''}] };
+const newSrc = () => ({ name:'', link:'', files:[], ana:[''] });
+const state = { f:{ title:'', intro:'', body:'', concl:'' }, sources:[newSrc(), newSrc()] };
+const MAX_FILES = 3, MAX_BYTES = 10*1024*1024; // 자료당 파일 3개·각 10MB (2026-10-12 선생님 결정)
+// 분석 1개 = 숫자가 들어간 한 줄(분자·분모 수치, 계산식과 결과 등). 4개 이상이면 자료 분석 4점(느슨하게) — api/report-grade.js와 같게
+const anaOk = t => { const x = String(t||'').trim(); return x.length >= 4 && /\d/.test(x); };
+const anaCount = () => state.sources.reduce((a,x)=> a + (x.ana||[]).filter(anaOk).length, 0);
 let prepData = null; // 22번 data(자료 불러오기용)
 const isUrl = s => /^https?:\/\/\S+\.\S+/i.test(String(s||'').trim());
 const goodSources = () => state.sources.filter(x=> x.name.trim() && isUrl(x.link) && !bannedSourceKind(x.link, x.name));
@@ -324,7 +345,7 @@ function missing(){
 const isDone = () => missing().length === 0;
 const valueOf = () => `${state.f.title.trim() ? '제목: '+state.f.title.trim()+' · ' : ''}서론 ${cnt('intro')}자 · 본론 ${cnt('body')}자 · 결론 ${cnt('concl')}자 · 합계 ${totalCount()}자`;
 function collectData(){ return { title: state.f.title, intro: state.f.intro, body: state.f.body, concl: state.f.concl, total: totalCount(),
-  sources: state.sources.map(x=>({name:x.name, link:x.link})) }; }
+  sources: state.sources.map(x=>({name:x.name, link:x.link, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
 
 /* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
    블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
@@ -364,21 +385,86 @@ function bannedSourceKind(link, name){
   return '';
 }
 
-/* [자료 출처] 줄 */
+/* [자료 출처 · 자료 분석] 카드: 이름·링크 / 파일(이미지·PDF) / 분석 줄 */
+const fileIcon = f => /^image\//.test(f.type||'') ? `<img src="${esc(f.url)}" alt="">` : '📄';
 function renderSources(){
-  const box = $('srcRows');
-  box.innerHTML = state.sources.map((x,i)=>`<div class="src-row">
+  const box = $('srcRows'), locked = finalLockedNow();
+  box.innerHTML = state.sources.map((x,i)=>`<div class="src-card"><div class="src-row">
     <span class="no">${i+1}.</span>
     <input type="text" data-si="${i}" data-sc="name" value="${esc(x.name)}" placeholder="기관·자료 이름 (예: KBO, 2024 정규시즌 기록)">
     <div class="lk"><input type="url" data-si="${i}" data-sc="link" value="${esc(x.link)}" placeholder="https://…"><small id="srcOk${i}"></small></div>
-    ${state.sources.length>1?`<button type="button" class="del" data-sdel="${i}" title="이 출처 지우기">✕</button>`:'<span></span>'}
-  </div>`).join('');
+    ${state.sources.length>1?`<button type="button" class="del" data-sdel="${i}" title="이 자료 지우기">✕</button>`:'<span></span>'}
+  </div>
+  <div class="sub"><div class="lbl">📎 활용한 부분 (스크린샷·PDF, ${MAX_FILES}개까지·각 10MB)</div><div class="files">
+    ${(x.files||[]).map((f,j)=>`<span class="fchip">${fileIcon(f)}<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`).join('')}
+    ${(x.files||[]).length < MAX_FILES ? `<button type="button" class="fadd" data-fadd="${i}">＋ 파일 올리기</button>` : ''}<span class="fmsg" id="fmsg${i}"></span></div></div>
+  <div class="sub"><div class="lbl">🔎 이 자료의 분석 내용 (숫자가 들어간 분석을 한 줄씩)</div>
+    ${(x.ana||[]).map((t,j)=>`<div class="ana-row"><input type="text" data-ai="${i}:${j}" value="${esc(t)}" placeholder="예) 홈경기 승률 = 홈 승리 45 ÷ 홈경기 72 ≈ 0.625" maxlength="200"><span class="ok" id="ak${i}_${j}"></span>${(x.ana||[]).length>1?`<button type="button" data-adel="${i}:${j}" title="이 줄 지우기">✕</button>`:''}</div>`).join('')}
+    <button type="button" class="aadd" data-aadd="${i}">＋ 분석 추가</button></div></div>`).join('');
   box.querySelectorAll('[data-si]').forEach(el=>{
-    el.readOnly = finalLockedNow();
+    el.readOnly = locked;
     el.addEventListener('input', ()=>{ state.sources[+el.dataset.si][el.dataset.sc] = el.value; paintSrcOk(); changed(); });
   });
-  box.querySelectorAll('[data-sdel]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.splice(+b.dataset.sdel,1); renderSources(); changed(); }));
+  box.querySelectorAll('[data-ai]').forEach(el=>{
+    el.readOnly = locked;
+    el.addEventListener('input', ()=>{ const [i,j] = el.dataset.ai.split(':').map(Number); state.sources[i].ana[j] = el.value; paintSrcOk(); changed(); });
+  });
+  box.querySelectorAll('[data-sdel]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLockedNow()) return; const x = state.sources[+b.dataset.sdel];
+    if(((x.files||[]).length || (x.ana||[]).some(a=>a.trim())) && !confirm('이 자료의 파일과 분석 내용도 함께 지워져요. 지울까요?')) return;
+    state.sources.splice(+b.dataset.sdel,1); renderSources(); changed(); }));
+  box.querySelectorAll('[data-fdel]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLockedNow()) return; const [i,j] = b.dataset.fdel.split(':').map(Number); state.sources[i].files.splice(j,1); renderSources(); changed(); }));
+  box.querySelectorAll('[data-aadd]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLockedNow()) return; const i = +b.dataset.aadd; state.sources[i].ana.push(''); renderSources(); const ins = box.querySelectorAll(`[data-ai^="${i}:"]`); if(ins.length) ins[ins.length-1].focus(); }));
+  box.querySelectorAll('[data-adel]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLockedNow()) return; const [i,j] = b.dataset.adel.split(':').map(Number); state.sources[i].ana.splice(j,1); renderSources(); changed(); }));
+  box.querySelectorAll('[data-fadd]').forEach(b=> b.addEventListener('click', ()=> pickFiles(+b.dataset.fadd)));
   paintSrcOk();
+}
+/* 파일 올리기: 사진은 긴 쪽 2000px·JPEG로 줄여서, PDF는 그대로 Vercel Blob에 올린다(api/blob-upload.js가 토큰을 준다) */
+let blobLib = null;
+function loadBlobLib(){
+  if(window.VercelBlobUpload) return Promise.resolve(window.VercelBlobUpload);
+  if(blobLib) return blobLib;
+  return blobLib = new Promise((ok, no)=>{ const sc = document.createElement('script'); sc.src = 'lib/blob-client.js'; sc.onload = ()=> ok(window.VercelBlobUpload); sc.onerror = ()=>{ blobLib = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
+}
+function shrinkImage(file){
+  return new Promise(resolve=>{
+    if(!/^image\/(jpeg|png|webp|bmp)$/i.test(file.type)) return resolve(file);
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = ()=>{ URL.revokeObjectURL(url);
+      const k = Math.min(1, 2000 / Math.max(img.width, img.height));
+      if(k === 1 && file.size < 1.5*1024*1024) return resolve(file);
+      const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(b=> resolve(b && b.size < file.size ? new File([b], file.name.replace(/\.\w+$/,'')+'.jpg', {type:'image/jpeg'}) : file), 'image/jpeg', 0.85); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+function pickFiles(i){
+  if(finalLockedNow()) return;
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,application/pdf,.pdf'; inp.multiple = true;
+  inp.onchange = ()=> uploadFiles(i, Array.from(inp.files||[]));
+  inp.click();
+}
+async function uploadFiles(i, files){
+  const msg = t => { const el = $('fmsg'+i); if(el) el.textContent = t; };
+  const src = state.sources[i]; if(!src) return;
+  const room = (CURRENT_PROFILE && CURRENT_PROFILE.classNo) || 'x', num = (CURRENT_PROFILE && CURRENT_PROFILE.number) || 'x';
+  const safe = s => String(s).replace(/[^\w.-]+/g,'_').slice(0,30) || 'x';
+  for(const f0 of files){
+    if((src.files||[]).length >= MAX_FILES){ msg(`파일은 자료마다 ${MAX_FILES}개까지예요.`); break; }
+    if(!/^image\//.test(f0.type) && !/pdf$/i.test(f0.type) && !/\.pdf$/i.test(f0.name)){ msg('이미지나 PDF만 올릴 수 있어요.'); continue; }
+    const f = await shrinkImage(f0);
+    if(f.size > MAX_BYTES){ msg(`'${f0.name}'은 10MB가 넘어요. 더 작은 파일로 올려요.`); continue; }
+    msg(`'${f0.name}' 올리는 중…`);
+    try{
+      const upload = await loadBlobLib();
+      const ext = (f.name.match(/\.(\w+)$/)||[,'bin'])[1].toLowerCase();
+      const blob = await upload(`prob33/${safe(room)}/${safe(num)}/${Date.now()}.${ext}`, f, { access:'public', handleUploadUrl:'/api/blob-upload', contentType: f.type || (ext==='pdf'?'application/pdf':undefined) });
+      src.files = (src.files||[]).concat({ url: blob.url, name: f0.name.slice(0,80), type: f.type || 'application/pdf', size: f.size });
+      renderSources(); changed();
+    }catch(e){ msg('올리지 못했어요: ' + (e && e.message || e)); return; }
+  }
+  if($('fmsg'+i) && /올리는 중/.test($('fmsg'+i).textContent)) msg('');
 }
 function paintSrcOk(){
   state.sources.forEach((x,i)=>{ const el=$('srcOk'+i); if(!el) return; const l=x.link.trim();
@@ -386,18 +472,20 @@ function paintSrcOk(){
     el.textContent = bk ? `🚫 인정되지 않는 출처예요(${bk}) — 자료 조사를 안 한 것으로 봐요` : (!l ? '' : (isUrl(l) ? '✅ 링크 형식 OK' : '⚠️ https:// 로 시작하는 주소를 붙여 넣어요'));
     el.style.color = bk ? '#c62828' : (isUrl(l) ? '#2e7d32' : '#e65100'); });
   const n = goodSources().length, c = $('cnt-src');
-  c.textContent = `${n}개 / 2개 ${n>=2?'✅':''}`; c.className = 'cnt ' + (n>=2 ? 'ok' : (n>0 ? 'short' : ''));
+  c.textContent = `자료 ${n}개 / 2개 ${n>=2?'✅':''}`; c.className = 'cnt ' + (n>=2 ? 'ok' : (n>0 ? 'short' : ''));
+  state.sources.forEach((x,i)=> (x.ana||[]).forEach((t,j)=>{ const el = $(`ak${i}_${j}`); if(!el) return; const ok = anaOk(t); el.textContent = !String(t).trim() ? '' : (ok ? '✅ 1개' : '숫자 필요'); el.style.color = ok ? '#2e7d32' : '#e65100'; }));
+  const a = anaCount(), ca = $('cnt-ana'); ca.textContent = `분석 ${a}개 / 4개 ${a>=4?'✅':''}`; ca.className = 'cnt ' + (a>=4 ? 'ok' : (a>0 ? 'short' : ''));
 }
 function finalLockedNow(){ return document.body.classList.contains('final-locked'); }
-$('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.push({name:'',link:''}); renderSources(); changed(); });
+$('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.push(newSrc()); renderSources(); changed(); });
 $('loadPrepSrc').addEventListener('click', ()=>{
   if(finalLockedNow()) return;
   const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim())) : [];
   if(!src.length){ alert('1부 탐구 준비에 적은 자료가 없어요.'); return; }
   const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
-  const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim() }));
+  const add = src.filter(x=> !have.has(String(x.link||'').trim())).map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files:[], ana:[''] }));
   if(!add.length){ alert('1부에서 모은 자료가 이미 모두 들어 있어요.'); return; }
-  state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim()).concat(add);
+  state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim() || (x.files||[]).length || (x.ana||[]).some(a=>a.trim())).concat(add);
   renderSources(); changed();
 });
 
@@ -578,7 +666,9 @@ const RT = {
 function restoreData(d){
   if(!d) return;
   document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
-  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'' }));
+  const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'',
+    files: arr(x&&x.files).filter(f=>f&&f.url).slice(0,MAX_FILES), ana: (a=> a.length ? a : [''])(arr(x&&x.ana).map(String)) }));
   renderSources(); paintAll(); changed({noSave:true});
 }
 function paintAll(){ document.querySelectorAll('textarea[data-k]').forEach(autoGrow); }
