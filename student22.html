@@ -150,6 +150,10 @@
   .fchip a{color:#1565c0;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
   .fchip img{width:28px;height:28px;object-fit:cover;border-radius:4px;}
   .fchip button{border:0;background:none;color:#c62828;cursor:pointer;font-size:13px;}
+  .fchip.pic{flex-direction:column;align-items:stretch;border-radius:8px;padding:4px;position:relative;max-width:180px;}
+  .fchip.pic img{width:170px;height:120px;object-fit:contain;background:#f5f7f9;border-radius:6px;display:block;cursor:zoom-in;}
+  .fchip.pic a.nm{font-size:11.5px;padding:2px 4px 0;max-width:170px;}
+  .fchip.pic button{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.9);border-radius:50%;width:22px;height:22px;line-height:20px;padding:0;}
   .fadd{border:1px dashed #90a4ae;background:#fff;border-radius:16px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:#455a64;font-family:inherit;}
   .fmsg{font-size:12px;color:#e65100;margin-left:6px;}
   body.final-locked .fadd, body.final-locked .fchip button{display:none;}
@@ -768,7 +772,7 @@ function renderSources(){
     <div class="both-note">🔗 링크와 📎 스크린샷을 <b>둘 다 꼭</b> 남겨요. 링크는 자료를 만든 기관의 첫 화면 주소도 괜찮아요.</div>
     <div class="k">🔗 어디서 찾았는지 링크 <span class="link-ok" id="lk${i}"></span></div><input type="url" data-s="${i}" data-c="link" value="${esc(s.link)}" placeholder="https://… (자료를 만든 기관 홈페이지 주소도 OK)">
     <div class="k">📎 활용할 부분 스크린샷·PDF <span style="font-weight:normal;color:#888;">(여러 개 가능·각 10MB — 2부에서 그대로 불러와요)</span> <span class="link-ok" id="fk${i}"></span></div>
-    <div class="files">${(s.files||[]).map((f,j)=>`<span class="fchip">${/^image\//.test(f.type||'')?`<img src="${esc(f.url)}" alt="">`:'📄'}<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`).join('')}
+    <div class="files">${(s.files||[]).map((f,j)=>`${/^image\//.test(f.type||'') ? `<span class="fchip pic"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="크게 보기"><img src="${esc(f.url)}" alt="${esc(f.name||'')}"></a><a class="nm" href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'이미지')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>` : `<span class="fchip">📄<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`}`).join('')}
       ${(s.files||[]).length < 20 ? `<button type="button" class="fadd" data-fadd="${i}">＋ 파일 올리기</button>` : ''}<span class="fmsg" id="fmsg${i}"></span></div>
   </div>`).join('');
   $('srcList').querySelectorAll('[data-fdel]').forEach(b=>b.addEventListener('click', ()=>{ if(finalLocked) return; const [i,j] = b.dataset.fdel.split(':').map(Number); state.sources[i].files.splice(j,1); renderSources(); changed(); }));

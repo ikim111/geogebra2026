@@ -126,6 +126,10 @@
   .fchip a{color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
   .fchip img{width:28px;height:28px;object-fit:cover;border-radius:4px;}
   .fchip button,.ana-row button{border:0;background:none;color:var(--red);cursor:pointer;font-size:13px;}
+  .fchip.pic{flex-direction:column;align-items:stretch;border-radius:8px;padding:4px;position:relative;max-width:180px;}
+  .fchip.pic img{width:170px;height:120px;object-fit:contain;background:#f5f7f9;border-radius:6px;display:block;cursor:zoom-in;}
+  .fchip.pic a.nm{font-size:11.5px;padding:2px 4px 0;max-width:170px;}
+  .fchip.pic button{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.9);border-radius:50%;width:22px;height:22px;line-height:20px;padding:0;}
   .fadd{border:1px dashed #90a4ae;background:#fff;border-radius:16px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:var(--ink2);font-family:inherit;}
   .fmsg{font-size:12px;color:#e65100;margin-left:6px;}
   .ana-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
@@ -398,7 +402,7 @@ function renderSources(){
     ${state.sources.length>1?`<button type="button" class="del" data-sdel="${i}" title="이 자료 지우기">✕</button>`:'<span></span>'}
   </div>
   <div class="sub"><div class="lbl">📎 활용한 부분 (스크린샷·PDF, 여러 개 가능·각 10MB)</div><div class="files">
-    ${(x.files||[]).map((f,j)=>`<span class="fchip">${fileIcon(f)}<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`).join('')}
+    ${(x.files||[]).map((f,j)=>`${/^image\//.test(f.type||'') ? `<span class="fchip pic"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="크게 보기"><img src="${esc(f.url)}" alt="${esc(f.name||'')}"></a><a class="nm" href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'이미지')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>` : `<span class="fchip">📄<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`}`).join('')}
     ${(x.files||[]).length < MAX_FILES ? `<button type="button" class="fadd" data-fadd="${i}">＋ 파일 올리기</button>` : ''}<span class="fmsg" id="fmsg${i}"></span></div></div>
   <div class="sub"><div class="lbl">🔎 이 자료의 분석 내용 (숫자가 들어간 분석을 한 줄씩)</div>
     ${(x.ana||[]).map((t,j)=>`<div class="ana-row"><input type="text" data-ai="${i}:${j}" value="${esc(t)}" placeholder="예) 홈경기 승률 = 홈 승리 45 ÷ 홈경기 72 ≈ 0.625" maxlength="200"><span class="ok" id="ak${i}_${j}"></span>${(x.ana||[]).length>1?`<button type="button" data-adel="${i}:${j}" title="이 줄 지우기">✕</button>`:''}</div>`).join('')}
