@@ -13,6 +13,8 @@
   #rpFab{position:fixed;left:12px;bottom:12px;z-index:9000;background:#fff;color:#c62828;border:1.5px solid #ef9a9a;border-radius:20px;
     padding:6px 12px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.9;}
   #rpFab:hover{opacity:1;background:#fdecea;}
+  #rpFab.in-bar{position:static;flex:0 0 auto;box-shadow:none;opacity:1;background:#2a2e33;color:#ffb4ab;border:1px solid #6b3b3b;border-radius:6px;padding:7px 10px;font-size:13px;white-space:nowrap;}
+  #rpFab.in-bar:hover{background:#4a2b2b;}
   #rpModal{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:16px;}
   #rpModal .rp-card{background:#fff;border-radius:14px;max-width:460px;width:100%;padding:18px 18px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-family:inherit;}
   #rpModal h3{margin:0 0 6px;font-size:18px;color:#c62828;}
@@ -54,7 +56,13 @@
     const fab = document.createElement('button'); fab.id = 'rpFab'; fab.type = 'button'; fab.textContent = '🚩 오류 신고';
     fab.title = '화면이나 채점, AI 피드백이 이상하면 선생님께 알려 주세요';
     fab.addEventListener('click', () => open(null));
-    document.body.appendChild(fab);
+    // 위쪽 고정 막대(🏠 ◀이전 … 다음▶)가 있으면 🏠 바로 옆에 넣어 잘 보이게 하고, 없으면 화면 왼쪽 아래에 띄운다.
+    const bar = document.querySelector('#stickyBar .sticky-controls');
+    if (bar) {
+      fab.classList.add('in-bar');
+      const home = bar.querySelector('a[href="student.html"]');
+      if (home && home.nextSibling) bar.insertBefore(fab, home.nextSibling); else bar.insertBefore(fab, bar.firstChild);
+    } else document.body.appendChild(fab);
     const m = document.createElement('div'); m.id = 'rpModal';
     m.innerHTML = `<div class="rp-card">
       <h3>🚩 오류 신고</h3>
