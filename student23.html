@@ -204,6 +204,7 @@
   .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
   .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
+  .aifb-wrong{margin-left:6px;border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:1px 8px;font-size:12px;cursor:pointer;font-family:inherit;}
 </style></style>
 </head>
 <body>
@@ -503,12 +504,13 @@ function aifbHTML(e){
   const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
   const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
           : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
-  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.</div>`;
+  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.${window.reportOpen ? ' <button type="button" class="aifb-wrong">🤔 AI가 틀린 것 같아요</button>' : ''}</div>`;
 }
 /* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
 function aifbMount(box, opt){
   box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
   const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = AIFB.filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
   req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
   let busy = false, fails = 0;
   const paint = () => {
@@ -1026,5 +1028,6 @@ if(PREVIEW_MODE){
   setInterval(reportPreviewHeight, 500);
 }
 </script>
+<script src="report.js"></script><!-- 🚩 오류 신고(모든 학생 화면 공통) -->
 </body>
 </html>
