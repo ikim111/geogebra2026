@@ -1,8 +1,8 @@
-// Vercel 서버리스 함수: student22.html 제출 페이지의 "💬 AI 도우미" 챗봇이 호출한다.
+// Vercel 서버리스 함수: studentpa2.html 제출 페이지의 "💬 AI 도우미" 챗봇이 호출한다.
 // 질문 만들기·자료 찾기가 막막할 때 힌트와 되묻는 질문으로 돕는다(답·문장·수치를 직접 주지 않음).
-// 대화는 student22.html이 rooms/{반}__prob32/aiLog에 저장하고 teacher22.html에서 볼 수 있다(이상 사용 감지는 나중에 추가 예정).
+// 대화는 studentpa2.html이 rooms/{반}__prob32/aiLog에 저장하고 teacherpa2.html에서 볼 수 있다(이상 사용 감지는 나중에 추가 예정).
 //
-// 요청 형식(POST, JSON): { message, history:[{role:'user'|'assistant', content}], work: student22.html의 data }
+// 요청 형식(POST, JSON): { message, history:[{role:'user'|'assistant', content}], work: studentpa2.html의 data }
 // 응답 형식(JSON): { reply, model }
 const { bodyOf, callOpenAI, STUDENT_AI_RULES, RECOMMENDED_SITES } = require('./_report-common');
 

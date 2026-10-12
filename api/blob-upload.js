@@ -1,4 +1,4 @@
-// Vercel 서버리스 함수: student22(1부 step3)·student23(2부 자료 카드)의 파일 첨부(이미지·PDF)를 Vercel Blob에 올릴 때 쓰는 일회용 업로드 토큰을 만들어 준다.
+// Vercel 서버리스 함수: studentpa2(1부 step3)·studentpa3(2부 자료 카드)의 파일 첨부(이미지·PDF)를 Vercel Blob에 올릴 때 쓰는 일회용 업로드 토큰을 만들어 준다.
 // 파일은 브라우저에서 Blob으로 바로 올라가므로(이 함수를 거치지 않음) 10MB 파일도 된다.
 // 필요한 환경변수: BLOB_READ_WRITE_TOKEN (Vercel → Storage → Blob 저장소를 이 프로젝트에 연결하면 자동으로 생김)
 const { handleUpload } = require('@vercel/blob/client');

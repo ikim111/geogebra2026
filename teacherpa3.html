@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
+  header{background:#1a237e;color:#fff;padding:16px;text-align:center;}
+  header h1{margin:0 0 4px;font-size:19px;}
+  header p{margin:0;font-size:12.5px;opacity:.85;}
+  .wrap{max-width:1080px;margin:0 auto;padding:16px;}
+  .panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  #roomCode{flex:1;min-width:140px;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:#fff;}
+  input[type=text]{padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+  #announceInput{flex:1;min-width:200px;}
+  button{padding:9px 14px;border:none;border-radius:6px;cursor:pointer;font-size:13.5px;white-space:nowrap;}
+  button.primary{background:var(--blue);color:#fff;}
+  button.pause{background:#fdecea;color:var(--red);border:1px solid #ef9a9a;}
+  button.pause.active{background:var(--red);color:#fff;}
+  button.send{background:var(--orange);color:#fff;}
+  button:disabled{background:#f0f0f0!important;color:#bbb!important;border-color:#e0e0e0!important;cursor:not-allowed;}
+  input.rowCheck, #checkAll{width:15px;height:15px;cursor:pointer;}
+  #connStatus{font-size:12.5px;color:#999;margin-top:8px;}
+  #connStatus.on{color:var(--green);font-weight:bold;}
+  .submit-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;background:#ffb300;}
+  .submit-check{color:var(--green);font-weight:bold;margin-left:5px;}
+  .summary{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px;font-size:13.5px;color:#444;}
+  .summary b{color:var(--blue);font-size:17px;}
+
+  table{border-collapse:collapse;width:100%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:13px;}
+  th,td{padding:9px 8px;text-align:center;border-bottom:1px solid #eee;}
+  th{background:#f0f2f5;font-size:11.5px;color:#555;}
+  th.taskcol{cursor:pointer;}
+  th.taskcol:hover{background:#dde4ee;color:var(--blue);}
+  td.name{text-align:left;font-weight:bold;cursor:pointer;}
+  td.name:hover{color:var(--blue);}
+  tr.selected td{background:#e3f2fd;}
+  tr.idle td{opacity:.5;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+  .dot.on{background:var(--green);}
+  .dot.off{background:#bbb;}
+  .empty{color:#999;font-size:13.5px;text-align:center;padding:20px;}
+  .pbar-wrap{width:60px;height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;}
+  .pbar-fill{height:100%;background:var(--green);}
+
+  .cell{width:22px;height:22px;border-radius:5px;display:inline-block;cursor:pointer;}
+  .cell.done{background:var(--green);}
+  .cell.progress{background:#ffb300;}
+  .cell.pending{background:#e0e0e0;}
+  .cell.current{outline:2px solid var(--blue);outline-offset:1px;}
+  .cell.locked{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px)!important;opacity:.7;}
+  .cell.error{background:#ffebee;color:var(--red);text-align:center;line-height:22px;font-weight:bold;font-size:13px;}
+  .grid-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#666;margin:6px 2px 10px;align-items:center;}
+  .grid-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .grid-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .grid-legend i.locked{background:repeating-linear-gradient(45deg,#d8d8d8,#d8d8d8 4px,#ececec 4px,#ececec 8px);}
+  .grid-legend i.error{background:#ffebee;border:2px solid var(--red);}
+
+  .layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .grid-wrap{flex:2;min-width:400px;overflow-x:auto;}
+  .detail{flex:1;min-width:300px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:16px;max-height:80vh;overflow-y:auto;}
+  .detail h3{margin:0 0 10px;font-size:16px;}
+  .detail .drow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;cursor:pointer;border-radius:4px;}
+  .detail .drow:hover{background:#f5f7fa;}
+  .detail .drow .st{font-weight:bold;}
+  .detail .drow .st.ok{color:var(--green);}
+  .detail .drow .st.no{color:#999;}
+
+  .tab-bar{display:flex;gap:4px;margin:18px 0 0;border-bottom:2px solid #e0e0e0;}
+  .tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .tab-btn:hover{color:var(--blue);}
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab-panel{display:none;padding-top:16px;}
+  .tab-panel.active{display:block;}
+  .preview-topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  #previewLabel{font-size:13px;font-weight:bold;color:#555;min-width:56px;text-align:center;}
+
+  .pace-track{display:flex;gap:4px;user-select:none;flex-wrap:wrap;}
+  .pace-chip{width:30px;height:30px;border-radius:6px;border:1px solid #ccc;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:bold;cursor:pointer;color:#555;transition:background .1s,color .1s;}
+  .pace-chip:hover{border-color:var(--blue);}
+  .pace-chip.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .pace-chip.range-edge{outline:2px solid #ff9800;outline-offset:1px;}
+  .pace-badge{display:none;margin-top:8px;font-size:12.5px;color:#0052a3;background:#e8f0fe;border:1px solid #b3d1ff;padding:7px 12px;border-radius:6px;}
+
+  .teacher-col{margin-top:16px;}
+  .teacher-col-title{font-size:12.5px;font-weight:bold;color:#666;margin:4px 2px 8px;}
+  .text-answer-list{display:flex;flex-direction:column;gap:10px;}
+  .text-answer-item{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:10px 14px;}
+  .text-answer-item .ta-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+  .text-answer-item .ta-name{font-weight:bold;font-size:13px;color:#222;}
+  .text-answer-item .ta-live{color:var(--red);font-weight:bold;font-size:11.5px;margin-left:6px;}
+  .text-answer-item .ta-status{font-size:11px;padding:2px 9px;border-radius:10px;white-space:nowrap;}
+  .text-answer-item .ta-status.done{background:#e8f5e9;color:var(--green);}
+  .text-answer-item .ta-status.pending{background:#fff3e0;color:var(--orange);}
+  .text-answer-item .ta-text{font-size:13px;color:#333;white-space:pre-wrap;word-break:break-word;}
+  .text-answer-empty{color:#999;font-size:13.5px;text-align:center;padding:24px 10px;}
+  .rep h4{font-size:13.5px;margin:12px 0 4px;color:#1a237e;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e3e6ea;padding-bottom:2px;}
+  .rep h4:first-child{margin-top:0;}
+  .rep h4 .c{font-weight:normal;font-size:12px;color:#888;}
+  .rep h4 .c.short{color:#e65100;font-weight:bold;}
+  .rep .v{font-size:13.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:#222;}
+  .rep .v.none{color:#bbb;}
+  .rep .tot{font-size:13px;color:#444;margin-bottom:6px;}
+  .rep .tot b{color:#1a237e;}
+  .text-answer-item .rep .v{max-height:none;}
+  .gr-q{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0 4px;font-size:12px;}
+  .gr-q span{padding:2px 7px;border-radius:10px;background:#f0f2f5;color:#555;} .gr-q span b{margin-left:2px;}
+  .gr-q .o{background:#e8f1fc;color:#1565c0;} .gr-q .t{background:#fff8e1;color:#9a6b00;} .gr-q .x{background:#ffebee;color:#c62828;}
+  .gr-q small{color:#888;margin-left:6px;}
+  .gr-item{border-bottom:1px dashed #cfe8e5;padding:4px 0;}
+  .gr-fb{margin:2px 0 6px 0;padding:6px 10px;background:#fff;border-radius:6px;font-size:13px;}
+  .gr-fb .lbl{font-size:11.5px;color:#888;margin-bottom:2px;}
+  .gr-fb .fb-row{margin:3px 0;}
+  .gr-sum{margin-top:8px;}
+  .gr-sum .fb-sec p{margin:4px 0 0;font-size:13.5px;}
+  .ai-box{margin-top:12px;border:1px solid #d1c4e9;background:#f7f4fd;border-radius:8px;padding:10px 12px;}
+  .ai-box .ai-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#4527a0;font-size:13.5px;}
+  .ai-box .ai-txt{word-break:break-word;margin-top:8px;}
+  .ai-box .ai-txt .fb{font-size:13.5px;}
+  .ai-box .ai-note{font-size:12px;color:#777;font-weight:normal;}
+  button.ai{background:#5e35b1;color:#fff;font-weight:bold;}
+  button.ai:disabled{background:#c5bce0;cursor:not-allowed;}
+  /* ---- 📊 채점(AI 1차 → 선생님 수정) ---- */
+  .gr-box{margin-top:12px;border:1px solid #b2dfdb;background:#f3fbfa;border-radius:8px;padding:10px 12px;}
+  .gr-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#00695c;font-size:13.5px;}
+  .gr-hd .note{font-weight:normal;font-size:12px;color:#777;}
+  button.gr-ai{background:#00897b;color:#fff;font-weight:bold;padding:6px 12px;font-size:12.5px;}
+  button.gr-ai:disabled{background:#a7d3cd;cursor:not-allowed;}
+  .gr-warn{font-size:12.5px;color:#e65100;margin-top:6px;}
+  .gr-row{display:grid;grid-template-columns:110px 1fr auto;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid #dbeeeb;}
+  .gr-row:first-of-type{border-top:none;}
+  .gr-row .nm{font-weight:bold;font-size:13px;color:#333;}
+  .gr-row .nm small{display:block;font-weight:normal;color:#888;font-size:11.5px;}
+  .gr-row .why{font-size:12.5px;color:#555;line-height:1.5;}
+  .gr-row .why .ov{color:#00695c;font-weight:bold;}
+  .gr-chips{display:flex;gap:4px;flex-wrap:nowrap;}
+  .gr-chips button{position:relative;min-width:30px;height:30px;padding:0 6px;border:1px solid #b0bec5;background:#fff;color:#555;border-radius:6px;font-weight:bold;font-size:13px;}
+  .gr-chips button.on{background:#00897b;border-color:#00897b;color:#fff;}
+  .gr-chips button.ai-mark::after{content:'AI';position:absolute;top:-7px;right:-5px;font-size:9px;background:#7e57c2;color:#fff;border-radius:6px;padding:0 3px;line-height:13px;}
+  .gr-total{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;font-size:13.5px;}
+  .gr-total b{font-size:16px;color:#00695c;}
+  @media (max-width:700px){ .gr-row{grid-template-columns:1fr;} }
+  td.score-cell{font-weight:bold;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;}
+  td.score-cell .src{font-size:10.5px;font-weight:normal;color:#888;margin-left:3px;}
+  .agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#fffbe6;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#5d4200;}
+  .agg b{font-size:16px;color:#8d6e00;}
+  .flipseq{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0 8px;}
+  .flipseq span{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;}
+  .flipseq .h{background:#f3d27a;border:1.5px solid #a77b12;color:#5c4209;}
+  .flipseq .t{background:#dfe3e8;border:1.5px solid #7d8591;color:#39404a;}
+  .kv{font-size:13px;color:#444;margin:2px 0;}
+  .kv b{color:#1a237e;}
+  .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto 8px;}
+  /* ---- AI 피드백 읽기 좋게(studentpa3·teacherpa3 공통) ---- */
+  .fb{font-size:14.5px;line-height:1.65;color:#222;white-space:normal;}
+  .fb-note{font-size:12.5px;color:#6a6a66;background:#f4f2f9;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+  .fb-sec{background:#fff;border:1px solid #e3def0;border-radius:10px;padding:10px 14px;margin:8px 0;}
+  .fb-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:bold;color:#4527a0;margin-bottom:4px;}
+  .fb-score{background:#ede7f6;color:#4527a0;border-radius:12px;padding:1px 10px;font-size:13.5px;white-space:nowrap;}
+  .fb-row{display:flex;gap:8px;align-items:flex-start;margin:6px 0;}
+  .fb-tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-row.good .fb-tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-row.fix .fb-tag{background:#fff3e0;color:#e65100;}
+  .fb-row.ask .fb-tag{background:#e3f2fd;color:#1565c0;}
+  .fb p{margin:3px 0;}
+  .fb-li{margin:3px 0 3px 4px;}
+  .fb-sec.total{background:#4527a0;border-color:#4527a0;}
+  .fb-sec.total .fb-hd{color:#fff;margin:0;}
+  .fb-sec.total .fb-score{background:#fff;color:#4527a0;font-size:16px;}
+  .fb-sec.total p{color:#ddd5f3;font-size:12px;margin:4px 0 0;}
+  .fb-sec.first{border-left:5px solid #e65100;}
+  .fb-sec.st-ok{border-left:5px solid #2e7d32;background:#f3faf3;}
+  .fb-sec.st-mid{border-left:5px solid #f0a500;background:#fffaf0;}
+  .fb-sec.st-bad{border-left:5px solid #c62828;background:#fff6f6;}
+  .ai-agg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;background:#f7f4fd;border:1px solid #d1c4e9;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#311b92;}
+  .ai-agg button.ai-toggle{background:#5e35b1;color:#fff;font-weight:bold;}
+  .ai-agg button.ai-toggle.off{background:#9e9e9e;}
+  .ai-agg .st{font-size:12.5px;}
+</style>
+</head>
+<body>
+
+<button id="qrFabBtn" type="button" title="QR코드 보기" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1a237e;color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">📱 QR코드</button>
+<div id="qrModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);">
+    <h3 style="margin:0 0 4px;font-size:16px;color:#1a237e;">학생 접속 QR코드</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:#888;word-break:break-all;">https://geogebra2026.vercel.app/student.html</p>
+    <div id="qrCodeBox" style="display:inline-block;"></div>
+    <button id="qrModalCloseBtn" type="button" style="margin-top:16px;padding:9px 20px;border:none;border-radius:8px;background:#616161;color:#fff;font-size:13px;cursor:pointer;">닫기</button>
+  </div>
+</div>
+<script>
+(function(){
+  var qrBtn = document.getElementById('qrFabBtn');
+  var overlay = document.getElementById('qrModalOverlay');
+  var closeBtn = document.getElementById('qrModalCloseBtn');
+  var box = document.getElementById('qrCodeBox');
+  var rendered = false;
+  qrBtn.addEventListener('click', function(){
+    if(!rendered){
+      new QRCode(box, { text:'https://geogebra2026.vercel.app/student.html', width:200, height:200, colorDark:'#000000', colorLight:'#ffffff' });
+      rendered = true;
+    }
+    overlay.style.display = 'flex';
+  });
+  closeBtn.addEventListener('click', function(){ overlay.style.display='none'; });
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
+})();
+</script>
+
+<!-- 요약뷰에서 학생의 칸(또는 상세 패널의 행)을 클릭하면, 그 학생의 보고서 전체와 AI 채점·피드백을 보여주는 모달. -->
+<div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+    <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
+    <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
+    <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
+    <div id="tdmCanvasWrap" style="border-radius:8px;margin-bottom:12px;overflow:hidden;"></div>
+    <div id="tdmTextWrap"></div>
+  </div>
+</div>
+
+<header>
+  <h1>📊 교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
+  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, AI 채점·피드백을 받아 선생님이 점수를 확정해요</p>
+</header>
+
+<div class="wrap">
+
+  <div id="teacherGateScreen" class="panel" style="max-width:420px;margin:60px auto;text-align:center;">
+    <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 단원 목록으로</a>
+    <h2 style="margin-top:0;font-size:18px;color:#1a237e;">반을 선택하고 시작하세요</h2>
+    <div class="row" style="justify-content:center;">
+      <select id="roomCode"><option value="">반 선택</option></select>
+      <button class="primary" id="connectBtn">시작하기 →</button>
+    </div>
+    <div id="connStatus" style="margin-top:12px;">반을 선택하고 "시작하기"를 눌러주세요.</div>
+  </div>
+
+  <div id="teacherAppScreen" style="display:none;">
+
+    <div class="panel">
+      <div class="row">
+        <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">현재 반: <b id="currentRoomLabel">-</b></span>
+        <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
+        <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
+        <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
+        <button class="pause" id="anonymizeBtn">🎭 익명화</button>
+        <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
+        <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
+        <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input type="text" id="announceInput" placeholder="학생 화면에 띄울 공지 메시지">
+        <button class="send" id="announceBtn">📢 공지 보내기</button>
+        <button class="pause" id="announceClearBtn">🔽 공지 내리기</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+        <button class="pause" id="classStartBtn">▶ 수업 시작</button>
+        <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
+      </div>
+      <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
+        <div id="paceTrack" class="pace-track"></div>
+        <button class="pause" id="paceClearBtn">제한 해제</button>
+      </div>
+      <div id="paceBadge" class="pace-badge"></div>
+      <div class="summary" id="summary" style="display:none;">
+        <div>학생 수: <b id="sumCount">0</b></div>
+        <div>평균 진행률: <b id="sumAvg">0%</b></div>
+        <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
+      </div>
+      <div class="agg" id="aggPanel" style="display:none;">
+        <span>📋 제출 <b id="aggSub">0</b>명 · 800자 이상 <b id="aggLong">0</b>명</span>
+      </div>
+      <div class="ai-agg" id="ai22Panel" style="display:none;">
+        <span>🤖 <b>1부 탐구 준비(22번) 학생 AI</b> <span style="font-size:12px;color:#777;">— AI 피드백·AI 도우미 (2부 보고서 화면에는 AI가 없어요)</span></span>
+        <button class="ai-toggle" id="ai22ToggleBtn">🤖 1부 학생 AI 끄기</button>
+        <span class="st" id="ai22State"></span>
+      </div>
+      <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
+        <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
+        <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
+        <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
+        <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
+      <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
+      <button class="tab-btn" data-tab="student">③ 학생용</button>
+    </div>
+
+    <div id="tab-summary" class="tab-panel active">
+      <div class="layout">
+        <div class="grid-wrap">
+          <div class="grid-legend">
+            <span><i style="background:#e0e0e0;"></i>안 함 (아직 열어보지 않음)</span>
+            <span><i style="background:#ffb300;"></i>진행중 (열어봤지만 미완료)</span>
+            <span><i class="error"></i>입력함 (확인 필요)</span>
+            <span><i style="background:var(--green);"></i>완료</span>
+            <span><i class="locked"></i>속도조절로 제한된 화면</span>
+          </div>
+          <table id="grid">
+            <thead><tr id="gridHeadRow"></tr></thead>
+            <tbody id="gridBody"><tr><td class="empty" colspan="9">아직 접속한 학생이 없어요.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="detail" id="detail">
+          <h3>학생 선택</h3>
+          <div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체와 AI 채점·피드백을 볼 수 있어요.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-teacher" class="tab-panel">
+      <div class="panel">
+        <div id="teacherTaskTrack" class="pace-track"></div>
+        <div id="teacherTaskLabel" style="font-size:12.5px;color:#888;margin-top:8px;"></div>
+      </div>
+      <div class="teacher-col">
+        <div class="teacher-col-title">✏️ 학생 보고서 전체 (🤖 AI 채점·피드백을 받고 점수를 고칠 수 있어요 · ● 지금 보는 중)</div>
+        <div id="teacherTextWrap" class="text-answer-list"></div>
+      </div>
+    </div>
+
+    <div id="tab-student" class="tab-panel">
+      <div class="panel">
+        <div class="preview-topbar">
+          <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
+          <div class="row">
+            <button id="previewPrevBtn">◀ 이전</button>
+            <span id="previewLabel">1 / 4</span>
+            <button id="previewNextBtn">다음 ▶</button>
+          </div>
+        </div>
+      </div>
+      <div style="border:1px solid #ddd;border-radius:10px;overflow:visible;background:#fff;">
+        <iframe id="previewFrame" title="학생 화면 미리보기" scrolling="auto" style="width:100%;height:900px;border:none;display:block;"></iframe>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   studentpa3.html과 짝이 되는 교사용 실시간 대시보드 (확률 탐구 글쓰기 ② 보고서 제출).
+   teacherpa2.html과 같은 틀(번호순 정렬, 지금 보는 중, 상세 모달, 공지·일시정지·수업 종료, 미리보기)을 쓴다.
+   - 학생 보고서(제목·서론·본론·결론)와 글자 수(띄어쓰기 포함, 연속 띄어쓰기는 1자, 줄바꿈 제외)를 보여준다.
+   - 📊 AI 채점·피드백(2026-10-07 합침): /api/report-grade를 한 번 불러 4개 항목(질문3·자료3·분석4·논리5)마다
+     1차 점수·채점 이유(선생님용)와 학생용 피드백(잘된 점·보완할 점·생각해 볼 질문), 가장 먼저 고칠 점, 제출 상태를 받는다.
+     rooms/{반}__prob33/students/{key}/aiGrade = {scores, reasons, fb:{항목:{good,fix,ask}}, first, status, statusReason, total, hash, ts, model}
+     선생님은 숫자를 눌러 항목별로 고친다(teacherGrade). 표의 "점수" 칸과 엑셀에 최종 점수가 나온다.
+     학생에게는 이 화면에서 보이지 않는다(나중에 별도 결과 확인 탭에서 보여 줄 예정).
+   반드시 아래 두 가지를 studentpa3.html과 동일하게 맞춰야 한다.
+   1) FIREBASE_CONFIG
+   2) ACTIVITY_SUFFIX
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__prob33'; // studentpa3.html과 반드시 동일해야 함
+// ※ 파일 번호를 32·33 → 22·23으로 바꿀 때 이미 저장된 학생 글을 지키려고 Firebase 이름(__prob32/__prob33)은 그대로 두었다.
+const UNIT_LABEL = '23. 확률 탐구 글쓰기 ② 보고서 제출';
+const CONFIG = {
+  GOOGLE_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfUg_9IyuoeYgo4FC5l2wxLdeD_RgSLJXD05iGGdRdz4eBneg/formResponse',
+  ENTRY_UNIT: 'entry.926486903',
+  ENTRY_ROOM: 'entry.2051553698',
+  ENTRY_NUMBER: 'entry.553461765',
+  ENTRY_NAME: 'entry.1279750620',
+  ENTRY_TASK: 'entry.863803595',
+  ENTRY_SUCCESS: 'entry.172713041',
+  ENTRY_ANSWER: 'entry.1090948288'
+};
+
+const TASK_LABELS = [
+  {id:1, key:'r1', label:'보고서 작성'}
+];
+const TASK_IDS = TASK_LABELS.map(t=>t.id);
+function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
+function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
+
+/* ---------- 자료로 인정하지 않는 출처 판별 (studentpa2·studentpa3·teacherpa2·teacherpa3·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+   블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
+   (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
+   링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */
+const BANNED_SOURCES = [
+  ['블로그', ['blog.naver.com','blog.daum.net','tistory.com','egloos.com','blogspot.com','wordpress.com','velog.io','post.naver.com','blog.me']],
+  ['카페', ['cafe.naver.com','cafe.daum.net']],
+  ['커뮤니티', ['dcinside.com','fmkorea.com','theqoo.net','ruliweb.com','clien.net','ppomppu.co.kr','mlbpark.donga.com','inven.co.kr','instiz.net','pann.nate.com','todayhumor.co.kr','bobaedream.co.kr','etoland.co.kr','ilbe.com','82cook.com','reddit.com','humoruniv.com','dogdrip.net','arca.live','ygosu.com','gasengi.com','slrclub.com']],
+  ['SNS', ['instagram.com','facebook.com','fb.com','x.com','twitter.com','threads.net','threads.com','tiktok.com','band.us','kakao.com/story','story.kakao.com']],
+  ['위키', ['namu.wiki','wikipedia.org','wikiwand.com','librewiki.net']],
+  ['질문·답변 사이트', ['kin.naver.com','tip.daum.net','tip.kakao.com','quora.com','answers.yahoo.com']],
+  ['유튜브', ['youtube.com','youtu.be']],
+  ['개인 글 플랫폼', ['brunch.co.kr','medium.com','substack.com','postype.com']],
+  ['AI가 만든 글', ['chatgpt.com','chat.openai.com','openai.com/chat','gemini.google.com','bard.google.com','g.co/gemini','claude.ai','perplexity.ai','wrtn.ai','copilot.microsoft.com','poe.com','character.ai','clova-x.naver.com','askup.upstage.ai','liner.com','gamma.app']]
+];
+const BANNED_NAME_WORDS = [
+  ['블로그', /블로그|티스토리|tistory/i], ['카페', /네이버\s*카페|다음\s*카페/], ['커뮤니티', /디시|에펨|더쿠|루리웹|클리앙|뽐뿌|엠팍|인스티즈|네이트\s*판|오늘의\s*유머|보배드림|레딧|reddit/i],
+  ['SNS', /인스타그램|instagram|페이스북|facebook|트위터|twitter|스레드|틱톡|tiktok/i], ['위키', /나무\s*위키|위키\s*백과|wikipedia|namu\.wiki/i],
+  ['질문·답변 사이트', /지식\s*i?n|지식인|quora/i], ['유튜브', /유튜브|youtube/i], ['개인 글 플랫폼', /브런치|미디엄|medium\.com/i],
+  ['AI가 만든 글', /chat\s*gpt|챗\s*gpt|챗지피티|gemini|제미나이|claude|클로드|perplexity|퍼플렉시티|뤼튼|wrtn|copilot|코파일럿|생성형\s*ai|ai\s*답변/i]
+];
+function bannedSourceKind(link, name){
+  const raw = String(link||'').trim();
+  if(raw){
+    let host = '', path = '';
+    try{ const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://'+raw); host = u.hostname.toLowerCase().replace(/^www\.|^m\./,''); path = u.pathname.toLowerCase(); }catch(e){}
+    if(host){
+      const hp = host + path;
+      for(const [kind, doms] of BANNED_SOURCES){
+        if(doms.some(d => d.includes('/') ? hp.startsWith(d) || hp.startsWith('www.'+d) : (host===d || host.endsWith('.'+d)))) return kind;
+      }
+    }
+  }
+  const nm = String(name||'');
+  for(const [kind, re] of BANNED_NAME_WORDS){ if(re.test(nm)) return kind; }
+  return '';
+}
+
+/* ---------- 학생 보고서 표시 (studentpa3.html의 data 필드) ---------- */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const str = x => (typeof x==='string' ? x : '');
+const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length; // studentpa3.html과 같은 방식(연속 띄어쓰기는 1자, 줄바꿈 제외)
+const SECS = [ {k:'title', name:'제목', min:0}, {k:'intro', name:'서론', min:150}, {k:'body', name:'본론', min:500}, {k:'concl', name:'결론', min:150} ];
+const TOTAL_MIN = 800; // 서론 150·본론 500·결론 150 이상 + 합계 800 이상 (2026-10-12)
+const arrOf = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+const anaOk = t => { const x = String(t||'').trim(); return x.length >= 4 && /\d/.test(x); }; // 숫자가 들어간 분석 줄(studentpa3·api와 같게)
+const srcOf = s => { const d=(s&&s.data)||{}; return arrOf(d.sources).filter(x=>x && (str(x.name).trim()||str(x.link).trim()||arrOf(x.ana).length||arrOf(x.files).length))
+  .map(x=>({name:str(x.name).trim(), link:str(x.link).trim(), ana: arrOf(x.ana).map(t=>str(t).trim()).filter(Boolean), files: arrOf(x.files).filter(f=>f&&f.url).map(f=>({url:str(f.url), name:str(f.name), type:str(f.type)}))})); };
+const repOf = s => { const d=(s&&s.data)||{}; return { title:str(d.title), intro:str(d.intro), body:str(d.body), concl:str(d.concl), sources: srcOf(s) }; };
+const totalOf = s => { const r=repOf(s); return countChars(r.intro)+countChars(r.body)+countChars(r.concl); };
+const hasReport = s => { const r=repOf(s); return !!(r.title.trim()||r.intro.trim()||r.body.trim()||r.concl.trim()); };
+
+/* 보고서 내용 지문(글이 바뀌었는지 비교용) */
+function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sources.map(x=>x.name+' '+x.link+' '+x.files.length).join('\n')].join('\u0001'); let h=5381; for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i))>>>0; return h.toString(36); }
+function activityDetailHTML(s, id, key){
+  if(!hasReport(s)) return key ? gradeBoxHTML(key, s) : '';
+  const r = repOf(s), tot = totalOf(s);
+  let h = `<div class="rep"><div class="tot">서론+본론+결론 <b style="color:${tot>=TOTAL_MIN?'#2e7d32':'#e65100'};">${tot.toLocaleString()}자</b> / ${TOTAL_MIN}자 이상 · ${s.submitted?'<b style="color:#2e7d32;">✅ 제출함</b>':'<span style="color:#e65100;">미제출</span>'}</div>`;
+  SECS.forEach(x=>{
+    const n = countChars(r[x.k]), short = x.min && n < x.min;
+    h += `<h4><span>[${x.name}]</span><span class="c${short?' short':''}">${n.toLocaleString()}자${x.min?` / ${x.min}자 이상`:''}</span></h4>` +
+         `<div class="v${r[x.k].trim()?'':' none'}">${r[x.k].trim()?esc(r[x.k]):'(비어 있음)'}</div>`;
+  });
+  const srcs = r.sources;
+  h += `<h4><span>[자료 출처]</span><span class="c${srcs.length<2?' short':''}">자료 ${srcs.length}개</span></h4>` + (srcs.length
+    ? '<ol style="margin:2px 0;padding-left:20px;font-size:13.5px;">' + srcs.map(x=>`<li style="margin-bottom:6px;">${bannedSourceKind(x.link, x.name)?`<b style="color:#c62828;">🚫 ${esc(bannedSourceKind(x.link, x.name))}(인정 안 됨)</b> `:''}${esc(x.name)||'<span style="color:#bbb;">(이름 없음)</span>'}${x.link?` — ${/^https?:\/\//i.test(x.link)?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:#1565c0;word-break:break-all;">${esc(x.link)}</a>`:`<span style="color:#e65100;">${esc(x.link)}</span>`}`:' <span style="color:#e65100;">(링크 없음 — 자료로 안 셈)</span>'}
+      ${x.files.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">${x.files.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}" style="display:inline-flex;align-items:center;gap:4px;border:1px solid #cfd8dc;border-radius:6px;padding:2px 6px;font-size:12px;color:#1565c0;text-decoration:none;">${/^image\//.test(f.type)?`<img src="${esc(f.url)}" style="height:120px;max-width:200px;object-fit:contain;background:#f5f7f9;border-radius:4px;">`:'📄'}<span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.name||'파일')}</span></a>`).join('')}</div>`:'<div style="font-size:12px;color:#e65100;">(스크린샷 없음 — 자료로 안 셈)</div>'}</li>`).join('') + '</ol>'
+    : '<div class="v none">(비어 있음)</div>');
+  h += '</div>';
+  return h + (key ? gradeBoxHTML(key, s) : '');
+}
+/* 요약 패널 */
+function renderAggregate(){
+  const panel=document.getElementById('aggPanel'); if(!panel) return;
+  panel.style.display = currentRoomKey ? 'flex' : 'none';
+  const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
+  document.getElementById('aggSub').textContent = list.filter(s=>s.submitted).length;
+  document.getElementById('aggLong').textContent = list.filter(s=>totalOf(s)>=TOTAL_MIN).length;
+}
+
+/* ---------- 📊 채점: AI가 1차 채점 → 선생님이 항목별로 고친다 (teacherpa1과 같은 방식) ----------
+   rooms/{반}__prob33/students/{key}/aiGrade      = {scores:{question,data,analysis,logic}, reasons:{...}, total, hash, ts, model}
+   rooms/{반}__prob33/students/{key}/teacherGrade = {question:2, ...}  ← 선생님이 고친 항목만(AI 점수와 같게 고르면 지움)
+   최종 점수 = 선생님 점수가 있으면 그것, 없으면 AI 점수. 학생 화면에는 점수를 보여주지 않는다.
+   hash: 채점할 때의 보고서 지문 — 채점 뒤 학생이 글을 고치면 "다시 채점" 안내가 뜨고 일괄 채점 대상이 된다. */
+/* 탐구 질문 5항목(1부 step1 자기평가와 같은 기준) — AI가 ○△✕로 판단, 점수 = ○0.6·△0.3·✕0 합계 반올림 */
+/* 탐구 질문 3항목(2026-10-12 간소화): (1) 질문을 씀 = 기본 1점 (2) 확률을 구하는 질문 (3) 예측형·비교선택형 형태 — 각 1점 */
+const Q3 = ["탐구 질문을 썼는가? (기본 1점)", "확률을 구하는 질문인가?", "예측형 또는 비교·선택형 질문의 형태인가?"];
+const Q3S = ['질문을 씀(기본)','확률을 구함','예측형·비교선택형'];
+const D3S = ["자료 1이 질문에 맞음", "자료 2가 맞고 다른 정보", "계산에 필요한 수치 모두"];
+const A4S = { '비교·선택형': ['확률1 수치','확률2 수치','확률1 식·결과','확률2 식·결과'], '예측형': ['분자 수치','분모 수치','분수(식)','계산 결과'] };
+const L5S = ['서론 150자','본론 500자','결론 150자','결론에 답','확률 해석'];
+const A4N = ['자료1 활용','자료2 활용','확률 계산','확률값 해석']; // 2026-10-12: 본론에서 판단
+/* 자료 분석·글의 논리: 항목별 1/0 칩 */
+function binChips(k, ai, sc){
+  if(!ai) return '';
+  let names = null, c = '';
+  if(k==='analysis'){ if(typeof ai.achecks==='string' && ai.achecks.length===4 && !ai.qtype){ names = A4N; c = ai.achecks; } else return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(본론에서 자료1·자료2 활용, 계산, 해석)으로 채점해요.</small></div>`; }
+  if(k==='logic' && typeof ai.lchecks==='string' && ai.lchecks){ names = L5S; c = ai.lchecks; }
+  if(!names) return '';
+  return `<div class="gr-q">${names.map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${c[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${sc}점${k==='logic'?' (글자 수 3칸은 프로그램이 셈)':''}</small></div>`;
+}
+const Q5S = ['확률을 구함','예측형·비교선택형','대상·기간·조건','공식 자료로 답','수치로 계산·비교'];
+const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
+const SCORE_MAX = 15;
+const gradePending = new Set();
+let gradeBulkRunning = false;
+const isNum = v => typeof v === 'number' && isFinite(v);
+function gradeOf(s){
+  const ai = (s && s.aiGrade && s.aiGrade.scores) ? s.aiGrade : null;
+  const tg = (s && s.teacherGrade) || {};
+  let total = 0, cnt = 0, ov = 0;
+  const items = CRITERIA.map(c=>{
+    const a = ai && isNum(ai.scores[c.k]) ? ai.scores[c.k] : null;
+    const t = isNum(tg[c.k]) ? tg[c.k] : null;
+    const f = t!=null ? t : a;
+    if(f!=null){ total += f; cnt++; }
+    if(t!=null) ov++;
+    return Object.assign({}, c, { ai:a, teacher:t, final:f, reason: ai && ai.reasons ? (ai.reasons[c.k]||'') : '' });
+  });
+  return { items, total, complete: cnt===CRITERIA.length, any: cnt>0, overridden: ov, ai, stale: !!ai && !!ai.hash && ai.hash !== repHash(s) };
+}
+function gradeBoxHTML(key, s){
+  const g = gradeOf(s), pending = gradePending.has(key);
+  const can = hasReport(s) && !pending;
+  const when = g.ai && g.ai.ts ? new Date(g.ai.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → 숫자를 눌러 선생님이 항목별로 고쳐요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
+    <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점·피드백 받는 중… (10~40초)' : (g.ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button></div>`;
+  if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
+  if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
+  if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
+  g.items.forEach(it=>{
+    let chips = '';
+    for(let v=0; v<=it.max; v++){
+      const on = it.final===v, aiMark = it.ai===v;
+      chips += `<button class="${on?'on':''}${aiMark?' ai-mark':''}" data-gs="${esc(key)}" data-gc="${it.k}" data-gv="${v}" title="${aiMark?'AI 점수 · ':''}${v}점으로 정하기">${v}</button>`;
+    }
+    const why = it.teacher!=null && it.teacher!==it.ai
+      ? `<span class="ov">선생님 수정 ${it.teacher}점</span>${it.ai!=null?` (AI ${it.ai}점: ${esc(it.reason)})`:''} <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="font-size:11.5px;color:#888;">↺ AI 점수로</a>`
+      : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
+    const f = g.ai && g.ai.fb && g.ai.fb[it.k];
+    const qc = it.k==='question' && g.ai && typeof g.ai.qchecks==='string' && g.ai.qchecks ? g.ai.qchecks : '';
+    const qch = qc ? (qc.length===3 ? `<div class="gr-q">${Q3.map((t,i)=>`<span class="${qc[i]==='O'?'o':'x'}" title="${esc(t)}">${i+1}. ${esc(Q3S[i])} <b>${qc[i]==='O'?'1':'0'}</b></span>`).join('')}<small>${qc[0]==='X' ? '질문이 없어 0점' : `합계 ${it.ai}점`}</small></div>` : `<div class="gr-q"><small>예전 기준(5항목)으로 채점된 결과예요. "다시 받기"를 누르면 새 기준으로 채점해요.</small></div>`) : '';
+    const dc = it.k==='data' && g.ai && typeof g.ai.dchecks==='string' && g.ai.dchecks ? g.ai.dchecks : '';
+    const dch = dc ? `<div class="gr-q">${D3S.map((t,i)=>`<span class="${dc[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${dc[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${it.ai}점${it.ai===0 && dc.includes('O') ? ' (인정되는 자료가 없어 0점)' : ''}</small></div>` : '';
+    const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
+      + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
+      + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
+    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${qch}${dch}${binChips(it.k, g.ai, it.ai)}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
+  });
+  if(g.ai && (g.ai.first || g.ai.status)){
+    const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
+    h += `<div class="gr-sum">${g.ai.first?`<div class="fb-sec first"><div class="fb-hd"><span>가장 먼저 고치면 좋은 점</span></div><p>${esc(g.ai.first)}</p></div>`:''}`
+      + (ST ? `<div class="fb-sec ${ST[0]}"><div class="fb-hd"><span>${ST[1]}</span></div>${g.ai.statusReason?`<p>${esc(g.ai.statusReason)}</p>`:''}</div>` : '') + '</div>';
+  }
+  h += `<div class="gr-total">${g.overridden?`<span style="font-size:12px;color:#00695c;">선생님 수정 ${g.overridden}개</span>`:''}합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}점${g.any && !g.complete ? ' <span style="font-size:12px;color:#e65100;">(일부 항목 미채점)</span>' : ''}</div></div>`;
+  return h;
+}
+async function requestGrade(key){
+  const s = allStudents[key];
+  if(!s || !hasReport(s) || gradePending.has(key)) return false;
+  gradePending.add(key); refreshAI();
+  try{
+    const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
+    const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
+      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
+    await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
+    if(allStudents[key]) allStudents[key].aiGrade = g;
+    return true;
+  }catch(err){
+    throw new Error(`${s.name||key}: ${err.message||err}`);
+  }finally{
+    gradePending.delete(key); refreshAI();
+  }
+}
+async function setTeacherScore(key, c, v){
+  const s = allStudents[key]; if(!s) return;
+  const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
+  const val = (v==null || v===ai) ? null : v; // AI 점수와 같게 고르면 '수정 없음'으로
+  await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/teacherGrade/'+c).set(val);
+  if(!s.teacherGrade) s.teacherGrade = {};
+  if(val==null) delete s.teacherGrade[c]; else s.teacherGrade[c] = val;
+  refreshAI(); renderGrid();
+}
+/* 일괄 채점 대상: 제출했고, 아직 AI 채점 전이거나 채점 뒤 글을 고친 학생 */
+function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
+function renderGradePanel(){
+  const panel = document.getElementById('gradePanel'); if(!panel) return;
+  panel.style.display = currentRoomKey ? 'flex' : 'none';
+  const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
+  const graded = list.map(gradeOf).filter(g=>g.any);
+  document.getElementById('grAi').textContent = list.filter(s=>s.aiGrade&&s.aiGrade.scores).length;
+  document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
+  document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
+  const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
+  btn.textContent = `🤖 AI 채점·피드백 일괄 — 제출했고 아직 안 받았거나 고친 학생 (${n}명)`;
+  btn.disabled = n===0 || gradeBulkRunning;
+}
+document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
+  const keys = gradeEligibleKeys(); if(!keys.length) return;
+  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 3명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
+  gradeBulkRunning = true; renderGradePanel();
+  const st = document.getElementById('gradeBulkStatus');
+  let ok=0, fail=[], i=0;
+  const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestGrade(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `채점 중… ${ok+fail.length}/${keys.length}`; } };
+  await Promise.all([worker(),worker(),worker()]);
+  gradeBulkRunning = false; renderGradePanel(); renderGrid();
+  st.textContent = `완료: ${ok}명 채점` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 채점해요)` : '');
+  if(fail.length) console.warn('AI 채점 실패:', fail);
+});
+/* 점수 엑셀(.xlsx) 내려받기 — 항목별 최종 점수(선생님 수정 반영) + AI 점수 */
+document.getElementById('exportExcelBtn').addEventListener('click', ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  if(typeof XLSX==='undefined'){ alert('엑셀 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.'); return; }
+  const list = Object.keys(allStudents).map(k=>allStudents[k]||{}).sort(byNumber);
+  if(!list.length){ alert('아직 접속한 학생이 없어요.'); return; }
+  const header = ['번호','이름', ...CRITERIA.map(c=>`${c.name} /${c.max}점`), `총점 /${SCORE_MAX}점`, '선생님 수정 항목 수', ...CRITERIA.map(c=>`(AI) ${c.name}`), '(AI) 총점', '제목', '글자 수', '자료 출처 수', '제출 여부'];
+  const rows = [header];
+  list.forEach(s=>{
+    const g = gradeOf(s), r = repOf(s);
+    rows.push([ s.number||'', s.name||'(이름없음)', ...g.items.map(it=> it.final==null ? '' : it.final), g.any ? g.total : '', g.overridden,
+      ...g.items.map(it=> it.ai==null ? '' : it.ai), g.ai ? CRITERIA.reduce((a,c)=>a+(g.ai.scores[c.k]||0),0) : '',
+      r.title, totalOf(s), r.sources.length, s.submitted ? '제출완료' : '미제출' ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:10},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:9},{wch:30},{wch:8},{wch:10},{wch:9}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '점수');
+  const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `수행평가_확률탐구보고서_${currentRoomName||''}반_${ymd}.xlsx`);
+});
+
+function refreshAI(){ renderAggregate(); renderGradePanel(); renderTeacherView(); refreshOpenModal(); }
+document.addEventListener('click', async e=>{
+  if(!e.target.closest) return;
+  // 📊 채점 상자: 점수 숫자 / ↺ AI 점수로 / 🤖 AI 채점
+  const gs = e.target.closest('[data-gs]'), gr = e.target.closest('[data-gr]'), ga = e.target.closest('[data-grade-ai]');
+  if(gs || gr || ga){
+    e.stopPropagation(); e.preventDefault();
+    try{
+      if(gs) await setTeacherScore(gs.dataset.gs, gs.dataset.gc, parseInt(gs.dataset.gv,10));
+      else if(gr) await setTeacherScore(gr.dataset.gr, gr.dataset.gc, null);
+      else { const k = ga.dataset.gradeAi; await requestGrade(k); renderGrid(); }
+    }catch(err){ alert('채점하지 못했어요.\n'+(err.message||err)+'\n\n잠시 후 다시 눌러 보세요.'); }
+    return;
+  }
+}, true);
+let tdmKey = null;
+function refreshOpenModal(){
+  if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
+  const s = allStudents[tdmKey]; if(!s) return;
+  document.getElementById('tdmTextWrap').innerHTML = activityDetailHTML(s, 1, tdmKey) || '';
+}
+function onStudentsUpdated(){ refreshOpenModal(); }
+
+let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
+/* 🤖 1부(22번) 학생 AI 켜기/끄기 — teacherpa2와 같은 값(rooms/{반}__prob32/control/aiOff)을 쓴다.
+   mgmt에서 23번을 열면 자동으로 꺼지고, 여기서 다시 켤 수 있다. */
+const AI22_SUFFIX = '__prob32';
+let ai22Ref = null, ai22Off = false;
+function renderAi22(){
+  const box = document.getElementById('ai22Panel'); if(!box) return;
+  box.style.display = ai22Ref ? 'flex' : 'none';
+  const btn = document.getElementById('ai22ToggleBtn');
+  btn.textContent = ai22Off ? '🤖 1부 학생 AI 켜기' : '🤖 1부 학생 AI 끄기';
+  btn.classList.toggle('off', ai22Off);
+  document.getElementById('ai22State').textContent = ai22Off ? '🔒 꺼져 있어요. (mgmt에서 23번을 열면 자동으로 꺼져요)' : '🟢 켜져 있어요 — 학생이 1부 화면에서 AI를 쓸 수 있어요.';
+}
+let paused=false, anonymize=false, checkedKeys=new Set();
+let classEnded=false, currentRoomName='';
+let paceStart=null, paceEnd=null;
+
+function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
+
+const PSEUDONYMS = ['유클리드','가우스','히파티아','디오판토스','피타고라스','아르키메데스','탈레스','에라토스테네스','데카르트','오일러','뉴턴','라이프니츠','파스칼','칸토어','뇌터','튜링'];
+function displayName(key, name, number){
+  if(!anonymize) return (number ? number+'번 ' : '') + (name || '(이름없음)');
+  let h=0;
+  for(let i=0;i<key.length;i++) h=(h*31 + key.charCodeAt(i)) >>> 0;
+  return PSEUDONYMS[h % PSEUDONYMS.length];
+}
+/* 학생 목록을 이름 가나다순이 아니라 출석번호 순으로 정렬한다(항상 번호순 — 완료개수로
+   먼저 정렬하던 예전 방식은 쓰지 않는다). */
+function byNumber(a, b){
+  const na = parseInt(a.number, 10), nb = parseInt(b.number, 10);
+  const va = isNaN(na) ? Infinity : na, vb = isNaN(nb) ? Infinity : nb;
+  if(va !== vb) return va - vb;
+  return (a.name||'').localeCompare(b.name||'');
+}
+function taskDone(s, id){ const k=keyOf(id); return !!(s.progress && s.progress[k] && s.progress[k].done); }
+function taskVisited(s, id){ const k=keyOf(id); return !!(s.progress && s.progress[k] && s.progress[k].visited); }
+function taskValue(s, id){ const k=keyOf(id); return (s.progress && s.progress[k] && s.progress[k].value) ? String(s.progress[k].value) : ''; }
+function doneCountOf(s){ return TASK_IDS.filter(id=>taskDone(s,id)).length; }
+function isAllDone(s){ return doneCountOf(s)===TASK_IDS.length; }
+function fmtTime(ts){
+  if(!ts) return '-';
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+
+/* ---------- 그리드 헤더: 과제 4개를 각각 열로 만든다(클릭하면 ② 교사용 뷰로 이동) ---------- */
+function buildGridHead(){
+  const tr = document.getElementById('gridHeadRow');
+  tr.textContent='';
+
+  const th0=document.createElement('th');
+  const checkAll=document.createElement('input');
+  checkAll.type='checkbox'; checkAll.id='checkAll';
+  checkAll.addEventListener('change', ()=> toggleCheckAll(checkAll.checked));
+  th0.appendChild(checkAll);
+  tr.appendChild(th0);
+
+  const th1=document.createElement('th'); th1.style.textAlign='left'; th1.textContent='이름';
+  tr.appendChild(th1);
+
+  const th2=document.createElement('th'); th2.textContent='번호';
+  tr.appendChild(th2);
+
+  const th3=document.createElement('th'); th3.textContent='진행률';
+  tr.appendChild(th3);
+
+  TASK_LABELS.forEach(t=>{
+    const th=document.createElement('th');
+    th.className='taskcol';
+    th.textContent=String(t.id);
+    th.title=`클릭하면 ② 교사용 뷰에서 [${t.label}]을 볼 수 있어요`;
+    th.addEventListener('click', ()=> gotoTeacherTab(t.id));
+    tr.appendChild(th);
+  });
+
+  const thScore=document.createElement('th'); thScore.textContent='점수';
+  thScore.title='최종 점수(선생님 수정 반영) / 15점 — 누르면 채점 화면이 열려요';
+  tr.appendChild(thScore);
+
+  const thTime=document.createElement('th'); thTime.textContent='마지막 활동';
+  tr.appendChild(thTime);
+}
+buildGridHead();
+const GRID_COLSPAN = 4 + TASK_IDS.length + 2; // 체크박스+이름+번호+진행률 + 과제N개 + 점수 + 마지막활동
+
+function populateRoomSelect(){
+  const sel=document.getElementById('roomCode');
+  for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=i+'반'; sel.appendChild(o); }
+}
+populateRoomSelect();
+
+document.getElementById('connectBtn').addEventListener('click', ()=>{
+  const room = document.getElementById('roomCode').value.trim();
+  const statusEl = document.getElementById('connStatus');
+  if(!FIREBASE_CONFIG.apiKey){ statusEl.textContent='⚠️ FIREBASE_CONFIG가 설정되지 않았어요.'; return; }
+  if(!room){ statusEl.textContent='반을 선택해주세요.'; return; }
+  try{
+    if(!app){ app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); }
+    statusEl.textContent='🔄 연결 중...';
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = sanitize(room) + ACTIVITY_SUFFIX;
+      currentRoomKey = roomKey;
+      currentRoomName = room;
+      const roomRef = db.ref('rooms/'+roomKey);
+      studentsRef = roomRef.child('students');
+      controlRef = roomRef.child('control');
+      if(ai22Ref) ai22Ref.off();
+      ai22Ref = db.ref('rooms/'+sanitize(room)+AI22_SUFFIX+'/control/aiOff');
+      ai22Ref.on('value', sn=>{ ai22Off = !!sn.val(); renderAi22(); });
+      selectedKey = null; checkedKeys = new Set();
+      setPaceRange(null, null, /*fromRemote*/true);
+      // 1초에 한 번만 다시 그리되, 그 사이 들어온 마지막 변경은 버리지 않고 1초 뒤에 반영한다.
+      let __ggbThrottleTs = 0, __ggbPendingSnap = null, __ggbTimer = null;
+      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); renderGradePanel(); onStudentsUpdated(); };
+      studentsRef.on('value', snap=>{
+        const wait = 1000 - (Date.now()-__ggbThrottleTs);
+        if(wait<=0){ __ggbApply(snap); return; }
+        __ggbPendingSnap = snap;
+        if(!__ggbTimer) __ggbTimer = setTimeout(()=>{ __ggbTimer=null; const sn=__ggbPendingSnap; __ggbPendingSnap=null; if(sn) __ggbApply(sn); }, wait);
+      });
+      controlRef.on('value', snap=>{
+        const c = snap.val() || {};
+        paused = !!c.paused;
+        updatePauseBtn();
+        classEnded = !!c.classEnded;
+        updateClassButtons();
+        if(c.minTaskId!=null || c.maxTaskId!=null){
+          const mn = c.minTaskId!=null ? c.minTaskId : TASK_IDS[0];
+          const mx = c.maxTaskId!=null ? c.maxTaskId : TASK_IDS[TASK_IDS.length-1];
+          setPaceRange(mn, mx, /*fromRemote*/true);
+        }else{
+          setPaceRange(null, null, /*fromRemote*/true);
+        }
+      });
+      document.getElementById('teacherGateScreen').style.display='none';
+      document.getElementById('teacherAppScreen').style.display='block';
+      document.getElementById('currentRoomLabel').textContent = room+'반';
+      document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(room));
+      document.getElementById('summary').style.display='flex';
+      renderAggregate(); renderGradePanel();
+    }).catch(err=>{ statusEl.textContent='⚠️ 로그인 실패: '+err.message; });
+  }catch(err){ statusEl.textContent='⚠️ 연결 실패: '+err.message; }
+});
+
+/* teacher.html에서 반을 먼저 고른 뒤 이 단원으로 넘어온 경우, 자동으로 그 반에 연결한다. */
+(function autoConnectFromUrl(){
+  const params = new URLSearchParams(location.search);
+  const classNo = (params.get('classNo')||'').trim();
+  if(!classNo) return;
+  const sel = document.getElementById('roomCode');
+  if([...sel.options].some(o=>o.value===classNo)){
+    sel.value = classNo;
+    setTimeout(()=> document.getElementById('connectBtn').click(), 0);
+  }
+})();
+
+function updatePauseBtn(){
+  const btn=document.getElementById('pauseBtn');
+  btn.classList.toggle('active', paused);
+  btn.textContent = paused ? '▶ 재개하기' : '⏸ 전체 일시정지';
+}
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ paused: !paused });
+});
+
+document.getElementById('anonymizeBtn').addEventListener('click', ()=>{
+  anonymize = !anonymize;
+  const btn=document.getElementById('anonymizeBtn');
+  btn.classList.toggle('active', anonymize);
+  btn.textContent = anonymize ? '🎭 익명화 해제' : '🎭 익명화';
+  renderGrid();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!confirm(`${currentRoomKey}반의 학생 접속 기록을 모두 지울까요? (이전 시간대 학생 목록을 정리할 때 사용하세요)`)) return;
+  studentsRef.set(null);
+  selectedKey = null; checkedKeys = new Set();
+});
+
+document.getElementById('announceBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const input=document.getElementById('announceInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  controlRef.update({ announcement: msg, announcementTs: Date.now() });
+  input.value='';
+});
+document.getElementById('announceClearBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ announcement: '', announcementTs: Date.now() });
+});
+
+function toggleCheck(key, checked){
+  if(checked) checkedKeys.add(key); else checkedKeys.delete(key);
+  updateDeleteBtn();
+  updateSurveyBtn();
+  const checkAll = document.getElementById('checkAll');
+  if(checkAll) checkAll.checked = Object.keys(allStudents).length>0 && Object.keys(allStudents).every(k=>checkedKeys.has(k));
+}
+function toggleCheckAll(checked){
+  checkedKeys = new Set(checked ? Object.keys(allStudents) : []);
+  renderGrid();
+}
+function updateDeleteBtn(){
+  const btn=document.getElementById('deleteSelectedBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `🗑 선택 삭제 (${checkedKeys.size})`;
+}
+function updateSurveyBtn(){
+  const btn=document.getElementById('surveySubmitBtn');
+  if(!btn) return;
+  btn.disabled = checkedKeys.size===0;
+  btn.textContent = `📨 설문 제출 (${checkedKeys.size})`;
+}
+function updateClassButtons(){
+  const endBtn=document.getElementById('classEndBtn');
+  const startBtn=document.getElementById('classStartBtn');
+  if(endBtn) endBtn.classList.toggle('active', classEnded);
+  if(startBtn) startBtn.classList.toggle('active', !classEnded);
+}
+
+/* ---------- 학생 답변(과제 4개 전부)을 구글 설문지로 전송 (교사가 직접) ---------- */
+function submitStudentAnswersToGoogleForm(s){
+  if(!(CONFIG.GOOGLE_FORM_URL && CONFIG.ENTRY_TASK)) return 0;
+  let sent=0;
+  TASK_IDS.forEach(id=>{
+    if(!taskDone(s,id)) return; // 완료(제출)된 과제만 전송
+    const body=new URLSearchParams();
+    const addField=(entryName,val)=>{ if(!entryName) return; body.append(entryName, val==null?'':val); };
+    addField(CONFIG.ENTRY_UNIT, UNIT_LABEL);
+    addField(CONFIG.ENTRY_ROOM, currentRoomName);
+    addField(CONFIG.ENTRY_NUMBER, s.number);
+    addField(CONFIG.ENTRY_NAME, s.name);
+    addField(CONFIG.ENTRY_TASK, keyOf(id)+'_'+taskLabelOf(id));
+    addField(CONFIG.ENTRY_SUCCESS, '성공');
+    addField(CONFIG.ENTRY_ANSWER, taskValue(s,id));
+    // fetch는 각각 독립된 요청이라 여러 개(과제 4개 x 학생 수)를 동시에 보내도 서로 방해하지 않는다.
+    fetch(CONFIG.GOOGLE_FORM_URL, {method:'POST', mode:'no-cors', body}).catch(()=>{});
+    sent++;
+  });
+  return sent;
+}
+document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
+  if(checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명(${names.join(', ')})의 완료된 답을 구글 설문지로 제출할까요?`)) return;
+  let total=0;
+  checkedKeys.forEach(k=>{ if(allStudents[k]) total += submitStudentAnswersToGoogleForm(allStudents[k]); });
+  alert(`${checkedKeys.size}명, 총 ${total}개 문항을 설문지로 전송했어요.`);
+});
+
+/* ---------- 수업 시작/종료 (일시정지와는 별개) ---------- */
+document.getElementById('classEndBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: true, classEndedTs: Date.now() });
+});
+document.getElementById('classStartBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  controlRef.update({ classEnded: false, classStartedTs: Date.now() });
+});
+document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
+  if(!studentsRef || checkedKeys.size===0) return;
+  const names = Array.from(checkedKeys).map(k=> (allStudents[k]&&allStudents[k].name) || '(이름없음)');
+  if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}`)) return;
+  const updates = {};
+  checkedKeys.forEach(k=>{ updates[k] = null; });
+  studentsRef.update(updates);
+  if(selectedKey && checkedKeys.has(selectedKey)) selectedKey = null;
+  checkedKeys = new Set();
+});
+
+document.getElementById('ai22ToggleBtn').addEventListener('click', ()=>{
+  if(!ai22Ref){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!ai22Off && !confirm('이 반 학생들의 1부(22번) AI 피드백·AI 도우미를 끌까요?')) return;
+  if(ai22Off && !confirm('1부(22번) 학생 AI를 다시 켤까요?\n※ 2부 보고서를 쓰는 중이면 학생이 다른 탭에서 1부 AI를 쓸 수 있어요.')) return;
+  ai22Ref.set(!ai22Off);
+});
+document.getElementById('changeRoomBtn').addEventListener('click', ()=>{
+  if(studentsRef) studentsRef.off();
+  if(controlRef) controlRef.off();
+  if(ai22Ref){ ai22Ref.off(); ai22Ref = null; } renderAi22();
+  allStudents={}; selectedKey=null; checkedKeys=new Set(); paused=false; currentRoomKey=null; renderAggregate(); renderGradePanel();
+  document.getElementById('teacherAppScreen').style.display='none';
+  document.getElementById('teacherGateScreen').style.display='block';
+  document.getElementById('connStatus').textContent='반을 선택하고 "시작하기"를 눌러주세요.';
+});
+
+/* ---------- ① 요약뷰: 번호순 정렬 + 진행률 막대 + 과제별 4단계 칸 ---------- */
+const DEFAULT_DETAIL_HTML = `<h3>학생 선택</h3><div class="empty">표에서 이름을 클릭하면<br>그 학생의 진행 상황이 여기 나와요.<br><br>보고서 칸(또는 행)을 클릭하면<br>보고서 전체와 AI 채점·피드백을 볼 수 있어요.</div>`;
+function resetDetailPanel(){
+  document.getElementById('detail').innerHTML = DEFAULT_DETAIL_HTML;
+}
+
+function renderGrid(){
+  const body = document.getElementById('gridBody');
+  body.textContent='';
+  Array.from(checkedKeys).forEach(k=>{ if(!allStudents[k]) checkedKeys.delete(k); });
+  const keys = Object.keys(allStudents);
+  if(keys.length===0){
+    body.innerHTML = `<tr><td class="empty" colspan="${GRID_COLSPAN}">아직 접속한 학생이 없어요.</td></tr>`;
+    document.getElementById('sumCount').textContent='0';
+    document.getElementById('sumAvg').textContent='0%';
+    document.getElementById('sumDone').textContent='0';
+    const checkAllEmpty=document.getElementById('checkAll');
+    if(checkAllEmpty) checkAllEmpty.checked=false;
+    updateDeleteBtn();
+    updateSurveyBtn();
+    if(selectedKey){ selectedKey=null; resetDetailPanel(); }
+    renderTeacherView();
+    return;
+  }
+  const list = keys.map(k=>({ key:k, student: allStudents[k]||{} }));
+  list.sort((a,b)=> byNumber(a.student, b.student));
+
+  let totalPct=0, allDoneCount=0;
+  list.forEach(item=>{
+    const s = item.student;
+    const done = doneCountOf(s);
+    const total = TASK_IDS.length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    totalPct += pct;
+    if(isAllDone(s)) allDoneCount++;
+    const idle = s.online===false;
+
+    const tr = document.createElement('tr');
+    tr.className = [(item.key===selectedKey?'selected':''), (idle?'idle':'')].filter(Boolean).join(' ');
+
+    const tdCheck=document.createElement('td');
+    tdCheck.addEventListener('click', e=>e.stopPropagation());
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.className='rowCheck'; cb.checked=checkedKeys.has(item.key);
+    cb.addEventListener('click', ()=> toggleCheck(item.key, cb.checked));
+    tdCheck.appendChild(cb);
+    tr.appendChild(tdCheck);
+
+    const tdName = document.createElement('td');
+    tdName.className='name';
+    tdName.addEventListener('click', ()=>{ selectedKey = item.key; renderGrid(); });
+    const dot = document.createElement('span');
+    dot.className='dot '+(idle?'off':'on');
+    tdName.appendChild(dot);
+    const nameText=document.createElement('span');
+    nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
+    if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
+    tdName.appendChild(nameText);
+    if(s.submitted){
+      const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
+      tdName.appendChild(sc);
+    }else{
+      const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
+      tdName.appendChild(sd);
+    }
+    tr.appendChild(tdName);
+
+    const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
+    tr.appendChild(tdNum);
+
+    const tdPct=document.createElement('td');
+    const pbarWrap=document.createElement('span'); pbarWrap.className='pbar-wrap';
+    const pbarFill=document.createElement('span'); pbarFill.className='pbar-fill'; pbarFill.style.width=pct+'%';
+    pbarWrap.appendChild(pbarFill);
+    tdPct.appendChild(pbarWrap);
+    tdPct.appendChild(document.createTextNode(' '+pct+'%'));
+    tr.appendChild(tdPct);
+
+    TASK_LABELS.forEach(t=>{
+      const done2 = taskDone(s,t.id);
+      const visited = taskVisited(s,t.id);
+      const val = taskValue(s,t.id);
+      const hasValue = val!=null && val!=='';
+      const isError = !done2 && hasValue;
+      const cur = s.currentTaskId===t.id;
+      const locked = paceStart!=null && paceEnd!=null && (t.id<paceStart || t.id>paceEnd);
+      const stateClass = done2 ? 'done' : (isError ? 'error' : (visited ? 'progress' : 'pending'));
+      const stateLabel = done2 ? '완료' : (isError ? '입력함(확인 필요)' : (visited ? '진행중' : '안 함'));
+      const lockedLabel = locked ? ' (속도조절로 제한됨)' : '';
+
+      const td=document.createElement('td');
+      const cell=document.createElement('span');
+      cell.className = ['cell', stateClass, (cur?'current':''), (locked?'locked':'')].filter(Boolean).join(' ');
+      cell.title = `${t.label} — ${stateLabel}${lockedLabel}`;
+      cell.textContent = isError ? '!' : '';
+      cell.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, t.id); });
+      td.appendChild(cell);
+      tr.appendChild(td);
+    });
+
+    const tdScore=document.createElement('td'); tdScore.className='score-cell';
+    const gg = gradeOf(s);
+    if(gg.any){
+      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' ⚠️':''}</span>`;
+      tdScore.title = `${gg.total}/${SCORE_MAX}점` + (gg.overridden?` · 선생님 수정 ${gg.overridden}개`:' · AI 점수') + (gg.stale?' · 채점 뒤 글이 바뀜':'');
+    } else { tdScore.textContent = '-'; tdScore.style.color='#bbb'; tdScore.title='아직 채점 전'; }
+    tdScore.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); });
+    tr.appendChild(tdScore);
+
+    const tdTime=document.createElement('td');
+    tdTime.textContent = fmtTime(s.lastActive);
+    tr.appendChild(tdTime);
+
+    body.appendChild(tr);
+  });
+
+  document.getElementById('sumCount').textContent = list.length;
+  document.getElementById('sumAvg').textContent = Math.round(totalPct/list.length)+'%';
+  document.getElementById('sumDone').textContent = allDoneCount;
+
+  const checkAll = document.getElementById('checkAll');
+  if(checkAll) checkAll.checked = list.length>0 && list.every(i=>checkedKeys.has(i.key));
+  updateDeleteBtn();
+  updateSurveyBtn();
+
+  if(selectedKey){
+    const sel = list.find(i=>i.key===selectedKey);
+    if(sel) renderDetail(sel); else { selectedKey=null; resetDetailPanel(); }
+  }
+  renderTeacherView();
+}
+
+function renderDetail(item){
+  const wrap = document.getElementById('detail');
+  wrap.textContent='';
+  const h3 = document.createElement('h3');
+  h3.textContent = displayName(item.key, item.student.name, item.student.number);
+  wrap.appendChild(h3);
+  const s = item.student;
+  const meta=document.createElement('div');
+  meta.style.cssText='font-size:12.5px;color:#888;margin-bottom:10px;';
+  meta.textContent = `마지막 활동: ${fmtTime(s.lastActive)} · 글자 수 ${totalOf(s).toLocaleString()}자 · 제출: ${s.submitted?'✅ 완료':'미제출'} · AI 채점·피드백: ${(s.aiGrade&&s.aiGrade.scores)?(s.aiGrade.fb?'받음':'예전 채점(피드백 없음)'):'아직'}`;
+  wrap.appendChild(meta);
+  TASK_LABELS.forEach(t=>{
+    const done = taskDone(s,t.id);
+    const visited = taskVisited(s,t.id);
+    const val = taskValue(s,t.id);
+    const hasValue = val!=null && val!=='';
+    const isError = !done && hasValue;
+    const label = done ? '✅ 완료' : (isError ? '📝 입력함' : (visited ? '🟠 진행중' : '⬜ 안 함'));
+
+    const row=document.createElement('div'); row.className='drow';
+    row.title='클릭하면 이 학생의 보고서 전체와 AI 채점·피드백을 볼 수 있어요';
+    row.addEventListener('click', ()=> openTaskDetail(item.key, s, t.id));
+    const left=document.createElement('span'); left.textContent = t.label;
+    const right=document.createElement('span'); right.className='st '+(done?'ok':'no'); right.textContent = label;
+    row.appendChild(left); row.appendChild(right);
+    wrap.appendChild(row);
+  });
+}
+
+/* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 채점·피드백을 모달로 보여준다. */
+function openTaskDetail(key, s, taskId){
+  const t = TASK_LABELS.find(x=>x.id===taskId);
+  const done = taskDone(s,taskId);
+  const visited = taskVisited(s,taskId);
+  const statusLabel = done ? '✅ 완료' : (visited ? '🟠 진행중' : '⬜ 안 함');
+  document.getElementById('tdmTitle').textContent = t.label;
+  document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${statusLabel}`;
+  document.getElementById('tdmCanvasWrap').textContent='';
+  tdmKey = key;
+  const html = activityDetailHTML(s, taskId, key);
+  const textWrap = document.getElementById('tdmTextWrap');
+  textWrap.innerHTML = html || `<div style="color:#999;font-size:13px;padding:30px;text-align:center;">${visited ? '아직 쓴 내용이 없어요.' : '아직 시작하지 않았어요.'}</div>`;
+  document.getElementById('taskDetailOverlay').style.display='flex';
+}
+document.getElementById('taskDetailCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('taskDetailOverlay').style.display='none';
+});
+document.getElementById('taskDetailOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='taskDetailOverlay') document.getElementById('taskDetailOverlay').style.display='none';
+});
+
+/* ---------- 속도조절(화면 범위 제한) — 드래그로 과제 범위를 선택하면 그 범위 밖 화면은
+   학생 쪽에서 이동이 막힌다(studentpa3.html의 clampToPacing/updateNavButtons가 소비). ---------- */
+let paceMouseDownIdx=null, paceDragMoved=false, paceShiftHeld=false, paceAwaitingEnd=false, paceAnchor=null, paceDragging=false;
+(function buildPaceTrack(){
+  const track=document.getElementById('paceTrack');
+  TASK_IDS.forEach(id=>{
+    const chip=document.createElement('div');
+    chip.className='pace-chip';
+    chip.textContent=id;
+    chip.dataset.n=String(id);
+    chip.title=taskLabelOf(id);
+    chip.addEventListener('mousedown', (e)=>{
+      if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+      e.preventDefault();
+      paceDragging=true; paceDragMoved=false; paceMouseDownIdx=id; paceShiftHeld=e.shiftKey;
+    });
+    chip.addEventListener('mouseenter', ()=>{
+      if(paceDragging && paceMouseDownIdx!=null && id!==paceMouseDownIdx){
+        paceDragMoved=true;
+        setPaceRange(Math.min(paceMouseDownIdx,id), Math.max(paceMouseDownIdx,id));
+      }
+    });
+    track.appendChild(chip);
+  });
+  document.addEventListener('mouseup', ()=>{
+    if(!paceDragging) return;
+    paceDragging=false;
+    const i=paceMouseDownIdx;
+    if(i==null) return;
+    if(paceDragMoved){
+      paceAnchor=Math.min(paceMouseDownIdx, paceEnd!=null?paceEnd:paceMouseDownIdx);
+      commitPacing(); paceAwaitingEnd=false;
+    }else if(paceShiftHeld && paceAnchor!=null){
+      setPaceRange(Math.min(paceAnchor,i), Math.max(paceAnchor,i)); commitPacing(); paceAwaitingEnd=false;
+    }else if(paceAwaitingEnd && paceAnchor!=null){
+      setPaceRange(Math.min(paceAnchor,i), Math.max(paceAnchor,i)); commitPacing(); paceAwaitingEnd=false;
+    }else{
+      paceAnchor=i; setPaceRange(i,i); commitPacing(); paceAwaitingEnd=true;
+    }
+    paceMouseDownIdx=null;
+  });
+})();
+function setPaceRange(s, e, fromRemote){
+  paceStart=s; paceEnd=e;
+  document.querySelectorAll('#paceTrack .pace-chip').forEach(c=>{
+    const n=parseInt(c.dataset.n,10);
+    const inRange = s!=null && e!=null && n>=s && n<=e;
+    c.classList.toggle('selected', inRange);
+    c.classList.toggle('range-edge', inRange && (n===s || n===e));
+  });
+  updatePaceBadge();
+  if(!fromRemote) renderGrid();
+}
+function updatePaceBadge(){
+  const badge=document.getElementById('paceBadge');
+  if(paceStart!=null && paceEnd!=null){
+    badge.style.display='inline-block';
+    badge.textContent = paceStart===paceEnd
+      ? `현재 학생들은 [ ${paceStart} ]만 볼 수 있습니다`
+      : `현재 학생들은 [ ${paceStart} ~ ${paceEnd} ]만 볼 수 있습니다`;
+  }else{
+    badge.style.display='none';
+  }
+}
+function commitPacing(){
+  if(!controlRef) return;
+  controlRef.update({ minTaskId: paceStart, maxTaskId: paceEnd });
+  renderGrid();
+}
+document.getElementById('paceClearBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  paceAnchor=null; paceAwaitingEnd=false;
+  setPaceRange(null, null);
+  controlRef.update({ minTaskId: null, maxTaskId: null });
+});
+
+/* ---------- ② 교사용 뷰: 과제를 하나 선택하면 학생 전체의 도형·답변을 한눈에 보기 ---------- */
+let selectedTaskId = TASK_IDS[0];
+function buildTeacherTaskTrack(){
+  const track = document.getElementById('teacherTaskTrack');
+  if(!track) return;
+  track.textContent='';
+  TASK_IDS.forEach(id=>{
+    const chip=document.createElement('div');
+    chip.className='pace-chip'+(id===selectedTaskId?' selected':'');
+    chip.textContent=id;
+    chip.title=taskLabelOf(id);
+    chip.addEventListener('click', ()=> selectTeacherTask(id));
+    track.appendChild(chip);
+  });
+}
+function selectTeacherTask(id){
+  selectedTaskId = id;
+  document.querySelectorAll('#teacherTaskTrack .pace-chip').forEach(c=>{
+    c.classList.toggle('selected', parseInt(c.textContent,10)===id);
+  });
+  renderTeacherView();
+}
+function gotoTeacherTab(taskId){
+  if(document.getElementById('teacherTaskTrack').children.length) selectTeacherTask(taskId);
+  else selectedTaskId = taskId;
+  document.querySelector('.tab-btn[data-tab="teacher"]').click();
+}
+function renderTeacherView(){
+  const textWrap = document.getElementById('teacherTextWrap');
+  const labelEl = document.getElementById('teacherTaskLabel');
+  if(!textWrap) return;
+  if(!document.getElementById('teacherTaskTrack').children.length) buildTeacherTaskTrack();
+  if(labelEl) labelEl.textContent = taskLabelOf(selectedTaskId);
+  textWrap.textContent='';
+  const keys = Object.keys(allStudents);
+  if(keys.length===0){
+    textWrap.innerHTML = '<div class="text-answer-empty">아직 접속한 학생이 없어요.</div>';
+    return;
+  }
+  const list = keys.map(k=>({key:k, student:allStudents[k]||{}}))
+    .sort((a,b)=> byNumber(a.student, b.student));
+  list.forEach(item=>{
+    const s = item.student;
+    const done = taskDone(s, selectedTaskId);
+    const val = taskValue(s, selectedTaskId);
+    const isLive = s.currentTaskId===selectedTaskId;
+    const box=document.createElement('div'); box.className='text-answer-item'; box.style.cursor='pointer';
+    const head=document.createElement('div'); head.className='ta-head';
+    const nameWrap=document.createElement('span');
+    const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
+    nameWrap.appendChild(name);
+    if(isLive){
+      const live=document.createElement('span'); live.className='ta-live'; live.textContent='● 지금 보는 중';
+      nameWrap.appendChild(live);
+    }
+    const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
+    head.appendChild(nameWrap); head.appendChild(status);
+    box.appendChild(head);
+    const detail=document.createElement('div');
+    detail.innerHTML = activityDetailHTML(s, selectedTaskId, item.key) || '<div class="ta-text" style="color:#999;">(아직 쓴 내용 없음)</div>';
+    box.appendChild(detail);
+    box.addEventListener('click', ()=> openTaskDetail(item.key, s, selectedTaskId));
+    textWrap.appendChild(box);
+  });
+}
+
+/* ---------- 탭 전환 ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='teacher') renderTeacherView();
+    if(btn.dataset.tab==='student') ensurePreviewLoaded();
+  });
+});
+
+/* ---------- ③ 학생용 뷰: 실제 학생 파일을 미리보기 모드(iframe)로 띄워서 보여줌 ----------
+   studentpa3.html이 ?preview=1&task=N으로 열리면 반/번호/이름 입력 없이 바로 appScreen을 그
+   과제 페이지로 보여준다(읽기 전용, 실제 학생 데이터에는 영향 없음). "이전/다음" 버튼은
+   taskId를 postMessage로 보내고(ggbPreviewGoto), 학생쪽이 그 taskId에 해당하는 페이지로
+   이동한 뒤 현재 높이(ggbPreviewHeight)를 돌려준다 — 다른 단원과 동일한 프로토콜이다. */
+let previewLoaded=false;
+let previewTaskId=TASK_IDS[0];
+function ensurePreviewLoaded(){
+  const frame=document.getElementById('previewFrame');
+  if(!previewLoaded){
+    frame.src = 'studentpa3.html?preview=1&task='+previewTaskId;
+    previewLoaded=true;
+  }
+  updatePreviewLabel();
+}
+function updatePreviewLabel(){
+  const idx = TASK_IDS.indexOf(previewTaskId);
+  document.getElementById('previewLabel').textContent = (idx+1)+' / '+TASK_IDS.length;
+  document.getElementById('previewPrevBtn').disabled = idx<=0;
+  document.getElementById('previewNextBtn').disabled = idx>=TASK_IDS.length-1;
+}
+function sendPreviewGoto(){
+  updatePreviewLabel();
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow) frame.contentWindow.postMessage({type:'ggbPreviewGoto', taskId:previewTaskId}, window.location.origin);
+}
+document.getElementById('previewPrevBtn').addEventListener('click', ()=>{
+  const idx=TASK_IDS.indexOf(previewTaskId);
+  previewTaskId = TASK_IDS[Math.max(0, idx-1)];
+  sendPreviewGoto();
+});
+document.getElementById('previewNextBtn').addEventListener('click', ()=>{
+  const idx=TASK_IDS.indexOf(previewTaskId);
+  previewTaskId = TASK_IDS[Math.min(TASK_IDS.length-1, idx+1)];
+  sendPreviewGoto();
+});
+window.addEventListener('message', (e)=>{
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type==='ggbPreviewHeight' && typeof e.data.height==='number'){
+    const frame=document.getElementById('previewFrame');
+    if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
+  }
+});
+</script>
+</body>
+</html>

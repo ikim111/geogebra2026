@@ -164,8 +164,8 @@ const SECTIONS = [
   { chapter:'VIII. 확률', groups:[
       { title:'', items:[
         {n:21, label:1, title:'동전을 계속 던지면 어떻게 될까?', file:'teacher21.html'},
-        {n:22, label:2, title:'확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'teacher22.html'},
-        {n:23, label:3, title:'확률 탐구 글쓰기 ② 보고서 제출', file:'teacher23.html'}
+        {n:22, label:2, title:'확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'teacherpa2.html'},
+        {n:23, label:3, title:'확률 탐구 글쓰기 ② 보고서 제출', file:'teacherpa3.html'}
       ]}
   ]}
 ];
@@ -288,7 +288,7 @@ function toggleUnit(n, row, btn){
   accessRef.child('units/'+n).set(next).then(()=>{
     accessData[n] = next;
     // 23번(확률 탐구 글쓰기 ② 보고서 제출)을 열면 그 반의 22번 학생 AI(피드백·도우미)를 자동으로 끈다.
-    // (다시 켜려면 teacher22.html의 "🤖 학생 AI 켜기" 버튼) — 22번 저장 경로는 __prob32
+    // (다시 켜려면 teacherpa2.html의 "🤖 학생 AI 켜기" 버튼) — 22번 저장 경로는 __prob32
     if(n===23 && next) firebase.database().ref('rooms/'+sanitize(currentRoom)+'__prob32/control/aiOff').set(true).catch(()=>{});
     row.classList.toggle('locked', !next);
     btn.className = 'lock-toggle ' + (next?'open':'locked');

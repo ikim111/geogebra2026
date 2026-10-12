@@ -146,7 +146,7 @@ AI의 역할은 글을 더 그럴듯하게 만들어 주는 것이 아니라 학
 학생의 보고서:
 {{학생보고서}}`;
 
-// 글자 수: 띄어쓰기 포함, 연달아 친 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(student23.html과 같은 방식).
+// 글자 수: 띄어쓰기 포함, 연달아 친 띄어쓰기는 1자, 줄바꿈·줄 앞뒤 공백 제외(studentpa3.html과 같은 방식).
 const countChars = s => Array.from(String(s == null ? '' : s).split(/\r?\n/).map(l => l.replace(/[\s　]+/g, ' ').trim()).join('')).length;
 
 /* 요청 본문 → 보고서 글. AI는 글자 수를 정확히 세지 못하므로 서버에서 센 글자 수를 끝에 함께 적는다. */
@@ -229,7 +229,7 @@ function rubricText() {
   return PROMPT_TEMPLATE.slice(a, b).trim();
 }
 
-/* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
+/* ---------- 자료로 인정하지 않는 출처 판별 (studentpa2·studentpa3·teacherpa2·teacherpa3·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
    블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
    (선생님 기준: 이런 곳만 썼다면 자료 조사를 하지 않은 것으로 봄). 링크 주소(도메인)로 판별하고,
    링크가 없으면 출처 이름에 들어 있는 대표 이름으로 판별한다. 반환: 금지 종류 이름(예: '블로그') 또는 ''. */

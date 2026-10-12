@@ -1,8 +1,8 @@
-// Vercel 서버리스 함수: student22.html 각 step의 "🤖 AI 피드백 받기" 버튼이 호출한다.
+// Vercel 서버리스 함수: studentpa2.html 각 step의 "🤖 AI 피드백 받기" 버튼이 호출한다.
 // 학생이 지금 step에 적은 내용을 채점 기준에 비추어 확인하고, 잘한 점(칭찬)과 보완할 점을 짧게 돌려준다.
 // 보완할 점이 없으면 빈 목록을 돌려준다(학생 화면에 "보완할 점이 없어요"로 표시).
 //
-// 요청 형식(POST, JSON): { step: 1~5, data: student22.html의 data }
+// 요청 형식(POST, JSON): { step: 1~5, data: studentpa2.html의 data }
 // 응답 형식(JSON): { good:[문장], fix:[문장], model }
 //   step1: 요청에 which:1|2|3(1·2·3차 질문)을 함께 보내면 그 질문만 평가한다(자기평가도 그 차수 것: selfCheck/selfCheck2/selfCheck3).
 //          응답에 추가로 { checks:['O'|'△'|'X' ×6], target:'1차'|'2차' } — 체크리스트 6항목 AI평가

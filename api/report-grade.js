@@ -1,7 +1,7 @@
-// Vercel 서버리스 함수: teacher23.html의 "🤖 AI 채점·피드백" 버튼이 호출하는 엔드포인트.
+// Vercel 서버리스 함수: teacherpa3.html의 "🤖 AI 채점·피드백" 버튼이 호출하는 엔드포인트.
 // (2026-10-07 선생님 결정) 예전의 'AI 채점'(/api/report-grade)과 'AI 피드백'(/api/report-feedback)을 하나로 합쳤다.
 // AI를 한 번만 불러서 4개 채점 요소(탐구 질문 3, 자료 수집 3, 자료 분석 4, 글의 논리 5 — 총 15점)마다
-//   - score  : 1차 점수(선생님이 teacher23에서 항목별로 고친다)
+//   - score  : 1차 점수(선생님이 teacherpa3에서 항목별로 고친다)
 //   - reason : 선생님이 보는 채점 이유
 //   - good / fix / ask : 학생에게 보여 줄 피드백(잘된 점 / 보완할 점 / 생각해 볼 질문) — 나중에 학생용 결과 확인 탭에서 보여 준다
 // 그리고 first(가장 먼저 고치면 좋은 점), status(ok|check|need) + statusReason 을 돌려준다.
