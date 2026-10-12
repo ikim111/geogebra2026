@@ -112,6 +112,23 @@
   .kv{font-size:13px;color:#444;margin:2px 0;}
   .kv b{color:#1a237e;}
   .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto 8px;}
+  .stagebox{margin-top:12px;background:#f3f6ff;border:1px solid #c5cae9;border-radius:10px;padding:12px 14px;}
+  .stage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:15px;color:#1a237e;}
+  .stage-state{font-size:13px;color:#555;}
+  .stg{background:#fff;border:1px solid #dfe3f0;border-radius:10px;padding:10px 12px;margin-top:8px;}
+  .stg.now{border:2px solid #1565c0;box-shadow:0 1px 4px rgba(21,101,192,.15);}
+  .stg.past{opacity:.75;}
+  .stg-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .stg-no{font-weight:bold;color:#1a237e;white-space:nowrap;}
+  .stg-t{font-weight:bold;font-size:15.5px;}
+  .stg-c{margin-left:auto;font-size:13px;color:#555;white-space:nowrap;}
+  .stg-bar{width:140px;height:10px;background:#e8eaf0;border-radius:6px;overflow:hidden;}
+  .stg-bar i{display:block;height:100%;background:#2e7d32;}
+  .stg-d{font-size:13.5px;color:#555;margin-top:4px;}
+  .stg-tip{font-size:13.5px;color:#0d47a1;background:#e8f0fe;border-radius:6px;padding:6px 10px;margin-top:6px;}
+  .stg-go{margin-top:8px;background:#1565c0;color:#fff;font-weight:bold;font-size:14.5px;padding:9px 18px;}
+  details.manual{margin-top:10px;font-size:13px;color:#666;}
+  details.manual summary{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -206,6 +223,11 @@
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>평균 진행률: <b id="sumAvg">0%</b></div>
         <div>4개 활동 모두 완료: <b id="sumDone">0</b></div>
+      </div>
+      <div class="stagebox" id="stagePanel">
+        <div class="stage-head"><b>📋 수업 진행 도우미</b><span id="stageState" class="stage-state"></span>
+          <button class="pause" id="stageFree" style="margin-left:auto;">🔓 단계 해제</button></div>
+        <div id="stageList"></div>
       </div>
       <div class="agg" id="aggPanel" style="display:none;">
         <span>🪙 <b>활동 1 학급 합계</b> — 10번 다 던진 학생 <b id="aggCount">0</b>명 · 동전을 던진 횟수 <b id="aggTotal">0</b>회 · 앞면 <b id="aggHeads">0</b>회 <span id="aggRel" style="color:#8a6d00;"></span></span>
@@ -372,7 +394,62 @@ function renderAggregate(){
   document.getElementById('aggRel').textContent = cnt ? `(상대도수 ${relDec(heads, cnt*10)} — 교사용 참고)` : '';
   document.getElementById('aggAnnounceBtn').disabled = cnt===0;
   panel.dataset.total = cnt*10; panel.dataset.heads = heads;
+  renderStages();
 }
+
+const STAGES = [
+  {t:'직접 던지기', d:'동전을 10번 던지고 친구들과 비교하기 (활동 1)', tasks:[1], max:1, reveal:{},
+   tip:'대부분 10번을 다 던지면 다음 단계를 열어요. (다음 단계에서 반 전체 결과가 실시간으로 모여요)'},
+  {t:'학급 합치기·예상', d:'반 전체 결과 합치기 → 더 많이 던지면? 예상하기 (활동 2~3)', tasks:[2,3], max:3, reveal:{},
+   tip:'💬 "10번일 때와 반 전체일 때 상대도수는 어떻게 달랐나요?" — 예상값이 모이면 다음 단계를 열어요.'},
+  {t:'시뮬레이션', d:'1,000번·10,000번 시뮬레이션으로 예상 확인하기 → 개념 확인 (활동 4)', tasks:[4], max:null, reveal:{},
+   tip:'💬 "던지는 횟수가 많아질수록 상대도수는 어떻게 되나요?" — 개념(확률의 뜻)을 함께 정리해요.'}
+];
+/* ---------- 📋 수업 진행 도우미: 단계 이름·완료 인원을 보고 「다음 단계 열기」 한 번으로 진행 ----------
+   단계를 열면 control/stage, maxTaskId(학생이 갈 수 있는 마지막 활동), 필요한 공개(reveal)를 한꺼번에 바꾼다.
+   학생 쪽은 기존 속도조절(maxTaskId) 로직을 그대로 쓰고, stage가 있으면 "다음 단계를 기다려요" 문구를 보여준다. */
+let stageNow = null;
+function stageDoneCount(st){
+  const list = Object.values(allStudents||{});
+  return { done: list.filter(s=> st.tasks.every(id=>taskDone(s,id))).length, total: list.length };
+}
+function renderStages(){
+  const wrap = document.getElementById('stageList'); if(!wrap) return;
+  wrap.textContent = '';
+  STAGES.forEach((st, i)=>{
+    const no = i+1;
+    const state = stageNow==null ? 'idle' : (no < stageNow ? 'past' : (no===stageNow ? 'now' : 'future'));
+    const c = stageDoneCount(st);
+    const pct = c.total ? Math.round(c.done/c.total*100) : 0;
+    const row = document.createElement('div'); row.className = 'stg '+state;
+    const icon = state==='past' ? '✅' : (state==='now' ? '▶' : '⬜');
+    row.innerHTML = `<div class="stg-top"><span class="stg-no">${icon} ${no}단계</span><span class="stg-t">${esc(st.t)}</span>
+        <span class="stg-c">완료 ${c.done}/${c.total}명</span><span class="stg-bar"><i style="width:${pct}%"></i></span></div>
+      <div class="stg-d">${esc(st.d)}</div>${state==='now' ? `<div class="stg-tip">${esc(st.tip)}</div>` : ''}`;
+    const isNext = (stageNow==null && no===1) || (stageNow!=null && no===stageNow+1);
+    if(isNext){
+      const b = document.createElement('button'); b.className = 'stg-go';
+      b.textContent = stageNow==null ? '▶ 1단계로 수업 시작' : `▶ ${no}단계 열기`;
+      b.addEventListener('click', ()=> setStage(no));
+      row.appendChild(b);
+    }
+    wrap.appendChild(row);
+  });
+  const st = document.getElementById('stageState');
+  if(st) st.textContent = stageNow==null ? '지금: 단계 없음 (학생이 모든 활동을 자유롭게 할 수 있어요)' : `지금: ${stageNow}단계 — 학생은 ${STAGES[stageNow-1].max ? '활동 '+STAGES[stageNow-1].max+'까지' : '끝까지'} 할 수 있어요`;
+}
+function setStage(no){
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  const upd = {};
+  if(no==null){ upd.stage = null; upd.minTaskId = null; upd.maxTaskId = null; }
+  else {
+    const st = STAGES[no-1];
+    upd.stage = no; upd.minTaskId = null; upd.maxTaskId = st.max || null;
+    STAGES.slice(0, no).forEach(s=> Object.keys(s.reveal||{}).forEach(k=>{ upd['reveal/'+k] = true; }));
+  }
+  controlRef.update(upd);
+}
+document.getElementById('stageFree').addEventListener('click', ()=>{ if(confirm('단계 제한을 풀까요? 학생들이 모든 활동을 자유롭게 할 수 있어요.')) setStage(null); });
 
 let app=null, db=null, studentsRef=null, controlRef=null, currentRoomKey=null, allStudents={}, selectedKey=null;
 let paused=false, anonymize=false, checkedKeys=new Set();
@@ -475,6 +552,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       });
       controlRef.on('value', snap=>{
         const c = snap.val() || {};
+        stageNow = (c.stage!=null) ? c.stage : null; renderStages();
         paused = !!c.paused;
         updatePauseBtn();
         classEnded = !!c.classEnded;

@@ -677,6 +677,7 @@ const RT = {
       } else if(!c.announcement){
         $('announceBanner').style.display = 'none';
       }
+      this.stageOn = (c.stage!=null);
       this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
       clampToPacing();
@@ -1389,6 +1390,7 @@ function updateNavButtons(){
     if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
     else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
     else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
     pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
   }
   if(gateMsg){
