@@ -762,9 +762,9 @@ function renderSources(){
       <div><div class="k">출처 (사이트명·자료 이름)</div><input type="text" data-s="${i}" data-c="site" value="${esc(s.site)}" placeholder="예: [KBO 기록실] 2024 팀 홈/원정 성적"></div>
       <div><div class="k">링크 <span class="link-ok" id="lk${i}"></span></div><input type="url" data-s="${i}" data-c="link" value="${esc(s.link)}" placeholder="https://…"></div>
     </div>
-    <div class="k">활용할 부분 파일 (스크린샷·PDF, 3개까지·각 10MB) <span style="font-weight:normal;color:#c62828;">— 2부 제출 때 자료마다 1개 이상 꼭 필요해요. 지금 올려 두면 2부에서 그대로 불러와요</span></div>
+    <div class="k">활용할 부분 파일 (스크린샷·PDF, 여러 개 가능·각 10MB) <span style="font-weight:normal;color:#c62828;">— 2부 제출 때 자료마다 1개 이상 꼭 필요해요. 지금 올려 두면 2부에서 그대로 불러와요</span></div>
     <div class="files">${(s.files||[]).map((f,j)=>`<span class="fchip">${/^image\//.test(f.type||'')?`<img src="${esc(f.url)}" alt="">`:'📄'}<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name||'파일')}</a><button type="button" data-fdel="${i}:${j}" title="파일 빼기">✕</button></span>`).join('')}
-      ${(s.files||[]).length < 3 ? `<button type="button" class="fadd" data-fadd="${i}">＋ 파일 올리기</button>` : ''}<span class="fmsg" id="fmsg${i}"></span></div>
+      ${(s.files||[]).length < 20 ? `<button type="button" class="fadd" data-fadd="${i}">＋ 파일 올리기</button>` : ''}<span class="fmsg" id="fmsg${i}"></span></div>
   </div>`).join('');
   $('srcList').querySelectorAll('[data-fdel]').forEach(b=>b.addEventListener('click', ()=>{ if(finalLocked) return; const [i,j] = b.dataset.fdel.split(':').map(Number); state.sources[i].files.splice(j,1); renderSources(); changed(); }));
   $('srcList').querySelectorAll('[data-fadd]').forEach(b=>b.addEventListener('click', ()=> pickFiles(+b.dataset.fadd)));
@@ -809,7 +809,7 @@ async function uploadFiles(i, files){
   const room = (CURRENT_PROFILE && CURRENT_PROFILE.classNo) || 'x', num = (CURRENT_PROFILE && CURRENT_PROFILE.number) || 'x';
   const safe = s => String(s).replace(/[^\w.-]+/g,'_').slice(0,30) || 'x';
   for(const f0 of files){
-    if((src.files||[]).length >= 3){ msg('파일은 자료마다 3개까지예요.'); break; }
+    if((src.files||[]).length >= 20){ msg('파일은 자료마다 20개까지예요.'); break; } // 저장 용량 보호용 안전 한도
     if(!/^image\//.test(f0.type) && !/pdf$/i.test(f0.type) && !/\.pdf$/i.test(f0.name)){ msg('이미지나 PDF만 올릴 수 있어요.'); continue; }
     const f = await shrinkImage(f0);
     if(f.size > 10*1024*1024){ msg(`'${f0.name}'은 10MB가 넘어요. 더 작은 파일로 올려요.`); continue; }
@@ -1043,7 +1043,7 @@ function restoreData(d){
   ['selfCheck','selfCheck2','selfCheck3'].forEach((k,j)=>{ if(typeof d[k]==='string') state.selfChecks[j] = SELF_CHECKS.map((_,i)=>{ const c=d[k][i]; return (c==='O'||c==='△'||c==='X')?c:''; }); });
   state.qDone = (d.qDone===1 || d.qDone===2) ? d.qDone : 0; state.qDoneQ = typeof d.qDoneQ==='string' ? d.qDoneQ : (state.qDone ? v('q'+state.qDone) : '');
   if(Array.isArray(d.planRows) && d.planRows.length) state.planRows = d.planRows.map(r=>({need:(r&&r.need)||'', where:(r&&r.where)||''}));
-  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(s=>({what:(s&&s.what)||'', site:(s&&s.site)||'', link:(s&&s.link)||'', analysis:(s&&s.analysis)||'', files: (Array.isArray(s&&s.files) ? s.files : Object.values((s&&s.files)||{})).filter(f=>f&&f.url).slice(0,3)}));
+  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(s=>({what:(s&&s.what)||'', site:(s&&s.site)||'', link:(s&&s.link)||'', analysis:(s&&s.analysis)||'', files: (Array.isArray(s&&s.files) ? s.files : Object.values((s&&s.files)||{})).filter(f=>f&&f.url).slice(0,20)}));
   if(typeof d.dataCheck==='string') state.dataCheck = DATA_CHECKS.map((_,i)=>d.dataCheck[i]==='1');
   // 예전 구조(step2 '자료 수집 계획' 표)에 적은 내용이 있고 자료 카드가 비어 있으면 자료 카드로 옮긴다.
   const rowsUsed = state.planRows.filter(r=> r.need.trim() || r.where.trim());
