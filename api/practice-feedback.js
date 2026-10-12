@@ -38,6 +38,25 @@ const item = { type: 'array', items: { type: 'string' } };
 const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'practice_feedback', strict: true, schema: {
   type: 'object', additionalProperties: false, required: ['good', 'fix'], properties: { good: item, fix: item } } } };
 
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+async function callGemini(prompt) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1500, responseMimeType: 'application/json',
+          responseSchema: { type: 'object', properties: { good: { type: 'array', items: { type: 'string' } }, fix: { type: 'array', items: { type: 'string' } } }, required: ['good', 'fix'] } } })
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const j = parseJSON(parts.map(x => x.text || '').join(''));
+    return (j && Array.isArray(j.good)) ? j : null;
+  } catch (e) { return null; }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
@@ -69,13 +88,16 @@ JSON 하나만 출력한다: {"good":["잘한 점"], "fix":["보완할 점"]}
 
 ${ctx ? `[학생 화면의 참고 정보]\n${ctx}\n\n` : ''}[학생이 쓴 글]
 ${answer || '(비어 있음)'}`;
-  // 비용 절약: 수업 연습용은 생각을 최소로(minimal) 하고 답을 짧게 받는다.
-  // Vercel 환경변수 OPENAI_PRACTICE_MODEL에 더 싼 모델 ID를 넣으면 이 연습용에만 그 모델을 쓴다(비우면 OPENAI_MODEL과 같은 모델).
-  const r = await callOpenAI(prompt, { maxTokens: 1500, effort: 'minimal', responseFormat: RESPONSE_FORMAT,
-    model: (process.env.OPENAI_PRACTICE_MODEL || '').trim() || undefined });
-  if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
-  const j = parseJSON(r.text);
+  // 비용 절약: 외심내심 채점(grade-justify.js)에서 이미 쓰는 Gemini 소형 모델(GEMINI_API_KEY)을 먼저 쓴다.
+  // Gemini가 실패하면 OpenAI(생각 최소)로 한 번 더 시도한다. OPENAI_PRACTICE_MODEL을 넣으면 그 모델을 쓴다.
+  let j = await callGemini(prompt), model = GEMINI_MODEL;
+  if (!j) {
+    const r = await callOpenAI(prompt, { maxTokens: 1500, effort: 'minimal', responseFormat: RESPONSE_FORMAT,
+      model: (process.env.OPENAI_PRACTICE_MODEL || '').trim() || undefined });
+    if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
+    j = parseJSON(r.text); model = r.model;
+  }
   if (!j) { res.status(502).json({ error: 'AI 피드백을 해석하지 못했어요.' }); return; }
   const clean = a => (Array.isArray(a) ? a : []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 2).map(x => x.slice(0, 200));
-  res.status(200).json({ good: clean(j.good), fix: clean(j.fix), model: r.model });
+  res.status(200).json({ good: clean(j.good), fix: clean(j.fix), model });
 };
