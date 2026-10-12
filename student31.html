@@ -189,6 +189,21 @@
   .recap .rc{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#f7f9fb;font-size:14px;}
   .recap .rc b{display:block;margin-bottom:4px;}
   @media (max-width:640px){ .pr-scene,.cmp{width:100%;} }
+  .share-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .share-btn{background:#7b1fa2;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .share-btn:disabled{background:#cdb6d8;cursor:default;}
+  .share-btn.edit{background:#fff;color:#7b1fa2;border:2px solid #7b1fa2;}
+  .activity textarea.shared{background:#f6f0fa;}
+  .pr-scene svg [data-zn], .pr-scene svg [data-pn]{cursor:pointer;}
+  .pr-scene svg [data-zn]:hover circle, .pr-scene svg [data-pn]:hover rect{filter:brightness(1.08);}
+  .scard{touch-action:none;user-select:none;}
+  .scard.dragging{opacity:.35;}
+  .drag-ghost{position:fixed;z-index:9999;pointer-events:none;width:150px;height:84px;border:2px solid #ffb300;border-radius:10px;background:#fff;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,.25);transform:translate(-50%,-50%) rotate(-3deg);}
+  .drag-ghost svg{width:100%;height:100%;display:block;}
+  .bin.over, .tray.over{border-color:#ffb300;box-shadow:0 0 0 3px #ffe082;}
+  .pens{display:inline-flex;gap:5px;align-items:center;margin-right:6px;}
+  .pens button{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #c5cad1;cursor:pointer;padding:0;}
+  .pens button.on{box-shadow:0 0 0 3px #1f2328;}
 </style></style>
 </head>
 <body>
@@ -266,10 +281,11 @@
     <div class="pr-layout">
       <div class="pr-scene" id="pr2"></div>
       <div class="pr-side">
-        <p class="hint">다음은 <b>정상적으로 작동하는</b> 프린터입니다.<br>Zoom 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요. <span class="note">(여러 배율로 인쇄해 보세요)</span></p>
+        <p class="hint">다음은 <b>정상적으로 작동하는</b> 프린터입니다.<br>그림 속 프린터의 Zoom <b>−</b>/<b>+</b> 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요. <span class="note">(여러 배율로 인쇄해 보세요)</span></p>
         <div class="question" style="font-size:16px;">Zoom(확대/축소 정도)에 상관없이 <b>똑같이 유지되는 것</b>은 무엇이고, <b>달라지는 것</b>은 무엇일까요?</div>
         <p class="lbl">똑같이 유지되는 것</p><textarea id="t2a" placeholder="예) 도형의 ~"></textarea>
         <p class="lbl">달라지는 것</p><textarea id="t2b" placeholder="예) 도형의 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh2" disabled>📤 답변 공유</button><span class="note" id="shn2"></span></div>
         <div class="friends-box" id="fr2"></div>
       </div>
     </div>
@@ -285,9 +301,11 @@
     <div class="pr-layout">
       <div class="pr-scene" id="pr3"></div>
       <div class="pr-side">
-        <p class="hint">이 프린터는 <b>고장났습니다</b>.<br>Zoom 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요.</p>
+        <p class="hint">이 프린터는 <b>고장났습니다</b>.<br>그림 속 프린터의 Zoom <b>−</b>/<b>+</b> 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요.</p>
         <div class="question" style="font-size:16px;">이 프린터가 어떻게 고장났는지 설명해 보세요.</div>
         <textarea id="t3" placeholder="인쇄된 도형은 원래 도형과 비교해서 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh3" disabled>📤 답변 공유</button><span class="note" id="shn3"></span></div>
+        <div class="friends-box" id="fr3"></div>
       </div>
     </div>
   </div>
@@ -302,9 +320,11 @@
     <div class="pr-layout">
       <div class="pr-scene" id="pr4"></div>
       <div class="pr-side">
-        <p class="hint">이 프린터도 <b>고장났습니다</b>.<br>Zoom 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요.</p>
+        <p class="hint">이 프린터도 <b>고장났습니다</b>.<br>그림 속 프린터의 Zoom <b>−</b>/<b>+</b> 버튼으로 확대/축소 정도를 바꾸고 「인쇄」를 눌러 보세요.</p>
         <div class="question" style="font-size:16px;">이 프린터가 어떻게 고장났는지 설명해 보세요.</div>
         <textarea id="t4" placeholder="인쇄된 도형은 원래 도형과 비교해서 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh4" disabled>📤 답변 공유</button><span class="note" id="shn4"></span></div>
+        <div class="friends-box" id="fr4"></div>
       </div>
     </div>
   </div>
@@ -323,6 +343,7 @@
           세 번째 출력물(#3)과 네 번째 출력물(#4)은 <b>닮은 도형이 아닙니다</b>.</p>
         <div class="question" style="font-size:16px;">어떤 도형이 닮은 도형인지 아닌지 아는 방법을 설명해 보세요.</div>
         <textarea id="t5" placeholder="닮은 도형은 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh5" disabled>📤 답변 공유</button><span class="note" id="shn5"></span></div>
         <div class="friends-box" id="fr5"></div>
       </div>
     </div>
@@ -336,7 +357,7 @@
     <div class="act-head"><span class="act-tag">6 카드 정렬</span><span class="badge pending" id="badge-a6">미완료</span></div>
     <h2>카드 정렬</h2>
     <p class="hint">카드마다 두 도형이 그려져 있어요. 두 도형이 닮은 도형인지 아닌지에 따라 카드를 나눠 보세요.<br>
-      <b>카드를 누른 뒤 → 넣을 칸을 누르면</b> 옮겨져요. (다시 누르면 다른 칸으로 옮길 수 있어요)</p>
+      <b>카드를 끌어서</b> 알맞은 칸에 놓아요. (놓은 카드도 다시 끌어서 옮길 수 있어요)</p>
     <div class="tray" id="tray"></div>
     <div class="bins">
       <div class="bin" data-bin="sim"><div class="bin-h sim">닮은 도형 (닮음)</div><div class="bin-c" id="bin-sim"></div></div>
@@ -357,7 +378,7 @@
     <p class="hint">왼쪽 칸에 <b>무엇이든 그려 보세요</b>. 오른쪽에서 컴퓨터 1~4를 눌러 보면 각 컴퓨터가 내 그림을 어떻게 바꾸는지 볼 수 있어요.</p>
     <div class="draw-layout">
       <div>
-        <div class="draw-tools"><button class="sbtn" id="drawUndo">↶ 되돌리기</button><button class="sbtn" id="drawClear">🗑 모두 지우기</button></div>
+        <div class="draw-tools"><span class="pens" id="pens"></span><button class="sbtn" id="drawUndo">↶ 되돌리기</button><button class="sbtn" id="drawClear">🗑 모두 지우기</button></div>
         <div class="drawbox"><svg id="pad" viewBox="0 0 300 300" class="pad"></svg><div class="pad-ph" id="padPh">여기에 무엇이든 그려 보세요.</div></div>
       </div>
       <div>
@@ -384,6 +405,7 @@
     <div class="recap" id="recap8"></div>
     <div class="big-question">일반적으로 어떤 그림이 다른 그림과 닮은 도형인지 어떻게 알 수 있을까요?</div>
     <textarea id="t8" placeholder="두 그림이 닮은 도형이려면 ~"></textarea>
+    <div class="share-row"><button class="share-btn" id="sh8" disabled>📤 답변 공유</button><span class="note" id="shn8"></span></div>
     <div class="friends-box" id="fr8"></div>
   </div>
   <div class="why" id="why8">내 생각을 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
@@ -476,7 +498,9 @@ const state = {
   t2a:'', t2b:'', t3:'', t4:'', t5:'',
   sort: {}, sortChecked:false, sel:null,
   strokes: [], comp:[false,false,false,false], compChecked:false, ctab:0,
-  t8:''
+  t8:'',
+  shared:{2:false,3:false,4:false,5:false,8:false}, seen:{2:false,3:false,4:false,5:false,8:false},
+  pen:'#5b8fd1', strokeCols:[]
 };
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
@@ -488,13 +512,13 @@ const r1 = v => Math.round(v*10)/10;
 
 function isDone(id){
   if(id===1) return state.moved;
-  if(id===2) return new Set(state.pr[2].prints).size>=2 && len(state.t2a)>=MIN_TEXT && len(state.t2b)>=MIN_TEXT;
-  if(id===3) return state.pr[3].prints.length>=1 && len(state.t3)>=MIN_TEXT;
-  if(id===4) return state.pr[4].prints.length>=1 && len(state.t4)>=MIN_TEXT;
-  if(id===5) return len(state.t5)>=MIN_TEXT;
+  if(id===2) return new Set(state.pr[2].prints).size>=2 && len(state.t2a)>=MIN_TEXT && len(state.t2b)>=MIN_TEXT && state.shared[2];
+  if(id===3) return state.pr[3].prints.length>=1 && len(state.t3)>=MIN_TEXT && state.shared[3];
+  if(id===4) return state.pr[4].prints.length>=1 && len(state.t4)>=MIN_TEXT && state.shared[4];
+  if(id===5) return len(state.t5)>=MIN_TEXT && state.shared[5];
   if(id===6) return CARDS.every(c=>state.sort[c.k]) && state.sortChecked;
   if(id===7) return state.strokes.length>0 && state.compChecked;
-  if(id===8) return len(state.t8)>=MIN_TEXT;
+  if(id===8) return len(state.t8)>=MIN_TEXT && state.shared[8];
   return false;
 }
 function valueOf(id){
@@ -509,7 +533,7 @@ function valueOf(id){
   if(id===8) return state.t8.trim();
   return '';
 }
-function packStrokes(){ return state.strokes.map(s=>s.map(p=>Math.round(p[0])+','+Math.round(p[1])).join(' ')); }
+function packStrokes(){ return state.strokes.map((s,i)=>(state.strokeCols[i]||'#5b8fd1')+'|'+s.map(p=>Math.round(p[0])+','+Math.round(p[1])).join(' ')); }
 function collectData(){
   return {
     pts: state.pts.map(p=>[p[0],p[1]]), moved: state.moved,
@@ -517,15 +541,17 @@ function collectData(){
     t2a: state.t2a, t2b: state.t2b, t3: state.t3, t4: state.t4, t5: state.t5,
     sort: Object.assign({}, state.sort), sortChecked: state.sortChecked,
     strokes: packStrokes(), comp: state.comp.slice(), compChecked: state.compChecked,
-    t8: state.t8
+    t8: state.t8, shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen)
   };
 }
 /* 친구들에게 보여 줄 서술(이름 없이) — 내 답을 쓴 뒤에만 친구 답이 보인다 */
 function shareEntries(){
   return {
-    keep: isDone(2) ? {a: state.t2a.trim().slice(0,200), b: state.t2b.trim().slice(0,200)} : null,
-    how:  isDone(5) ? {t: state.t5.trim().slice(0,300)} : null,
-    sum:  isDone(8) ? {t: state.t8.trim().slice(0,300)} : null
+    keep: state.shared[2] ? {a: state.t2a.trim().slice(0,200), b: state.t2b.trim().slice(0,200)} : null,
+    br1:  state.shared[3] ? {t: state.t3.trim().slice(0,300)} : null,
+    br2:  state.shared[4] ? {t: state.t4.trim().slice(0,300)} : null,
+    how:  state.shared[5] ? {t: state.t5.trim().slice(0,300)} : null,
+    sum:  state.shared[8] ? {t: state.t8.trim().slice(0,300)} : null
   };
 }
 function pushShare(rt){
@@ -754,8 +780,9 @@ function printerSVG(n){
     <rect x="18" y="18" width="448" height="214" rx="12" fill="#5f656b"/>
     <rect x="18" y="18" width="88" height="214" rx="12" fill="#6f757b"/>
     <text x="62" y="70" text-anchor="middle" fill="#d6d9dc" font-size="15">Zoom</text>
-    <circle cx="45" cy="100" r="14" fill="#e9ebee" stroke="#2a2e33" stroke-width="2"/><text x="45" y="106" text-anchor="middle" font-size="20" font-weight="bold">−</text>
-    <circle cx="80" cy="100" r="14" fill="#e9ebee" stroke="#2a2e33" stroke-width="2"/><text x="80" y="106" text-anchor="middle" font-size="20" font-weight="bold">+</text>
+    <g data-zn="${n}" data-d="-1" role="button" aria-label="축소"><circle cx="43" cy="100" r="16" fill="#e9ebee" stroke="#2a2e33" stroke-width="2"/><text x="43" y="107" text-anchor="middle" font-size="22" font-weight="bold" pointer-events="none">−</text></g>
+    <g data-zn="${n}" data-d="1" role="button" aria-label="확대"><circle cx="81" cy="100" r="16" fill="#e9ebee" stroke="#2a2e33" stroke-width="2"/><text x="81" y="107" text-anchor="middle" font-size="22" font-weight="bold" pointer-events="none">+</text></g>
+    <text x="62" y="186" text-anchor="middle" fill="#e9ebee" font-size="16" font-weight="bold">${ZOOMS[P.z]}%</text>
     <rect x="26" y="134" width="74" height="24" rx="6" fill="#4a4f54"/>${dots}
     <rect x="112" y="30" width="346" height="190" fill="#4a4f54"/>
     <g clip-path="url(#clip${n})"><g class="paper" id="paper${n}" style="transform:translateY(${last==null?-200:0}px)">
@@ -764,9 +791,8 @@ function printerSVG(n){
     <rect x="162" y="274" width="156" height="156" rx="6" fill="#fff"/>
     <circle cx="324" cy="352" r="4" fill="none" stroke="#888"/>
     ${shapeSVG('normal', 100, 240, 352, 8)}
+    <g data-pn="${n}" role="button" aria-label="인쇄"><rect x="372" y="246" width="92" height="40" rx="8" fill="#1565c0"/><text x="418" y="272" text-anchor="middle" fill="#fff" font-size="17" font-weight="bold" pointer-events="none">🖨 인쇄</text></g>
   </svg>
-  <div class="pr-ctrl"><button class="zb" data-zn="${n}" data-d="-1" aria-label="축소">−</button><span class="zl">${ZOOMS[P.z]}%</span><button class="zb" data-zn="${n}" data-d="1" aria-label="확대">+</button>
-    <button class="pbtn" data-pn="${n}">🖨 인쇄</button></div>
   <div class="pr-hist">${P.prints.length ? '인쇄한 배율: ' + [...new Set(P.prints)].map(z=>ZOOMS[z]+'%').join(', ') : '아직 인쇄하지 않았어요.'}</div>`;
 }
 function renderPrinter(n){ $('pr'+n).innerHTML = printerSVG(n); }
@@ -785,11 +811,11 @@ document.addEventListener('click', e=>{
 function check2(opts){
   state.t2a = $('t2a').value; state.t2b = $('t2b').value;
   const k = new Set(state.pr[2].prints).size;
-  setWhy(2, '✅ 완료! '+NEXT, k<2 ? `두 가지 이상의 배율로 인쇄해 보세요. (지금 ${k}가지)` : '두 칸을 모두 쓰면 다음으로 넘어갈 수 있어요.');
-  renderFriends(2); refreshAll(opts);
+  setWhy(2, '✅ 완료! '+NEXT, k<2 ? `두 가지 이상의 배율로 인쇄해 보세요. (지금 ${k}가지)` : (SH_READY[2]() ? '「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.' : '두 칸을 모두 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'));
+  paintShare(2); renderFriends(2); refreshAll(opts);
 }
-function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, state.pr[3].prints.length ? '어떻게 고장났는지 쓰면 다음으로 넘어갈 수 있어요.' : '먼저 「인쇄」를 눌러 보세요.'); refreshAll(opts); }
-function check4(opts){ state.t4 = $('t4').value; setWhy(4, '✅ 완료! '+NEXT, state.pr[4].prints.length ? '어떻게 고장났는지 쓰면 다음으로 넘어갈 수 있어요.' : '먼저 「인쇄」를 눌러 보세요.'); refreshAll(opts); }
+function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, state.pr[3].prints.length ? '어떻게 고장났는지 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.' : '먼저 그림 속 「인쇄」를 눌러 보세요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
+function check4(opts){ state.t4 = $('t4').value; setWhy(4, '✅ 완료! '+NEXT, state.pr[4].prints.length ? '어떻게 고장났는지 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.' : '먼저 그림 속 「인쇄」를 눌러 보세요.'); paintShare(4); renderFriends(4); refreshAll(opts); }
 ['t2a','t2b'].forEach(id=> $(id).addEventListener('input', ()=>check2()));
 $('t3').addEventListener('input', ()=>check3()); $('t4').addEventListener('input', ()=>check4());
 
@@ -808,7 +834,7 @@ function renderCompare(){
     ${item(10,1,'normal',150,true)}${item(125,2,'normal',50,true)}${item(240,3,'wavy',100,false)}${item(355,4,'stretch',100,false)}
   </svg>`;
 }
-function check5(opts){ state.t5 = $('t5').value; setWhy(5, '✅ 완료! '+NEXT, '설명을 쓰면 다음으로 넘어갈 수 있어요.'); renderFriends(5); refreshAll(opts); }
+function check5(opts){ state.t5 = $('t5').value; setWhy(5, '✅ 완료! '+NEXT, '설명을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(5); renderFriends(5); refreshAll(opts); }
 $('t5').addEventListener('input', ()=>check5());
 function renderAllShapes(){ [2,3,4].forEach(renderPrinter); renderCompare(); }
 
@@ -842,23 +868,62 @@ function renderSort(){
   } else $('sortMsg').textContent = all ? '다 나눴으면 「확인하기」를 눌러 보세요.' : `남은 카드 ${CARDS.filter(c=>!state.sort[c.k]).length}장`;
 }
 document.addEventListener('click', e=>{
-  if(!e.target.closest || !e.target.closest('#task-a6') || finalLocked) return;
+  if(!e.target.closest || !e.target.closest('#task-a6') || finalLocked || suppressClick) return;
   const card = e.target.closest('[data-card]');
   if(card){ state.sel = state.sel===card.dataset.card ? null : card.dataset.card; renderSort(); return; }
   const bin = e.target.closest('[data-bin]');
   if(bin && state.sel){ state.sort[state.sel] = bin.dataset.bin; state.sel = null; state.sortChecked = false; renderSort(); check6(); return; }
   if(e.target.closest('#tray') && state.sel){ delete state.sort[state.sel]; state.sel = null; state.sortChecked = false; renderSort(); check6(); }
 });
+/* 카드 끌어서 옮기기(마우스·터치) — 조금만 움직이고 떼면 누르기(선택)로 처리한다 */
+let cardDrag = null, suppressClick = false;
+document.addEventListener('pointerdown', e=>{
+  const card = e.target.closest && e.target.closest('#task-a6 [data-card]'); if(!card || finalLocked) return;
+  cardDrag = {k: card.dataset.card, x0: e.clientX, y0: e.clientY, el: card, ghost: null};
+});
+document.addEventListener('pointermove', e=>{
+  if(!cardDrag) return;
+  if(!cardDrag.ghost){
+    if(Math.hypot(e.clientX-cardDrag.x0, e.clientY-cardDrag.y0) < 6) return;
+    const g = document.createElement('div'); g.className = 'drag-ghost'; g.innerHTML = cardDrag.el.innerHTML; document.body.appendChild(g);
+    cardDrag.ghost = g; cardDrag.el.classList.add('dragging'); state.sel = null;
+  }
+  e.preventDefault();
+  cardDrag.ghost.style.left = e.clientX+'px'; cardDrag.ghost.style.top = e.clientY+'px';
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const tgt = under && (under.closest('.bin') || under.closest('#tray'));
+  document.querySelectorAll('.bin, #tray').forEach(x=> x.classList.toggle('over', x===tgt));
+}, {passive:false});
+document.addEventListener('pointerup', e=>{
+  if(!cardDrag) return;
+  const d = cardDrag; cardDrag = null;
+  if(!d.ghost) return;
+  d.ghost.remove(); d.el.classList.remove('dragging');
+  document.querySelectorAll('.bin, #tray').forEach(x=> x.classList.remove('over'));
+  suppressClick = true; setTimeout(()=>{ suppressClick = false; }, 0);
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const bin = under && under.closest('.bin');
+  if(bin) state.sort[d.k] = bin.dataset.bin;
+  else if(under && under.closest('#tray')) delete state.sort[d.k];
+  else { renderSort(); return; }
+  state.sortChecked = false; renderSort(); check6();
+});
 $('sortCheck').addEventListener('click', ()=>{ state.sortChecked = true; renderSort(); check6({now:true}); });
 function check6(opts){ setWhy(6, '✅ 완료! '+NEXT, '카드를 모두 나누고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
 
 /* ---------- 화면 7: 그림 그리기 + 컴퓨터 1~4 ---------- */
+const PENS = ['#5b8fd1','#e53935','#43a047','#fb8c00','#8e24aa','#212121'];
+$('pens').innerHTML = PENS.map(c=>`<button data-pen="${c}" style="background:${c}" title="펜 색"></button>`).join('');
+$('pens').addEventListener('click', e=>{ const b = e.target.closest('[data-pen]'); if(!b) return; state.pen = b.dataset.pen; paintPens(); });
+function paintPens(){ document.querySelectorAll('#pens button').forEach(b=> b.classList.toggle('on', b.dataset.pen===state.pen)); }
 const strokePath = (s, f) => s.length ? 'M' + s.map(p=>{ const q = f ? f(p[0],p[1]) : p; return `${r1(q[0])},${r1(q[1])}`; }).join('L') : '';
 function renderPads(){
-  const st = 'fill="none" stroke="#5b8fd1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
-  $('pad').innerHTML = state.strokes.map(s=>`<path d="${strokePath(s)}" ${st}/>`).join('') + (cur ? `<path d="${strokePath(cur)}" ${st}/>` : '');
+  const st = c => `fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"`;
+  const col = i => state.strokeCols[i] || '#5b8fd1';
+  $('pad').innerHTML = state.strokes.map((s,i)=>`<path d="${strokePath(s)}" ${st(col(i))}/>`).join('') + (cur ? `<path d="${strokePath(cur)}" ${st(state.pen)}/>` : '');
   const f = COMP[state.ctab];
-  $('outpad').innerHTML = state.strokes.map(s=>`<path d="${strokePath(s, f)}" ${st}/>`).join('');
+  $('outpad').innerHTML = state.strokes.map((s,i)=>`<path d="${strokePath(s, f)}" ${st(col(i))}/>`).join('');
+  paintPens();
   $('padPh').style.display = (state.strokes.length || cur) ? 'none' : 'flex';
   document.querySelectorAll('#ctabs button').forEach(b=> b.classList.toggle('on', +b.dataset.c===state.ctab));
 }
@@ -868,11 +933,11 @@ let cur = null;
   const at = e => { const r = svg.getBoundingClientRect(), sc = 300/r.width; return [Math.max(0,Math.min(300,(e.clientX-r.left)*sc)), Math.max(0,Math.min(300,(e.clientY-r.top)*sc))]; };
   svg.addEventListener('pointerdown', e=>{ if(finalLocked || RT.paused) return; cur = [at(e)]; svg.setPointerCapture(e.pointerId); e.preventDefault(); renderPads(); });
   svg.addEventListener('pointermove', e=>{ if(!cur) return; const p = at(e), q = cur[cur.length-1]; if(Math.hypot(p[0]-q[0], p[1]-q[1]) >= 3){ cur.push(p); renderPads(); } });
-  const end = ()=>{ if(!cur) return; if(cur.length>1){ state.strokes.push(cur); if(state.strokes.length>60) state.strokes.shift(); } cur = null; renderPads(); check7(); };
+  const end = ()=>{ if(!cur) return; if(cur.length>1){ state.strokes.push(cur); state.strokeCols.push(state.pen); if(state.strokes.length>60){ state.strokes.shift(); state.strokeCols.shift(); } } cur = null; renderPads(); check7(); };
   svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
 })();
-$('drawUndo').addEventListener('click', ()=>{ if(finalLocked) return; state.strokes.pop(); renderPads(); check7(); });
-$('drawClear').addEventListener('click', ()=>{ if(finalLocked) return; state.strokes = []; renderPads(); check7(); });
+$('drawUndo').addEventListener('click', ()=>{ if(finalLocked) return; state.strokes.pop(); state.strokeCols.pop(); renderPads(); check7(); });
+$('drawClear').addEventListener('click', ()=>{ if(finalLocked) return; state.strokes = []; state.strokeCols = []; renderPads(); check7(); });
 $('ctabs').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; state.ctab = +b.dataset.c; renderPads(); });
 document.querySelectorAll('#cpick input').forEach(inp=> inp.addEventListener('change', ()=>{ state.comp[+inp.value] = inp.checked; state.compChecked = false; renderComp(); check7(); }));
 $('compCheck').addEventListener('click', ()=>{ state.compChecked = true; renderComp(); check7({now:true}); });
@@ -892,21 +957,43 @@ function renderRecap(){
   $('recap8').innerHTML = `<div class="rc"><b>📝 화면 5에서 내가 쓴 닮음 판단 방법</b>${esc(state.t5.trim()) || '<span class="note">(아직 안 씀)</span>'}</div>`
     + `<div class="rc"><b>🃏 카드 정렬 · 🖥 컴퓨터</b>${cnt ? `닮은 도형 카드 ${sim}장 / 닮음이 아님 ${cnt-sim}장` : '카드 정렬 전'}<br>${state.compChecked ? '닮음을 만드는 컴퓨터: 1, 3, 4' : ''}</div>`;
 }
-function check8(opts){ state.t8 = $('t8').value; setWhy(8, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰면 완료돼요. 마지막 화면에서 제출하세요.'); renderFriends(8); refreshAll(opts); }
+function check8(opts){ state.t8 = $('t8').value; setWhy(8, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「📤 답변 공유」를 누르면 완료돼요.'); paintShare(8); renderFriends(8); refreshAll(opts); }
 $('t8').addEventListener('input', ()=>check8());
 
 /* ---------- 친구들의 생각(내 답을 쓴 뒤 자동 공개, 이름 없이) ---------- */
 function renderFriends(n){
   const box = $('fr'+n); if(!box) return;
-  if(!isDone(n)){ box.innerHTML = ''; return; }
-  const kind = n===2 ? 'keep' : (n===5 ? 'how' : 'sum'), all = shareOf(kind), me = RT.studentKey;
+  if(!state.seen[n]){ box.innerHTML = ''; return; }
+  const kind = {2:'keep',3:'br1',4:'br2',5:'how',8:'sum'}[n], all = shareOf(kind), me = RT.studentKey;
   const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
-  if(!keys.length){ box.innerHTML = ''; return; }
+  if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
   const item = k => n===2 ? `<b>유지</b>${esc(all[k].a)}\n<b>달라짐</b>${esc(all[k].b)}` : esc(all[k].t);
   box.innerHTML = `<h4>👥 친구들의 생각 (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${item(k)}</div>`).join('')}</div>`;
 }
 
-function onShareChanged(){ renderFriends(2); renderFriends(5); renderFriends(8); }
+/* ---------- 📤 답변 공유: 공유하면 친구들 답(이름 없이)이 보이고, 「수정하기」로 고친 뒤 다시 공유할 수 있다 ---------- */
+const SH_FIELDS = {2:['t2a','t2b'], 3:['t3'], 4:['t4'], 5:['t5'], 8:['t8']};
+const SH_READY = {2:()=> new Set(state.pr[2].prints).size>=2 && len(state.t2a)>=MIN_TEXT && len(state.t2b)>=MIN_TEXT,
+  3:()=> state.pr[3].prints.length>=1 && len(state.t3)>=MIN_TEXT, 4:()=> state.pr[4].prints.length>=1 && len(state.t4)>=MIN_TEXT,
+  5:()=> len(state.t5)>=MIN_TEXT, 8:()=> len(state.t8)>=MIN_TEXT};
+function paintShare(n){
+  const b = $('sh'+n); if(!b) return;
+  const sh = state.shared[n];
+  SH_FIELDS[n].forEach(id=>{ $(id).readOnly = sh; $(id).classList.toggle('shared', sh); });
+  b.classList.toggle('edit', sh);
+  b.textContent = sh ? '✏️ 수정하기' : (state.seen[n] ? '📤 다시 공유' : '📤 답변 공유');
+  b.disabled = !sh && (!SH_READY[n]() || finalLocked);
+  $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
+}
+[2,3,4,5,8].forEach(n=> $('sh'+n).addEventListener('click', ()=>{
+  if(finalLocked) return;
+  if(state.shared[n]) state.shared[n] = false;
+  else { if(!SH_READY[n]()) return; state.shared[n] = true; state.seen[n] = true; }
+  paintShare(n); renderFriends(n);
+  ({2:check2,3:check3,4:check4,5:check5,8:check8})[n]({now:true});
+}));
+
+function onShareChanged(){ [2,3,4,5,8].forEach(renderFriends); }
 function onRevealChanged(){}
 function onShowPage(taskId){ if(taskId===8) renderRecap(); if(taskId===6) renderSort(); }
 
@@ -924,7 +1011,11 @@ function restoreData(d){
   ['t2a','t2b','t3','t4','t5','t8'].forEach(k=>{ state[k] = d[k] || ''; $(k).value = state[k]; });
   state.sort = {}; if(d.sort) Object.keys(d.sort).forEach(k=>{ if(d.sort[k]==='sim'||d.sort[k]==='not') state.sort[k] = d.sort[k]; });
   state.sortChecked = !!d.sortChecked;
-  state.strokes = arr(d.strokes).map(s=>String(s).split(' ').map(p=>p.split(',').map(Number)).filter(p=>p.length===2 && p.every(Number.isFinite))).filter(s=>s.length>1);
+  state.strokes = []; state.strokeCols = [];
+  arr(d.strokes).forEach(raw=>{ let s = String(raw), c = '#5b8fd1'; const k = s.indexOf('|'); if(k>=0){ c = s.slice(0,k); s = s.slice(k+1); }
+    const pts = s.split(' ').map(p=>p.split(',').map(Number)).filter(p=>p.length===2 && p.every(Number.isFinite));
+    if(pts.length>1){ state.strokes.push(pts); state.strokeCols.push(/^#[0-9a-f]{6}$/i.test(c) ? c : '#5b8fd1'); } });
+  [2,3,4,5,8].forEach(n=>{ state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
   state.comp = [0,1,2,3].map(i=>!!arr(d.comp)[i]); state.compChecked = !!d.compChecked;
   renderMaker(); renderAllShapes(); renderSort(); renderPads();
   check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); check5({noSave:true}); check6({noSave:true}); check7({noSave:true}); check8({noSave:true});
