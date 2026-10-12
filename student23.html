@@ -263,7 +263,7 @@
   </div>
   <div class="card" id="exCard">
     <h3>친구들이 찾은 예</h3>
-    <div class="waitbox" id="exWait">⏳ 선생님이 공개하면 친구들이 찾은 예가 여기에 나타나요.</div>
+    <div class="waitbox" id="exWait">⏳ 내 예를 두 가지 모두 쓰면 친구들이 찾은 예가 여기에 나타나요.</div>
     <div class="excols" id="exCols" style="display:none;">
       <div><div class="exh z">확률이 0인 사건</div><div class="exlist" id="exList0"></div></div>
       <div><div class="exh o">확률이 1인 사건</div><div class="exlist" id="exList1"></div></div>
@@ -297,7 +297,7 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">활동 3</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>친구들은 어디에 놓았을까?</h2>
-    <div class="waitbox" id="lineWait">⏳ 선생님이 공개하면 우리 반 친구들이 놓은 자리가 여기에 나타나요.</div>
+    <div class="waitbox" id="lineWait">⏳ 선생님이 다음 단계를 열면 우리 반 친구들이 놓은 자리가 여기에 나타나요.</div>
     <div id="lineBox" style="display:none;">
       <p class="hint">점 하나가 친구 한 명이에요. <span class="me-dot"></span> 표시가 내가 놓은 자리예요.</p>
       <div id="classLines"></div>
@@ -325,7 +325,7 @@
   </div>
   <div class="card">
     <h3>우리 반 확률 표현 모음</h3>
-    <div class="waitbox" id="myWait">⏳ 선생님이 공개하면 친구들이 찾은 표현이 여기에 모여요.</div>
+    <div class="waitbox" id="myWait">⏳ 내 표현·확률·이유를 모두 쓰면 친구들이 찾은 표현이 여기에 모여요.</div>
     <div id="myBox" style="display:none;">
       <div id="myLine"></div>
       <div class="gallery" id="gallery"></div>
@@ -523,6 +523,7 @@ const RT = {
         $('announceBanner').style.display = 'none';
       }
       REVEAL = c.reveal || {}; onRevealChanged();
+      this.stageOn = (c.stage!=null);
       this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
       clampToPacing();
@@ -619,11 +620,12 @@ function dotLineHTML(values, color, band){
 function check1(opts){
   state.ex0 = $('ex0').value; state.ex1 = $('ex1').value;
   setWhy(1, '✅ 완료! '+NEXT, '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  renderEx();
   refreshAll(opts);
 }
 ['ex0','ex1'].forEach(id=> $(id).addEventListener('input', ()=>check1()));
 function renderEx(){
-  const show = !!REVEAL.ex;
+  const show = !!REVEAL.ex || isDone(1);   // 내 예를 다 쓰면 자동으로 보인다
   $('exWait').style.display = show ? 'none' : 'block';
   $('exCols').style.display = show ? 'flex' : 'none';
   if(!show) return;
@@ -711,12 +713,13 @@ function check4(opts){
   state.myExpr = $('myExpr').value; state.myVal = $('myVal').value.trim(); state.myWhy = $('myWhy').value;
   const r = parseRel(state.myVal);
   $('myValMsg').innerHTML = r.empty ? '' : r.bad ? '<span class="bad">분수(3/10)나 소수(0.3), 백분율(30%)로 써 주세요.</span>' : r.range ? '<span class="bad">확률은 0 이상 1 이하예요.</span>' : `<span class="ok">✓ ${fmtV(r.value)}</span>`;
+  renderGallery();
   setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', '표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.');
   refreshAll(opts);
 }
 ['myExpr','myVal','myWhy'].forEach(id=> $(id).addEventListener('input', ()=>check4()));
 function renderGallery(){
-  const show = !!REVEAL.mine;
+  const show = !!REVEAL.mine || isDone(4);   // 내 표현을 다 쓰면 자동으로 보인다
   $('myWait').style.display = show ? 'none' : 'block';
   $('myBox').style.display = show ? 'block' : 'none';
   if(!show) return;
@@ -794,6 +797,7 @@ function updateNavButtons(){
     if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
     else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
     else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
     pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
   }
   if(gateMsg){

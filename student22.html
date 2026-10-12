@@ -319,7 +319,7 @@
     <div class="act-head"><span class="act-tag">상금 분배 ②</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>반 친구들은 어떻게 나눴을까?</h2>
     <div class="kvline" id="my1Line"></div>
-    <div class="waitbox" id="splitWait">⏳ 선생님이 친구들의 생각을 공개하면 여기에 나타나요. 잠시만 기다려 주세요.</div>
+    <div class="waitbox" id="splitWait">⏳ 선생님이 다음 단계를 열면 친구들의 생각이 여기에 나타나요. 잠시만 기다려 주세요.</div>
     <div id="splitBox" style="display:none;">
       <div class="bars" id="splitBars"></div>
       <div class="filter" id="splitFilter"></div>
@@ -490,7 +490,7 @@
   </div>
   <div class="card" id="voteCard">
     <h3>우리 반의 예상은?</h3>
-    <div class="waitbox" id="voteWait">⏳ 선생님이 공개하면 우리 반의 예상 결과가 여기에 나타나요.</div>
+    <div class="waitbox" id="voteWait">⏳ 위의 타율을 모두 구하면 우리 반의 예상 결과가 여기에 나타나요.</div>
     <div class="bars" id="voteBars" style="display:none;"></div>
   </div>
   <div class="why" id="why7">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
@@ -813,6 +813,7 @@ const RT = {
         $('announceBanner').style.display = 'none';
       }
       REVEAL = c.reveal || {}; onRevealChanged();
+      this.stageOn = (c.stage!=null);
       this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
       clampToPacing();
@@ -1142,12 +1143,12 @@ function check7(opts){
     $('batResult').innerHTML = `<div class="result-row"><div class="stat"><div class="k">선수 A 시즌 타율</div><div class="v frac">17/50 = 0.34</div></div><div class="stat"><div class="k">선수 B 시즌 타율</div><div class="v frac">18/50 = 0.36</div></div></div>
       <p style="margin:10px 0 0;font-size:16px;font-weight:bold;">➡ 시즌 전체 타율은 <span style="color:var(--orange);">선수 B</span>가 더 높아요! <span class="note" style="font-weight:normal;">(내 예상: ${esc(pred)} — ${state.vote==='B'?'예상이 맞았어요 🎯':'예상과 달랐어요 😮'})</span></p>`;
   }
-  lockVote();
+  lockVote(); renderVote();
   setWhy(7, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 function renderVote(){
-  const show = !!REVEAL.vote;
+  const show = !!REVEAL.vote || batOk();   // 내 계산을 끝내면 자동으로 보인다
   $('voteWait').style.display = show ? 'none' : 'block';
   $('voteBars').style.display = show ? 'flex' : 'none';
   if(!show) return;
@@ -1258,6 +1259,7 @@ function updateNavButtons(){
     if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
     else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
     else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
     pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
   }
   if(gateMsg){
