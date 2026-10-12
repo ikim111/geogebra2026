@@ -351,7 +351,7 @@ function missing(){
 const isDone = () => missing().length === 0;
 const valueOf = () => `${state.f.title.trim() ? '제목: '+state.f.title.trim()+' · ' : ''}서론 ${cnt('intro')}자 · 본론 ${cnt('body')}자 · 결론 ${cnt('concl')}자 · 합계 ${totalCount()}자`;
 function collectData(){ return { title: state.f.title, intro: state.f.intro, body: state.f.body, concl: state.f.concl, total: totalCount(),
-  prepImported: !!state.prepImported, sources: state.sources.map(x=>({name:x.name, link:x.link, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
+  prepImported: !!state.prepImported, sources: state.sources.map(x=>({name:x.name, link:x.link, from1: x.from1==null ? null : x.from1, files:(x.files||[]).map(f=>({url:f.url, name:f.name, type:f.type, size:f.size})), ana:(x.ana||[]).filter(a=>String(a).trim())})) }; }
 
 /* ---------- 자료로 인정하지 않는 출처 판별 (student22·student23·teacher22·teacher23·api/_report-common.js 공통 — 모두 똑같이 유지) ----------
    블로그·카페·커뮤니티·SNS·위키·질문답변 사이트·유튜브·개인 글 플랫폼·AI가 만든 글은 자료로 인정하지 않는다
@@ -484,20 +484,33 @@ function paintSrcOk(){
 }
 function finalLockedNow(){ return document.body.classList.contains('final-locked'); }
 $('addSrcRow').addEventListener('click', ()=>{ if(finalLockedNow()) return; state.sources.push(newSrc()); renderSources(); changed(); });
-/* 1부(22번) 자료 → 2부 자료 카드로 복사. 같은 링크가 이미 있으면 1부 파일만 더한다. 반환: {added, merged} */
+/* 1부(22번) 자료 → 2부 자료 카드로 복사. 반환: {added, merged}
+   1부 자료와 2부 카드는 '1부 몇 번째 자료인지(from1)'로 짝짓는다. 같은 사이트 첫 화면 주소처럼 링크가 같아도 다른 자료로 본다.
+   예전에 링크만 보고 잘못 합쳐진 스크린샷(다른 1부 자료의 파일)은 제자리 카드로 옮긴다. */
 function importPrep(){
-  const src = prepData && Array.isArray(prepData.sources) ? prepData.sources.filter(x=>x && (String(x.site||'').trim() || String(x.link||'').trim() || (x.files && Object.keys(x.files).length))) : [];
-  if(!src.length) return null;
-  const have = new Set(state.sources.map(x=>x.link.trim()).filter(Boolean));
+  const all = prepData && Array.isArray(prepData.sources) ? prepData.sources : [];
   const filesOf = x => (Array.isArray(x.files) ? x.files : Object.values(x.files||{})).filter(f=>f&&f.url).slice(0,MAX_FILES).map(f=>({url:f.url, name:f.name||'파일', type:f.type||'', size:f.size||0}));
-  let merged = 0;
-  src.forEach(x=>{ const l = String(x.link||'').trim(); if(!l || !have.has(l)) return; const cur = state.sources.find(y=>y.link.trim()===l); const urls = new Set((cur.files||[]).map(f=>f.url));
-    filesOf(x).forEach(f=>{ if(!urls.has(f.url) && (cur.files||[]).length < MAX_FILES){ cur.files = (cur.files||[]).concat(f); merged++; } }); });
-  const add = src.filter(x=> { const l = String(x.link||'').trim(); return !l || !have.has(l); })
-    .filter(x=> !state.sources.some(y=> !y.link.trim() && y.name.trim() && y.name.trim()===[String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', ')))
-    .map(x=>({ name: [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', '), link: String(x.link||'').trim(), files: filesOf(x), ana:[''] }));
-  if(add.length) state.sources = state.sources.filter(x=> x.name.trim() || x.link.trim() || (x.files||[]).length || (x.ana||[]).some(a=>a.trim())).concat(add);
-  return { added: add.length, merged };
+  const idx = all.map((x,i)=>({x,i})).filter(o=>o.x && (String(o.x.site||'').trim() || String(o.x.link||'').trim() || filesOf(o.x).length));
+  if(!idx.length) return null;
+  const nameOf = x => [String(x.site||'').trim(), String(x.what||'').trim()].filter(Boolean).join(', ');
+  const owner = {}; idx.forEach(({x,i})=> filesOf(x).forEach(f=> owner[f.url] = i));
+  let added = 0, merged = 0;
+  idx.forEach(({x,i})=>{
+    let card = state.sources.find(c=> c.from1 === i);
+    if(!card) card = state.sources.find(c=> c.from1 == null && c.name.trim() === nameOf(x) && c.link.trim() === String(x.link||'').trim());
+    if(card){
+      card.from1 = i;
+      const urls = new Set((card.files||[]).map(f=>f.url));
+      filesOf(x).forEach(f=>{ if(!urls.has(f.url) && (card.files||[]).length < MAX_FILES){ card.files = (card.files||[]).concat(f); merged++; } });
+    } else {
+      state.sources = state.sources.filter(c=> c.name.trim() || c.link.trim() || (c.files||[]).length || (c.ana||[]).some(a=>a.trim()));
+      state.sources.push({ name: nameOf(x), link: String(x.link||'').trim(), files: filesOf(x), ana:[''], from1: i }); added++;
+    }
+  });
+  // 다른 1부 자료의 스크린샷이 잘못 들어간 카드에서 빼기(그 자료의 카드가 따로 있을 때만)
+  const hasCard = new Set(state.sources.filter(c=>c.from1!=null).map(c=>c.from1));
+  state.sources.forEach(c=>{ if(c.from1==null) return; c.files = (c.files||[]).filter(f=> owner[f.url]==null || owner[f.url]===c.from1 || !hasCard.has(owner[f.url])); });
+  return { added, merged };
 }
 $('loadPrepSrc').addEventListener('click', ()=>{
   if(finalLockedNow()) return;
@@ -698,7 +711,7 @@ function restoreData(d){
   state.prepImported = !!d.prepImported;
   document.querySelectorAll('textarea[data-k]').forEach(el=>{ const k=el.dataset.k; if(typeof d[k]==='string'){ state.f[k]=d[k]; el.value=d[k]; } });
   const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
-  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'',
+  if(Array.isArray(d.sources) && d.sources.length) state.sources = d.sources.map(x=>({ name:(x&&x.name)||'', link:(x&&x.link)||'', from1: (x && Number.isInteger(x.from1)) ? x.from1 : null,
     files: arr(x&&x.files).filter(f=>f&&f.url).slice(0,MAX_FILES), ana: (a=> a.length ? a : [''])(arr(x&&x.ana).map(String)) }));
   renderSources(); paintAll(); changed({noSave:true});
 }
