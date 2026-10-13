@@ -32,6 +32,10 @@
   button.sec{background:#fff;color:var(--blue);border:1.5px solid var(--blue);}
   button:disabled{background:#9fb6d3;cursor:default;border-color:#9fb6d3;color:#fff;}
   .note{font-size:13px;color:var(--ink2);}
+  .drop{border:2px dashed #b39ddb;border-radius:12px;padding:22px 14px;text-align:center;background:#faf8ff;font-size:15px;color:var(--ink2);}
+  .drop.over{border-color:#5e35b1;background:#ede7f6;}
+  .drop .pick{display:inline-block;color:#5e35b1;font-weight:bold;text-decoration:underline;cursor:pointer;margin:0;}
+  .drop .fname{margin-top:8px;font-size:14px;color:var(--ink);font-weight:bold;min-height:18px;}
   .msg{font-size:14px;margin-top:8px;white-space:pre-wrap;}
   .bad{color:var(--red);} .ok{color:var(--green);}
   .bar{height:10px;background:#e3e6ea;border-radius:6px;overflow:hidden;margin-top:10px;} .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .2s;}
@@ -62,7 +66,8 @@
     <h2>2. 스캔본 올리기</h2>
     <p class="note" style="margin:0 0 6px;">이미 올린 학생은 그대로 남고, 이번 PDF에 있는 학생만 더해지거나 바뀌어요. 결석생 추가나 점수 정정은 그 학생 PDF만 올리면 돼요.</p>
     <label for="pdf">반 전체 스캔 PDF</label>
-    <input type="file" id="pdf" accept="application/pdf">
+    <div class="drop" id="drop">📄 여기에 PDF를 <b>끌어다 놓거나</b> <label for="pdf" class="pick">파일 고르기</label>
+      <input type="file" id="pdf" accept="application/pdf" style="display:none;"><div class="fname" id="fname"></div></div>
     <div id="autoMsg" class="msg"></div>
     <label for="seg">학생별 쪽 나누기 <span class="note">— 한 줄에 「번호, 시작쪽, 끝쪽, 총점」. Claude가 만든 PDF를 고르면 자동으로 채워져요.</span></label>
     <textarea id="seg" placeholder="1,1,4,19&#10;2,5,10,20&#10;..."></textarea>
@@ -113,8 +118,16 @@ $('statusBtn').addEventListener('click', async () => {
 });
 
 /* Claude가 만든 PDF에는 문서 정보(Keywords)에 「BN|반|번호,시작,끝,총점;…」이 들어 있어서, 고르기만 하면 반과 목록이 채워진다 */
-$('pdf').addEventListener('change', async () => {
-  const f = $('pdf').files[0]; $('autoMsg').textContent = ''; if (!f || !window.pdfjsLib) return;
+/* 끌어다 놓기: 놓은 PDF를 파일 칸에 넣고 같은 처리를 한다 */
+let PDF_FILE = null;
+const drop = $('drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = Array.from(e.dataTransfer.files || []).find(x => /pdf$/i.test(x.type) || /\.pdf$/i.test(x.name)); if (!f) { $('autoMsg').innerHTML = '<span class="bad">PDF 파일만 올릴 수 있어요.</span>'; return; } onPdf(f); });
+$('pdf').addEventListener('change', () => onPdf($('pdf').files[0]));
+async function onPdf(f){
+  PDF_FILE = f || null; $('fname').textContent = f ? `${f.name} (${(f.size/1024/1024).toFixed(1)}MB)` : '';
+  $('autoMsg').textContent = ''; if (!f || !window.pdfjsLib) return;
   try {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
@@ -124,7 +137,7 @@ $('pdf').addEventListener('change', async () => {
     $('cls').value = m[1]; $('seg').value = m[2].split(';').join('\n');
     $('autoMsg').innerHTML = `<span class="ok">✅ ${m[1]}반 목록(${m[2].split(';').length}명)을 자동으로 채웠어요. 「올리기」만 누르면 돼요.</span>`;
   } catch (e) { $('autoMsg').innerHTML = '<span class="bad">PDF를 읽지 못했어요.</span>'; }
-});
+}
 function parseSeg(text){
   const rows = [], errs = [];
   text.split(/\n/).map(s => s.trim()).filter(Boolean).forEach((line, i) => {
@@ -146,7 +159,7 @@ async function pageToJpeg(pdf, no){
   return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.68));
 }
 $('goBtn').addEventListener('click', async () => {
-  const msg = $('msg'), bar = $('bar'), cls = $('cls').value, key = $('key').value.trim(), f = $('pdf').files[0];
+  const msg = $('msg'), bar = $('bar'), cls = $('cls').value, key = $('key').value.trim(), f = PDF_FILE;
   try { localStorage.setItem(KEY_LS, key); } catch (e) {}
   if (!key) { msg.innerHTML = '<span class="bad">관리 비밀번호를 넣어 주세요.</span>'; return; }
   if (!f) { msg.innerHTML = '<span class="bad">스캔 PDF를 골라 주세요.</span>'; return; }
