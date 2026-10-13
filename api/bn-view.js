@@ -3,6 +3,7 @@
 // [학생] POST { cls, num, name, code }
 //   반·번호·이름·인증번호(외심내심 수행평가와 같은 휴대전화 뒷 4자리)를 서버에서 확인한 뒤에만
 //   그 학생의 총점과 채점된 답안 사진 주소를 돌려준다. → { ok:true, score, pages:[url] }
+//   선생님 목차(mgmt)에서 그 반의 33번 잠금이 열려 있을 때만 보여 준다(rooms/{반}__access/units/33 === true).
 //   인증번호: rooms/{반}__assess_pa1/students/{번호_이름}/verifyCode (없으면 rooms/{반}__assess_pa1/rosterCodes/{번호_이름})
 // [선생님] POST { admin:key, cls } → 그 반의 현재 목록(공개 여부·학생 수) 확인
 //
@@ -56,7 +57,7 @@ module.exports = async (req, res) => {
     if (b.admin !== undefined) {
       if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
       const m = await loadMap(cls);
-      res.status(200).json({ ok: true, map: m ? { open: !!m.open, ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
+      res.status(200).json({ ok: true, unitOpen: (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true, map: m ? { ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
       return;
     }
     // ---- 학생
@@ -68,8 +69,11 @@ module.exports = async (req, res) => {
     if (real == null) real = await fbGet(`rooms/${room}/rosterCodes/${key}`);
     if (real == null) { await sleep(400); res.status(404).json({ error: '해당 반·번호·이름을 찾을 수 없어요. 다시 확인해 주세요.' }); return; }
     if (String(real).trim() !== code) { await sleep(800); res.status(403).json({ error: '인증번호가 일치하지 않아요. 다시 확인해 주세요.' }); return; }
+    // 공개 여부 = 선생님 목차(mgmt)에서 그 반의 33번(배움노트 결과 보기) 잠금을 열었는지
+    const unitOpen = (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true;
+    if (!unitOpen) { res.status(200).json({ ok: true, closed: true }); return; }
     const m = await loadMap(cls);
-    if (!m || !m.open) { res.status(200).json({ ok: true, closed: true }); return; }
+    if (!m) { res.status(200).json({ ok: true, none: true }); return; }
     const s = (m.students || {})[num];
     if (!s) { res.status(200).json({ ok: true, none: true }); return; }
     res.status(200).json({ ok: true, score: s.score, max: m.max || 20, pages: s.pages || [] });

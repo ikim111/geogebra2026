@@ -46,7 +46,7 @@
 <body>
 <div class="wrap">
   <h1>📤 배움노트 채점본 올리기 <span class="note">(교사용)</span></h1>
-  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.</p>
+  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.<br><b>학생에게 공개/비공개는 선생님 목차(관리 페이지)에서 그 반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금으로 해요.</b></p>
 
   <div class="card">
     <h2>1. 관리 비밀번호와 반</h2>
@@ -62,11 +62,9 @@
     <h2>2. 스캔본 올리기</h2>
     <label for="pdf">반 전체 스캔 PDF</label>
     <input type="file" id="pdf" accept="application/pdf">
-    <label for="seg">학생별 쪽 나누기 <span class="note">— 한 줄에 「번호, 시작쪽, 끝쪽, 총점」 (Claude가 만들어 준 목록을 그대로 붙여 넣으세요)</span></label>
+    <div id="autoMsg" class="msg"></div>
+    <label for="seg">학생별 쪽 나누기 <span class="note">— 한 줄에 「번호, 시작쪽, 끝쪽, 총점」. Claude가 만든 PDF를 고르면 자동으로 채워져요.</span></label>
     <textarea id="seg" placeholder="1,1,4,19&#10;2,5,10,20&#10;..."></textarea>
-    <div class="row" style="margin-top:10px;">
-      <label style="flex:0 0 auto;margin:0;font-weight:normal;"><input type="checkbox" id="openNow"> 올린 뒤 바로 학생에게 공개</label>
-    </div>
     <div style="margin-top:12px;"><button id="goBtn">⬆ 올리기</button></div>
     <div class="bar"><i id="bar"></i></div>
     <div id="msg" class="msg"></div>
@@ -94,31 +92,38 @@ async function getMap(){
   const r = await fetch('/api/bn-view', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ admin: $('key').value.trim(), cls: $('cls').value }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
-  return j.map;
+  return j;
 }
 async function saveMap(map){
   map.ts = Date.now();
   await put(`bnmap/${map.cls}.json`, new Blob([JSON.stringify(map)], {type:'application/json'}), 'application/json');
 }
-function renderCur(m){
-  if (!m) { $('cur').innerHTML = '<p class="note">아직 올린 것이 없어요.</p>'; return; }
+function renderCur(m, unitOpen){
+  const st = `<p>학생에게 <span class="pill ${unitOpen?'on':'off'}">${unitOpen?'공개 중 (목차 잠금 열림)':'비공개 (목차에서 잠김)'}</span></p>`;
+  if (!m) { $('cur').innerHTML = st + '<p class="note">아직 올린 것이 없어요.</p>'; return; }
   const nums = Object.keys(m.students || {}).sort((a, b) => a - b);
-  $('cur').innerHTML = `<p>학생에게 <span class="pill ${m.open?'on':'off'}">${m.open?'공개 중':'비공개'}</span>
-    <button class="sec" id="toggleBtn" style="margin-left:8px;padding:6px 14px;font-size:14px;">${m.open?'🔒 비공개로 바꾸기':'🔓 학생에게 공개하기'}</button>
-    <span class="note">· ${nums.length}명 · 마지막 저장 ${new Date(m.ts).toLocaleString('ko-KR')}</span></p>
+  $('cur').innerHTML = st + `<p class="note">${nums.length}명 · 마지막 저장 ${new Date(m.ts).toLocaleString('ko-KR')}</p>
     <table><tr><th>번호</th><th>총점</th><th>쪽수</th><th>사진</th></tr>${nums.map(n => { const s = m.students[n]; return `<tr><td>${esc(n)}</td><td>${esc(s.score)}</td><td>${(s.pages||[]).length}</td><td class="thumbs">${(s.pages||[]).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">${i+1}쪽</a>`).join('')}</td></tr>`; }).join('')}</table>`;
-  $('toggleBtn').addEventListener('click', async () => {
-    const b = $('toggleBtn'); b.disabled = true;
-    try { m.open = !m.open; await saveMap(m); $('status').innerHTML = `<span class="ok">✅ ${m.open?'공개했어요.':'비공개로 바꿨어요.'}</span>`; renderCur(m); }
-    catch (e) { m.open = !m.open; b.disabled = false; $('status').innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
-  });
 }
 $('statusBtn').addEventListener('click', async () => {
   $('status').textContent = '불러오는 중…';
-  try { const m = await getMap(); $('status').textContent = ''; renderCur(m); }
+  try { const j = await getMap(); $('status').textContent = ''; renderCur(j.map, j.unitOpen); }
   catch (e) { $('status').innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
 });
 
+/* Claude가 만든 PDF에는 문서 정보(Keywords)에 「BN|반|번호,시작,끝,총점;…」이 들어 있어서, 고르기만 하면 반과 목록이 채워진다 */
+$('pdf').addEventListener('change', async () => {
+  const f = $('pdf').files[0]; $('autoMsg').textContent = ''; if (!f || !window.pdfjsLib) return;
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    const meta = await pdf.getMetadata(); const kw = String((meta && meta.info && meta.info.Keywords) || '');
+    const m = kw.match(/^BN\|([5-8])\|(.+)$/);
+    if (!m) { $('autoMsg').innerHTML = '<span class="note">이 PDF에는 자동 목록이 없어요. 쪽 나누기 목록을 직접 붙여 넣어 주세요.</span>'; return; }
+    $('cls').value = m[1]; $('seg').value = m[2].split(';').join('\n');
+    $('autoMsg').innerHTML = `<span class="ok">✅ ${m[1]}반 목록(${m[2].split(';').length}명)을 자동으로 채웠어요. 「올리기」만 누르면 돼요.</span>`;
+  } catch (e) { $('autoMsg').innerHTML = '<span class="bad">PDF를 읽지 못했어요.</span>'; }
+});
 function parseSeg(text){
   const rows = [], errs = [];
   text.split(/\n/).map(s => s.trim()).filter(Boolean).forEach((line, i) => {
@@ -156,7 +161,7 @@ $('goBtn').addEventListener('click', async () => {
     if (bad.length) throw new Error(`PDF는 ${pdf.numPages}쪽인데 목록에 그보다 큰 쪽이 있어요: ${bad.map(r => r.num + '번').join(', ')}`);
     const total = rows.reduce((s, r) => s + (r.to - r.from + 1), 0);
     let done = 0;
-    const map = { cls, max: 20, open: $('openNow').checked, students: {} };
+    const map = { cls, max: 20, students: {} };
     for (const r of rows) {
       const pages = [];
       for (let p = r.from; p <= r.to; p++) {
@@ -169,8 +174,7 @@ $('goBtn').addEventListener('click', async () => {
     }
     msg.textContent = '⏳ 반 목록 저장 중…';
     await saveMap(map);
-    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요. ${map.open ? '학생에게 공개 중이에요.' : '아직 비공개예요. 위 「현재 상태 보기」에서 공개할 수 있어요.'}</span>`;
-    renderCur(map);
+    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요. 학생에게 보여 주려면 선생님 목차에서 ${cls}반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금을 여세요.</span>`;
   } catch (e) {
     msg.innerHTML = `<span class="bad">❌ ${esc(e.message || e)}</span>`;
   }
