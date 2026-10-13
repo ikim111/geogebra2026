@@ -46,7 +46,7 @@
 <body>
 <div class="wrap">
   <h1>📤 배움노트 채점본 올리기 <span class="note">(교사용)</span></h1>
-  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.<br><b>학생에게 공개/비공개는 선생님 목차(관리 페이지)에서 그 반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금으로 해요.</b></p>
+  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.<br>결석생처럼 나중에 몇 명만 올려도 <b>전에 올린 학생은 그대로 남고 합쳐져요</b>(같은 번호는 새로 올린 것으로 바뀌어요).<br><b>학생에게 공개/비공개는 선생님 목차(관리 페이지)에서 그 반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금으로 해요.</b></p>
 
   <div class="card">
     <h2>1. 관리 비밀번호와 반</h2>
@@ -173,8 +173,11 @@ $('goBtn').addEventListener('click', async () => {
       map.students[r.num] = { score: r.score, pages };
     }
     msg.textContent = '⏳ 반 목록 저장 중…';
+    // 이미 올린 학생은 그대로 두고 합친다(결석생 추가·한 학생만 다시 올리기). 같은 번호는 새로 올린 것으로 바뀐다.
+    let prevCount = 0;
+    try { const cur = (await getMap()).map; if (cur && cur.students) { prevCount = Object.keys(cur.students).filter(n => !map.students[n]).length; map.students = Object.assign({}, cur.students, map.students); } } catch (e) {}
     await saveMap(map);
-    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요. 학생에게 보여 주려면 선생님 목차에서 ${cls}반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금을 여세요.</span>`;
+    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요${prevCount ? ` (전에 올린 ${prevCount}명은 그대로 두고 합쳤어요)` : ''}. 학생에게 보여 주려면 선생님 목차에서 ${cls}반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금을 여세요.</span>`;
   } catch (e) {
     msg.innerHTML = `<span class="bad">❌ ${esc(e.message || e)}</span>`;
   }
