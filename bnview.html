@@ -51,6 +51,21 @@
     <label for="code">인증번호 (휴대전화 뒷 4자리)</label><input type="password" id="code" inputmode="numeric" maxlength="4" autocomplete="off">
     <button id="go">내 배움노트 보기</button>
     <div class="err" id="err"></div>
+    <a href="#" id="openEdit" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:12px;">휴대전화 번호가 바뀌었나요? 인증번호 변경하기</a>
+  </div>
+  <!-- 인증번호 변경·등록: 외심내심 결과 보기(resultpa1)의 「인증번호 변경하기」와 같은 비밀번호. 외심내심과 같은 저장소라 여기서 바꾸면 둘 다 바뀐다 -->
+  <div class="gate" id="edit" style="display:none;">
+    <h1>인증번호 변경</h1>
+    <p>인증번호 변경은 선생님 안내에 따라 진행해 주세요. 바꾸면 <b>외심내심 수행평가 결과 보기</b>에서도 같이 바뀌어요.</p>
+    <label for="ePw">비밀번호 (선생님이 알려 줌)</label><input type="password" id="ePw" autocomplete="off">
+    <label for="eCls">반</label>
+    <select id="eCls"><option value="">반 선택</option><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select>
+    <label for="eNum">번호</label><input type="text" id="eNum" inputmode="numeric" autocomplete="off">
+    <label for="eName">이름</label><input type="text" id="eName" autocomplete="off">
+    <label for="eCode">새 인증번호 (휴대전화 뒷 4자리)</label><input type="text" id="eCode" inputmode="numeric" maxlength="4" autocomplete="off">
+    <button id="eGo">인증번호 저장</button>
+    <div class="err" id="eErr"></div>
+    <a href="#" id="backEdit" style="display:block;text-align:center;font-size:12px;color:#888;margin-top:10px;">← 돌아가기</a>
   </div>
   <div id="result" style="display:none;"></div>
 </div>
@@ -94,6 +109,26 @@ function show(j, cls, num, name){
   $('again').addEventListener('click', () => { R.style.display = 'none'; R.innerHTML = ''; $('gate').style.display = ''; $('code').value = ''; });
 }
 $('go').addEventListener('click', go);
+$('openEdit').addEventListener('click', e => { e.preventDefault(); $('gate').style.display = 'none'; $('edit').style.display = ''; $('eErr').textContent = ''; $('eCls').value = $('cls').value; $('eNum').value = $('num').value; $('eName').value = $('name').value; $('ePw').focus(); });
+$('backEdit').addEventListener('click', e => { e.preventDefault(); $('edit').style.display = 'none'; $('gate').style.display = ''; });
+async function editCode(){
+  const pw = $('ePw').value.trim(), cls = $('eCls').value, num = $('eNum').value.trim(), name = $('eName').value.trim(), newCode = $('eCode').value.trim();
+  const err = $('eErr'); err.style.color = ''; err.textContent = '';
+  if (!pw) { err.textContent = '비밀번호를 써 주세요.'; return; }
+  if (!cls || !/^\d{1,2}$/.test(num) || !name) { err.textContent = '반·번호·이름을 모두 써 주세요.'; return; }
+  if (!/^\d{4}$/.test(newCode)) { err.textContent = '새 인증번호는 숫자 4자리로 써 주세요.'; return; }
+  const b = $('eGo'); b.disabled = true; b.textContent = '저장하는 중…';
+  try {
+    const r = await fetch('/api/bn-view', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ edit: pw, cls, num, name, newCode }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || '잠시 후 다시 시도해 주세요.');
+    err.style.color = '#2e7d32'; err.textContent = (j.registered ? '인증번호를 새로 등록했어요.' : '인증번호를 바꿨어요.') + ' 새 인증번호로 결과를 확인해 보세요.';
+    $('cls').value = cls; $('num').value = num; $('name').value = name; $('code').value = ''; $('ePw').value = ''; $('eCode').value = '';
+  } catch (e) { err.textContent = e.message; }
+  b.disabled = false; b.textContent = '인증번호 저장';
+}
+$('eGo').addEventListener('click', editCode);
+$('eCode').addEventListener('keydown', e => { if (e.key === 'Enter') editCode(); });
 $('code').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
 </script>
 <script src="report.js"></script>

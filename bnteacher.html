@@ -80,7 +80,7 @@ async function load(){
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     MAP = j.map; NUMS = MAP ? Object.keys(MAP.students || {}).sort((a, b) => a - b) : [];
     msg.innerHTML = `${cls}반 · 학생에게 <span class="pill ${j.unitOpen?'on':'off'}">${j.unitOpen?'공개 중':'비공개'}</span> <span class="note">(공개/비공개는 관리 페이지 목차의 잠금으로 바꿔요)</span>`;
-    if (j.noCode && j.noCode.length) msg.innerHTML += `<div class="bad" style="margin-top:4px;">⚠️ 인증번호가 없는 학생: ${j.noCode.map(n => n + '번').join(', ')} — 외심내심 수행평가 때 등록된 인증번호(휴대전화 뒷 4자리)가 없어서 결과를 볼 수 없어요. teacherpa1에서 등록해 주세요.</div>`;
+    if (j.noCode && j.noCode.length) msg.innerHTML += `<div class="bad" style="margin-top:4px;">⚠️ 인증번호가 없는 학생: ${j.noCode.map(n => n + '번').join(', ')} — 외심내심 수행평가 때 등록된 인증번호(휴대전화 뒷 4자리)가 없어서 결과를 볼 수 없어요. 학생 결과 보기 화면(bnview)의 「인증번호 변경하기」에서 비밀번호(관리 비밀번호와 같음)를 넣고 등록하면 외심내심 결과 보기에서도 함께 쓸 수 있어요.</div>`;
     else if (MAP) msg.innerHTML += `<div class="note" style="margin-top:4px;">✅ 올린 학생 모두 인증번호가 있어요.</div>`;
     if (!MAP) { $('list').innerHTML = '<p class="note" style="margin:10px 0 0;">아직 올린 채점본이 없어요. 위의 「📤 채점본 올리기」에서 올릴 수 있어요.</p>'; return; }
     const avg = NUMS.length ? (NUMS.reduce((s, n) => s + (+MAP.students[n].score || 0), 0) / NUMS.length).toFixed(1) : '-';
