@@ -11,7 +11,7 @@
   2) 「올리기」를 누르면 이 브라우저에서 PDF 쪽을 사진(JPEG)으로 바꿔 Vercel Blob에 올리고(api/bn-upload.js),
      마지막에 반 목록(bnmap/{반}.json: 번호별 총점·사진 주소·공개 여부)을 올린다.
   3) 학생은 bnview.html에서 반·번호·이름·인증번호로 자기 것만 본다(서버 api/bn-view.js가 확인).
-  - 관리 비밀번호 = Vercel 환경변수 BN_ADMIN_KEY (이 브라우저에만 기억)
+  - 관리 비밀번호: 서버(api/bn-upload.js)가 확인한다 (이 브라우저에만 기억)
   - 학생 이름·점수는 이 파일(공개 저장소)에 넣지 않는다. 쪽 나누기 목록은 선생님이 붙여 넣는다.
 -->
 <style>
@@ -51,7 +51,7 @@
   <div class="card">
     <h2>1. 관리 비밀번호와 반</h2>
     <div class="row">
-      <div><label for="key">관리 비밀번호 (Vercel 환경변수 BN_ADMIN_KEY)</label><input type="password" id="key" autocomplete="off"></div>
+      <div><label for="key">관리 비밀번호</label><input type="password" id="key" autocomplete="off"></div>
       <div><label for="cls">반</label><select id="cls"><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
     </div>
     <div class="row" style="margin-top:12px;"><div style="flex:0 0 auto;"><button class="sec" id="statusBtn">현재 상태 보기</button></div><div id="status" class="msg"></div></div>
