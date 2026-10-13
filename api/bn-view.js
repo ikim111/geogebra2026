@@ -9,12 +9,12 @@
 // 반 목록(bnmap/{반}.json)은 무작위 꼬리가 붙은 주소라 서버가 list()로만 찾는다(가장 최근에 올린 것을 쓴다).
 const { list } = require('@vercel/blob');
 const crypto = require('crypto');
-// 관리 비밀번호 확인: Vercel 환경변수 BN_ADMIN_KEY가 있으면 그것과 비교하고, 없으면 아래 해시(SHA-256)와 비교한다.
-// (비밀번호 자체는 코드에 없다. 선생님께 따로 알려 드림)
-const BN_ADMIN_HASH = '55c0ce3a379b5098808bfca8e9b8eac046872fbd98acf6aa32e738ca17f7b147';
+// 관리 비밀번호 확인: Vercel 환경변수 BN_ADMIN_KEY가 있으면 그것과 비교하고, 없으면 아래 값(PBKDF2-SHA256, 30만 번 반복)과 비교한다.
+// (비밀번호 자체는 코드에 없다. 틀리면 1초 늦게 답해서 마구 넣어 보기를 느리게 한다)
+const BN_ADMIN_SALT = '9089f93260bf5b2ce0b06ea8f4164d27', BN_ADMIN_HASH = 'af4151bdef4c178346335af0930eaa1e30500a2637b3741aeefd589684345ae8';
 const bnAdminOk = k => { k = String(k || '').trim(); if (!k) return false;
   const env = (process.env.BN_ADMIN_KEY || '').trim(); if (env) return k === env;
-  return crypto.createHash('sha256').update(k).digest('hex') === BN_ADMIN_HASH; };
+  return crypto.pbkdf2Sync(k, Buffer.from(BN_ADMIN_SALT, 'hex'), 300000, 32, 'sha256').toString('hex') === BN_ADMIN_HASH; };
 
 const FB_API_KEY = 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI'; // 학생 페이지들에 이미 들어 있는 공개용 웹 키
 const FB_DB = 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
   try {
     // ---- 선생님: 현재 상태 확인
     if (b.admin !== undefined) {
-      if (!bnAdminOk(b.admin)) { res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
+      if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
       const m = await loadMap(cls);
       res.status(200).json({ ok: true, map: m ? { open: !!m.open, ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
       return;
