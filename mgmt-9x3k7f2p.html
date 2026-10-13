@@ -332,16 +332,16 @@ function toggleUnit(n, row, btn){
 }
 
 /* ---------- 목차 대단원 접기/펼치기 (반별 실시간) ----------
-   반마다 Firebase rooms/{반}__access/fold/{대단원키} = true(펼침)/false(접힘)에 저장한다.
+   반마다 Firebase rooms/{반}__access/fold2/{대단원키} (2026-10-13 기본값 바꾸며 fold → fold2로 새로 시작) = true(펼침)/false(접힘)에 저장한다.
    선생님(mgmt-9x3k7f2p.html)이 접고 펴면 그 반 학생 목차(student.html)도 실시간으로 똑같이 바뀐다.
    저장된 값이 없는 대단원은 기본값(TOC_DEFAULT_CLOSED)을 따른다. */
-const TOC_DEFAULT_CLOSED = ch => ch.includes('삼각형') || ch.includes('확률'); // 처음 기본값: 삼각형·확률 단원 접기
+const TOC_DEFAULT_CLOSED = ch => !ch.includes('확률'); // 기본값(2026-10-13): VIII. 확률 단원만 펼치고 나머지는 접기
 let tocFoldRemote = {};
 const foldKey = ch => sanitize(ch);
 function isChapterOpen(ch){ const k = foldKey(ch); return (k in tocFoldRemote) ? !!tocFoldRemote[k] : !TOC_DEFAULT_CLOSED(ch); }
 function setChapterOpen(ch, open){
   tocFoldRemote[foldKey(ch)] = open;
-  if(accessRef) accessRef.child('fold/'+foldKey(ch)).set(open).catch(()=>{});
+  if(accessRef) accessRef.child('fold2/'+foldKey(ch)).set(open).catch(()=>{});
 }
 function applyFoldToDom(){
   document.querySelectorAll('.chapter-title.toggle').forEach(el=>{
@@ -410,7 +410,7 @@ function goToUnitPage(room){
       // 이 반의 목차 접기/펼치기 상태를 실시간으로 받는다(다른 기기에서 바꿔도 맞춰진다).
       if(foldRef) foldRef.off();
       tocFoldRemote = {};
-      foldRef = accessRef.child('fold');
+      foldRef = accessRef.child('fold2');
       foldRef.on('value', snap=>{ tocFoldRemote = snap.val() || {}; applyFoldToDom(); });
       watchReports();
       accessRef.child('units').once('value').then(snap=>{
