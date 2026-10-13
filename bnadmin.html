@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>배움노트 채점본 올리기 (교사용)</title>
+<!--
+  배움노트 정리 수행평가 채점본 올리기 — 교사용
+  1) 반을 고르고, 반 전체 스캔 PDF와 "학생별 쪽 나누기" 목록(번호,시작쪽,끝쪽,총점)을 넣는다.
+  2) 「올리기」를 누르면 이 브라우저에서 PDF 쪽을 사진(JPEG)으로 바꿔 Vercel Blob에 올리고(api/bn-upload.js),
+     마지막에 반 목록(bnmap/{반}.json: 번호별 총점·사진 주소·공개 여부)을 올린다.
+  3) 학생은 bnview.html에서 반·번호·이름·인증번호로 자기 것만 본다(서버 api/bn-view.js가 확인).
+  - 관리 비밀번호 = Vercel 환경변수 BN_ADMIN_KEY (이 브라우저에만 기억)
+  - 학생 이름·점수는 이 파일(공개 저장소)에 넣지 않는다. 쪽 나누기 목록은 선생님이 붙여 넣는다.
+-->
+<style>
+  :root{--ink:#1f2328;--ink2:#52514e;--line:#e3e6ea;--blue:#1565c0;--red:#c62828;--green:#2e7d32;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#f4f6f8;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 16px;}
+  .card{background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+  .card h2{font-size:16px;margin:0 0 10px;}
+  label{display:block;font-weight:bold;font-size:14px;margin:10px 0 4px;}
+  input[type=text],input[type=password],select,textarea{width:100%;padding:8px 10px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  textarea{min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .row > *{flex:1;min-width:160px;}
+  button{border:none;border-radius:8px;padding:10px 18px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;background:var(--blue);color:#fff;}
+  button.sec{background:#fff;color:var(--blue);border:1.5px solid var(--blue);}
+  button:disabled{background:#9fb6d3;cursor:default;border-color:#9fb6d3;color:#fff;}
+  .note{font-size:13px;color:var(--ink2);}
+  .msg{font-size:14px;margin-top:8px;white-space:pre-wrap;}
+  .bad{color:var(--red);} .ok{color:var(--green);}
+  .bar{height:10px;background:#e3e6ea;border-radius:6px;overflow:hidden;margin-top:10px;} .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .2s;}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+  th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;}
+  th{background:#f7f9fb;font-size:13px;color:var(--ink2);}
+  .pill{display:inline-block;border-radius:12px;padding:2px 10px;font-size:13px;font-weight:bold;}
+  .pill.on{background:#e8f5e9;color:var(--green);} .pill.off{background:#fdecea;color:var(--red);}
+  .thumbs a{display:inline-block;margin:2px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📤 배움노트 채점본 올리기 <span class="note">(교사용)</span></h1>
+  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.</p>
+
+  <div class="card">
+    <h2>1. 관리 비밀번호와 반</h2>
+    <div class="row">
+      <div><label for="key">관리 비밀번호 (Vercel 환경변수 BN_ADMIN_KEY)</label><input type="password" id="key" autocomplete="off"></div>
+      <div><label for="cls">반</label><select id="cls"><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
+    </div>
+    <div class="row" style="margin-top:12px;"><div style="flex:0 0 auto;"><button class="sec" id="statusBtn">현재 상태 보기</button></div><div id="status" class="msg"></div></div>
+    <div id="cur"></div>
+  </div>
+
+  <div class="card">
+    <h2>2. 스캔본 올리기</h2>
+    <label for="pdf">반 전체 스캔 PDF</label>
+    <input type="file" id="pdf" accept="application/pdf">
+    <label for="seg">학생별 쪽 나누기 <span class="note">— 한 줄에 「번호, 시작쪽, 끝쪽, 총점」 (Claude가 만들어 준 목록을 그대로 붙여 넣으세요)</span></label>
+    <textarea id="seg" placeholder="1,1,4,19&#10;2,5,10,20&#10;..."></textarea>
+    <div class="row" style="margin-top:10px;">
+      <label style="flex:0 0 auto;margin:0;font-weight:normal;"><input type="checkbox" id="openNow"> 올린 뒤 바로 학생에게 공개</label>
+    </div>
+    <div style="margin-top:12px;"><button id="goBtn">⬆ 올리기</button></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const KEY_LS = 'bn_admin_key';
+try { $('key').value = localStorage.getItem(KEY_LS) || ''; } catch (e) {}
+$('key').addEventListener('change', () => { try { localStorage.setItem(KEY_LS, $('key').value.trim()); } catch (e) {} });
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let blobUpload = null;
+function loadBlob(){
+  if (blobUpload) return blobUpload;
+  return blobUpload = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'lib/blob-client.js'; sc.onload = () => ok(window.VercelBlobUpload); sc.onerror = () => { blobUpload = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
+}
+async function put(path, data, type){
+  const upload = await loadBlob();
+  const r = await upload(path, data, { access:'public', handleUploadUrl:'/api/bn-upload', contentType:type, clientPayload: JSON.stringify({ key: $('key').value.trim() }) });
+  return r.url;
+}
+async function getMap(){
+  const r = await fetch('/api/bn-view', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ admin: $('key').value.trim(), cls: $('cls').value }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j.map;
+}
+async function saveMap(map){
+  map.ts = Date.now();
+  await put(`bnmap/${map.cls}.json`, new Blob([JSON.stringify(map)], {type:'application/json'}), 'application/json');
+}
+function renderCur(m){
+  if (!m) { $('cur').innerHTML = '<p class="note">아직 올린 것이 없어요.</p>'; return; }
+  const nums = Object.keys(m.students || {}).sort((a, b) => a - b);
+  $('cur').innerHTML = `<p>학생에게 <span class="pill ${m.open?'on':'off'}">${m.open?'공개 중':'비공개'}</span>
+    <button class="sec" id="toggleBtn" style="margin-left:8px;padding:6px 14px;font-size:14px;">${m.open?'🔒 비공개로 바꾸기':'🔓 학생에게 공개하기'}</button>
+    <span class="note">· ${nums.length}명 · 마지막 저장 ${new Date(m.ts).toLocaleString('ko-KR')}</span></p>
+    <table><tr><th>번호</th><th>총점</th><th>쪽수</th><th>사진</th></tr>${nums.map(n => { const s = m.students[n]; return `<tr><td>${esc(n)}</td><td>${esc(s.score)}</td><td>${(s.pages||[]).length}</td><td class="thumbs">${(s.pages||[]).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">${i+1}쪽</a>`).join('')}</td></tr>`; }).join('')}</table>`;
+  $('toggleBtn').addEventListener('click', async () => {
+    const b = $('toggleBtn'); b.disabled = true;
+    try { m.open = !m.open; await saveMap(m); $('status').innerHTML = `<span class="ok">✅ ${m.open?'공개했어요.':'비공개로 바꿨어요.'}</span>`; renderCur(m); }
+    catch (e) { m.open = !m.open; b.disabled = false; $('status').innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+  });
+}
+$('statusBtn').addEventListener('click', async () => {
+  $('status').textContent = '불러오는 중…';
+  try { const m = await getMap(); $('status').textContent = ''; renderCur(m); }
+  catch (e) { $('status').innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+});
+
+function parseSeg(text){
+  const rows = [], errs = [];
+  text.split(/\n/).map(s => s.trim()).filter(Boolean).forEach((line, i) => {
+    const p = line.split(/[,\s\t]+/).map(x => x.trim()).filter(Boolean);
+    const [n, a, b, sc] = p.map(Number);
+    if (p.length < 4 || [n, a, b, sc].some(x => !Number.isFinite(x)) || a > b) errs.push(`${i+1}번째 줄 「${line}」`);
+    else rows.push({ num: String(n), from: a, to: b, score: sc });
+  });
+  return { rows, errs };
+}
+async function pageToJpeg(pdf, no){
+  const page = await pdf.getPage(no);
+  const v0 = page.getViewport({ scale: 1 });
+  const scale = Math.min(2.2, 1400 / v0.width);
+  const v = page.getViewport({ scale });
+  const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({ canvasContext: ctx, viewport: v }).promise;
+  return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.72));
+}
+$('goBtn').addEventListener('click', async () => {
+  const msg = $('msg'), bar = $('bar'), cls = $('cls').value, key = $('key').value.trim(), f = $('pdf').files[0];
+  try { localStorage.setItem(KEY_LS, key); } catch (e) {}
+  if (!key) { msg.innerHTML = '<span class="bad">관리 비밀번호를 넣어 주세요.</span>'; return; }
+  if (!f) { msg.innerHTML = '<span class="bad">스캔 PDF를 골라 주세요.</span>'; return; }
+  const { rows, errs } = parseSeg($('seg').value);
+  if (errs.length || !rows.length) { msg.innerHTML = `<span class="bad">쪽 나누기 목록을 확인해 주세요.\n${esc(errs.join('\n') || '목록이 비어 있어요.')}</span>`; return; }
+  if (!confirm(`${cls}반 ${rows.length}명의 채점본을 올릴까요?`)) return;
+  $('goBtn').disabled = true; bar.style.width = '0';
+  try {
+    if (!window.pdfjsLib) throw new Error('PDF 도구를 불러오지 못했어요. 새로고침해 보세요.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    const bad = rows.filter(r => r.to > pdf.numPages);
+    if (bad.length) throw new Error(`PDF는 ${pdf.numPages}쪽인데 목록에 그보다 큰 쪽이 있어요: ${bad.map(r => r.num + '번').join(', ')}`);
+    const total = rows.reduce((s, r) => s + (r.to - r.from + 1), 0);
+    let done = 0;
+    const map = { cls, max: 20, open: $('openNow').checked, students: {} };
+    for (const r of rows) {
+      const pages = [];
+      for (let p = r.from; p <= r.to; p++) {
+        msg.textContent = `⏳ ${r.num}번 ${p - r.from + 1}쪽 올리는 중… (${done + 1}/${total})`;
+        const jpg = await pageToJpeg(pdf, p);
+        pages.push(await put(`bn/${cls}/${r.num}/p${p - r.from + 1}.jpg`, jpg, 'image/jpeg'));
+        done++; bar.style.width = (done / total * 100) + '%';
+      }
+      map.students[r.num] = { score: r.score, pages };
+    }
+    msg.textContent = '⏳ 반 목록 저장 중…';
+    await saveMap(map);
+    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요. ${map.open ? '학생에게 공개 중이에요.' : '아직 비공개예요. 위 「현재 상태 보기」에서 공개할 수 있어요.'}</span>`;
+    renderCur(map);
+  } catch (e) {
+    msg.innerHTML = `<span class="bad">❌ ${esc(e.message || e)}</span>`;
+  }
+  $('goBtn').disabled = false;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배움노트 정리 수행평가 결과 보기</title>
+<!--
+  배움노트 정리 수행평가 — 채점된 내 배움노트 보기 (5~8반)
+  반·번호·이름·인증번호(외심내심 수행평가 결과 보기와 같은 휴대전화 뒷 4자리)를 넣으면
+  서버(api/bn-view.js)가 인증번호를 확인한 뒤에만 내 총점과 채점된 배움노트 사진을 보내 준다.
+  사진은 선생님이 bnadmin.html에서 올린다. 선생님이 비공개로 바꾸면 볼 수 없다.
+-->
+<style>
+  :root{--ink:#1f2328;--ink2:#52514e;--line:#e3e6ea;--blue:#1565c0;--red:#c62828;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#f4f6f8;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;}
+  .top{background:#1A1D20;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+  .top a{color:#e8eaed;text-decoration:none;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;font-size:16px;}
+  .top b{font-size:15px;}
+  .wrap{max-width:900px;margin:0 auto;padding:18px 16px 60px;}
+  .gate{max-width:420px;margin:30px auto;background:#fff;border-radius:14px;padding:22px 22px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .gate h1{font-size:20px;margin:0 0 6px;}
+  .gate p{font-size:13.5px;color:#666;margin:0 0 10px;}
+  .gate label{display:block;font-weight:bold;font-size:14px;margin:12px 0 4px;}
+  .gate input,.gate select{width:100%;padding:10px 12px;border:1px solid #c5cad1;border-radius:8px;font-size:16px;font-family:inherit;}
+  .gate button{width:100%;margin-top:16px;padding:12px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .gate button:disabled{background:#9fb6d3;}
+  .err{color:var(--red);font-size:14px;margin-top:10px;min-height:20px;}
+  .head{background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
+  .head .who{font-size:16px;} .head .who b{font-size:19px;}
+  .head .score{margin-left:auto;font-size:15px;color:var(--ink2);} .head .score b{font-size:34px;color:var(--red);margin-right:2px;}
+  .tip{font-size:13.5px;color:var(--ink2);margin:0 0 12px;}
+  .pg{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px;overflow:hidden;}
+  .pg .cap{font-size:13px;color:var(--ink2);padding:6px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;}
+  .pg .cap a{color:var(--blue);text-decoration:none;}
+  .pg img{display:block;width:100%;height:auto;}
+  .box{background:#fff;border-radius:14px;padding:22px;text-align:center;color:var(--ink2);box-shadow:0 1px 4px rgba(0,0,0,.07);}
+  .again{background:none;border:1px solid #c5cad1;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+</style>
+</head>
+<body>
+<div class="top"><a href="student.html" title="과제 목록으로">🏠</a><b>📊 배움노트 정리 수행평가 결과 보기</b></div>
+<div class="wrap">
+  <div class="gate" id="gate">
+    <h1>내 배움노트 보기</h1>
+    <p>반·번호·이름·인증번호를 입력하면 선생님이 채점한 <b>내 배움노트</b>만 보여요.<br>인증번호는 외심내심 수행평가 결과 볼 때 쓴 <b>휴대전화 뒷 4자리</b>예요.</p>
+    <label for="cls">반</label>
+    <select id="cls"><option value="">반 선택</option><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select>
+    <label for="num">번호</label><input type="text" id="num" inputmode="numeric" autocomplete="off">
+    <label for="name">이름</label><input type="text" id="name" autocomplete="off">
+    <label for="code">인증번호 (휴대전화 뒷 4자리)</label><input type="password" id="code" inputmode="numeric" maxlength="4" autocomplete="off">
+    <button id="go">내 배움노트 보기</button>
+    <div class="err" id="err"></div>
+  </div>
+  <div id="result" style="display:none;"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+try {
+  const p = JSON.parse(localStorage.getItem('ggb_profile_v1') || '{}');
+  if (/^[5-8]$/.test(String(p.classNo || ''))) $('cls').value = String(p.classNo);
+  if (p.number) $('num').value = p.number;
+  if (p.name) $('name').value = p.name;
+} catch (e) {}
+async function go(){
+  const cls = $('cls').value, num = $('num').value.trim(), name = $('name').value.trim(), code = $('code').value.trim();
+  const err = $('err'); err.textContent = '';
+  if (!cls) { err.textContent = '반을 골라 주세요.'; return; }
+  if (!/^\d{1,2}$/.test(num)) { err.textContent = '번호를 숫자로 써 주세요.'; return; }
+  if (!name) { err.textContent = '이름을 써 주세요.'; return; }
+  if (!/^\d{4}$/.test(code)) { err.textContent = '인증번호(휴대전화 뒷 4자리)를 숫자 4자리로 써 주세요.'; return; }
+  const b = $('go'); b.disabled = true; b.textContent = '확인하는 중…';
+  try {
+    const r = await fetch('/api/bn-view', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ cls, num, name, code }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || '잠시 후 다시 시도해 주세요.');
+    try { localStorage.setItem('ggb_profile_v1', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ggb_profile_v1') || '{}'), { classNo: cls, number: num, name }))); } catch (e) {}
+    show(j, cls, num, name);
+  } catch (e) { err.textContent = e.message; }
+  b.disabled = false; b.textContent = '내 배움노트 보기';
+}
+function show(j, cls, num, name){
+  $('gate').style.display = 'none';
+  const R = $('result'); R.style.display = '';
+  const again = `<button class="again" id="again">다른 학생으로 다시 보기</button>`;
+  if (j.closed) { R.innerHTML = `<div class="box">아직 결과를 볼 수 있는 기간이 아니에요. 선생님이 공개하면 다시 들어와 주세요.<br><br>${again}</div>`; }
+  else if (j.none) { R.innerHTML = `<div class="box">${esc(cls)}반 ${esc(num)}번의 채점된 배움노트가 아직 없어요. 선생님께 여쭤봐 주세요.<br><br>${again}</div>`; }
+  else {
+    R.innerHTML = `<div class="head"><div class="who">${esc(cls)}반 ${esc(num)}번 <b>${esc(name)}</b></div><div class="score">총점 <b>${esc(j.score)}</b>/ ${esc(j.max || 20)}</div>${again}</div>
+      <p class="tip">👆 사진을 누르면 크게 볼 수 있어요. 채점에 궁금한 점이 있으면 선생님께 말씀드려요.</p>`
+      + (j.pages || []).map((u, i) => `<div class="pg"><div class="cap"><span>${i + 1}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 크게 보기</a></div><a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${i + 1}쪽" loading="lazy"></a></div>`).join('');
+  }
+  $('again').addEventListener('click', () => { R.style.display = 'none'; R.innerHTML = ''; $('gate').style.display = ''; $('code').value = ''; });
+}
+$('go').addEventListener('click', go);
+$('code').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+</script>
+<script src="report.js"></script>
+</body>
+</html>
