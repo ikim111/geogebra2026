@@ -138,12 +138,12 @@ function parseSeg(text){
 async function pageToJpeg(pdf, no){
   const page = await pdf.getPage(no);
   const v0 = page.getViewport({ scale: 1 });
-  const scale = Math.min(2.2, 1400 / v0.width);
+  const scale = Math.min(2.2, 1200 / v0.width);
   const v = page.getViewport({ scale });
   const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
   const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
   await page.render({ canvasContext: ctx, viewport: v }).promise;
-  return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.72));
+  return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.68));
 }
 $('goBtn').addEventListener('click', async () => {
   const msg = $('msg'), bar = $('bar'), cls = $('cls').value, key = $('key').value.trim(), f = $('pdf').files[0];
@@ -163,16 +163,19 @@ $('goBtn').addEventListener('click', async () => {
     const total = rows.reduce((s, r) => s + (r.to - r.from + 1), 0);
     let done = 0;
     const map = { cls, max: 20, students: {} };
-    for (const r of rows) {
-      const pages = [];
-      for (let p = r.from; p <= r.to; p++) {
-        msg.textContent = `⏳ ${r.num}번 ${p - r.from + 1}쪽 올리는 중… (${done + 1}/${total})`;
-        const jpg = await pageToJpeg(pdf, p);
-        pages.push(await put(`bn/${cls}/${r.num}/p${p - r.from + 1}.jpg`, jpg, 'image/jpeg'));
-        done++; bar.style.width = (done / total * 100) + '%';
+    // 모든 쪽을 한 줄로 늘어놓고 6쪽씩 동시에 변환·올린다(한 장씩 차례로 하면 100쪽에 5분 가까이 걸림)
+    const jobs = []; rows.forEach(r => { for (let p = r.from; p <= r.to; p++) jobs.push({ num: r.num, p, k: p - r.from + 1 }); });
+    const urls = new Array(jobs.length); let next = 0; const PAR = 6;
+    async function worker(){
+      while (next < jobs.length) {
+        const i = next++, j = jobs[i];
+        const jpg = await pageToJpeg(pdf, j.p);
+        urls[i] = await put(`bn/${cls}/${j.num}/p${j.k}.jpg`, jpg, 'image/jpeg');
+        done++; bar.style.width = (done / total * 100) + '%'; msg.textContent = `⏳ 올리는 중… ${done}/${total}쪽 (${j.num}번)`;
       }
-      map.students[r.num] = { score: r.score, pages };
     }
+    await Promise.all(Array.from({ length: Math.min(PAR, jobs.length) }, worker));
+    rows.forEach(r => { map.students[r.num] = { score: r.score, pages: jobs.map((j, i) => j.num === r.num ? urls[i] : null).filter(Boolean) }; });
     msg.textContent = '⏳ 반 목록 저장 중…';
     // 이미 올린 학생은 그대로 두고 합친다(결석생 추가·한 학생만 다시 올리기). 같은 번호는 새로 올린 것으로 바뀐다.
     let prevCount = 0;
