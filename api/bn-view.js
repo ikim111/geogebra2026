@@ -57,7 +57,17 @@ module.exports = async (req, res) => {
     if (b.admin !== undefined) {
       if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
       const m = await loadMap(cls);
-      res.status(200).json({ ok: true, unitOpen: (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true, map: m ? { ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
+      // 인증번호가 없는 학생 찾기: 외심내심 수행평가 방(__assess_pa1)의 students/{번호_이름}/verifyCode 또는 rosterCodes/{번호_이름}
+      let noCode = [];
+      if (m && m.students) {
+        const room = sanitize(cls) + '__assess_pa1';
+        const [stu, roster] = await Promise.all([fbGet(`rooms/${room}/students`), fbGet(`rooms/${room}/rosterCodes`)]);
+        const has = new Set();
+        Object.keys(stu || {}).forEach(k => { if (stu[k] && stu[k].verifyCode) has.add(k.split('_')[0]); });
+        Object.keys(roster || {}).forEach(k => { if (roster[k]) has.add(k.split('_')[0]); });
+        noCode = Object.keys(m.students).filter(n => !has.has(String(parseInt(n, 10)))).sort((a, b) => a - b);
+      }
+      res.status(200).json({ ok: true, noCode, unitOpen: (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true, map: m ? { ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
       return;
     }
     // ---- 학생
