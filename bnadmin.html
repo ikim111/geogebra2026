@@ -60,6 +60,7 @@
 
   <div class="card">
     <h2>2. 스캔본 올리기</h2>
+    <p class="note" style="margin:0 0 6px;">이미 올린 학생은 그대로 남고, 이번 PDF에 있는 학생만 더해지거나 바뀌어요. 결석생 추가나 점수 정정은 그 학생 PDF만 올리면 돼요.</p>
     <label for="pdf">반 전체 스캔 PDF</label>
     <input type="file" id="pdf" accept="application/pdf">
     <div id="autoMsg" class="msg"></div>
@@ -175,7 +176,9 @@ $('goBtn').addEventListener('click', async () => {
     msg.textContent = '⏳ 반 목록 저장 중…';
     // 이미 올린 학생은 그대로 두고 합친다(결석생 추가·한 학생만 다시 올리기). 같은 번호는 새로 올린 것으로 바뀐다.
     let prevCount = 0;
-    try { const cur = (await getMap()).map; if (cur && cur.students) { prevCount = Object.keys(cur.students).filter(n => !map.students[n]).length; map.students = Object.assign({}, cur.students, map.students); } } catch (e) {}
+    // 지금까지 올린 목록을 못 읽으면 저장하지 않는다(그대로 저장하면 전에 올린 학생이 목록에서 빠질 수 있음)
+    let cur; try { cur = (await getMap()).map; } catch (e) { throw new Error('지금까지 올린 목록을 확인하지 못해서 저장을 멈췄어요. 사진은 올라갔으니 잠시 후 다시 「올리기」를 눌러 주세요. (' + (e.message || e) + ')'); }
+    if (cur && cur.students) { prevCount = Object.keys(cur.students).filter(n => !map.students[n]).length; map.students = Object.assign({}, cur.students, map.students); }
     await saveMap(map);
     msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명(${total}쪽)을 올렸어요${prevCount ? ` (전에 올린 ${prevCount}명은 그대로 두고 합쳤어요)` : ''}. 학생에게 보여 주려면 선생님 목차에서 ${cls}반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금을 여세요.</span>`;
   } catch (e) {
