@@ -291,7 +291,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g3" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">비율은 <b>k = 3</b>으로 정해져 있어요. 대신 <b>중심 ◎을 어디에 둘지</b> 직접 골라야 해요.<br>모눈의 <b>교점을 눌러</b> 중심을 놓고(다시 누르면 옮겨져요) 「⛳ 치기」를 눌러 보세요.</p>
+        <p class="hint">비율은 <b>k = 3</b>으로 정해져 있어요. 대신 <b>중심 ◎을 어디에 둘지</b> 직접 골라야 해요.<br>모눈의 <b>교점을 눌러</b> 중심을 놓고(끌어서 옮길 수도 있어요) 「⛳ 치기」를 눌러 보세요.</p>
         <div class="kctrl" id="kc3"></div>
         <div class="g-msg" id="gm3"></div>
         <div class="question" style="font-size:15px;margin-top:10px;">💭 중심을 어디에 놓아야 공이 홀로 갈까요? 공·홀·중심의 위치에서 규칙을 찾아보세요.</div>
@@ -309,7 +309,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g4" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">공과 홀 사이에 연못이 있어요. 하지만 확대 골프의 공은 <b>날아가니까</b> 괜찮아요!<br>이번에는 <b>중심 ◎의 위치</b>와 <b>비율 k</b>를 모두 직접 정해요. 홀에 넣는 방법은 <b>여러 가지</b>예요 — 한 번 넣은 뒤 다른 중심으로도 넣어 보세요.</p>
+        <p class="hint">공과 홀 사이에 연못이 있어요. 하지만 확대 골프의 공은 <b>날아가니까</b> 괜찮아요!<br>이번에는 <b>중심 ◎의 위치</b>(교점을 누르거나 끌어서)와 <b>비율 k</b>를 모두 직접 정해요. 홀에 넣는 방법은 <b>여러 가지</b>예요 — 한 번 넣은 뒤 다른 중심으로도 넣어 보세요.</p>
         <div class="kctrl" id="kc4"></div>
         <div class="g-msg" id="gm4"></div>
         <div class="sol-box" id="sol4"></div>
@@ -323,18 +323,18 @@
 <section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
     <div class="act-head"><span class="act-tag">5 홀 4</span><span class="badge pending" id="badge-a5">미완료</span></div>
-    <h2>홀 4: 삼각형 공</h2>
+    <h2>홀 4: 공 두 개를 한 번에</h2>
     <div class="g-layout">
       <div class="g-board"><svg id="g5" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이번 공은 <b>삼각형 ABC</b>예요. 중심은 꼭짓점 <b>A</b>로 정해져 있어요.<br>비율을 조절해(슬라이더 또는 노란 꼭짓점 끌기) 삼각형을 <b>점선 홀(삼각형 AB′C′)</b>에 딱 맞게 넣어 보세요.</p>
+        <p class="hint">이번엔 공이 <b>두 개</b>예요 — <b>흰 공 B</b>와 <b>노란 공 C</b>가 막대로 이어져 있고, 중심은 <b>A</b>로 정해져 있어요.<br>비율을 하나 정하면 두 공이 <b>같은 비율로</b> 날아가요. 흰 공은 <b>흰 홀 B′</b>에, 노란 공은 <b>노란 홀 C′</b>에 <b>동시에</b> 들어가게 하려면 비율을 얼마로 해야 할까요?</p>
         <div class="kctrl" id="kc5"></div>
         <div class="g-msg" id="gm5"></div>
       </div>
     </div>
     <div class="q5" id="q5box">
-      <div class="question" style="font-size:16px;">홀에 넣은 그림을 보고 답해 보세요.</div>
-      <div class="q5row"><span class="q5l">⑴ 변 BC와 변 B′C′의 관계는?</span>
+      <div class="question" style="font-size:16px;">두 공을 넣은 그림에서 공 사이 막대 BC와 홀 사이 막대 B′C′를 보고 답해 보세요.</div>
+      <div class="q5row"><span class="q5l">⑴ 막대 BC와 막대 B′C′의 관계는?</span>
         <label><input type="radio" name="rel5" value="par"> 평행하다</label>
         <label><input type="radio" name="rel5" value="perp"> 수직이다</label>
         <label><input type="radio" name="rel5" value="none"> 아무 관계 없다</label></div>
@@ -395,8 +395,8 @@
    scratchpad의 build.py로 가져오고 화면 6개를 넣었다.
    공은 치지 않고 "중심 ◎에서 비율 k배로 확대·축소"해서 홀로 보낸다(중심·공·공의 상은 한 직선 위).
    ① 연습 홀(비율 슬라이더, k=2) ② 홀 1 축소(k=1/2, 분수 직접 입력) ③ 홀 2 중심 찾기(k=3 고정, 교점 클릭으로 중심 놓기)
-   ④ 홀 3 연못 건너기(중심·비율 모두 자유, 답 여러 가지: (0,2)·k=4, (20,12)·k=1/4, (2,3)·k=7 …)
-   ⑤ 홀 4 삼각형 공(중심 A 고정, k=2로 △AB′C′에 맞추기 → BC∥B′C′, AB:AB′=BC:B′C′=1:2 물음)
+   ④ 홀 3 연못 건너기(중심·비율 모두 자유, 답 여러 가지: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5 …)
+   ⑤ 홀 4 공 두 개(흰 공 B·노란 공 C, 중심 A 고정, 한 비율 k=2로 흰 홀 B′·노란 홀 C′에 동시에 → 막대 BC∥B′C′, AB:AB′=BC:B′C′=1:2 물음)
    ⑥ 정리하기(서술 + 친구 답 공유 + 선생님이 공개하는 정리 상자: BC∥B′C′이면 AB:AB′=AC:AC′=BC:B′C′)
    단원 번호 34(33은 배움노트 결과 보기 잠금이 쓰고 있어서). 방: rooms/{반}__sim34
    공유: rooms/{반}__sim34/share/sum/{학생키} — 학생이 자기 답을 쓰면 친구들 답(이름 없이)이 자동으로 보인다.
@@ -434,7 +434,7 @@ const HOLES = {
   1:{o:[2,2],  p:[6,4],  h:[10,6], ans:2},
   2:{o:[20,4], p:[8,14], h:[14,9], ans:0.5, typeK:true},
   3:{o:null,   p:[6,5],  h:[12,11], fixK:3, pickO:true, ansO:[3,2]},
-  4:{o:null,   p:[4,4],  h:[16,10], pickO:true, typeK:true, pond:[7,5.2,6,3.6]},
+  4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3]},   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
   5:{a:[3,3],  b:[9,4],  c:[6,9],  ans:2}
 };
 const K_MIN = 0.25, K_MAX = 4, K_STEP = 0.25;
@@ -659,13 +659,21 @@ const ANIM = {};   // 치기 애니메이션 상태 {n: {from, to, t0}}
 function ballSVG(pt, cls, label){
   return `<g class="${cls}"><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="8" /><circle cx="${px(pt[0])-2.5}" cy="${py(pt[1])-2.5}" r="2" fill="#fff" opacity=".8"/>${label?`<text x="${px(pt[0])}" y="${py(pt[1])-13}" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">${label}</text>`:''}</g>`;
 }
+function holeSVG2(pt, color, label){
+  return `<g><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="9" fill="#2b2b2b"/><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="9" fill="none" stroke="${color}" stroke-width="2.5"/>
+    <line x1="${px(pt[0])}" y1="${py(pt[1])}" x2="${px(pt[0])}" y2="${py(pt[1])-28}" stroke="#444" stroke-width="2"/><path d="M${px(pt[0])},${py(pt[1])-28} l15,6 l-15,6z" fill="${color}" stroke="#555" stroke-width="1"/>
+    <text x="${px(pt[0])+18}" y="${py(pt[1])-12}" font-size="12" font-weight="bold" fill="#2b2b2b">${label}</text></g>`;
+}
+function ballSVG2(pt, color, label){
+  return `<g class="ball"><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="8" fill="${color}" stroke="#8d6e00" stroke-width="1.8"/><circle cx="${px(pt[0])-2.5}" cy="${py(pt[1])-2.5}" r="2" fill="#fff" opacity=".8"/><text x="${px(pt[0])}" y="${py(pt[1])-13}" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">${label}</text></g>`;
+}
 function holeSVG(pt){
   return `<g><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="9" fill="#2b2b2b"/><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="9" fill="none" stroke="#fff" stroke-width="1.5"/>
     <line x1="${px(pt[0])}" y1="${py(pt[1])}" x2="${px(pt[0])}" y2="${py(pt[1])-30}" stroke="#444" stroke-width="2"/><path d="M${px(pt[0])},${py(pt[1])-30} l16,6 l-16,6z" fill="#e53935"/>
     <text x="${px(pt[0])+20}" y="${py(pt[1])-14}" font-size="12" font-weight="bold" fill="#b71c1c">홀</text></g>`;
 }
-function centerSVG(pt){
-  return `<g><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="7" fill="none" stroke="#c62828" stroke-width="2.5"/><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="2.5" fill="#c62828"/>
+function centerSVG(pt, drag){
+  return `<g class="${drag?'cdrag':''}">${drag?`<circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="16" fill="transparent"/>`:''}<circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="7" fill="none" stroke="#c62828" stroke-width="2.5"/><circle cx="${px(pt[0])}" cy="${py(pt[1])}" r="2.5" fill="#c62828"/>
     <text x="${px(pt[0])}" y="${py(pt[1])+22}" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">중심</text></g>`;
 }
 function gridSVG(){
@@ -688,21 +696,22 @@ function renderHole(n){
   let s = gridSVG();
   if(H.pond){ const [x,y,w,hh] = H.pond; s += `<rect x="${px(x)}" y="${py(y+hh)}" width="${w*U}" height="${hh*U}" rx="14" fill="#7fc4e8" stroke="#4a9bc9" stroke-width="2"/><text x="${px(x+w/2)}" y="${py(y+hh/2)+5}" text-anchor="middle" font-size="14" fill="#1a5276">연못</text>`; }
   if(n===5){
+    // 삼각형 공: 흰 공 B·노란 공 C(중심 A)를 같은 비율로 보내 흰 홀 B′·노란 홀 C′에 동시에 넣는다
     const A = H.a, B = H.b, C = H.c, k = h.k, B2 = imgOf(A,B,H.ans), C2 = imgOf(A,C,H.ans), Bi = imgOf(A,B,k), Ci = imgOf(A,C,k);
-    const tri = (P,Q,R) => `M${px(P[0])},${py(P[1])}L${px(Q[0])},${py(Q[1])}L${px(R[0])},${py(R[1])}Z`;
-    s += `<path d="${tri(A,B2,C2)}" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-dasharray="7 5"/>`;
-    s += `<text x="${px(B2[0])+6}" y="${py(B2[1])+16}" font-size="13" font-weight="bold" fill="#2b2b2b">B′</text><text x="${px(C2[0])-6}" y="${py(C2[1])-8}" text-anchor="end" font-size="13" font-weight="bold" fill="#2b2b2b">C′</text><text x="${px((B2[0]+C2[0])/2)+8}" y="${py((B2[1]+C2[1])/2)}" font-size="12" fill="#b71c1c" font-weight="bold">홀</text>`;
+    const seg = (P,Q,st) => `<line x1="${px(P[0])}" y1="${py(P[1])}" x2="${px(Q[0])}" y2="${py(Q[1])}" ${st}/>`;
     s += rayLine(A,B) + rayLine(A,C);
-    s += `<path d="${tri(A,B,C)}" fill="rgba(21,101,192,.35)" stroke="#1565c0" stroke-width="2"/>`;
-    s += `<path id="img5" d="${tri(A,Bi,Ci)}" fill="rgba(255,235,59,.25)" stroke="#f9a825" stroke-width="2" stroke-dasharray="4 3"/>`;
-    s += `<g class="drag" data-v="b"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="7" fill="#fff" stroke="#f9a825" stroke-width="2"/><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="15" fill="transparent"/></g><g class="drag" data-v="c"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="7" fill="#fff" stroke="#f9a825" stroke-width="2"/><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="15" fill="transparent"/></g>`;
+    s += seg(B2, C2, 'stroke="#2b2b2b" stroke-width="2" stroke-dasharray="7 5"');          // 홀 사이 막대 B′C′
+    s += holeSVG2(B2, '#fff', 'B′') + holeSVG2(C2, '#fdd835', 'C′');
+    s += seg(B, C, 'stroke="#1565c0" stroke-width="3"');                                      // 공 사이 막대 BC
+    s += `<g id="img5b" class="ghost"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/></g><g id="img5c" class="ghost"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="8" fill="rgba(253,216,53,.45)" stroke="#8d6e00" stroke-width="1.5" stroke-dasharray="3 2"/></g>`;
+    s += `<g class="drag" data-v="b"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="16" fill="transparent"/></g><g class="drag" data-v="c"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="16" fill="transparent"/></g>`;
+    s += ballSVG(B, 'ball', 'B') + ballSVG2(C, '#fdd835', 'C');
     s += centerSVG(A) + `<text x="${px(A[0])-12}" y="${py(A[1])-10}" font-size="13" font-weight="bold" fill="#c62828">A</text>`;
-    s += `<text x="${px(B[0])+5}" y="${py(B[1])+15}" font-size="13" font-weight="bold" fill="#0d47a1">B</text><text x="${px(C[0])-5}" y="${py(C[1])-7}" text-anchor="end" font-size="13" font-weight="bold" fill="#0d47a1">C</text>`;
   } else {
     const o = oOf(n), p = H.p;
     if(o){ s += rayLine(o, p); }
     s += holeSVG(H.h);
-    if(o){ const q = imgOf(o, p, h.k); s += `<g id="img${n}" class="ghost drag"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="${px(q[0])}" cy="${py(q[1])}" r="16" fill="transparent"/></g>`; s += centerSVG(o); }
+    if(o){ const q = imgOf(o, p, h.k); s += `<g id="img${n}" class="ghost drag"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="${px(q[0])}" cy="${py(q[1])}" r="16" fill="transparent"/></g>`; s += centerSVG(o, !!H.pickO); }
     s += ballSVG(p, 'ball', '공');
     if(H.pickO && !o) s += `<text x="${px(BW/2)}" y="${py(BH)-(-16)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 모눈의 교점을 눌러 중심을 놓으세요</text>`;
   }
@@ -737,7 +746,7 @@ function shoot(n){
   ANIM[n] = {t0: performance.now(), from: n===5 ? null : H.p, hit};
   const step = now => {
     const t = Math.min(1, (now - ANIM[n].t0)/750), e = 1 - Math.pow(1-t, 3);
-    if(n===5){ const k = 1 + (h.k-1)*e, B = imgOf(o,H.b,k), C = imgOf(o,H.c,k); const el = $('img5'); if(el) el.setAttribute('d', `M${px(o[0])},${py(o[1])}L${px(B[0])},${py(B[1])}L${px(C[0])},${py(C[1])}Z`); }
+    if(n===5){ [['b',H.b],['c',H.c]].forEach(([v,p0])=>{ const q = imgOf(o,p0,h.k), x = p0[0]+(q[0]-p0[0])*e, y = p0[1]+(q[1]-p0[1])*e; const g = $('img5'+v); if(g){ const c = g.querySelector('circle'); c.setAttribute('cx', px(x)); c.setAttribute('cy', py(y)); c.setAttribute('stroke-dasharray', ''); c.setAttribute('fill', v==='b' ? '#fff' : '#fdd835'); } }); }
     else { const q = imgOf(o, H.p, h.k), x = H.p[0]+(q[0]-H.p[0])*e, y = H.p[1]+(q[1]-H.p[1])*e; const g = $('img'+n); if(g){ const c = g.querySelector('circle'); c.setAttribute('cx', px(x)); c.setAttribute('cy', py(y)); c.setAttribute('fill', '#fff'); c.setAttribute('stroke-dasharray', ''); } }
     if(t<1) requestAnimationFrame(step); else { delete ANIM[n]; landed(n, hit); }
   };
@@ -750,7 +759,7 @@ function landed(n, hit){
     if(n===4){ const key = `${o[0]},${o[1]}|${fmtK(h.k)}`; if(!h.sols.includes(key)) h.sols.push(key); }
     let msg = `⛳ 홀인! (${h.strokes}타) 비율 k = ${fmtK(h.k)}`;
     if(n!==5) msg += `<br><span style="font-weight:normal;">중심~공 : 중심~홀 = <b>${ratioText(h.k)}</b></span>`;
-    else msg += `<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(h.k)}</b></span>`;
+    else msg = `⛳ 두 공 모두 홀인! (${h.strokes}타) 비율 k = ${fmtK(h.k)}<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(h.k)}</b></span>`;
     if(n===3) msg += `<br><span style="font-weight:normal;">중심 (${o[0]}, ${o[1]}) — 중심·공·홀이 <b>한 직선 위</b>에 있네요!</span>`;
     if(n===4) msg += `<br><span style="font-weight:normal;">다른 중심으로도 넣어 보세요. (지금까지 ${h.sols.length}가지)</span>`;
     $('gm'+n).innerHTML = `<div class="hit">${msg}</div>`;
@@ -761,7 +770,7 @@ function landed(n, hit){
       if(Math.abs(cross) > 0.5*dPH) why = '공이 홀 쪽으로 가지 않아요. 중심·공·홀의 위치를 살펴보세요.';
       else why = dist(q,H.h) > 0 && (dist(o,q) < dH) ? '홀까지 못 미쳤어요. 비율을 더 키워 보세요.' : '홀을 지나쳤어요. 비율을 줄여 보세요.';
       if(H.fixK) why = Math.abs(cross) > 0.5*dPH ? '공이 홀 쪽으로 가지 않아요. 중심을 어디에 두어야 할까요?' : (dist(o,q) < dH ? '방향은 맞는데 못 미쳤어요. 중심을 공에서 더 멀리(또는 가까이) 옮겨 보세요.' : '방향은 맞는데 지나쳤어요. 중심을 옮겨 보세요.');
-    } else if(n===5) why = h.k < H.ans ? '홀보다 작아요. 비율을 키워 보세요.' : '홀보다 커요. 비율을 줄여 보세요.';
+    } else if(n===5) why = h.k < H.ans ? '두 공 모두 홀까지 못 미쳤어요. 비율을 키워 보세요.' : '두 공 모두 홀을 지나쳤어요. 비율을 줄여 보세요.';
     $('gm'+n).innerHTML = `<span class="miss">🏌️ 아깝다! ${why}</span>`;
   }
   renderCtrl(n); renderHole(n); renderSols(); if(n===5) paintQ5();
@@ -789,6 +798,17 @@ function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.
     state.h[n].k = k; renderCtrl(n); renderHole(n);
   });
   const end = ()=>{ if(kdrag && kdrag.n===n){ kdrag = null; refreshAll(); } };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+});
+/* 중심 끌기(3·4번 홀): 중심 표시를 잡고 끌면 교점에 맞춰 옮겨진다 */
+let odrag = null;
+[3,4].forEach(n=>{
+  const svg = $('g'+n);
+  svg.addEventListener('pointerdown', ev=>{ if(finalLocked || ANIM[n]) return; const el = ev.target.closest('.cdrag'); if(!el) return; odrag = {n, moved:false}; svg.setPointerCapture(ev.pointerId); ev.preventDefault(); });
+  svg.addEventListener('pointermove', ev=>{ if(!odrag || odrag.n!==n) return; const [x,y] = svgPoint(svg, ev); const H = HOLES[n];
+    if(x<0||x>BW||y<0||y>BH) return; if((x===H.p[0]&&y===H.p[1]) || (x===H.h[0]&&y===H.h[1])) return;
+    const o = state.h[n].o; if(o && o[0]===x && o[1]===y) return; state.h[n].o = [x,y]; odrag.moved = true; renderCtrl(n); renderHole(n); });
+  const end = ()=>{ if(odrag && odrag.n===n){ if(odrag.moved){ $('gm'+n).innerHTML=''; refreshAll(); } odrag = null; } };
   svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
 });
 /* 중심 놓기: 교점 클릭 */

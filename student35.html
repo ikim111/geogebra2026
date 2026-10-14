@@ -215,6 +215,8 @@
   .name-box b{color:#1b5e20;}
   .golf .vtx{cursor:grab;}
   .activity .g-side textarea{min-height:70px;}
+  .tools .sbtn.on{background:#1565c0;border-color:#1565c0;color:#fff;}
+  .golf{touch-action:none;}
 </style></style>
 </head>
 <body>
@@ -314,9 +316,9 @@
     <div class="act-head"><span class="act-tag">3 내 방법 만들기</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>핀 없이 균형점을 찾는 방법을 만들어 보자</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g3" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-board"><div class="tools" id="tools3"><button class="sbtn on" data-t="pen">✏️ 자유롭게 그리기</button><button class="sbtn" data-t="line">📏 직선 (두 점 누르기)</button><button class="sbtn" id="undo3">↶ 되돌리기</button><button class="sbtn" id="clr3">🗑 지우기</button></div><svg id="g3" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림에 내가 찾은 균형점이 표시되어 있어요. 어떤 점·선과 관계가 있을까요?</div>
+        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림에 내가 찾은 균형점이 표시되어 있어요. 그림 위에 <b>선을 그려 보면서</b> 어떤 점·선과 관계가 있을지 찾아보세요.</div>
         <p class="note">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</p>
         <textarea id="t3" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
         <div class="share-row"><button class="share-btn" id="sh3" disabled>📤 답변 공유</button><span class="note" id="shn3"></span></div>
@@ -467,7 +469,7 @@ const VN = ['A','B','C'], FN = ['D','E','F'];   // 꼭짓점·마주 보는 변�
 const state = {
   pred: null,                                   // 예측한 점 [x,y]
   bal: TRIS.map(()=>({pin:null, tries:0, done:false})), cur:0,
-  t3:'',
+  t3:'', strokes3:[], tool3:'pen', lineStart3:null,
   lines4:[false,false,false], meas4:[],          // 그은 선(꼭짓점별), 잰 선분 이름들
   c4:{a:'', b:'', checked:false, ok:false},
   tri5:[[4,3],[18,4],[9,15]], moves5:0, t5:'',
@@ -504,7 +506,7 @@ function valueOf(id){
   return '';
 }
 function collectData(){
-  return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, t3: state.t3,
+  return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, t3: state.t3, strokes3: state.strokes3.slice(0,40).map(st=>st.slice(0,80)),
     lines4: state.lines4.slice(), meas4: state.meas4.slice(), c4: Object.assign({}, state.c4),
     tri5: state.tri5.map(p=>[r1(p[0]),r1(p[1])]), moves5: state.moves5, t5: state.t5, t6: state.t6,
     shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen) };
@@ -512,7 +514,7 @@ function collectData(){
 /* 친구들에게 보여 줄 것(이름 없이): 예측 점은 찍으면 바로, 서술은 공유를 누른 뒤 */
 function shareEntries(){
   return { pred: state.pred ? {x:state.pred[0], y:state.pred[1]} : null,
-    method: state.shared[3] ? {t: state.t3.trim().slice(0,300)} : null,
+    method: state.shared[3] ? {t: state.t3.trim().slice(0,300), s: state.strokes3.slice(0,20).map(st=>st.filter((q,i)=>i%2===0 || i===st.length-1).slice(0,40).map(q=>q.map(v=>Math.round(v*10)/10)))} : null,
     sum: state.shared[6] ? {t: state.t6.trim().slice(0,300)} : null };
 }
 function pushShare(rt){
@@ -745,8 +747,8 @@ $('go2').addEventListener('click', ()=>{
   const g = centroid(TRIS[i].v), d = dist(b.pin, g), hit = d < BAL_TOL;
   b.tries++; const target = hit ? 0 : Math.min(0.9, 0.25 + d*0.12);
   ANIM2 = {t0: performance.now()}; $('go2').disabled = true;
-  const step = now => { const t = Math.min(1, (now-ANIM2.t0)/600), e = 1-Math.pow(1-t,3);
-    renderBal(hit ? Math.sin(t*Math.PI*3)*0.08*(1-t) : target*e);
+  const step = now => { const t = hit ? 1 : Math.min(1, (now-ANIM2.t0)/600), e = 1-Math.pow(1-t,3);
+    if(!hit) renderBal(target*e);
     if(t<1) requestAnimationFrame(step); else { ANIM2 = null; if(hit){ b.done = true; renderBal(0); }
       const dirName = (()=>{ const dx = g[0]-b.pin[0], dy = g[1]-b.pin[1]; const h = Math.abs(dx)>Math.abs(dy)*1.5 ? (dx>0?'오른쪽':'왼쪽') : Math.abs(dy)>Math.abs(dx)*1.5 ? (dy>0?'위쪽':'아래쪽') : `${dy>0?'위':'아래'}·${dx>0?'오른':'왼'}쪽`; return h; })();
       $('gm2').innerHTML = hit ? `<div class="hit">⚖️ 수평! 균형점을 찾았어요. (${b.tries}번 만에) 핀 (${b.pin[0]}, ${b.pin[1]})${state.bal.every(x=>x.done)?'<br><span style="font-weight:normal;">삼각형 세 개 모두 찾았어요!</span>':'<br><span style="font-weight:normal;">위의 다른 삼각형도 찾아보세요.</span>'}</div>`
@@ -757,7 +759,25 @@ $('go2').addEventListener('click', ()=>{
 function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, `삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요. (지금 ${state.bal.filter(b=>b.done).length}/3)`); refreshAll(opts); }
 
 /* ---------- 화면 3: 내 방법 ---------- */
-function renderG3(){ const t = TRIS[0].v, g = centroid(t); $('g3').innerHTML = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>` + labelsSVG(t, VN) + dotSVG(g, '#2e7d32', '균형점 G', 7); }
+/* 화면 3 그림판: ✏️ 자유 그리기(끌기) / 📏 직선(두 점 누르기, 0.5 단위로 맞춤). strokes: [[x,y],...] 단위 좌표 */
+const strokeD = pts => pts.length ? 'M' + pts.map(q=>`${r1(px(q[0]))},${r1(py(q[1]))}`).join('L') : '';
+function strokesSVG(strokes, color){ return strokes.map(st=>`<path d="${strokeD(st)}" fill="none" stroke="${color||'#e53935'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join(''); }
+function renderG3(){ const t = TRIS[0].v, g = centroid(t);
+  $('g3').innerHTML = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>` + labelsSVG(t, VN) + strokesSVG(state.strokes3) + (state.lineStart3 ? dotSVG(state.lineStart3, '#e53935', '', 5) : '') + dotSVG(g, '#2e7d32', '균형점 G', 7);
+  document.querySelectorAll('#tools3 [data-t]').forEach(b=> b.classList.toggle('on', b.dataset.t===state.tool3));
+  $('g3').classList.toggle('pick', true); }
+let draw3 = null;
+$('tools3').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b || finalLocked) return;
+  if(b.dataset.t){ state.tool3 = b.dataset.t; state.lineStart3 = null; }
+  if(b.id==='undo3'){ state.strokes3.pop(); state.lineStart3 = null; }
+  if(b.id==='clr3'){ state.strokes3 = []; state.lineStart3 = null; }
+  renderG3(); check3(); });
+$('g3').addEventListener('pointerdown', ev=>{ if(finalLocked) return; const q = svgPoint($('g3'), ev); if(q[0]<0||q[0]>BW||q[1]<0||q[1]>BH) return;
+  if(state.tool3==='line'){ const s = q.map(v=>Math.round(v*2)/2); if(!state.lineStart3){ state.lineStart3 = s; } else { if(dist(s, state.lineStart3)>0.4) state.strokes3.push([state.lineStart3, s]); state.lineStart3 = null; check3(); } renderG3(); return; }
+  draw3 = [[r1(q[0]), r1(q[1])]]; state.strokes3.push(draw3); $('g3').setPointerCapture(ev.pointerId); ev.preventDefault(); });
+$('g3').addEventListener('pointermove', ev=>{ if(!draw3) return; const q = svgPoint($('g3'), ev); const last = draw3[draw3.length-1]; if(Math.hypot(q[0]-last[0], q[1]-last[1])<0.15) return; draw3.push([r1(q[0]), r1(q[1])]); renderG3(); });
+const endDraw3 = ()=>{ if(!draw3) return; if(draw3.length<2) state.strokes3.pop(); draw3 = null; renderG3(); check3(); };
+$('g3').addEventListener('pointerup', endDraw3); $('g3').addEventListener('pointercancel', endDraw3);
 function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, '내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
 $('t3').addEventListener('input', ()=>check3());
 
@@ -848,7 +868,8 @@ function renderFriends(n){
   const all = shareOf(KIND[n]), me = RT.studentKey;
   const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
   if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
-  box.innerHTML = `<h4>👥 친구들의 ${n===3?'방법':'생각'} (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
+  const mini = k => { const st = arr(all[k].s).map(x=>arr(x).map(q=>arr(q).map(Number))).filter(x=>x.length>=2); if(!st.length) return ''; const t = TRIS[0].v; return `<svg viewBox="0 0 460 380" width="120" height="99" style="float:right;margin-left:8px;background:#dff3d2;border-radius:6px;"><path d="${triPath(t)}" ${TRI_FILL}/>${strokesSVG(st)}</svg>`; };
+  box.innerHTML = `<h4>👥 친구들의 ${n===3?'방법':'생각'} (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${n===3?mini(k):''}${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
 }
 const SH_FIELDS = {3:['t3'], 6:['t6']};
 const SH_READY = {3:()=> len(state.t3)>=MIN_TEXT, 6:()=> len(state.t6)>=MIN_TEXT};
@@ -882,6 +903,7 @@ function restoreData(d){
   arr(d.bal).forEach((b,i)=>{ if(!b || !state.bal[i]) return; const p = arr(b.pin).map(Number); state.bal[i] = {pin: (p.length===2 && p.every(Number.isFinite)) ? p : null, tries: Number(b.tries)||0, done: !!b.done}; });
   state.cur = Number.isInteger(d.cur) && TRIS[d.cur] ? d.cur : 0;
   state.t3 = d.t3 || ''; $('t3').value = state.t3;
+  state.strokes3 = arr(d.strokes3).map(st=>arr(st).map(q=>arr(q).map(Number)).filter(q=>q.length===2 && q.every(Number.isFinite))).filter(st=>st.length>=2);
   state.lines4 = [0,1,2].map(i=>!!arr(d.lines4)[i]); state.meas4 = arr(d.meas4).map(String);
   if(d.c4) state.c4 = {a: String(d.c4.a||''), b: String(d.c4.b||''), checked: !!d.c4.checked, ok: !!d.c4.ok};
   $('c4a').value = state.c4.a; $('c4b').value = state.c4.b;

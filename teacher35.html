@@ -369,7 +369,7 @@ function activityDetailHTML(s, id){
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
   if(id===1){ const p = arrOf(d.pred); return p.length===2 ? kv('예측한 점', `(${p[0]}, ${p[1]})`) : ''; }
   if(id===2){ const b = arrOf(d.bal); if(!b.some(x=>x && x.tries)) return ''; return b.map((x,i)=> x ? kv(TRI_NAMES[i], `${x.done?'⚖️ 수평':'아직'} · ${x.tries||0}번${arrOf(x.pin).length===2?` · 핀 (${x.pin[0]}, ${x.pin[1]})`:''}`) : '').join(''); }
-  if(id===3) return tb(d.t3);
+  if(id===3){ const st = arrOf(d.strokes3).map(x=>arrOf(x).map(q=>arrOf(q).map(Number))).filter(x=>x.length>=2); const mini = st.length ? `<svg viewBox="0 0 460 380" width="160" height="132" style="background:#dff3d2;border-radius:6px;display:block;margin-top:6px;"><path d="M${TRI1.map(p=>(10+p[0]*20)+','+(370-p[1]*20)).join('L')}Z" fill="rgba(255,193,7,.55)" stroke="#8d6e00" stroke-width="2"/>${st.map(x=>`<path d="M${x.map(q=>(10+q[0]*20)+','+(370-q[1]*20)).join('L')}" fill="none" stroke="#e53935" stroke-width="3"/>`).join('')}</svg>` : ''; return mini + tb(d.t3); }
   if(id===4){ const c = d.c4 || {}; if(!arrOf(d.lines4).some(Boolean) && !c.a) return '';
     return kv('그은 선', [0,1,2].filter(i=>arrOf(d.lines4)[i]).map(i=>'ABC'[i]).join(', ')||'-') + kv('잰 길이', arrOf(d.meas4).join(', ')||'-') + kv('규칙', `${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[c.a]||'-'} / ${c.b||'-'} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`); }
   if(id===5){ if(!d.moves5 && !d.t5) return ''; return kv('모양 바꾼 횟수', d.moves5||0) + tb(d.t5); }
