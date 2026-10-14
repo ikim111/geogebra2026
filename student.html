@@ -296,7 +296,7 @@ function showMyPresentScore(profile){
     });
     if(!seated){ box.style.display = 'none'; return; }   // 기록이 없어도(0점) 자리배치가 있는 반이면 보여 준다
     box.style.display = '';
-    box.innerHTML = `🎤 내 발표 점수 <b>${total}</b>점 <span class="sub">· 🍬 망고젤리 ${Math.max(0, Math.floor(total))}개 또는 ⭐ 상점 ${Math.max(0, Math.floor(total/10))}점으로 바꿀 수 있어요 (주문은 선생님께)</span>`;
+    box.innerHTML = `🎤 내 발표 점수 <b>${total}</b>점`;   // 주문(젤리·상점) 안내는 나중에 정하기로 해서 숨김
   };
   firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__seat20/seats').once('value').then(snap=>{ const v = snap.val(); seated = !!(v && Object.keys(v).length); base.child('events').once('value').then(s2=> paint(s2.val())); }).catch(()=>{});
   base.child('resetAt').on('value', snap=>{ resetAt = +snap.val() || 0; base.child('events').once('value').then(s=> paint(s.val())); });
