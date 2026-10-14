@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
+    --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
+    --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6; --scustom:#1f2328;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #gateMsg{display:none;text-align:center;font-size:12.5px;color:#0052a3;background:#e8f0fe;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .activity, body.app-paused #pagerNav button, body.app-paused .submit-panel button{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .activity .card{ pointer-events:none !important; opacity:.65; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+
+  /* ---- 공통 카드·입력 ---- */
+  .card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .act-tag{display:inline-block;font-size:12px;font-weight:bold;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .activity h2{margin:0 0 4px;font-size:20px;}
+  .activity h3{margin:0 0 10px;font-size:17px;}
+  .question{font-size:17.5px;font-weight:bold;background:var(--blue-soft);border-left:5px solid var(--blue);padding:10px 14px;border-radius:6px;margin:10px 0 14px;}
+  .hint{font-size:14px;color:var(--ink2);margin:4px 0 10px;}
+  .note{font-size:13px;color:var(--muted);}
+  .why{font-size:13.5px;color:var(--muted);text-align:right;margin:2px 4px 14px;}
+  .why.ok{color:var(--green);font-weight:bold;}
+
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.concept-btn{background:var(--green);}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-size:17px;font-weight:bold;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .choice.selected{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .choice:disabled{cursor:default;}
+
+  .result-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .result-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .stat .k{font-size:13px;color:var(--ink2);}
+  .stat .v{font-size:22px;font-weight:bold;}
+  .frac{font-variant-numeric:tabular-nums;}
+  .friends{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .friends span{background:#f1f3f6;border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:14px;font-weight:bold;font-variant-numeric:tabular-nums;}
+
+  .activity textarea, .activity input[type=text]{font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;width:100%;}
+  .activity textarea{resize:vertical;min-height:84px;}
+  .activity textarea:focus, .activity input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .field label{min-width:250px;font-weight:bold;}
+  .activity .field input{width:150px;text-align:right;}
+  .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
+  .error.show{display:block;}
+  .live-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px;}
+  .live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  .live-stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;}
+  .live-stats .stat .v{font-size:24px;}
+  .friends span.me{background:#e8f1fc;border-color:#90b8ea;color:#1565c0;}
+  .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .compare .stat{text-align:center;}
+  .compare .stat .v{font-size:26px;}
+
+  .concept{display:none;border:2px solid var(--green);background:var(--green-soft);border-radius:12px;padding:16px 18px;margin-top:14px;}
+  .concept.show{display:block;}
+  .concept .def{font-size:18px;font-weight:bold;line-height:1.7;}
+  .concept .def b{color:var(--green);}
+  @media (max-width:640px){ .field label{min-width:0;} }
+  /* ---- 35번 활동 ---- */
+  .ok{color:var(--green);font-weight:bold;} .bad{color:var(--warn);font-weight:bold;}
+  .sbtn{border:1px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .sbtn:hover{border-color:var(--blue);color:var(--blue);}
+  .big-question{font-size:18px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
+  .lbl{font-weight:bold;margin:10px 0 4px;font-size:15px;}
+  /* 골프판 */
+  .g-layout{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;}
+  .g-board{flex:0 0 auto;width:460px;max-width:100%;}
+  .golf{width:100%;display:block;border-radius:10px;background:#dff3d2;border:1px solid #b9d9a8;touch-action:manipulation;user-select:none;}
+  .golf.pick{cursor:crosshair;}
+  .g-side{flex:1;min-width:260px;}
+  .o-mark{color:#c62828;font-weight:bold;} .ghost-mark{color:#555;font-weight:bold;}
+  .kctrl{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fafbfc;}
+  .kctrl .krow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .kctrl .klab{font-weight:bold;font-size:16px;min-width:88px;}
+  .kctrl .klab b{color:var(--blue);font-size:19px;}
+  .kctrl input[type=range]{flex:1;min-width:140px;}
+  .kctrl .kin{width:86px;padding:7px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  .kctrl .shoot{background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .kctrl .shoot:disabled{background:#a5c7a7;cursor:default;}
+  .kctrl .orow{font-size:14px;color:var(--ink2);margin-top:6px;}
+  .kctrl .orow b{color:#c62828;}
+  .kctrl .strokes{font-size:13px;color:var(--ink2);margin-left:auto;}
+  .g-msg{margin-top:8px;min-height:22px;font-size:15px;}
+  .g-msg .hit{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:8px 12px;color:#1b5e20;font-weight:bold;}
+  .g-msg .miss{color:#b26a00;}
+  .sol-box{margin-top:8px;font-size:14px;}
+  .sol-box:empty{display:none;}
+  .sol-box .sol{display:inline-block;background:#fff;border:1px solid #a5d6a7;border-radius:14px;padding:3px 10px;margin:2px 4px 2px 0;}
+  /* 홀 4 물음 */
+  .q5{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+  .q5row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:15.5px;}
+  .q5l{font-weight:bold;min-width:200px;}
+  .q5row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+  .q5row input[type=radio]{width:17px;height:17px;}
+  .ratio{width:110px;padding:7px 9px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  .q5.locked input{pointer-events:none;background:#f3f4f6;}
+  /* 친구들 생각 */
+  .friends-box{margin-top:12px;}
+  .friends-box:empty{display:none;}
+  .friends-box h4{margin:0 0 6px;font-size:14.5px;color:#311b92;}
+  .flist{display:flex;flex-direction:column;gap:5px;max-height:260px;overflow:auto;}
+  .flist div{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;white-space:pre-wrap;word-break:break-word;}
+  .flist div.me{border-color:#f3b183;background:#fff6ef;}
+  .share-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .share-btn{background:#7b1fa2;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .share-btn:disabled{background:#cdb6d8;cursor:default;}
+  .share-btn.edit{background:#fff;color:#7b1fa2;border:2px solid #7b1fa2;}
+  .activity textarea.shared{background:#f6f0fa;}
+  /* 정리 */
+  .recap{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .recap:empty{display:none;}
+  .recap .rc{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#f7f9fb;font-size:14px;}
+  .recap .rc b{display:block;margin-bottom:4px;}
+  .sum-box{margin-top:14px;}
+  .sum-wait{background:#f3f4f6;border:1px dashed #c5cad1;border-radius:10px;padding:10px 14px;color:var(--ink2);font-size:14.5px;}
+  .sum-body{background:#fffbe6;border:2px solid #ffca28;border-radius:12px;padding:12px 16px;}
+  .sum-body h4{margin:0 0 8px;font-size:16px;color:#8d6e00;}
+  .sum-fig{width:300px;max-width:100%;display:block;margin:0 auto 8px;}
+  .sum-key{font-size:17px;background:#fff;border-radius:8px;padding:8px 12px;text-align:center;}
+  @media (max-width:640px){ .g-board{width:100%;} }
+  .golf .ball circle:first-child{fill:#fff;stroke:#333;stroke-width:1.8;}
+  .activity .q5row input.ratio{width:120px;}
+  /* 균형점 찾기 */
+  .ttabs{display:flex;gap:6px;margin:6px 0;}
+  .ttabs button{flex:1;border:1px solid #c5cad1;background:#fff;border-radius:8px;padding:7px 4px;font-family:inherit;font-size:14px;cursor:pointer;color:var(--ink2);}
+  .ttabs button.on{background:#1565c0;color:#fff;border-color:#1565c0;}
+  .ttabs button.ok{border-color:#2e7d32;color:#2e7d32;font-weight:bold;} .ttabs button.on.ok{background:#2e7d32;color:#fff;}
+  .level{width:150px;height:28px;border:2px solid #777;border-radius:14px;background:#eef3f6;position:relative;overflow:hidden;}
+  .level::before,.level::after{content:'';position:absolute;top:0;bottom:0;width:2px;background:#bbb;left:calc(50% - 11px);} .level::after{left:calc(50% + 9px);}
+  .level .bub{position:absolute;top:3px;left:calc(50% - 9px);width:18px;height:18px;border-radius:50%;background:#8bd0ff;border:1px solid #4a9bc9;transition:left .4s;}
+  .level.ok .bub{background:#7bdc7b;border-color:#2e7d32;}
+  .golf .tri{transition:transform .5s ease-out;}
+  .golf .pin{cursor:crosshair;}
+  .tools{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;}
+  .tools .sbtn.used{background:#e8f1fc;border-color:#1565c0;color:#1565c0;}
+  .meas{font-size:14.5px;margin:6px 0;line-height:1.8;}
+  .meas:empty{display:none;}
+  .meas .m{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:2px 10px;margin:2px 4px 2px 0;}
+  .meas .m.eq{border-color:#2e7d32;background:#e8f5e9;}
+  .golf .seg{cursor:pointer;stroke-width:10;stroke:transparent;}
+  .golf .seg:hover{stroke:rgba(21,101,192,.18);}
+  .conj{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;}
+  .conj select{padding:6px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  .conj.locked select,.conj.locked input{pointer-events:none;background:#f3f4f6;}
+  .name-box{margin-top:10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:14.5px;}
+  .name-box b{color:#1b5e20;}
+  .golf .vtx{cursor:grab;}
+  .activity .g-side textarea{min-height:70px;}
+</style></style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기</h1>
+    <p class="gate-sub">삼각형을 손가락 하나로 받치려면 어디? 균형점을 찾고, 그 점의 정체를 파헤쳐 봅시다 — 김형준 선생님 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 6</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+  <div id="gateMsg"></div>
+
+  <div class="wrap" id="pageWrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+
+<!-- ===================== 화면 1: 예측 ===================== -->
+<section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">1 예측하기</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>손가락 하나로 받치려면 어디를 받쳐야 할까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g1" viewBox="0 0 460 380" class="golf pick"></svg></div>
+      <div class="g-side">
+        <p class="hint">두꺼운 종이로 만든 삼각형이 있어요. 이 삼각형을 <b>손가락 하나로 받쳐서 수평으로 들고 있으려면</b> 어디를 받쳐야 할까요?<br>삼각형 안의 한 점을 <b>눌러서</b> 예측해 보세요. (다시 누르면 옮겨져요)</p>
+        <div class="g-msg" id="gm1"></div>
+        <div class="friends-box" id="fr1"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why1">예측한 점을 찍으면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 2: 균형 시뮬레이터 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">2 균형점 찾기</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>핀 위에 올려서 균형 잡기</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf pick"></svg></div>
+      <div class="g-side">
+        <p class="hint">삼각형을 <b>📍 핀</b> 위에 올려요. 핀이 균형점에서 벗어나면 무거운 쪽으로 <b>기울어져요</b>. 핀 자리를 눌러 옮겨 가며 <b>수평</b>이 될 때까지 찾아보세요.<br>삼각형 세 개에서 모두 균형점을 찾으면 완료예요.</p>
+        <div class="ttabs" id="ttabs"></div>
+        <div class="kctrl"><div class="krow"><span class="orow" id="pin2"></span><span class="strokes" id="try2"></span></div>
+          <div class="krow" style="margin-top:8px;"><button class="shoot" id="go2" disabled>📍 올려 보기</button><div class="level" id="lvl2"><div class="bub" id="bub2"></div></div></div></div>
+        <div class="g-msg" id="gm2"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why2">삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 3: 내 방법 만들기 ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">3 내 방법 만들기</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>핀 없이 균형점을 찾는 방법을 만들어 보자</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-side">
+        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림에 내가 찾은 균형점이 표시되어 있어요. 어떤 점·선과 관계가 있을까요?</div>
+        <p class="note">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</p>
+        <textarea id="t3" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh3" disabled>📤 답변 공유</button><span class="note" id="shn3"></span></div>
+        <div class="friends-box" id="fr3"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why3">내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 4: 정체 파헤치기 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">4 정체 파헤치기</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>균형점 G의 정체는?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g4" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-side">
+        <p class="hint">도구가 두 개 있어요. <b>① 선 긋기</b>: 꼭짓점에서 G를 지나 마주 보는 변까지 선을 그어요. <b>② 길이 재기</b>: 그림의 선분을 <b>누르면</b> 길이가 보여요.<br>선을 긋고 여러 선분의 길이를 재면서 규칙을 찾아보세요.</p>
+        <div class="tools" id="tools4">
+          <button class="sbtn" data-v="0">A에서 선 긋기</button><button class="sbtn" data-v="1">B에서 선 긋기</button><button class="sbtn" data-v="2">C에서 선 긋기</button>
+          <button class="sbtn" id="clr4">↺ 잰 길이 지우기</button>
+        </div>
+        <div class="meas" id="meas4"></div>
+        <div class="conj" id="conj4">
+          <div class="question" style="font-size:15.5px;">찾은 규칙을 완성해 보세요.</div>
+          <div class="q5row">균형점 G는 꼭짓점과, 마주 보는 변의
+            <select id="c4a"><option value="">선택</option><option value="mid">중점</option><option value="tri">삼등분점</option><option value="end">끝점</option><option value="any">아무 점</option></select>을 이은 선 위에 있다.</div>
+          <div class="q5row">그 선은 G에 의해 꼭짓점 쪽부터 <input type="text" id="c4b" class="ratio" placeholder="예) 3:1" autocomplete="off"> 로 나누어진다.</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="c4Check" disabled>✔ 확인하기</button><span id="c4Msg" class="note"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why4">선을 긋고, 길이를 두 개 이상 잰 뒤, 규칙을 맞히면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 5: 항상 그럴까? ===================== -->
+<section class="task activity" id="task-a5" data-task-id="5">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">5 항상 그럴까?</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <h2>삼각형 모양을 바꿔도 그럴까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g5" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-side">
+        <p class="hint"><b>꼭짓점 A, B, C를 끌어서</b> 삼각형 모양을 바꿔 보세요. 균형점 G와 꼭짓점에서 G를 지나는 세 선이 함께 움직여요. 길이 비도 같이 보여요.<br><span class="note">(세 번 이상 바꿔 보세요)</span></p>
+        <div class="meas" id="meas5"></div>
+        <div class="name-box" id="name5" style="display:none;">
+          <b>이름 붙이기</b> 꼭짓점과 마주 보는 변의 중점을 이은 선분을 <b>중선</b>, 세 중선이 만나는 점(균형점)을 <b>무게중심</b>이라고 해요.
+        </div>
+        <div class="question" style="font-size:15.5px;margin-top:10px;">💭 모양을 어떻게 바꿔도 비가 항상 같은 값이에요. <b>왜 항상 그럴까요?</b> 내 생각을 써 보세요. (7.3에서 배운 것을 떠올려 봐요)</div>
+        <textarea id="t5" placeholder="두 변의 중점을 이은 선분은 ~ 그래서 ~"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why5">삼각형을 세 번 이상 바꿔 보고, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 6: 정리하기 ===================== -->
+<section class="task activity" id="task-a6" data-task-id="6">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">6 정리하기</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <h2>정리하기</h2>
+    <div class="recap" id="recap6"></div>
+    <div class="big-question">오늘 찾은 삼각형의 균형점(무게중심)에 대해 알게 된 것을 내 말로 정리해 보세요. (어떤 선 위에 있는지, 그 선을 어떤 비로 나누는지)</div>
+    <textarea id="t6" placeholder="삼각형의 무게중심은 ~"></textarea>
+    <div class="share-row"><button class="share-btn" id="sh6" disabled>📤 답변 공유</button><span class="note" id="shn6"></span></div>
+    <div class="friends-box" id="fr6"></div>
+    <div class="sum-box" id="sumBox">
+      <div class="sum-wait" id="sumWait">🔒 정리 상자는 선생님이 공개하면 보여요.</div>
+      <div class="sum-body" id="sumBody" style="display:none;">
+        <h4>📦 정리: 삼각형의 무게중심</h4>
+        <svg viewBox="0 0 300 190" class="sum-fig" id="sumFig"></svg>
+        <p>➊ 삼각형의 세 <b>중선</b>은 한 점(<b>무게중심</b> G)에서 만난다.</p>
+        <p class="sum-key">➋ <b>AG : GD = BG : GE = CG : GF = 2 : 1</b></p>
+        <p class="note">왜 항상 2:1일까? 학습지 <b>학습하기➊</b>에서 7.3의 중점연결(DE ∥ AB, DE = ½AB)과 닮음(△GAB ∽ △GDE)으로 설명해 봐요.</p>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why6">내 생각을 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   35. 7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기 (VII. 도형의 닮음과 피타고라스 정리)
+   교과서식 "중선을 긋고 2:1을 확인하라" 대신, '중선'·'무게중심'·'2:1'을 끝까지 숨기고 학생이 균형점을 찾아 정체를 파헤치게 했다.
+   (참고: TI Balancing Act — 균형 → 중선 → 성질 순서, Kasmer & Kim 2011 예측하기, Kapur 2014 생산적 실패)
+   student21.html과 같은 틀(게이트·단원 잠금·실시간 저장·일시정지·공지·속도조절·수업 종료·제출/백업·미리보기)을
+   scratchpad의 build.py로 가져오고 화면 6개를 넣었다.
+   ① 예측(삼각형 안의 점 찍기, 친구들 예측 점 공유) ② 균형 시뮬레이터(핀을 놓고 올리면 무게중심 쪽으로 기울어짐, 삼각형 3개)
+   ③ 내 방법 만들기(서술 공유) ④ 정체 파헤치기(꼭짓점→G 선 긋기, 선분 눌러 길이 재기 → 규칙 빈칸: 중점, 2:1)
+   ⑤ 항상 그럴까(꼭짓점 끌기, 비 2:1 유지 확인, 이름 붙이기, 왜 그럴까 서술) ⑥ 정리(공유 + 선생님이 공개하는 정리 상자)
+   단원 번호 35. 방: rooms/{반}__sim35. 공유: share/{pred|method|sum}/{학생키}. 공개: control/reveal/sum
+   ACTIVITY_SUFFIX는 teacher35.html과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__sim35'; // teacher35.html과 반드시 동일해야 함
+const UNIT_LABEL = '7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기';
+const UNIT_NO = 35;
+const MIN_TEXT = 5;   // 서술형 최소 글자 수
+
+const TASKS = [
+  {id:1, key:'a1', title:'1. 예측하기 — 어디를 받쳐야 할까?'},
+  {id:2, key:'a2', title:'2. 균형점 찾기 — 핀 위에 올리기(삼각형 3개)'},
+  {id:3, key:'a3', title:'3. 내 방법 만들기'},
+  {id:4, key:'a4', title:'4. 정체 파헤치기 — 선 긋기·길이 재기'},
+  {id:5, key:'a5', title:'5. 항상 그럴까? — 모양 바꾸기'},
+  {id:6, key:'a6', title:'6. 정리하기'}
+];
+/* 삼각형 3개(단위 좌표, 모눈 22×18): 예각·둔각·직각 */
+const TRIS = [
+  {name:'삼각형 ①', v:[[3,3],[19,4],[8,15]]},
+  {name:'삼각형 ②', v:[[2,3],[14,3],[20,14]]},
+  {name:'삼각형 ③', v:[[3,3],[17,3],[3,15]]}
+];
+const PIN_SNAP = 0.5, BAL_TOL = 0.3;   // 핀은 0.5 단위로 놓이고, 무게중심에서 0.3 안이면 수평
+const VN = ['A','B','C'], FN = ['D','E','F'];   // 꼭짓점·마주 보는 변의 중점 이름
+
+const state = {
+  pred: null,                                   // 예측한 점 [x,y]
+  bal: TRIS.map(()=>({pin:null, tries:0, done:false})), cur:0,
+  t3:'',
+  lines4:[false,false,false], meas4:[],          // 그은 선(꼭짓점별), 잰 선분 이름들
+  c4:{a:'', b:'', checked:false, ok:false},
+  tri5:[[4,3],[18,4],[9,15]], moves5:0, t5:'',
+  t6:'', shared:{3:false,6:false}, seen:{3:false,6:false}
+};
+let REVEAL = {};
+const SHARE = { all:{}, sent:{} };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const len = s => String(s||'').trim().length;
+const r1 = v => Math.round(v*10)/10;
+const centroid = t => [(t[0][0]+t[1][0]+t[2][0])/3, (t[0][1]+t[1][1]+t[2][1])/3];
+const mid = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
+const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+function inTri(p, t){ const s = (a,b,c)=> (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]); const d1=s(t[0],t[1],p), d2=s(t[1],t[2],p), d3=s(t[2],t[0],p); return !((d1<0||d2<0||d3<0) && (d1>0||d2>0||d3>0)); }
+
+function isDone(id){
+  if(id===1) return !!state.pred;
+  if(id===2) return state.bal.every(b=>b.done);
+  if(id===3) return len(state.t3)>=MIN_TEXT && state.shared[3];
+  if(id===4) return state.lines4.some(Boolean) && state.meas4.length>=2 && state.c4.checked && state.c4.ok;
+  if(id===5) return state.moves5>=3 && len(state.t5)>=MIN_TEXT;
+  if(id===6) return len(state.t6)>=MIN_TEXT && state.shared[6];
+  return false;
+}
+function valueOf(id){
+  if(id===1) return state.pred ? `예측 (${state.pred[0]}, ${state.pred[1]})` : '';
+  if(id===2) return state.bal.some(b=>b.tries) ? state.bal.map((b,i)=>`${TRIS[i].name} ${b.done?'수평':'아직'} ${b.tries}번`).join(' / ') : '';
+  if(id===3) return state.t3.trim();
+  if(id===4){ if(!state.lines4.some(Boolean) && !state.meas4.length) return ''; return `선: ${state.lines4.map((v,i)=>v?VN[i]:null).filter(Boolean).join(',')||'-'} · 잰 길이 ${state.meas4.length}개 · 규칙: ${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[state.c4.a]||'-'}, ${state.c4.b||'-'}${state.c4.checked?(state.c4.ok?' ✓':' ✗'):''}`; }
+  if(id===5) return (state.moves5||state.t5.trim()) ? `[모양 바꾸기 ${state.moves5}번]\n${state.t5.trim()}` : '';
+  if(id===6) return state.t6.trim();
+  return '';
+}
+function collectData(){
+  return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, t3: state.t3,
+    lines4: state.lines4.slice(), meas4: state.meas4.slice(), c4: Object.assign({}, state.c4),
+    tri5: state.tri5.map(p=>[r1(p[0]),r1(p[1])]), moves5: state.moves5, t5: state.t5, t6: state.t6,
+    shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen) };
+}
+/* 친구들에게 보여 줄 것(이름 없이): 예측 점은 찍으면 바로, 서술은 공유를 누른 뒤 */
+function shareEntries(){
+  return { pred: state.pred ? {x:state.pred[0], y:state.pred[1]} : null,
+    method: state.shared[3] ? {t: state.t3.trim().slice(0,300)} : null,
+    sum: state.shared[6] ? {t: state.t6.trim().slice(0,300)} : null };
+}
+function pushShare(rt){
+  if(!rt.shareRef) return;
+  const e = shareEntries();
+  Object.keys(e).forEach(kind=>{
+    const j = JSON.stringify(e[kind]);
+    if(SHARE.sent[kind] === j) return;
+    SHARE.sent[kind] = j;
+    rt.shareRef.child(kind+'/'+rt.studentKey).set(e[kind]);
+  });
+}
+const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
+
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.shareRef = this.roomRef.child('share');
+    this.connected = true;
+    this.shareRef.on('value', snap=>{ SHARE.all = snap.val() || {}; onShareChanged(); });
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
+      }
+      // 이전에 저장된 활동 기록을 먼저 되살린 "뒤에"만 저장을 시작한다(빈 상태로 덮어쓰지 않도록).
+      if(existing && existing.data) restoreData(existing.data);
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+      this.pushProgress();
+      refreshAll();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement;
+        $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        $('announceBanner').style.display = 'none';
+      }
+      REVEAL = c.reveal || {}; onRevealChanged();
+      this.stageOn = (c.stage!=null);
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing();
+      updateNavButtons();
+      // 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만 전체 제출/취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded){ applyFinalLock(true); this.markSubmitted(true); }
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyFinalLock(classEnded); this.markSubmitted(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>isDone(t.id)).length;
+    pushShare(this);
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  flushPending(){
+    if(this._t){ clearTimeout(this._t); this._t=null; }
+    this.pushProgress();
+  }
+};
+
+/* 상태가 바뀔 때마다 부른다: 배지·진행률·다음 버튼·요약표를 새로 고치고 저장한다. */
+function refreshAll(opts){
+  TASKS.forEach(t=>{
+    const b=$('badge-'+t.key); const d=isDone(t.id);
+    b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  });
+  const done = TASKS.filter(t=>isDone(t.id)).length;
+  $('progressText').textContent = `완료 ${done} / ${TASKS.length}`;
+  $('progressFill').style.width = (done/TASKS.length*100)+'%';
+  updateNavButtons();
+  if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+}
+
+
+function setWhy(id, doneMsg, todoMsg){
+  const el = $('why'+id); const d = isDone(id);
+  el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : '');
+}
+const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
+
+/* ---------- 그리기 공통 (SVG 460×380, 1단위 = 20px, 원점 (10,370)) ---------- */
+const U = 20, OX = 10, OY = 370, BW = 22, BH = 18;
+const px = x => OX + x*U, py = y => OY - y*U;
+const P = p => `${px(p[0])},${py(p[1])}`;
+function gridSVG(){
+  let s = '';
+  for(let x=0; x<=BW; x++) s += `<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(BH)}" stroke="${x%5?'#c9e3bb':'#a9cf97'}" stroke-width="1"/>`;
+  for(let y=0; y<=BH; y++) s += `<line x1="${px(0)}" y1="${py(y)}" x2="${px(BW)}" y2="${py(y)}" stroke="${y%5?'#c9e3bb':'#a9cf97'}" stroke-width="1"/>`;
+  return s;
+}
+const triPath = t => `M${P(t[0])}L${P(t[1])}L${P(t[2])}Z`;
+function labelsSVG(t, names){ const g = centroid(t); return t.map((p,i)=>{ const dx = p[0]-g[0], dy = p[1]-g[1], d = Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*0.9)}" y="${py(p[1]+dy/d*0.9)+5}" text-anchor="middle" font-size="14" font-weight="bold" fill="#0d47a1">${names[i]}</text>`; }).join(''); }
+function dotSVG(p, color, label, r){ return `<circle cx="${px(p[0])}" cy="${py(p[1])}" r="${r||5}" fill="${color}" stroke="#fff" stroke-width="1.5"/>${label?`<text x="${px(p[0])+8}" y="${py(p[1])-7}" font-size="13" font-weight="bold" fill="${color}">${label}</text>`:''}`; }
+function svgPoint(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
+const TRI_FILL = 'fill="rgba(255,193,7,.55)" stroke="#8d6e00" stroke-width="2.5" stroke-linejoin="round"';
+
+/* ---------- 화면 1: 예측 ---------- */
+function renderPred(){
+  const t = TRIS[0].v, all = shareOf('pred'), me = RT.studentKey;
+  let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>` + labelsSVG(t, VN);
+  if(state.pred){ Object.keys(all).forEach(k=>{ if(k===me || !all[k]) return; s += `<circle cx="${px(all[k].x)}" cy="${py(all[k].y)}" r="4" fill="rgba(21,101,192,.45)"/>`; }); s += dotSVG(state.pred, '#e53935', '내 예측', 7); }
+  else s += `<text x="${px(BW/2)}" y="${py(BH)+18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 삼각형 안을 눌러 예측해 보세요</text>`;
+  $('g1').innerHTML = s;
+}
+$('g1').addEventListener('click', ev=>{
+  if(finalLocked) return;
+  const q = svgPoint($('g1'), ev).map(v=>Math.round(v*2)/2);
+  if(!inTri(q, TRIS[0].v)){ $('gm1').innerHTML = '<span class="miss">삼각형 안을 눌러 주세요.</span>'; return; }
+  state.pred = q; $('gm1').innerHTML = `<span class="ok">예측한 점: (${q[0]}, ${q[1]})</span> <span class="note">— 친구들의 예측도 파란 점으로 보여요.</span>`;
+  renderPred(); renderFriendsPred(); check1({now:true});
+});
+function renderFriendsPred(){ const box = $('fr1'); if(!state.pred){ box.innerHTML=''; return; } const n = Object.keys(shareOf('pred')).filter(k=>k!==RT.studentKey && shareOf('pred')[k]).length; box.innerHTML = `<h4>👥 친구들의 예측 ${n}명</h4><div class="note">파란 점이 친구들이 찍은 곳이에요. 다음 화면에서 진짜 균형점을 찾아봐요.</div>`; }
+function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, '삼각형 안의 한 점을 눌러 예측하면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
+
+/* ---------- 화면 2: 균형 시뮬레이터 ----------
+   핀이 무게중심 G에서 벗어나면 G 쪽으로 기울어진다. 기울기는 핀→G 방향으로 눌러 그린다(그 방향을 축에 수직으로 cosθ 배 줄이기). */
+let ANIM2 = null;
+function tiltTransform(pin, g, theta){
+  if(!theta) return '';
+  const dx = g[0]-pin[0], dy = -(g[1]-pin[1]); const phi = Math.atan2(dy, dx)*180/Math.PI, c = Math.cos(theta);
+  return `translate(${px(pin[0])} ${py(pin[1])}) rotate(${phi}) scale(${c} 1) rotate(${-phi}) translate(${-px(pin[0])} ${-py(pin[1])})`;
+}
+function renderBal(theta){
+  const i = state.cur, t = TRIS[i].v, b = state.bal[i], g = centroid(t);
+  const off = b.pin ? [g[0]-b.pin[0], g[1]-b.pin[1]] : [0,0];
+  let s = gridSVG();
+  if(b.pin && theta){ const d = Math.hypot(off[0],off[1])||1, sh = 0.9*theta; s += `<g transform="${tiltTransform(b.pin, g, theta)}"><path d="${triPath(t.map(p=>[p[0]+off[0]/d*sh, p[1]+off[1]/d*sh-0.3]))}" fill="rgba(0,0,0,.10)"/></g>`; }
+  s += `<g class="tri" transform="${b.pin ? tiltTransform(b.pin, g, theta||0) : ''}"><path d="${triPath(t)}" ${TRI_FILL}/>${labelsSVG(t, VN)}</g>`;
+  if(b.pin){ s += `<g class="pin"><line x1="${px(b.pin[0])}" y1="${py(b.pin[1])+14}" x2="${px(b.pin[0])}" y2="${py(b.pin[1])}" stroke="#555" stroke-width="2"/><circle cx="${px(b.pin[0])}" cy="${py(b.pin[1])}" r="6" fill="#e53935" stroke="#fff" stroke-width="1.5"/></g>`;
+    if(theta && !b.done){ const d = Math.hypot(off[0],off[1])||1, ex = px(b.pin[0]+off[0]/d*2.2), ey = py(b.pin[1]+off[1]/d*2.2); s += `<line x1="${px(b.pin[0])}" y1="${py(b.pin[1])}" x2="${ex}" y2="${ey}" stroke="#c62828" stroke-width="3" marker-end="url(#arr)"/><defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#c62828"/></marker></defs>`; } }
+  if(b.done) s += dotSVG(b.pin, '#2e7d32', '균형점!', 7);
+  if(!b.pin) s += `<text x="${px(BW/2)}" y="${py(BH)+18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 삼각형 안을 눌러 핀을 놓으세요</text>`;
+  $('g2').innerHTML = s;
+}
+function renderTabs(){ $('ttabs').innerHTML = TRIS.map((t,i)=>`<button type="button" data-i="${i}" class="${i===state.cur?'on':''}${state.bal[i].done?' ok':''}">${state.bal[i].done?'✅ ':''}${t.name}</button>`).join(''); }
+function renderCtrl2(){
+  const b = state.bal[state.cur];
+  $('pin2').innerHTML = b.pin ? `핀: <b>(${b.pin[0]}, ${b.pin[1]})</b>` : '핀: <b>아직 안 놓음</b>';
+  $('try2').textContent = `올려 본 횟수 ${b.tries}`;
+  $('go2').disabled = !b.pin || finalLocked || !!ANIM2;
+  $('lvl2').classList.toggle('ok', b.done);
+  const g = centroid(TRIS[state.cur].v); const off = b.pin && !b.done ? [g[0]-b.pin[0], g[1]-b.pin[1]] : [0,0]; const d = Math.hypot(off[0],off[1]);
+  const k = d ? Math.min(1, d/6)/d : 0; $('bub2').style.left = `calc(50% - 9px + ${off[0]*k*60}px)`;
+}
+$('ttabs').addEventListener('click', e=>{ const bt = e.target.closest('button'); if(!bt || ANIM2) return; state.cur = +bt.dataset.i; renderTabs(); renderCtrl2(); renderBal(0); $('gm2').innerHTML=''; refreshAll(); });
+$('g2').addEventListener('click', ev=>{
+  if(finalLocked || ANIM2) return;
+  const t = TRIS[state.cur].v, q = svgPoint($('g2'), ev).map(v=>Math.round(v/PIN_SNAP)*PIN_SNAP);
+  if(!inTri(q, t)){ $('gm2').innerHTML = '<span class="miss">삼각형 안에 핀을 놓아 주세요.</span>'; return; }
+  const b = state.bal[state.cur]; if(b.done){ $('gm2').innerHTML = '<span class="note">이 삼각형은 이미 균형점을 찾았어요. 다른 삼각형을 골라 보세요.</span>'; return; }
+  b.pin = q; $('gm2').innerHTML = ''; renderBal(0); renderCtrl2(); refreshAll();
+});
+$('go2').addEventListener('click', ()=>{
+  const i = state.cur, b = state.bal[i]; if(!b.pin || finalLocked || ANIM2) return;
+  const g = centroid(TRIS[i].v), d = dist(b.pin, g), hit = d < BAL_TOL;
+  b.tries++; const target = hit ? 0 : Math.min(0.9, 0.25 + d*0.12);
+  ANIM2 = {t0: performance.now()}; $('go2').disabled = true;
+  const step = now => { const t = Math.min(1, (now-ANIM2.t0)/600), e = 1-Math.pow(1-t,3);
+    renderBal(hit ? Math.sin(t*Math.PI*3)*0.08*(1-t) : target*e);
+    if(t<1) requestAnimationFrame(step); else { ANIM2 = null; if(hit){ b.done = true; renderBal(0); }
+      const dirName = (()=>{ const dx = g[0]-b.pin[0], dy = g[1]-b.pin[1]; const h = Math.abs(dx)>Math.abs(dy)*1.5 ? (dx>0?'오른쪽':'왼쪽') : Math.abs(dy)>Math.abs(dx)*1.5 ? (dy>0?'위쪽':'아래쪽') : `${dy>0?'위':'아래'}·${dx>0?'오른':'왼'}쪽`; return h; })();
+      $('gm2').innerHTML = hit ? `<div class="hit">⚖️ 수평! 균형점을 찾았어요. (${b.tries}번 만에) 핀 (${b.pin[0]}, ${b.pin[1]})${state.bal.every(x=>x.done)?'<br><span style="font-weight:normal;">삼각형 세 개 모두 찾았어요!</span>':'<br><span style="font-weight:normal;">위의 다른 삼각형도 찾아보세요.</span>'}</div>`
+        : `<span class="miss">기울어졌어요 — <b>${dirName}</b>이 더 무거워요. 핀을 그쪽으로 옮겨 보세요.</span>`;
+      renderTabs(); renderCtrl2(); check2({now:true}); } };
+  requestAnimationFrame(step);
+});
+function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, `삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요. (지금 ${state.bal.filter(b=>b.done).length}/3)`); refreshAll(opts); }
+
+/* ---------- 화면 3: 내 방법 ---------- */
+function renderG3(){ const t = TRIS[0].v, g = centroid(t); $('g3').innerHTML = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>` + labelsSVG(t, VN) + dotSVG(g, '#2e7d32', '균형점 G', 7); }
+function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, '내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
+$('t3').addEventListener('input', ()=>check3());
+
+/* ---------- 화면 4: 정체 파헤치기 ---------- */
+function segs4(){
+  const t = TRIS[0].v, g = centroid(t), out = [];
+  t.forEach((v,i)=>{ if(!state.lines4[i]) return; const o1 = t[(i+1)%3], o2 = t[(i+2)%3], m = mid(o1,o2);
+    const n1 = VN[(i+1)%3], n2 = VN[(i+2)%3], f = FN[i];
+    out.push({name:`${VN[i]}G`, a:v, b:g}, {name:`G${f}`, a:g, b:m}, {name:`${n1}${f}`, a:o1, b:m}, {name:`${f}${n2}`, a:m, b:o2}); });
+  return out;
+}
+function renderG4(){
+  const t = TRIS[0].v, g = centroid(t);
+  let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
+  const S = segs4();
+  t.forEach((v,i)=>{ if(!state.lines4[i]) return; const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 5); });
+  S.forEach(sg=>{ const mx = (sg.a[0]+sg.b[0])/2, my = (sg.a[1]+sg.b[1])/2, d = dist(sg.a,sg.b), measured = state.meas4.includes(sg.name);
+    s += `<line class="seg" data-seg="${sg.name}" x1="${px(sg.a[0])}" y1="${py(sg.a[1])}" x2="${px(sg.b[0])}" y2="${py(sg.b[1])}"><title>${sg.name} 길이 재기</title></line>`;
+    if(measured) s += `<rect x="${px(mx)-20}" y="${py(my)-9}" width="40" height="18" rx="5" fill="#fff" stroke="#1565c0"/><text x="${px(mx)}" y="${py(my)+4}" text-anchor="middle" font-size="12" font-weight="bold" fill="#0d47a1">${r1(d)}</text>`; });
+  s += labelsSVG(t, VN) + dotSVG(g, '#2e7d32', 'G', 7);
+  $('g4').innerHTML = s;
+  document.querySelectorAll('#tools4 [data-v]').forEach(b=> b.classList.toggle('used', state.lines4[+b.dataset.v]));
+  const S2 = segs4(); const txt = state.meas4.map(n=>{ const sg = S2.find(x=>x.name===n); return sg ? `<span class="m">${n} = ${r1(dist(sg.a,sg.b))}</span>` : ''; }).join('');
+  $('meas4').innerHTML = txt ? `📏 잰 길이: ${txt}` : (state.lines4.some(Boolean) ? '<span class="note">선분을 누르면 길이를 잴 수 있어요. (파란 선의 각 부분, 변의 각 부분)</span>' : '');
+}
+document.querySelectorAll('#tools4 [data-v]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; state.lines4[+b.dataset.v] = true; renderG4(); check4(); }));
+$('clr4').addEventListener('click', ()=>{ if(finalLocked) return; state.meas4 = []; renderG4(); check4(); });
+$('g4').addEventListener('click', ev=>{ if(finalLocked) return; const el = ev.target.closest('.seg'); if(!el) return; const n = el.dataset.seg; if(!state.meas4.includes(n)) state.meas4.push(n); renderG4(); check4(); });
+function parseRatio(s){ const m = String(s||'').replace(/\s/g,'').match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/); if(!m) return null; const a=Number(m[1]), b=Number(m[2]); return (a>0&&b>0) ? a/b : null; }
+function paintC4(){ const c = state.c4; $('conj4').classList.toggle('locked', (c.checked && c.ok) || finalLocked); $('c4Check').disabled = !(c.a && parseRatio(c.b)!=null) || (c.checked && c.ok) || finalLocked || !state.lines4.some(Boolean); }
+function check4(opts){
+  paintC4();
+  if(state.c4.checked){ const okA = state.c4.a==='mid', okB = Math.abs((parseRatio(state.c4.b)||0) - 2) < 1e-6;
+    $('c4Msg').innerHTML = (okA && okB) ? '<span class="ok">✅ 맞았어요! G는 꼭짓점과 마주 보는 변의 중점을 이은 선 위에 있고, 그 선을 2:1로 나눠요.</span>' : `<span class="bad">다시 재 보세요 — ${[!okA&&'마주 보는 변의 어떤 점인지(변의 두 부분 길이를 비교)', !okB&&'비(꼭짓점~G와 G~변의 길이를 비교)'].filter(Boolean).join(', ')}</span>`; }
+  setWhy(4, '✅ 완료! '+NEXT, !state.lines4.some(Boolean) ? '먼저 「A에서 선 긋기」 같은 버튼으로 선을 그어 보세요.' : state.meas4.length<2 ? '선분을 눌러 길이를 두 개 이상 재 보세요.' : '찾은 규칙을 채우고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+$('c4a').addEventListener('change', ()=>{ if(finalLocked) return; state.c4.a = $('c4a').value; state.c4.checked = false; $('c4Msg').textContent=''; check4(); });
+$('c4b').addEventListener('input', ()=>{ if(finalLocked) return; state.c4.b = $('c4b').value; state.c4.checked = false; $('c4Msg').textContent=''; check4(); });
+$('c4Check').addEventListener('click', ()=>{ if(finalLocked) return; state.c4.checked = true; state.c4.ok = state.c4.a==='mid' && Math.abs((parseRatio(state.c4.b)||0) - 2) < 1e-6; check4({now:true}); });
+
+/* ---------- 화면 5: 항상 그럴까? (꼭짓점 끌기) ---------- */
+function renderG5(){
+  const t = state.tri5, g = centroid(t);
+  let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
+  const rows = [];
+  t.forEach((v,i)=>{ const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 4);
+    rows.push(`<span class="m eq">${VN[i]}G : G${FN[i]} = ${r1(dist(v,g))} : ${r1(dist(g,m))} = 2 : 1</span>`); });
+  s += dotSVG(g, '#2e7d32', 'G', 7);
+  t.forEach((v,i)=>{ s += `<circle class="vtx" data-i="${i}" cx="${px(v[0])}" cy="${py(v[1])}" r="11" fill="rgba(21,101,192,.25)" stroke="#1565c0" stroke-width="2"/>`; });
+  s += labelsSVG(t, VN);
+  $('g5').innerHTML = s;
+  $('meas5').innerHTML = rows.join(' ') + `<br><span class="note">모양 바꾼 횟수: ${state.moves5}</span>`;
+  $('name5').style.display = isDone(5) || (state.moves5>=3) ? '' : 'none';
+}
+let drag5 = null;
+$('g5').addEventListener('pointerdown', ev=>{ if(finalLocked) return; const el = ev.target.closest('.vtx'); if(!el) return; drag5 = {i:+el.dataset.i, moved:false}; $('g5').setPointerCapture(ev.pointerId); ev.preventDefault(); });
+$('g5').addEventListener('pointermove', ev=>{ if(!drag5) return; const r = svgPoint($('g5'), ev); const x = Math.min(BW, Math.max(0, Math.round(r[0]*2)/2)), y = Math.min(BH, Math.max(0, Math.round(r[1]*2)/2));
+  const t = state.tri5; if(t[drag5.i][0]===x && t[drag5.i][1]===y) return; const nt = t.map(p=>p.slice()); nt[drag5.i] = [x,y];
+  const area = Math.abs((nt[1][0]-nt[0][0])*(nt[2][1]-nt[0][1]) - (nt[2][0]-nt[0][0])*(nt[1][1]-nt[0][1]))/2; if(area < 6) return;
+  state.tri5 = nt; drag5.moved = true; renderG5(); });
+const endDrag5 = ()=>{ if(!drag5) return; if(drag5.moved){ state.moves5++; renderG5(); check5(); } drag5 = null; };
+$('g5').addEventListener('pointerup', endDrag5); $('g5').addEventListener('pointercancel', endDrag5);
+function check5(opts){ state.t5 = $('t5').value; setWhy(5, '✅ 완료! '+NEXT, state.moves5<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.moves5}번)` : '왜 항상 그런지 내 생각을 쓰면 다음으로 넘어갈 수 있어요.'); renderG5(); refreshAll(opts); }
+$('t5').addEventListener('input', ()=>check5());
+
+/* ---------- 화면 6: 정리 ---------- */
+function renderRecap(){
+  $('recap6').innerHTML = `<div class="rc"><b>⚖️ 내가 찾은 균형점</b>${state.bal.map((b,i)=>`${TRIS[i].name}: ${b.done?`(${b.pin[0]}, ${b.pin[1]}) · ${b.tries}번`:'-'}`).join('<br>')}</div>`
+    + `<div class="rc"><b>🔍 찾은 규칙</b>${state.c4.checked && state.c4.ok ? '균형점은 꼭짓점과 마주 보는 변의 중점을 이은 선 위, 그 선을 2:1로 나눔' : '<span class="note">(화면 4의 규칙을 아직 맞히지 않았어요)</span>'}</div>`;
+}
+function renderSumFig(){
+  const t = [[30,160],[270,160],[120,30]], g = centroid(t), m = [mid(t[1],t[2]), mid(t[2],t[0]), mid(t[0],t[1])], Q = p=>`${p[0]},${p[1]}`;
+  $('sumFig').innerHTML = `<polygon points="${t.map(Q).join(' ')}" fill="rgba(255,193,7,.45)" stroke="#8d6e00" stroke-width="2"/>` + t.map((v,i)=>`<line x1="${v[0]}" y1="${v[1]}" x2="${m[i][0]}" y2="${m[i][1]}" stroke="#1565c0" stroke-width="2"/>`).join('')
+    + `<circle cx="${g[0]}" cy="${g[1]}" r="5" fill="#2e7d32"/><text x="${g[0]+8}" y="${g[1]-6}" font-size="14" font-weight="bold" fill="#2e7d32">G</text>`
+    + `<text x="${t[0][0]-16}" y="${t[0][1]+6}" font-size="14" font-weight="bold">A</text><text x="${t[1][0]+6}" y="${t[1][1]+6}" font-size="14" font-weight="bold">B</text><text x="${t[2][0]-4}" y="${t[2][1]-8}" font-size="14" font-weight="bold">C</text>`
+    + `<text x="${m[0][0]+8}" y="${m[0][1]}" font-size="13" font-weight="bold" fill="#1565c0">D</text><text x="${m[1][0]-16}" y="${m[1][1]}" font-size="13" font-weight="bold" fill="#1565c0">E</text><text x="${m[2][0]-4}" y="${m[2][1]+18}" font-size="13" font-weight="bold" fill="#1565c0">F</text>`;
+}
+function paintSum(){ const on = !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; if(on) renderSumFig(); }
+function check6(opts){ state.t6 = $('t6').value; setWhy(6, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「📤 답변 공유」를 누르면 완료돼요.'); paintShare(6); renderFriends(6); refreshAll(opts); }
+$('t6').addEventListener('input', ()=>check6());
+
+/* ---------- 친구들의 생각(내 답을 쓴 뒤 자동 공개, 이름 없이) ---------- */
+const KIND = {3:'method', 6:'sum'};
+function renderFriends(n){
+  const box = $('fr'+n); if(!box) return;
+  if(!state.seen[n]){ box.innerHTML = ''; return; }
+  const all = shareOf(KIND[n]), me = RT.studentKey;
+  const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
+  if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
+  box.innerHTML = `<h4>👥 친구들의 ${n===3?'방법':'생각'} (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
+}
+const SH_FIELDS = {3:['t3'], 6:['t6']};
+const SH_READY = {3:()=> len(state.t3)>=MIN_TEXT, 6:()=> len(state.t6)>=MIN_TEXT};
+function paintShare(n){
+  const b = $('sh'+n); if(!b) return;
+  const sh = state.shared[n];
+  SH_FIELDS[n].forEach(id=>{ $(id).readOnly = sh; $(id).classList.toggle('shared', sh); });
+  b.classList.toggle('edit', sh);
+  b.textContent = sh ? '✏️ 수정하기' : (state.seen[n] ? '📤 다시 공유' : '📤 답변 공유');
+  b.disabled = !sh && (!SH_READY[n]() || finalLocked);
+  $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
+}
+[3,6].forEach(n=> $('sh'+n).addEventListener('click', ()=>{
+  if(finalLocked) return;
+  if(state.shared[n]) state.shared[n] = false;
+  else { if(!SH_READY[n]()) return; state.shared[n] = true; state.seen[n] = true; }
+  paintShare(n); renderFriends(n); ({3:check3,6:check6})[n]({now:true});
+}));
+
+function onShareChanged(){ renderPred(); renderFriendsPred(); renderFriends(3); renderFriends(6); }
+function onRevealChanged(){ paintSum(); }
+function onShowPage(taskId){ if(taskId===1) renderPred(); if(taskId===2) renderBal(0); if(taskId===3) renderG3(); if(taskId===4) renderG4(); if(taskId===5) renderG5(); if(taskId===6){ renderRecap(); paintSum(); } }
+
+function renderAll(){ renderPred(); renderFriendsPred(); renderTabs(); renderCtrl2(); renderBal(0); renderG3(); renderG4(); paintC4(); renderG5(); paintSum(); }
+function checkAll(opts){ check1(opts); check2(opts); check3(opts); check4(opts); check5(opts); check6(opts); }
+function initActivity(){ renderAll(); checkAll({noSave:true}); }
+const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+function restoreData(d){
+  if(!d) return;
+  const pr = arr(d.pred).map(Number); state.pred = (pr.length===2 && pr.every(Number.isFinite)) ? pr : null;
+  arr(d.bal).forEach((b,i)=>{ if(!b || !state.bal[i]) return; const p = arr(b.pin).map(Number); state.bal[i] = {pin: (p.length===2 && p.every(Number.isFinite)) ? p : null, tries: Number(b.tries)||0, done: !!b.done}; });
+  state.cur = Number.isInteger(d.cur) && TRIS[d.cur] ? d.cur : 0;
+  state.t3 = d.t3 || ''; $('t3').value = state.t3;
+  state.lines4 = [0,1,2].map(i=>!!arr(d.lines4)[i]); state.meas4 = arr(d.meas4).map(String);
+  if(d.c4) state.c4 = {a: String(d.c4.a||''), b: String(d.c4.b||''), checked: !!d.c4.checked, ok: !!d.c4.ok};
+  $('c4a').value = state.c4.a; $('c4b').value = state.c4.b;
+  const t5 = arr(d.tri5).map(p=>arr(p).map(Number)); if(t5.length===3 && t5.every(p=>p.length===2 && p.every(Number.isFinite))) state.tri5 = t5;
+  state.moves5 = Number(d.moves5)||0; state.t5 = d.t5 || ''; $('t5').value = state.t5;
+  state.t6 = d.t6 || ''; $('t6').value = state.t6;
+  [3,6].forEach(n=>{ state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
+  renderAll(); checkAll({noSave:true});
+}
+
+/* ---------- 화면 잠금 / 공지 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (활동 4개 + 마지막 제출 페이지) ----------
+   다른 단원과 같은 속도조절(교사 min/max) 제한에 더해, 이 단원은 "지금 활동을 끝내야" 다음
+   활동으로 넘어갈 수 있다(탐구 순서를 지키기 위함). 이전 활동으로 돌아가는 것은 자유롭다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+  onShowPage(pageTaskNum(currentPage));
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){ const i = taskIdToPageIdx(RT.maxTaskId); if(i>=0){ showPage(i); return; } }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){ const i = taskIdToPageIdx(RT.minTaskId); if(i>=0) showPage(i); }
+}
+function updateNavButtons(){
+  const prevBtn=$('prevBtn'), nextBtn=$('nextBtn'), pacingMsg=$('pacingMsg'), gateMsg=$('gateMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  const curNum = pageTaskNum(currentPage), nextNum = pageTaskNum(currentPage+1), prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  const notFinished = !PREVIEW_MODE && curNum!=null && curNum<=TASKS.length && !isDone(curNum);
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused || !!state.running;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused || !!state.running;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
+    else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
+    else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+  if(gateMsg){
+    gateMsg.textContent = notFinished ? `✋ 활동 ${curNum}을 마치면 「다음 ▶」 버튼이 켜져요.` : '';
+    gateMsg.style.display = (notFinished && !blockedNext) ? 'block' : 'none';
+  }
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.classNo && obj.name) ? obj : null; }catch(e){ return null; }
+}
+const IDENTITY_KEY = 'ggb_identity_sim35_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.name) ? obj : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none';
+  $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+/* 선생님이 이 단원을 이 반에 열어줬는지 확인한 뒤 시작 화면을 보여준다(오류 시에는 그냥 열어준다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none';
+    $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name;
+      $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    $('profileMissingBox').style.display='none';
+    $('profileBox').style.display='none';
+    $('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length,
+    answers: TASKS.map(t=>({task:t.id, title:t.title, done:isDone(t.id), value:valueOf(t.id)})),
+    data: collectData(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `균형점찾기_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* 처음 화면 */
+initActivity();
+refreshAll({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N이면 게이트 없이 그 활동 화면을 바로 보여준다(Firebase 연결 없음).
+   교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none';
+  $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+<script src="report.js"></script><!-- 🚩 오류 신고(모든 학생 화면 공통) -->
+</body>
+</html>
