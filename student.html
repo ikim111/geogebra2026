@@ -62,6 +62,10 @@
   .myscore{margin-top:6px;font-size:15px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:6px 10px;display:inline-block;}
   .myscore b{color:#e65100;font-size:18px;}
   .myscore .sub{font-size:12.5px;color:#666;}
+  .ordBtn{border:1px solid #f0a500;background:#fff;color:#8d5a00;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:4px;}
+  .ordBtn.item{background:#fff3cd;font-weight:bold;}
+  .ordBtn:disabled{opacity:.45;cursor:default;}
+  .ordPanel{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
 </style>
 </head>
 <body>
@@ -281,26 +285,54 @@ function applyAccessAndCompletion(profile){
   }catch(e){ unlockAllPending(); }
 }
 
-/* 🎤 내 발표 점수: 선생님 자리배치 화면(teacher20)의 ⑤ 발표 기록(rooms/{반}__present20)에서 내 번호의 점수를 합산해 보여 준다.
-   집계는 선생님이 초기화한 시각(resetAt) 이후만. 망고젤리 1개 = 1점, 상점 1점 = 10점. */
+/* 🎤 내 발표 점수 + 🛒 주문 신청: 선생님 자리배치 화면(teacher20)의 ⑤ 발표 기록(rooms/{반}__present20)에서 내 번호의 점수를 합산해 보여 준다.
+   집계는 선생님이 초기화한 시각(resetAt) 이후만. 주문 신청(requests)은 선생님이 ⑤ 탭에서 승인해야 차감된다(망고젤리 1개 = 1점, 상점 1점 = 10점).
+   주문은 ORDER_CLASSES 반에서만 보인다(일단 5~8반, 나중에 1~4반으로 확대). */
+const ORDER_CLASSES = ['5','6','7','8'];
+const esc = v => String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ORDER_ITEMS = { jelly:{label:'🍬 망고젤리 1개', cost:1}, point:{label:'⭐ 상점 1점', cost:10} };
 function showMyPresentScore(profile){
   const box = document.getElementById('myScore'); if(!box) return;
   const no = parseInt(profile.number, 10); if(!no) return;
   const base = firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__present20');
-  let resetAt = 0, seated = false;   // 자리배치표(__seat20)가 입력된 반에서만 보여 준다
-  const paint = events => {
-    let total = 0, n = 0;
-    Object.values(events || {}).forEach(e=>{
-      if(!e || e.voided || (+e.createdAt||0) <= resetAt) return;
-      Object.values(e.awards || {}).forEach(a=>{ if(a && +a.no === no){ total += +a.points || 0; n++; } });
-    });
-    if(!seated){ box.style.display = 'none'; return; }   // 기록이 없어도(0점) 자리배치가 있는 반이면 보여 준다
+  const canOrder = ORDER_CLASSES.includes(String(profile.classNo).trim());
+  let resetAt = 0, seated = false, events = null, requests = {}, open = false, busy = false, note = '';
+  const myReqs = () => Object.entries(requests).map(([id,r])=>({...r,id})).filter(r=>r && +r.no===no).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const balance = () => { let total = 0; Object.values(events || {}).forEach(e=>{ if(!e || e.voided || (+e.createdAt||0) <= resetAt) return; Object.values(e.awards || {}).forEach(a=>{ if(a && +a.no === no) total += +a.points || 0; }); }); return total; };
+  const paint = () => {
+    if(!seated || events===null){ box.style.display = 'none'; return; }
     box.style.display = '';
-    box.innerHTML = `🎤 내 발표 점수 <b>${total}</b>점`;   // 주문(젤리·상점) 안내는 나중에 정하기로 해서 숨김
+    const total = balance(), pend = myReqs().find(r=>r.status==='pending'), last = myReqs().find(r=>r.status!=='pending' && (Date.now()-(+r.decidedAt||0)) < 6*3600*1000);
+    let h = `🎤 내 발표 점수 <b>${total}</b>점`;
+    if(canOrder){
+      if(pend) h += ` <span class="sub">· ${esc(ORDER_ITEMS[pend.item]?ORDER_ITEMS[pend.item].label:pend.item)} 신청 중 — 선생님 확인을 기다려요</span> <button class="ordBtn" data-ord="cancel" ${busy?'disabled':''}>신청 취소</button>`;
+      else h += ` <button class="ordBtn" data-ord="open" ${busy?'disabled':''}>🛒 주문</button>`;
+      if(!pend && last) h += ` <span class="sub">· 지난 신청(${esc(ORDER_ITEMS[last.item]?ORDER_ITEMS[last.item].label:last.item)}): ${last.status==='approved'?'✅ 승인됨 — 선생님께 받아 가세요':'❌ 거절됨'}</span>`;
+      if(open && !pend) h += `<div class="ordPanel">${Object.entries(ORDER_ITEMS).map(([k,it])=>`<button class="ordBtn item" data-ord="${k}" ${total<it.cost||busy?'disabled':''}>${it.label} (${it.cost}점)</button>`).join('')}<button class="ordBtn" data-ord="close">닫기</button><div class="sub">신청하면 선생님이 확인한 뒤 점수가 빠져요. 남은 점수 ${total}점</div></div>`;
+      if(note) h += `<div class="sub">${esc(note)}</div>`;
+    }
+    box.innerHTML = h;
   };
-  firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__seat20/seats').once('value').then(snap=>{ const v = snap.val(); seated = !!(v && Object.keys(v).length); base.child('events').once('value').then(s2=> paint(s2.val())); }).catch(()=>{});
-  base.child('resetAt').on('value', snap=>{ resetAt = +snap.val() || 0; base.child('events').once('value').then(s=> paint(s.val())); });
-  base.child('events').on('value', snap=> paint(snap.val()));
+  box.addEventListener('click', async e=>{
+    const b = e.target.closest('[data-ord]'); if(!b || busy) return;
+    const k = b.dataset.ord; note = '';
+    if(k==='open'){ open = true; paint(); return; }
+    if(k==='close'){ open = false; paint(); return; }
+    if(k==='cancel'){ const r = myReqs().find(x=>x.status==='pending'); if(!r) return; busy = true; paint();
+      try{ await base.child('requests/'+r.id).update({status:'cancelled', decidedAt: firebase.database.ServerValue.TIMESTAMP}); }catch(err){ note = '취소하지 못했어요: '+err.message; }
+      busy = false; paint(); return; }
+    const it = ORDER_ITEMS[k]; if(!it) return;
+    if(balance() < it.cost){ note = '점수가 모자라요.'; paint(); return; }
+    if(myReqs().find(x=>x.status==='pending')){ note = '이미 신청 중이에요.'; paint(); return; }
+    busy = true; paint();
+    try{ await base.child('requests').push({ no, name: String(profile.name||'').trim(), item: k, cost: it.cost, status:'pending', createdAt: firebase.database.ServerValue.TIMESTAMP }); open = false; }
+    catch(err){ note = '신청하지 못했어요: '+err.message; }
+    busy = false; paint();
+  });
+  firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__seat20/seats').once('value').then(snap=>{ const v = snap.val(); seated = !!(v && Object.keys(v).length); paint(); }).catch(()=>{});
+  base.child('resetAt').on('value', snap=>{ resetAt = +snap.val() || 0; paint(); });
+  base.child('events').on('value', snap=>{ events = snap.val() || {}; paint(); });
+  if(canOrder) base.child('requests').on('value', snap=>{ requests = snap.val() || {}; paint(); });
 }
 
 // 아직 확인 전인 "잠정 잠금" 상태 - href가 아예 없어서 클릭해도 어차피 아무 데도 못 가지만,
