@@ -23,7 +23,8 @@
     events = {}; ready = false; pending = null; message = ''; ledger = null;
     originalLoad(r);
     if (!db) return;
-    const active = db.ref('presentationScores/v1/classes/' + r + '/events');
+    // 저장 경로: 최상위 presentationScores/… 는 Firebase 규칙이 막혀 있어(permission_denied) 다른 데이터처럼 rooms/ 아래에 둔다. 자리배치(__seat20)와는 별개 경로.
+    const active = db.ref('rooms/' + r + '__present20/events');
     ledger = active;
     active.on('value', snap => {
       if (ledger !== active) return;
