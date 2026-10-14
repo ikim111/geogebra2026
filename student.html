@@ -287,8 +287,8 @@ function applyAccessAndCompletion(profile){
 
 /* 🎤 내 발표 점수 + 🛒 주문 신청: 선생님 자리배치 화면(teacher20)의 ⑤ 발표 기록(rooms/{반}__present20)에서 내 번호의 점수를 합산해 보여 준다.
    집계는 선생님이 초기화한 시각(resetAt) 이후만. 주문 신청(requests)은 선생님이 ⑤ 탭에서 승인해야 차감된다(망고젤리 1개 = 1점, 상점 1점 = 10점).
-   주문은 ORDER_CLASSES 반에서만 보인다(일단 5~8반, 나중에 1~4반으로 확대). */
-const ORDER_CLASSES = ['5','6','7','8'];
+   주문은 ORDER_CLASSES 반에서만 보인다(전체 반, 단 자리배치표가 입력된 반만). */
+const ORDER_CLASSES = ['1','2','3','4','5','6','7','8','9','10','11','12'];   // 자리배치표가 없는 반은 어차피 점수 칸 자체가 안 보인다
 const esc = v => String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ORDER_ITEMS = { jelly:{label:'🍬 망고젤리 1개', cost:1}, point:{label:'⭐ 상점 1점', cost:10} };
 function showMyPresentScore(profile){
