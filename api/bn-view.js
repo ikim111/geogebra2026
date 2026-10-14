@@ -48,9 +48,11 @@ async function fbPut(path, value) {
 // 반 목록: 올릴 때마다 새 파일(무작위 꼬리)이 생기고 지우지 않으므로, 있는 파일을 모두 읽어 합친다(같은 번호는 더 나중 것).
 // Blob의 list()는 올린 직후 잠깐 최신 파일이 안 보일 수 있어서, 가장 최근 것 하나만 쓰면 그 전에 올린 학생이 빠질 수 있었다.
 async function loadMap(cls) {
-  const { blobs } = await list({ prefix: `bnmap/${cls}.json` });
-  if (!blobs.length) return null;
-  const maps = (await Promise.all(blobs.map(async b => { try { const r = await fetch(b.url, { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (e) { return null; } })))
+  // 실제 파일 이름은 bnmap/8-xxxx.json처럼 무작위 꼬리가 .json 앞에 붙으므로 prefix는 bnmap/8 까지만
+  const { blobs } = await list({ prefix: `bnmap/${cls}` });
+  const mine = blobs.filter(b => new RegExp(`^bnmap/${cls}(-[A-Za-z0-9_-]+)?\\.json$`).test(b.pathname));
+  if (!mine.length) return null;
+  const maps = (await Promise.all(mine.map(async b => { try { const r = await fetch(b.url, { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (e) { return null; } })))
     .filter(m => m && m.students).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   if (!maps.length) return null;
   const out = { cls, max: 20, ts: 0, students: {} };
