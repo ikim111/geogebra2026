@@ -189,6 +189,9 @@
   @media (max-width:640px){ .g-board{width:100%;} }
   .golf .ball circle:first-child{fill:#fff;stroke:#333;stroke-width:1.8;}
   .activity .q5row input.ratio{width:120px;}
+  .golf .drag{cursor:grab;} .golf .drag:active{cursor:grabbing;}
+  .golf{touch-action:none;}
+  .golf .ball{pointer-events:none;}
 </style></style>
 </head>
 <body>
@@ -254,7 +257,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g1" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이 골프는 공을 치지 않고 <b>확대·축소해서</b> 보내요. <span class="o-mark">◎ 중심</span>에서 공까지의 거리를 <b>비율 k배</b>로 늘이거나 줄이면, 공은 중심에서 공을 지나는 직선을 따라 <span class="ghost-mark">○ 점선 공</span> 자리로 날아가요.<br>슬라이더로 비율을 바꾸고 「⛳ 치기」를 눌러 <b>⛳ 홀</b>에 넣어 보세요.</p>
+        <p class="hint">이 골프는 공을 치지 않고 <b>확대·축소해서</b> 보내요. <span class="o-mark">◎ 중심</span>에서 공까지의 거리를 <b>비율 k배</b>로 늘이거나 줄이면, 공은 중심에서 공을 지나는 직선을 따라 <span class="ghost-mark">○ 점선 공</span> 자리로 날아가요.<br>슬라이더를 움직이거나 <b>점선 공을 직접 끌어서</b> 비율을 바꾸고, 「⛳ 치기」를 눌러 <b>⛳ 홀</b>에 넣어 보세요.</p>
         <div class="kctrl" id="kc1"></div>
         <div class="g-msg" id="gm1"></div>
       </div>
@@ -324,7 +327,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g5" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이번 공은 <b>삼각형 ABC</b>예요. 중심은 꼭짓점 <b>A</b>로 정해져 있어요.<br>비율을 조절해 삼각형을 <b>점선 홀(삼각형 AB′C′)</b>에 딱 맞게 넣어 보세요.</p>
+        <p class="hint">이번 공은 <b>삼각형 ABC</b>예요. 중심은 꼭짓점 <b>A</b>로 정해져 있어요.<br>비율을 조절해(슬라이더 또는 노란 꼭짓점 끌기) 삼각형을 <b>점선 홀(삼각형 AB′C′)</b>에 딱 맞게 넣어 보세요.</p>
         <div class="kctrl" id="kc5"></div>
         <div class="g-msg" id="gm5"></div>
       </div>
@@ -692,13 +695,14 @@ function renderHole(n){
     s += rayLine(A,B) + rayLine(A,C);
     s += `<path d="${tri(A,B,C)}" fill="rgba(21,101,192,.35)" stroke="#1565c0" stroke-width="2"/>`;
     s += `<path id="img5" d="${tri(A,Bi,Ci)}" fill="rgba(255,235,59,.25)" stroke="#f9a825" stroke-width="2" stroke-dasharray="4 3"/>`;
+    s += `<g class="drag" data-v="b"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="7" fill="#fff" stroke="#f9a825" stroke-width="2"/><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="15" fill="transparent"/></g><g class="drag" data-v="c"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="7" fill="#fff" stroke="#f9a825" stroke-width="2"/><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="15" fill="transparent"/></g>`;
     s += centerSVG(A) + `<text x="${px(A[0])-12}" y="${py(A[1])-10}" font-size="13" font-weight="bold" fill="#c62828">A</text>`;
     s += `<text x="${px(B[0])+5}" y="${py(B[1])+15}" font-size="13" font-weight="bold" fill="#0d47a1">B</text><text x="${px(C[0])-5}" y="${py(C[1])-7}" text-anchor="end" font-size="13" font-weight="bold" fill="#0d47a1">C</text>`;
   } else {
     const o = oOf(n), p = H.p;
     if(o){ s += rayLine(o, p); }
     s += holeSVG(H.h);
-    if(o){ const q = imgOf(o, p, h.k); s += `<g id="img${n}" class="ghost"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/></g>`; s += centerSVG(o); }
+    if(o){ const q = imgOf(o, p, h.k); s += `<g id="img${n}" class="ghost drag"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="${px(q[0])}" cy="${py(q[1])}" r="16" fill="transparent"/></g>`; s += centerSVG(o); }
     s += ballSVG(p, 'ball', '공');
     if(H.pickO && !o) s += `<text x="${px(BW/2)}" y="${py(BH)-(-16)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 모눈의 교점을 눌러 중심을 놓으세요</text>`;
   }
@@ -764,6 +768,29 @@ function landed(n, hit){
   checkHole(n, {now:true});
 }
 function renderSols(){ const h = state.h[4]; $('sol4').innerHTML = h.sols.length ? `<b>넣은 방법:</b> ${h.sols.map(s=>{ const [o,k] = s.split('|'); return `<span class="sol">중심 (${o}), k = ${k}</span>`; }).join('')}` : ''; }
+/* 점선 공(삼각형 공은 B′·C′)을 직선을 따라 끌어서 비율 바꾸기 — 슬라이더 대신 */
+let kdrag = null;
+function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
+[1,2,3,4,5].forEach(n=>{
+  const svg = $('g'+n);
+  svg.addEventListener('pointerdown', ev=>{
+    if(finalLocked || ANIM[n] || HOLES[n].fixK) return;
+    const el = ev.target.closest('.drag'); if(!el) return;
+    const H = HOLES[n], o = n===5 ? H.a : oOf(n); if(!o) return;
+    const p = n===5 ? (el.dataset.v==='c' ? H.c : H.b) : H.p;
+    kdrag = {n, o, p}; svg.setPointerCapture(ev.pointerId); ev.preventDefault();
+  });
+  svg.addEventListener('pointermove', ev=>{
+    if(!kdrag || kdrag.n!==n) return;
+    const q = svgPt(svg, ev), dx = kdrag.p[0]-kdrag.o[0], dy = kdrag.p[1]-kdrag.o[1], L2 = dx*dx+dy*dy;
+    let k = ((q[0]-kdrag.o[0])*dx + (q[1]-kdrag.o[1])*dy) / L2;   // 중심→공 방향으로 정사영한 비율
+    k = Math.round(k/K_STEP)*K_STEP; k = Math.min(8, Math.max(K_MIN, k));
+    if(Math.abs(k - state.h[n].k) < 1e-9) return;
+    state.h[n].k = k; renderCtrl(n); renderHole(n);
+  });
+  const end = ()=>{ if(kdrag && kdrag.n===n){ kdrag = null; refreshAll(); } };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+});
 /* 중심 놓기: 교점 클릭 */
 function svgPoint(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [Math.round((q.x-OX)/U), Math.round((OY-q.y)/U)]; }
 [3,4].forEach(n=> $('g'+n).addEventListener('click', ev=>{
