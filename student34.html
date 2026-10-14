@@ -324,7 +324,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g4" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">공과 홀 사이에 연못이 있어요. 하지만 확대 골프의 공은 <b>날아가니까</b> 괜찮아요!<br>이번에는 <b>중심 ◎의 위치</b>(교점을 누르거나 끌어서)와 <b>비율 k</b>를 모두 직접 정해요. 홀에 넣는 방법은 <b>여러 가지</b>예요 — 한 번 넣은 뒤 다른 중심으로도 넣어 보세요.</p>
+        <p class="hint">공과 홀 사이에 연못이 있어요. 하지만 확대 골프의 공은 <b>날아가니까</b> 괜찮아요!<br>이번에는 <b>중심 ◎의 위치</b>(교점을 누르거나 끌어서)와 <b>비율 k</b>를 모두 직접 정해요. 그리고 이 홀에서는 <b>점선 공이 안 보여요</b> — 공이 어디로 갈지 <b>머릿속으로 계산해서</b> 쳐야 해요.<br>홀에 넣는 방법은 <b>여러 가지</b>예요 — 한 번 넣은 뒤 다른 중심으로도 넣어 보세요.</p>
         <div class="kctrl" id="kc4"></div>
         <div class="g-msg" id="gm4"></div>
         <div class="sol-box" id="sol4"></div>
@@ -379,7 +379,8 @@
         <svg viewBox="0 0 300 170" class="sum-fig" id="sumFig"></svg>
         <p>삼각형 ABC의 두 변 AB, AC(또는 그 연장선) 위에 점 B′, C′가 있을 때,</p>
         <p class="sum-key"><b>BC ∥ B′C′</b> 이면 <b>AB : AB′ = AC : AC′ = BC : B′C′</b></p>
-        <p class="note">점 A를 중심으로 k배 확대한 그림이 바로 이 모양이에요. 학습지 <b>학습하기➊</b>에서 이 성질이 왜 성립하는지 닮음으로 설명해 봐요.</p>
+        <p class="note">점 A를 중심으로 k배 확대한 그림이 바로 이 모양이에요.</p>
+        <div class="question" style="font-size:15.5px;margin-top:8px;">🤔 <b>반대로</b>, 확대하지 않고 그냥 <b>BC와 평행하게</b> 선 B′C′를 그어도 AB : AB′ = AC : AC′ = BC : B′C′가 될까요? 왜 그럴까요? — 학습지 <b>학습하기➊</b>에서 닮음으로 확인해 봐요.</div>
       </div>
     </div>
   </div>
@@ -450,7 +451,7 @@ const HOLES = {
   1:{o:[2,2],  p:[6,4],  h:[10,6], ans:2},
   2:{o:[20,4], p:[8,14], h:[14,9], ans:0.5, typeK:true},
   3:{o:null,   p:[6,5],  h:[12,11], fixK:3, pickO:true, ansO:[3,2]},
-  4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3]},   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
+  4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3], noPreview:true},   // 미리 보기 없음: 어디 떨어질지 생각해서 쳐야 함   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
   5:{a:[3,3],  b:[9,4],  c:[6,9],  ans:2}
 };
 const K_MIN = 0.25, K_MAX = 4, K_STEP = 0.25;
@@ -816,7 +817,7 @@ function renderHole(n){
     const o = oOf(n), p = H.p;
     if(o){ s += rayLine(o, p); }
     s += holeSVG(H.h);
-    if(o){ const q = imgOf(o, p, h.k); s += `<g id="img${n}" class="ghost drag"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="${px(q[0])}" cy="${py(q[1])}" r="16" fill="transparent"/></g>`; s += centerSVG(o, !!H.pickO); }
+    if(o){ const q = imgOf(o, p, h.k); const hide = H.noPreview && !h.landed; s += `<g id="img${n}" class="ghost${hide?'':' drag'}" style="${hide?'opacity:0':''}"><circle cx="${px(q[0])}" cy="${py(q[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="${px(q[0])}" cy="${py(q[1])}" r="16" fill="transparent"/></g>`; s += centerSVG(o, !!H.pickO); }
     s += ballSVG(p, 'ball', '공');
     if(H.pickO && !o) s += `<text x="${px(BW/2)}" y="${py(BH)-(-16)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 모눈의 교점을 눌러 중심을 놓으세요</text>`;
   }
@@ -833,8 +834,8 @@ function renderCtrl(n){
   if(H.pickO) s += `<div class="orow">중심: ${o ? `<b>(${o[0]}, ${o[1]})</b> — 다른 교점을 누르면 옮겨져요` : '<b>아직 안 놓음</b> — 모눈의 교점을 누르세요'}</div>`;
   s += `<div class="krow" style="margin-top:8px;"><button class="shoot" id="go${n}" ${(!o || finalLocked) ? 'disabled' : ''}>⛳ 치기</button>${h.done ? '<span class="ok">홀인 완료! 더 쳐 봐도 돼요.</span>' : ''}</div>`;
   box.innerHTML = s;
-  const r = $('kr'+n); if(r) r.addEventListener('input', ()=>{ if(finalLocked) return; state.h[n].k = Number(r.value); renderCtrl(n); renderHole(n); refreshAll(); });
-  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 1/2, 0.75, 3 처럼 써 주세요.</span>'; return; } state.h[n].k = v; renderCtrl(n); renderHole(n); refreshAll(); });
+  const r = $('kr'+n); if(r) r.addEventListener('input', ()=>{ if(finalLocked) return; state.h[n].k = Number(r.value); state.h[n].landed = false; renderCtrl(n); renderHole(n); refreshAll(); });
+  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 1/2, 0.75, 3 처럼 써 주세요.</span>'; return; } state.h[n].k = v; state.h[n].landed = false; renderCtrl(n); renderHole(n); refreshAll(); });
   $('go'+n).addEventListener('click', ()=> shoot(n));
 }
 function targetOf(n){ const H = HOLES[n]; if(n===5) return null; return H.h; }
@@ -849,6 +850,7 @@ function shoot(n){
   h.tries.push({k:h.k, o: H.pickO ? o.slice() : null, hit});
   $('go'+n).disabled = true;
   ANIM[n] = {t0: performance.now(), from: n===5 ? null : H.p, hit};
+  if(H.noPreview){ const g = $('img'+n); if(g) g.style.opacity = ''; }
   const step = now => {
     const t = Math.min(1, (now - ANIM[n].t0)/750), e = 1 - Math.pow(1-t, 3);
     if(n===5){ [['b',H.b],['c',H.c]].forEach(([v,p0])=>{ const q = imgOf(o,p0,h.k), x = p0[0]+(q[0]-p0[0])*e, y = p0[1]+(q[1]-p0[1])*e; const g = $('img5'+v); if(g){ const c = g.querySelector('circle'); c.setAttribute('cx', px(x)); c.setAttribute('cy', py(y)); c.setAttribute('stroke-dasharray', ''); c.setAttribute('fill', v==='b' ? '#fff' : '#fdd835'); } }); }
@@ -859,6 +861,7 @@ function shoot(n){
 }
 function landed(n, hit){
   const H = HOLES[n], h = state.h[n], o = n===5 ? H.a : oOf(n);
+  h.landed = true;
   if(hit){
     h.done = true;
     if(n===4){ const key = `${o[0]},${o[1]}|${fmtK(h.k)}`; if(!h.sols.includes(key)) h.sols.push(key); }
@@ -912,7 +915,7 @@ let odrag = null;
   svg.addEventListener('pointerdown', ev=>{ if(finalLocked || ANIM[n]) return; const el = ev.target.closest('.cdrag'); if(!el) return; odrag = {n, moved:false}; svg.setPointerCapture(ev.pointerId); ev.preventDefault(); });
   svg.addEventListener('pointermove', ev=>{ if(!odrag || odrag.n!==n) return; const [x,y] = svgPoint(svg, ev); const H = HOLES[n];
     if(x<0||x>BW||y<0||y>BH) return; if((x===H.p[0]&&y===H.p[1]) || (x===H.h[0]&&y===H.h[1])) return;
-    const o = state.h[n].o; if(o && o[0]===x && o[1]===y) return; state.h[n].o = [x,y]; odrag.moved = true; renderCtrl(n); renderHole(n); });
+    const o = state.h[n].o; if(o && o[0]===x && o[1]===y) return; state.h[n].o = [x,y]; state.h[n].landed = false; odrag.moved = true; renderCtrl(n); renderHole(n); });
   const end = ()=>{ if(odrag && odrag.n===n){ if(odrag.moved){ $('gm'+n).innerHTML=''; refreshAll(); } odrag = null; } };
   svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
 });
@@ -923,7 +926,7 @@ function svgPoint(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; 
   const [x,y] = svgPoint($('g'+n), ev);
   if(x<0||x>BW||y<0||y>BH) return;
   const H = HOLES[n]; if((x===H.p[0]&&y===H.p[1]) || (x===H.h[0]&&y===H.h[1])){ $('gm'+n).innerHTML = '<span class="miss">공이나 홀 위에는 중심을 둘 수 없어요.</span>'; return; }
-  state.h[n].o = [x,y]; $('gm'+n).innerHTML = '';
+  state.h[n].o = [x,y]; state.h[n].landed = false; $('gm'+n).innerHTML = '';
   renderCtrl(n); renderHole(n); refreshAll();
 }));
 function checkHole(n, opts){
