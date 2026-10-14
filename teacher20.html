@@ -815,5 +815,6 @@ window.exportXlsx = exportXlsx;
   }catch(err){ db = null; $('saveState').textContent = '⚠️ 연결 실패 — 저장되지 않아요'; loadRoom(room); }
 })();
 </script>
+<script src="presentation-score.js"></script><!-- ⑤ 발표 기록 탭(별도 경로 presentationScores/v1에 저장, 자리배치 데이터는 건드리지 않음) -->
 </body>
 </html>
