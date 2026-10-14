@@ -192,6 +192,21 @@
   .golf .drag{cursor:grab;} .golf .drag:active{cursor:grabbing;}
   .golf{touch-action:none;}
   .golf .ball{pointer-events:none;}
+  .aifb{margin-top:10px;border:1px dashed #b39ddb;border-radius:10px;padding:8px 12px;background:#faf8ff;}
+  .aifb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .aifb-btn{background:#5e35b1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-btn:disabled{background:#c5b8e3;cursor:default;}
+  .aifb-left{font-size:13px;color:#6b6f76;}
+  .fb-out{margin-top:6px;font-size:14px;line-height:1.65;}
+  .fb-out:empty{display:none;}
+  .fb-out .row{display:flex;gap:8px;align-items:flex-start;margin:5px 0;}
+  .fb-out .tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-out .good .tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-out .fix .tag{background:#fff3e0;color:#e65100;}
+  .fb-out .none .tag{background:#e3f2fd;color:#1565c0;}
+  .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
+  .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
 </style></style>
 </head>
 <body>
@@ -354,10 +369,11 @@
     <div class="recap" id="recap6"></div>
     <div class="big-question">삼각형 공(홀 4)에서 점 A를 중심으로 확대했을 때, 변 BC와 변 B′C′는 어떤 관계였나요? 그리고 변의 길이의 비(AB:AB′, AC:AC′, BC:B′C′)는 어떤 관계였나요? 내 말로 정리해 보세요.</div>
     <textarea id="t6" placeholder="점 A를 중심으로 확대하면 BC와 B′C′는 ~ 그리고 AB:AB′와 BC:B′C′는 ~"></textarea>
+    <div class="aifb" id="aifb34"></div>
     <div class="share-row"><button class="share-btn" id="sh6" disabled>📤 답변 공유</button><span class="note" id="shn6"></span></div>
     <div class="friends-box" id="fr6"></div>
     <div class="sum-box" id="sumBox">
-      <div class="sum-wait" id="sumWait">🔒 정리 상자는 선생님이 공개하면 보여요.</div>
+      <div class="sum-wait" id="sumWait">🔒 정리 상자는 AI 피드백에서 <b>보완할 점이 없으면</b> 열려요. 피드백을 보고 내 글을 고쳐 다시 받아 보세요.</div>
       <div class="sum-body" id="sumBody" style="display:none;">
         <h4>📦 정리: 삼각형과 평행선</h4>
         <svg viewBox="0 0 300 170" class="sum-fig" id="sumFig"></svg>
@@ -481,7 +497,7 @@ const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
 function isDone(id){
   if(id>=1 && id<=4) return state.h[id].done;
   if(id===5) return state.h[5].done && state.q5.checked && state.q5.ok;
-  if(id===6) return len(state.t6)>=MIN_TEXT && state.shared[6];
+  if(id===6) return len(state.t6)>=MIN_TEXT && state.shared[6] && aifbList().length>=1;
   return false;
 }
 function valueOf(id){
@@ -495,7 +511,7 @@ function valueOf(id){
 function collectData(){
   const H = {};
   [1,2,3,4,5].forEach(n=>{ const h = state.h[n]; H['h'+n] = {k:h.k, o:h.o, strokes:h.strokes, done:h.done, tries:h.tries.slice(-30), sols:h.sols.slice()}; });
-  return Object.assign(H, { q5: Object.assign({}, state.q5), t6: state.t6, shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen) });
+  return Object.assign(H, { q5: Object.assign({}, state.q5), t6: state.t6, shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() });
 }
 /* 친구들에게 보여 줄 서술(이름 없이) — 내 답을 쓴 뒤에만 친구 답이 보인다 */
 function shareEntries(){ return { sum: state.shared[6] ? {t: state.t6.trim().slice(0,300)} : null }; }
@@ -511,6 +527,95 @@ function pushShare(rt){
 }
 const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
 
+/* ---------- 🤖 AI 피드백 받기(연습): 보완할 점이 없으면 정리 상자가 열린다. 3번까지, 결과는 data.aiFb ---------- */
+/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 3번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
+const AIFB_MAX = 3;
+const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
+let AIFB = [];
+let AIFB_REQ = 0;                       // 기회를 다 쓴 학생이 선생님께 요청한 시각(data.aiReq)
+let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(control/aiBonus/{학생키} = {n, ts})
+const aifbMax = () => AIFB_MAX + (+AIFB_BONUS.n || 0);
+/* 한 화면에 피드백 칸이 여러 개일 때: key='main'은 data.aiFb(AIFB), 그 밖은 data['aiFb_'+key](AIFB_SETS[key]) */
+const AIFB_SETS = {};
+const aifbList = key => (!key || key==='main') ? AIFB : (AIFB_SETS[key] || (AIFB_SETS[key] = []));
+const aifbUsed = key => aifbList(key).filter(e=>e && !e.skip).length;
+/* 마지막으로 받은 AI 피드백에 보완할 점이 없으면 통과 */
+function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+/* collectData에 넣을 추가 칸들 { aiFb_p7: [...] } */
+function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['aiFb_'+k] = AIFB_SETS[k]; }); return o; }
+/* 선생님이 기회를 더 주면 바로 반영(접속 뒤 control/aiBonus/{내 키}를 구독) */
+(function aifbWatch(){
+  const t = setInterval(()=>{
+    if(typeof RT==='undefined' || !RT.controlRef || !RT.studentKey) return;
+    clearInterval(t);
+    RT.controlRef.child('aiBonus/'+RT.studentKey).on('value', snap=>{
+      const v = snap.val() || {}; AIFB_BONUS = {n: +v.n || 0, ts: +v.ts || 0};
+      document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint());
+      if(typeof aifbOnChange==='function') aifbOnChange();
+    });
+  }, 500);
+})();
+const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function aifbHTML(e){
+  if(!e) return '';
+  if(e.skip) return `<div class="row none"><span class="tag">알림</span><span>AI에 연결되지 않아 이번에는 건너뛰었어요.</span></div>`;
+  const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
+  const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
+          : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
+  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.${window.reportOpen ? ' <button type="button" class="aifb-wrong">🤔 AI가 틀린 것 같아요</button>' : ''}</div>`;
+}
+/* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
+function aifbMount(box, opt){
+  const key = opt.key || 'main', L = () => aifbList(key);
+  box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
+  const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
+  req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
+  let busy = false, fails = 0;
+  const paint = () => {
+    const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
+    const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
+    btn.disabled = busy || out_ || aifbLocked() || short;
+    req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
+    req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
+    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
+      : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${mx-n}번)` : `남은 횟수 ${mx-n}번 · 다 쓴 뒤에 받아 보세요.`;
+    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); }
+  };
+  btn.addEventListener('click', async ()=>{
+    if(btn.disabled) return;
+    busy = true; paint(); out.innerHTML = '';
+    try{
+      const r = await fetch('/api/practice-feedback', { method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
+      L().push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      busy = false; paint();
+      if(typeof aifbOnChange==='function') aifbOnChange();
+      if(typeof refreshAll==='function') refreshAll({now:true});
+    }catch(e){
+      busy = false; fails++;
+      if(fails >= 2 && !L().length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        L().push({ t: Date.now(), skip: true }); paint();
+        if(typeof aifbOnChange==='function') aifbOnChange();
+        if(typeof refreshAll==='function') refreshAll({now:true});
+        return;
+      }
+      paint();
+      out.innerHTML = `<div class="row fix"><span class="tag">알림</span><span>AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요. (횟수는 줄지 않았어요)</span></div>`;
+    }
+  });
+  (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
+  box._paint = paint; paint();
+}
+function aifbRestore(d){
+  const arr = v => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  AIFB_REQ = +(d && d.aiReq) || 0; AIFB = arr(d && d.aiFb);
+  Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
+  document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+
+aifbMount($('aifb34'), { unit:34, minLen:10, inputs:[$('t6')], answer: ()=>$('t6').value, ctx: ()=>'홀 4: 점 A를 중심으로 흰 공 B와 노란 공 C를 비율 2로 보내 흰 홀 B′·노란 홀 C′에 넣었다. 공 사이 막대 BC와 홀 사이 막대 B′C′. AB:AB′=AC:AC′=BC:B′C′=1:2' });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -866,8 +971,8 @@ function renderSumFig(){
     <text x="${A[0]-14}" y="${A[1]+5}" font-size="14" font-weight="bold">A</text><text x="${B[0]-4}" y="${B[1]+17}" font-size="14" font-weight="bold" fill="#0d47a1">B</text><text x="${C[0]-4}" y="${C[1]-6}" font-size="14" font-weight="bold" fill="#0d47a1">C</text>
     <text x="${B2[0]-6}" y="${B2[1]+17}" font-size="14" font-weight="bold">B′</text><text x="${C2[0]-6}" y="${C2[1]-6}" font-size="14" font-weight="bold">C′</text>`;
 }
-function paintSum(){ const on = !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; if(on) renderSumFig(); }
-function check6(opts){ state.t6 = $('t6').value; setWhy(6, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「📤 답변 공유」를 누르면 완료돼요.'); paintShare(6); renderFriends(6); refreshAll(opts); }
+function paintSum(){ const on = aifbPassed() || !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; if(on) renderSumFig(); }
+function check6(opts){ state.t6 = $('t6').value; setWhy(6, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(6); renderFriends(6); refreshAll(opts); }
 $('t6').addEventListener('input', ()=>check6());
 
 /* ---------- 친구들의 생각(내 답을 쓴 뒤 자동 공개, 이름 없이) ---------- */
@@ -900,6 +1005,7 @@ $('sh6').addEventListener('click', ()=>{
 
 function onShareChanged(){ renderFriends(6); }
 function onRevealChanged(){ paintSum(); }
+function aifbOnChange(){ paintSum(); check6({noSave:true}); }
 function onShowPage(taskId){ if(taskId===6){ renderRecap(); paintSum(); } if(taskId>=1 && taskId<=5) renderHole(taskId); }
 
 function renderAll(){ [1,2,3,4,5].forEach(n=>{ renderCtrl(n); renderHole(n); }); renderSols(); paintQ5(); paintSum(); }
@@ -920,6 +1026,7 @@ function restoreData(d){
   const rr = document.querySelector(`input[name=rel5][value="${state.q5.rel}"]`); if(rr) rr.checked = true;
   $('r5a').value = state.q5.ra; $('r5b').value = state.q5.rb;
   state.t6 = d.t6 || ''; $('t6').value = state.t6;
+  aifbRestore(d);
   state.shared[6] = !!(d.shared && d.shared[6]); state.seen[6] = !!(d.seen && d.seen[6]) || state.shared[6];
   renderAll();
   [1,2,3,4].forEach(n=> checkHole(n, {noSave:true})); check5({noSave:true}); check6({noSave:true});

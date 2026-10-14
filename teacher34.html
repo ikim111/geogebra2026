@@ -249,7 +249,7 @@
       <div class="agg" id="revealPanel">
         <span>👀 <b>학생 화면에 공개</b></span>
         <button class="rv" id="rv_sum" data-k="sum">정리 상자 (삼각형과 평행선)</button>
-        <span style="font-size:12px;color:#8a6d00;">(누르면 공개 ↔ 숨김. 3단계를 열면 자동으로 공개돼요.)</span>
+        <span style="font-size:12px;color:#8a6d00;">(정리 상자는 학생이 AI 피드백을 통과하면 저절로 열려요. 필요할 때만 여기서 반 전체에 열어 주세요.)</span>
       </div>
       </details>
     </div>
@@ -348,7 +348,7 @@ const STAGES = [
    tip:'💬 "중심에서 공까지 거리와 홀까지 거리는 몇 배인가요?", "비율이 1보다 작으면 공은 어디로 가나요?"'},
   {t:'중심 찾기', d:'홀 2 중심 놓기 → 홀 3 연못 건너기 (화면 3~4)', tasks:[3,4], max:4, reveal:{},
    tip:'💬 "중심·공·홀은 어떤 위치에 있어야 하나요?" — 한 직선 위! 홀 3은 답이 여러 가지예요(반 전체 모음을 보여 주세요).'},
-  {t:'삼각형 공·정리', d:'홀 4 삼각형 공 → 정리하기 (화면 5~6, 정리 상자 자동 공개)', tasks:[5,6], max:null, reveal:{sum:true},
+  {t:'삼각형 공·정리', d:'홀 4 삼각형 공 → 정리하기 (화면 5~6, 정리 상자 자동 공개)', tasks:[5,6], max:null, reveal:{},
    tip:'💬 "BC와 B′C′는 왜 평행할까요?", "AB:AB′와 BC:B′C′가 같은 이유는?" — 정리 후 학습지 학습하기➊(평행선과 선분의 비)로 넘어가요.'}
 ];
 const TASK_LABELS = [
@@ -376,7 +376,7 @@ function activityDetailHTML(s, id){
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
   if(id>=1 && id<=4){ let s2 = holeLine(d['h'+id], id); if(id===4){ const sols = arrOf(d.h4 && d.h4.sols); if(sols.length) s2 += kv('넣은 방법', sols.map(x=>{ const [o,k]=String(x).split('|'); return `중심(${o}) k=${k}`; }).join(' / ')); } return s2; }
   if(id===5){ const q = d.q5 || {}; let s2 = holeLine(d.h5, 5); if(q.rel || q.ra || q.rb) s2 += kv('⑴ BC와 B′C′', REL[q.rel]||'-') + kv('⑵ AB:AB′', q.ra||'-') + kv('⑶ BC:B′C′', q.rb||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); return s2; }
-  if(id===6) return tb(d.t6);
+  if(id===6) return tb(d.t6) + aiFbHTML(d);
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -411,6 +411,36 @@ document.querySelectorAll('button.rv').forEach(b=> b.addEventListener('click', (
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
   controlRef.child('reveal/'+b.dataset.k).set(!reveal[b.dataset.k]);
 }));
+
+const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
+
+/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 control/aiBonus/{학생키}에 기회를 더 준다 ---------- */
+let aiBonusMap = {}, aiBonusWatched = false;
+function renderAiReq(){
+  if(typeof controlRef==='undefined' || !controlRef) return;
+  if(!aiBonusWatched){ aiBonusWatched = true; controlRef.child('aiBonus').on('value', s=>{ aiBonusMap = s.val() || {}; renderAiReq(); }); }
+  let box = document.getElementById('aiReqBox');
+  if(!box){
+    const anchor = document.getElementById('stagePanel'); if(!anchor) return;
+    box = document.createElement('div'); box.id = 'aiReqBox';
+    box.style.cssText = 'margin:10px 0;border:2px solid #b39ddb;background:#faf8ff;border-radius:12px;padding:10px 14px;';
+    anchor.parentNode.insertBefore(box, anchor.nextSibling);
+    box.addEventListener('click', e=>{
+      const b = e.target.closest('button[data-k]'); if(!b) return;
+      const k = b.dataset.k, cur = aiBonusMap[k] || {};
+      controlRef.child('aiBonus/'+k).set({ n: (+cur.n || 0) + 3, ts: Date.now() });
+    });
+  }
+  const reqs = Object.keys(allStudents||{}).map(k=>({k, s: allStudents[k]})).filter(x=>{
+    const d = x.s && x.s.data; const t = d && +d.aiReq; return t && t > ((aiBonusMap[x.k] && +aiBonusMap[x.k].ts) || 0);
+  });
+  box.style.display = '';
+  box.innerHTML = `<b style="color:#5e35b1;">🙋 AI 피드백 기회를 더 요청한 학생 ${reqs.length}명</b>${reqs.length ? '' : '<span style="color:#888;font-size:13.5px;margin-left:8px;">아직 없어요. 3번을 다 쓴 학생이 요청하면 여기에 떠요.</span>'}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">` + reqs.map(x=>`<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #d1c4e9;border-radius:8px;padding:4px 8px;font-size:14px;">${esc((x.s.number||'')+'번 '+(x.s.name||x.k))}
+      <button data-k="${esc(x.k)}" style="border:none;background:#5e35b1;color:#fff;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;">+3번 주기</button></span>`).join('') + `</div>`;
+}
+setInterval(renderAiReq, 2000);
 /* ---------- 📋 수업 진행 도우미: 단계 이름·완료 인원을 보고 「다음 단계 열기」 한 번으로 진행 ----------
    단계를 열면 control/stage, maxTaskId(학생이 갈 수 있는 마지막 활동), 필요한 공개(reveal)를 한꺼번에 바꾼다.
    학생 쪽은 기존 속도조절(maxTaskId) 로직을 그대로 쓰고, stage가 있으면 "다음 단계를 기다려요" 문구를 보여준다. */
