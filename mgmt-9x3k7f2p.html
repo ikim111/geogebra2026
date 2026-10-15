@@ -84,8 +84,7 @@
 </head>
 <body>
 
-<a id="presFabBtn" href="teacher20.html?tab=presentation" title="발표 점수 입력·주문 승인" style="position:fixed;top:10px;right:232px;z-index:99999;background:#ff7043;color:#fff;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🎤 발표 기록</a>
-<a id="seatFabBtn" href="teacher20.html" title="반별 멘토·멘티 자리배치" style="position:fixed;top:10px;right:118px;z-index:99999;background:#ffca28;color:#1a237e;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🪑 자리배치</a>
+<a id="seatFabBtn" href="teacher20.html?tab=presentation" title="발표 기록·주문 승인·멘토멘티 자리배치" style="position:fixed;top:10px;right:118px;z-index:99999;background:#ffca28;color:#1a237e;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🎤 발표·🪑 자리</a>
 <button id="qrFabBtn" type="button" title="QR코드 보기" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1a237e;color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">📱 QR코드</button>
 <div id="qrModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);">
@@ -481,12 +480,7 @@ document.getElementById('editBtn').addEventListener('click', ()=>{
 /* 🪑 자리배치(teacher20.html): 반을 골라 둔 상태면 그 반으로 바로 연다 */
 document.getElementById('seatFabBtn').addEventListener('click', e=>{
   const c = (document.getElementById('classNo').value || currentRoom || '').trim();
-  if(c){ e.preventDefault(); location.href = 'teacher20.html?classNo=' + encodeURIComponent(c); }
-});
-/* 🎤 발표 기록: 자리배치 화면의 발표 기록 탭으로 바로(반을 골라 둔 상태면 그 반) */
-document.getElementById('presFabBtn').addEventListener('click', e=>{
-  const c = (document.getElementById('classNo').value || currentRoom || '').trim();
-  e.preventDefault(); location.href = 'teacher20.html?' + (c ? 'classNo=' + encodeURIComponent(c) + '&' : '') + 'tab=presentation';
+  e.preventDefault(); location.href = 'teacher20.html?' + (c ? 'classNo=' + encodeURIComponent(c) + '&' : '') + 'tab=presentation'; // 발표 기록 탭이 먼저
 });
 </script>
 </body>
