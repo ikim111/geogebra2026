@@ -234,7 +234,6 @@
   .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
   /* 실에 매달기 */
   .golf.hangb{background:#f4f1ea;border-color:#d7ccc8;}
-  .golf.rec{max-width:340px;margin-top:4px;}
   .tools .sbtn:disabled{opacity:.5;cursor:default;}
   .conj.locked input[type=radio]{pointer-events:none;}
   /* 핀 기울기: 덜컹 */
@@ -250,6 +249,11 @@
   .geo-board .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
   svg.gcanvas{width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
   body.final-locked .gcanvas, body.final-locked .geo-board .toolbar{pointer-events:none;opacity:.85;}
+  .col1{max-width:520px;margin:0 auto;}
+  .col1 .tools{justify-content:center;margin:4px 0 8px;}
+  .col1 .tools .sbtn{font-size:16px;padding:9px 18px;font-weight:bold;}
+  .col1 .g-msg{text-align:center;}
+  .geo-board{width:auto;max-width:640px;margin:10px auto;}
 </style></style>
 </head>
 <body>
@@ -329,15 +333,13 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">2 실에 매달기</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>꼭짓점 하나를 들어 올리면, 추를 단 실은 어디를 지날까?</h2>
-    <div class="g-layout">
-      <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf hangb"></svg></div>
-      <div class="g-side">
-        <p class="hint">삼각형의 꼭짓점 하나에 <b>추를 단 실</b>을 함께 걸어 들어 올려요. 삼각형이 흔들리다 멈추면, 실(빨간 선)이 삼각형 위를 <b>똑바로 아래로</b> 지나가요.<br>세 꼭짓점을 차례로 들어 보고, 실이 지나간 자리를 기록판에서 살펴보세요.</p>
-        <div class="tools" id="tools2"><button class="sbtn" data-v="0">✋ A를 들기</button><button class="sbtn" data-v="1">✋ B를 들기</button><button class="sbtn" data-v="2">✋ C를 들기</button></div>
-        <div class="g-msg" id="gm2"></div>
-        <div class="lbl">📋 기록판 <span class="note" style="font-weight:normal;">(처음 놓인 모양으로 되돌려 실이 지난 자리를 그려 둬요 · 빨간 점은 내 예측)</span></div>
-        <svg id="rec2" viewBox="0 0 460 380" class="golf rec"></svg>
-      </div>
+    <p class="hint">삼각형의 꼭짓점 하나에 <b>추를 단 실</b>을 함께 걸어 들어 올려요. 삼각형이 흔들리다 멈추면, 실(빨간 선)이 삼각형 위를 <b>똑바로 아래로</b> 지나가요. 세 꼭짓점을 차례로 들어 보세요.</p>
+    <div class="col1">
+      <div class="tools" id="tools2"><button class="sbtn" data-v="0">✋ A를 들기</button><button class="sbtn" data-v="1">✋ B를 들기</button><button class="sbtn" data-v="2">✋ C를 들기</button></div>
+      <svg id="g2" viewBox="0 0 460 380" class="golf hangb"></svg>
+      <div class="g-msg" id="gm2"></div>
+      <div class="lbl">📋 기록판 <span class="note" style="font-weight:normal;">(처음 놓인 모양으로 되돌려 실이 지난 자리를 그려 둬요 · 빨간 점은 내 예측)</span></div>
+      <svg id="rec2" viewBox="0 0 460 380" class="golf"></svg>
     </div>
   </div>
   <div class="why" id="why2">세 꼭짓점을 모두 들어 보면 다음으로 넘어갈 수 있어요.</div>
@@ -387,16 +389,12 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">5 내 방법 만들기</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>핀 없이 균형점을 찾는 방법을 만들어 보자</h2>
-    <div class="g-layout">
-      <div class="g-board geo-board"><div class="toolbar" id="geoTools5"></div><svg class="gcanvas" id="geo5" viewBox="0 0 600 400"></svg></div>
-      <div class="g-side">
-        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자와 컴퍼스만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림의 G가 내가 찾은 균형점이에요. <b>작도 도구</b>(선분·중점·수직이등분선·각의 이등분선·길이 재기…)로 그려 보면서 어떤 점·선과 관계가 있을지 찾아보세요.</div>
-        <p class="note">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</p>
-        <textarea id="t5" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
-        <div class="share-row"><button class="share-btn" id="sh5" disabled>📤 답변 공유</button><span class="note" id="shn5"></span></div>
-        <div class="friends-box" id="fr5"></div>
-      </div>
-    </div>
+    <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자와 컴퍼스만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 아래 그림의 G가 내가 찾은 균형점이에요. <b>작도 도구</b>(선분·중점·수직이등분선·각의 이등분선·길이 재기…)로 그려 보면서 어떤 점·선과 관계가 있을지 찾아보세요.</div>
+    <div class="geo-board"><div class="toolbar" id="geoTools5"></div><svg class="gcanvas" id="geo5" viewBox="0 0 600 400"></svg></div>
+    <div class="lbl">✏️ 내 방법 <span class="note" style="font-weight:normal;">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</span></div>
+    <textarea id="t5" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
+    <div class="share-row"><button class="share-btn" id="sh5" disabled>📤 답변 공유</button><span class="note" id="shn5"></span></div>
+    <div class="friends-box" id="fr5"></div>
   </div>
   <div class="why" id="why5">내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
