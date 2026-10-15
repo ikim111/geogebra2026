@@ -212,6 +212,7 @@
   .np-rec{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fafbfc;font-size:14.5px;line-height:1.7;}
   .np-rec:empty{display:none;}
   .kctrl .chain-tag{background:#c62828;color:#fff;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:bold;}
+  .golf .hdrag{cursor:grab;}
 </style></style>
 </head>
 <body>
@@ -438,14 +439,12 @@
       <div class="question" style="font-size:16px;">흰 공과 노란 공을 각각 넣어 본 뒤 답해 보세요.</div>
       <div class="q5row"><span class="q5l">⑴ 흰 공이 들어갈 때 AB : AB′ = </span><input type="text" id="r8a" class="ratio" placeholder="예) 1:3" autocomplete="off"></div>
       <div class="q5row"><span class="q5l">⑵ 노란 공이 들어갈 때 AC : AC′ = </span><input type="text" id="r8b" class="ratio" placeholder="예) 1:3" autocomplete="off"></div>
-      <div class="q5row" style="align-items:flex-start;"><span class="q5l">⑶ 두 공을 한 번에 넣을 수 없는 까닭은?</span><span style="display:flex;flex-direction:column;gap:6px;">
-        <label><input type="radio" name="np8" value="ratio"> 두 비가 달라서 — 막대 B′C′이 BC와 평행하지 않아요</label>
-        <label><input type="radio" name="np8" value="far"> 홀이 공에서 너무 멀어서</label>
-        <label><input type="radio" name="np8" value="center"> 중심 A가 두 공 사이에 있지 않아서</label></span></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="q8Check" disabled>✔ 확인하기</button><span id="q8Msg" class="note"></span></div>
+      <div class="q5row" style="margin-top:12px;"><span class="q5l">⑶ 노란 홀 C′을 <b>끌어 옮겨서</b> 두 공이 <b>한 번에</b> 들어가게 만들어 보세요.</span></div>
+      <div id="mv8" style="font-size:14.5px;"></div>
     </div>
   </div>
-  <div class="why" id="why8">흰 공과 노란 공을 각각 홀에 넣어 보고, 물음에 답하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why8">흰 공과 노란 공을 각각 넣어 보고, ⑴⑵에 답한 뒤 노란 홀을 옮겨 두 공을 한 번에 넣으면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 9: 정리하기 ===================== -->
@@ -558,16 +557,17 @@ const PB = n => DUAL(n) ? HOLES[n].p : HOLES[n].b,  PC = n => DUAL(n) ? HOLES[n]
 /* 비율은 소수로(2026-10-15): 끌기·슬라이더·◀ ▶ 모두 0.1 간격. 1/3처럼 안 떨어지는 비율은 직접 입력 */
 function snapK(v){ return Math.round(v*10)/10; }
 const holeB = n => imgOf(OB(n), PB(n), HOLES[n].kb!=null ? HOLES[n].kb : HOLES[n].ans);
-const holeC = n => imgOf(OC(n), PC(n), HOLES[n].kc!=null ? HOLES[n].kc : HOLES[n].ans);
+const holeC = n => (HOLES[n].np && state.h[n].c2) ? state.h[n].c2 : imgOf(OC(n), PC(n), HOLES[n].kc!=null ? HOLES[n].kc : HOLES[n].ans);
+const canMoveC = () => state.h[8].inB && state.h[8].inC && state.q8.checked && state.q8.ok && !state.h[8].both && !finalLocked;   // 홀 7: ⑴⑵를 맞히면 노란 홀을 옮길 수 있다
 const HIT_TOL = 0.35;   // 홀인 판정 거리(단위)
 
 const state = {
   h: {1:newHole(), 2:newHole(), 3:newHole(3), 4:newHole(), 5:newHole(), 6:newHole(), 7:newHole(), 8:newHole()},
   q5: {rel:'', ra:'', rb:'', checked:false, ok:false}, q6: {rel:'', ra:'', rb:'', checked:false, ok:false}, q7: {rel:'', ra:'', rb:'', checked:false, ok:false},
-  q8: {why:'', ra:'', rb:'', checked:false, ok:false},
+  q8: {ra:'', rb:'', checked:false, ok:false},
   t9:'', shared:{9:false}, seen:{9:false}
 };
-function newHole(k){ return {k: k||1, o:null, strokes:0, done:false, tries:[], sols:[], inB:false, inC:false}; }
+function newHole(k){ return {k: k||1, o:null, strokes:0, done:false, tries:[], sols:[], inB:false, inC:false, c2:null, both:false}; }
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
 
@@ -605,7 +605,7 @@ const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
 function isDone(id){
   if(id>=1 && id<=4) return state.h[id].done;
   if(id>=5 && id<=7) return state.h[id].done && state['q'+id].checked && state['q'+id].ok;
-  if(id===8) return state.h[8].inB && state.h[8].inC && state.q8.checked && state.q8.ok;
+  if(id===8) return state.h[8].inB && state.h[8].inC && state.q8.checked && state.q8.ok && state.h[8].both;
   if(id===9) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbList().length>=1;
   return false;
 }
@@ -615,13 +615,13 @@ function valueOf(id){
   if(id>=5 && id<=7){ const h = state.h[id], q = state['q'+id]; if(!h.strokes && !q.checked) return '';
     return `${h.done?'⛳ 홀인':'아직'} · ${h.strokes}타 · k=${fmtK(h.k)} / 관계: ${({par:'평행',perp:'수직',none:'관계없음'})[q.rel]||'-'}, AB:AB′=${q.ra||'-'}, BC:B′C′=${q.rb||'-'}${q.checked?(q.ok?' ✓':' ✗'):''}`; }
   if(id===8){ const h = state.h[8], q = state.q8; if(!h.strokes && !q.checked) return '';
-    return `${h.strokes}타 · 흰 공 ${h.inB?'⛳':'-'} · 노란 공 ${h.inC?'⛳':'-'} / AB:AB′=${q.ra||'-'}, AC:AC′=${q.rb||'-'}, 까닭: ${({ratio:'두 비가 다름(평행 아님)',far:'너무 멂',center:'중심 위치'})[q.why]||'-'}${q.checked?(q.ok?' ✓':' ✗'):''}`; }
+    return `${h.strokes}타 · 흰 공 ${h.inB?'⛳':'-'} · 노란 공 ${h.inC?'⛳':'-'} / AB:AB′=${q.ra||'-'}, AC:AC′=${q.rb||'-'}${q.checked?(q.ok?' ✓':' ✗'):''} / 노란 홀 옮기기: ${h.both ? `⛳ 성공 (${h.c2 ? h.c2.join(',') : ''})` : h.c2 ? `옮김 (${h.c2.join(',')})` : '-'}`; }
   if(id===9) return state.t9.trim();
   return '';
 }
 function collectData(){
   const H = {};
-  [1,2,3,4,5,6,7,8].forEach(n=>{ const h = state.h[n]; H['h'+n] = {k:h.k, o:h.o, strokes:h.strokes, done:h.done, tries:h.tries.slice(-30), sols:h.sols.slice(), inB:!!h.inB, inC:!!h.inC}; });
+  [1,2,3,4,5,6,7,8].forEach(n=>{ const h = state.h[n]; H['h'+n] = {k:h.k, o:h.o, strokes:h.strokes, done:h.done, tries:h.tries.slice(-30), sols:h.sols.slice(), inB:!!h.inB, inC:!!h.inC, c2:h.c2||null, both:!!h.both}; });
   return Object.assign(H, { q5: Object.assign({}, state.q5), q6: Object.assign({}, state.q6), q7: Object.assign({}, state.q7), q8: Object.assign({}, state.q8), t9: state.t9, shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() });
 }
 /* 친구들에게 보여 줄 서술(이름 없이) — 내 답을 쓴 뒤에만 친구 답이 보인다 */
@@ -929,6 +929,7 @@ function renderHole(n){
     s += rayLine(A,B) + rayLine(A,C);
     s += seg(B2, C2, 'stroke="#2b2b2b" stroke-width="2" stroke-dasharray="7 5"');          // 홀 사이 막대 B′C′
     s += holeSVG2(B2, '#fff', 'B′') + holeSVG2(C2, '#fdd835', 'C′');
+    if(H.np && h.both) s += seg(B2, C2, 'stroke="#2e7d32" stroke-width="3"') + `<text x="${px((B2[0]+C2[0])/2)+8}" y="${py((B2[1]+C2[1])/2)-8}" font-size="14" font-weight="bold" fill="#2e7d32">B′C′ ∥ BC</text>`;
     s += seg(B, C, 'stroke="#1565c0" stroke-width="3"');                                      // 공 사이 막대 BC
     s += `<g id="img${n}b" class="ghost"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/></g><g id="img${n}c" class="ghost"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="8" fill="rgba(253,216,53,.45)" stroke="#8d6e00" stroke-width="1.5" stroke-dasharray="3 2"/></g>`;
     s += `<g class="drag" data-v="b"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="16" fill="transparent"/></g><g class="drag" data-v="c"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="16" fill="transparent"/></g>`;
@@ -942,6 +943,7 @@ function renderHole(n){
     s += ballSVG(p, 'ball', '공');
     if(H.pickO && !o) s += `<text x="${px(BW/2)}" y="${py(BH)-(-16)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 모눈의 교점을 눌러 중심을 놓으세요</text>`;
   }
+  if(H.np && canMoveC()){ const C2 = holeC(n); s += `<g class="hdrag"><circle cx="${px(C2[0])}" cy="${py(C2[1])}" r="18" fill="rgba(253,216,53,.25)" stroke="#f9a825" stroke-width="2" stroke-dasharray="4 3"/><text x="${px(C2[0])}" y="${py(C2[1])+32}" text-anchor="middle" font-size="12" font-weight="bold" fill="#e65100">끌어서 옮기기</text></g>`; }
   svg.innerHTML = s;
   svg.classList.toggle('pick', !!H.pickO);
 }
@@ -1019,6 +1021,9 @@ function landed(n, hit){
 function landedNP(n, hb, hc){
   const H = HOLES[n], h = state.h[n]; h.landed = true;
   const k = fmtK(h.k);
+  if(hb && hc){ h.both = true;
+    $('gm'+n).innerHTML = `<div class="hit">⛳ 두 공 모두 한 번에 홀인! (k = ${k})<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(h.k)}</b> — 두 비가 같아지니 <b>B′C′ ∥ BC</b>가 됐어요!</span></div>`;
+    renderCtrl(n); renderHole(n); renderNP(); paintQ8(); checkQ8({now:true}); return; }
   const msg = hb ? `<div class="hit" style="background:#f5f5f5;border-color:#bbb;color:#333;">⚪ 흰 공만 홀인! (k = ${k}) 그런데 노란 공은 ${dist(imgOf(H.a,H.c,h.k),H.a) < dist(holeC(n),H.a) ? '못 미쳤어요' : '지나쳤어요'}.</div>`
     : hc ? `<div class="hit" style="background:#fffde7;border-color:#fdd835;color:#5d4037;">🟡 노란 공만 홀인! (k = ${k}) 그런데 흰 공은 ${dist(imgOf(H.a,H.b,h.k),H.a) < dist(holeB(n),H.a) ? '못 미쳤어요' : '지나쳤어요'}.</div>`
     : `<span class="miss">🏌️ 둘 다 안 들어갔어요. 흰 공·노란 공 하나씩이라도 넣어 보세요.</span>`;
@@ -1033,18 +1038,27 @@ function paintQ8(){
   const q = state.q8, ok = state.h[8].inB && state.h[8].inC;
   $('q8box').style.opacity = ok ? '1' : '.5';
   $('q8box').classList.toggle('locked', q.checked && q.ok || finalLocked);
-  $('q8Check').disabled = !ok || !(q.why && parseRatio(q.ra)!=null && parseRatio(q.rb)!=null) || (q.checked && q.ok) || finalLocked;
+  $('q8Check').disabled = !ok || !(parseRatio(q.ra)!=null && parseRatio(q.rb)!=null) || (q.checked && q.ok) || finalLocked;
 }
-function q8Result(){ const q = state.q8; const okA = Math.abs(parseRatio(q.ra) - 1/2) < 1e-6, okB = Math.abs(parseRatio(q.rb) - 2/3) < 1e-6, okW = q.why==='ratio'; return {okA, okB, okW, ok: okA && okB && okW}; }
+function q8Result(){ const q = state.q8; const okA = Math.abs(parseRatio(q.ra) - 1/2) < 1e-6, okB = Math.abs(parseRatio(q.rb) - 2/3) < 1e-6, okW = true; return {okA, okB, okW, ok: okA && okB}; }
 function checkQ8(opts){
-  paintQ8(); const q = state.q8;
-  if(q.checked){ const r = q8Result(); $('q8Msg').innerHTML = r.ok ? '<span class="ok">✅ 맞았어요! AB:AB′ = 1:2인데 AC:AC′ = 2:3 — 두 비가 달라요. 한 번의 확대(같은 비율)로는 두 홀에 동시에 넣을 수 없고, 그래서 막대 B′C′도 BC와 평행하지 않아요.</span>'
-    : `<span class="bad">다시 생각해 보세요 — ${[!r.okA&&'⑴ AB:AB′', !r.okB&&'⑵ AC:AC′', !r.okW&&'⑶ 까닭'].filter(Boolean).join(', ')}</span>`; }
+  paintQ8(); renderHole(8); const q = state.q8;
+  if(q.checked){ const r = q8Result(); $('q8Msg').innerHTML = r.ok ? '<span class="ok">✅ 맞았어요! AB:AB′ = 1:2인데 AC:AC′ = 2:3 — 두 비가 달라서 같은 비율 한 번으로는 두 홀에 동시에 못 넣어요.</span>'
+    : `<span class="bad">다시 생각해 보세요 — ${[!r.okA&&'⑴ AB:AB′', !r.okB&&'⑵ AC:AC′'].filter(Boolean).join(', ')}</span>`; }
   const h = state.h[8];
-  setWhy(8, '✅ 완료! '+NEXT, !(h.inB && h.inC) ? `흰 공과 노란 공을 각각 홀에 넣어 보세요. (흰 공 ${h.inB?'⛳':'아직'} · 노란 공 ${h.inC?'⛳':'아직'})` : '세 물음에 답하고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.');
+  $('mv8').innerHTML = h.both ? '<span class="ok">⛳ 성공! 노란 홀을 옮겨 두 공을 한 번에 넣었어요 — 이제 B′C′ ∥ BC예요.</span>' : canMoveC() ? `<span class="note">판의 노란 홀 C′을 끌어 옮긴 뒤 「⛳ 치기」로 확인해 보세요.${h.c2 ? ` (지금 C′ (${h.c2[0]}, ${h.c2[1]}))` : ''}</span>` : '<span class="note">⑴⑵를 맞히면 노란 홀을 옮길 수 있어요.</span>';
+  setWhy(8, '✅ 완료! '+NEXT, !(h.inB && h.inC) ? `흰 공과 노란 공을 각각 홀에 넣어 보세요. (흰 공 ${h.inB?'⛳':'아직'} · 노란 공 ${h.inC?'⛳':'아직'})` : !(q.checked && q.ok) ? '⑴⑵에 답하고 「확인하기」를 누르세요.' : '노란 홀 C′을 옮겨서 두 공을 한 번에 넣으면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
-document.querySelectorAll('input[name=np8]').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked) return; state.q8.why = r.value; state.q8.checked = false; $('q8Msg').textContent=''; checkQ8(); }));
+/* 노란 홀 C′ 끌기(모눈 교점에 맞춤) */
+let hdrag8 = null;
+$('g8').addEventListener('pointerdown', ev=>{ if(!canMoveC() || ANIM[8] || !ev.target.closest('.hdrag')) return; hdrag8 = {moved:false}; $('g8').setPointerCapture(ev.pointerId); ev.preventDefault(); });
+$('g8').addEventListener('pointermove', ev=>{ if(!hdrag8) return; const q = svgPt($('g8'), ev), x = Math.min(BW, Math.max(0, Math.round(q[0]))), y = Math.min(BH, Math.max(0, Math.round(q[1])));
+  const H = HOLES[8], cur = holeC(8); if(cur[0]===x && cur[1]===y) return;
+  if([H.a, H.b, H.c, holeB(8)].some(p=> p[0]===x && p[1]===y)) return;
+  state.h[8].c2 = [x, y]; state.h[8].landed = false; hdrag8.moved = true; renderHole(8); });
+const endH8 = ()=>{ if(!hdrag8) return; if(hdrag8.moved){ $('gm8').innerHTML = ''; checkQ8({now:true}); } hdrag8 = null; };
+$('g8').addEventListener('pointerup', endH8); $('g8').addEventListener('pointercancel', endH8);
 ['a','b'].forEach(x=> $('r8'+x).addEventListener('input', ()=>{ if(finalLocked) return; state.q8['r'+x] = $('r8'+x).value; state.q8.checked = false; $('q8Msg').textContent=''; checkQ8(); }));
 $('q8Check').addEventListener('click', ()=>{ if(finalLocked) return; state.q8.checked = true; state.q8.ok = q8Result().ok; checkQ8({now:true}); });
 function renderSols(){ const h = state.h[4]; $('sol4').innerHTML = h.sols.length ? `<b>넣은 방법:</b> ${h.sols.map(s=>{ const [o,k] = s.split('|'); return `<span class="sol">중심 (${o}), k = ${k}</span>`; }).join('')}` : ''; }
@@ -1055,6 +1069,7 @@ function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.
   const svg = $('g'+n);
   svg.addEventListener('pointerdown', ev=>{
     if(finalLocked || ANIM[n] || HOLES[n].fixK) return;
+    if(ev.target.closest('.hdrag')) return;
     const el = ev.target.closest('.drag');
     const H = HOLES[n], o = TWO(n) ? OB(n) : oOf(n); if(!o) return;
     if(!el && H.pickO) return;   // 중심을 놓는 홀은 점선 공을 잡을 때만 비율을 바꾼다(빈 곳을 누르면 중심 놓기)
@@ -1140,7 +1155,7 @@ function renderRecap(){
   const row = n => { const h = state.h[n], o = TWO(n) ? OB(n) : oOf(n); return `${n===1?'연습':'홀 '+(n-1)}: ${h.done ? `⛳ k=${fmtK(h.k)}${HOLES[n].pickO&&o?` 중심(${o[0]},${o[1]})`:''}` : '-'}`; };
   const fnd = n => { const q = state['q'+n]; return q.checked && q.ok ? `BC ∥ B′C′, 비 ${['','','','','','1:2','2:1','2:1'][n]}` : '<span class="note">(아직)</span>'; };
   $('recap9').innerHTML = `<div class="rc"><b>⛳ 내 기록</b>${[1,2,3,4,5,6,7].map(row).join('<br>')}<br>홀 7: 흰 공 ${state.h[8].inB?'⛳':'-'} · 노란 공 ${state.h[8].inC?'⛳':'-'} (한 번에는 불가능)</div>`
-    + `<div class="rc"><b>🔺 공 두 개 홀에서 찾은 것</b>확대(홀 4): ${fnd(5)}<br>축소(홀 5): ${fnd(6)}<br>중심 두 개(홀 6): ${state.q7.checked && state.q7.ok ? 'O₁O₂ ∥ H₁H₂, 비 1:2' : '<span class="note">(아직)</span>'}<br>평행하지 않은 홀(홀 7): ${state.q8.checked && state.q8.ok ? 'AB:AB′ = 1:2 ≠ AC:AC′ = 2:3 → BC와 B′C′ 평행 아님' : '<span class="note">(아직)</span>'}</div>`;
+    + `<div class="rc"><b>🔺 공 두 개 홀에서 찾은 것</b>확대(홀 4): ${fnd(5)}<br>축소(홀 5): ${fnd(6)}<br>중심 두 개(홀 6): ${state.q7.checked && state.q7.ok ? 'O₁O₂ ∥ H₁H₂, 비 1:2' : '<span class="note">(아직)</span>'}<br>평행하지 않은 홀(홀 7): ${state.q8.checked && state.q8.ok ? 'AB:AB′ = 1:2 ≠ AC:AC′ = 2:3 → BC와 B′C′ 평행 아님' : '<span class="note">(아직)</span>'}${state.h[8].both ? ' → 노란 홀을 옮겨 비를 같게 하니 평행!' : ''}</div>`;
 }
 function renderSumFig(){
   const A=[40,150], B=[130,150], C=[95,80], k=2, B2=[A[0]+(B[0]-A[0])*k, A[1]+(B[1]-A[1])*k], C2=[A[0]+(C[0]-A[0])*k, A[1]+(C[1]-A[1])*k];
@@ -1199,12 +1214,13 @@ function restoreData(d){
     const o = arr(s.o).map(Number); h.o = (o.length===2 && o.every(Number.isInteger)) ? o : null;
     h.strokes = Number(s.strokes)||0; h.done = !!s.done;
     h.tries = arr(s.tries).filter(t=>t && typeof t==='object').map(t=>({k:Number(t.k), o: arr(t.o).length===2 ? arr(t.o).map(Number) : null, hit:!!t.hit, b:!!t.b, c:!!t.c}));
-    h.sols = arr(s.sols).map(String); h.inB = !!s.inB; h.inC = !!s.inC; });
+    h.sols = arr(s.sols).map(String); h.inB = !!s.inB; h.inC = !!s.inC;
+    const c2 = arr(s.c2).map(Number); h.c2 = (c2.length===2 && c2.every(Number.isInteger)) ? c2 : null; h.both = !!s.both; });
   [5,6,7].forEach(n=>{ const dq = d['q'+n]; if(dq) state['q'+n] = {rel: ['par','perp','none'].includes(dq.rel) ? dq.rel : '', ra: String(dq.ra||''), rb: String(dq.rb||''), checked: !!dq.checked, ok: !!dq.ok};
     const rr = document.querySelector(`input[name=rel${n}][value="${state['q'+n].rel}"]`); if(rr) rr.checked = true;
     $('r'+n+'a').value = state['q'+n].ra; $('r'+n+'b').value = state['q'+n].rb; });
-  if(d.q8) state.q8 = {why: ['ratio','far','center'].includes(d.q8.why) ? d.q8.why : '', ra: String(d.q8.ra||''), rb: String(d.q8.rb||''), checked: !!d.q8.checked, ok: !!d.q8.ok};
-  { const rr = document.querySelector(`input[name=np8][value="${state.q8.why}"]`); if(rr) rr.checked = true; $('r8a').value = state.q8.ra; $('r8b').value = state.q8.rb; }
+  if(d.q8){ state.q8 = {ra: String(d.q8.ra||''), rb: String(d.q8.rb||''), checked: !!d.q8.checked, ok: !!d.q8.ok}; if(state.q8.checked && state.q8.ok) state.q8.ok = q8Result().ok; }
+  $('r8a').value = state.q8.ra; $('r8b').value = state.q8.rb;
   state.t9 = d.t9 || (typeof d.t8==='string' ? d.t8 : '') || ''; $('t9').value = state.t9;   // 예전(정리=8번) 저장분도 읽기
   aifbRestore(d);
   const oldSum = !d.t9 && typeof d.t8==='string';

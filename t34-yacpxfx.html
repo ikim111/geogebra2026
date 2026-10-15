@@ -377,8 +377,8 @@ function activityDetailHTML(s, id){
   if(id>=1 && id<=4){ let s2 = holeLine(d['h'+id], id); if(id===4){ const sols = arrOf(d.h4 && d.h4.sols); if(sols.length) s2 += kv('넣은 방법', sols.map(x=>{ const [o,k]=String(x).split('|'); return `중심(${o}) k=${k}`; }).join(' / ')); } return s2; }
   if(id>=5 && id<=7){ const q = d['q'+id] || {}; let s2 = holeLine(d['h'+id], id); if(q.rel || q.ra || q.rb) s2 += kv(id===7?'⑴ O₁O₂와 H₁H₂':'⑴ BC와 B′C′', REL[q.rel]||'-') + kv(id===7?'⑵ PO₁:PH₁':'⑵ AB:AB′', q.ra||'-') + kv(id===7?'⑶ O₁O₂:H₁H₂':'⑶ BC:B′C′', q.rb||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); return s2; }
   if(id===8){ const h = d.h8 || {}, q = d.q8 || {}; if(!(Number(h.strokes)>0) && !q.checked) return '';
-    const W = {ratio:'두 비가 달라서(평행 아님)', far:'너무 멀어서', center:'중심 위치'};
-    return kv('타수', h.strokes||0) + kv('흰 공 / 노란 공', `${h.inB?'⛳':'-'} / ${h.inC?'⛳':'-'}`) + kv('⑴ AB:AB′', q.ra||'-') + kv('⑵ AC:AC′', q.rb||'-') + kv('⑶ 까닭', W[q.why]||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); }
+    const c2 = arrOf(h.c2);
+    return kv('타수', h.strokes||0) + kv('흰 공 / 노란 공', `${h.inB?'⛳':'-'} / ${h.inC?'⛳':'-'}`) + kv('⑴ AB:AB′', q.ra||'-') + kv('⑵ AC:AC′', q.rb||'-') + kv('⑴⑵ 확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직') + kv('⑶ 노란 홀 옮기기', h.both ? `⛳ 성공 (${c2.join(',')})` : c2.length===2 ? `옮기는 중 (${c2.join(',')})` : '-'); }
   if(id===9) return tb(d.t9 || d.t8) + aiFbHTML(d);
   return '';
 }
@@ -399,9 +399,8 @@ function taskAggregateHTML(id){
       inner += `<div style="margin-top:6px;">물음 확인한 학생 ${qs.length}명</div>` + (qs.length ? barsHTML(rows, qs.length) : ''); }
     return box(`${taskLabelOf(id)}`, inner);
   }
-  if(id===8){ const hs = ss.map(d=>d.h8).filter(h=>h && Number(h.strokes)>0); const both = hs.filter(h=>h.inB && h.inC).length; const qs = ss.map(d=>d.q8).filter(q=>q && q.checked);
-    const rows = [{label:'두 비가 달라서 (정답)', n: qs.filter(q=>q.why==='ratio').length, answer:true}, {label:'너무 멀어서', n: qs.filter(q=>q.why==='far').length}, {label:'중심 위치', n: qs.filter(q=>q.why==='center').length}];
-    return box(taskLabelOf(8), `두 공 각각 넣어 본 학생 <b>${both}명</b> / 시도 ${hs.length}명<div style="margin-top:6px;">물음 확인한 학생 ${qs.length}명</div>` + (qs.length ? barsHTML(rows, qs.length) : '')); }
+  if(id===8){ const hs = ss.map(d=>d.h8).filter(h=>h && Number(h.strokes)>0); const both = hs.filter(h=>h.inB && h.inC).length; const qs = ss.map(d=>d.q8).filter(q=>q && q.checked); const mv = hs.filter(h=>h.both).length;
+    return box(taskLabelOf(8), `두 공 각각 넣어 본 학생 <b>${both}명</b> / 시도 ${hs.length}명<div style="margin-top:6px;">⑴⑵ 정답 ${qs.filter(q=>q.ok).length}명 / 확인 ${qs.length}명 · 노란 홀 옮겨 한 번에 넣은 학생 <b>${mv}명</b></div>`); }
   return '';
 }
 /* 학생 화면 공개 버튼 (control/reveal/sum) */
