@@ -335,7 +335,7 @@ function undo(){ if(!undoStack.length) return; S = undoStack.pop(); pairSel = {m
 
 function loadRoom(r){
   room = r; undoStack = []; pairSel = {mentor:null, mentees:[]}; seatPick = null;
-  history.replaceState(null, '', '?classNo='+encodeURIComponent(room));
+  history.replaceState(null, '', '?classNo='+encodeURIComponent(room) + (new URLSearchParams(location.search).get('tab') ? '&tab='+encodeURIComponent(new URLSearchParams(location.search).get('tab')) : ''));
   $('homeLink').href = 'mgmt-9x3k7f2p.html?classNo='+encodeURIComponent(room);
   document.querySelectorAll('#classTabs button').forEach(b=> b.classList.toggle('on', b.dataset.c===room));
   if(ref) ref.off();
