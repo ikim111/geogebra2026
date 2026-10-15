@@ -299,7 +299,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 7</span>
+            <span id="previewLabel">1 / 9</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -316,7 +316,7 @@
 /* ============================================================
    student35.html과 짝이 되는 교사용 실시간 대시보드 (7.4 삼각형의 무게중심 생각열기 - 균형점 찾기).
    teacher21.html의 틀을 그대로 쓰고(build.py로 생성), 📋 수업 진행 도우미(3단계)와 정리 상자 공개 버튼을 넣었다.
-   ② 교사용 뷰: 화면 1은 반 전체 예측 점 분포, 화면 2는 세 실이 만나는 모양 답 막대, 화면 3은 삼각형별 균형점 찾은 인원·평균 횟수, 화면 5는 규칙 정답 막대.
+   ② 교사용 뷰: 화면 1 예측 분포, 화면 3 세 실이 만나는 모양, 화면 4 삼각형별 균형점 인원·평균 횟수, 화면 6 중점 정답, 화면 7 2:1 정답 막대.
    반드시 아래 두 가지를 student35.html과 동일하게 맞춰야 한다.
    1) FIREBASE_CONFIG
    2) ACTIVITY_SUFFIX
@@ -344,16 +344,16 @@ const CONFIG = {
 };
 
 const STAGES = [
-  {t:'예측·실에 매달기·핀', d:'어디를 받칠까 예측 → 꼭짓점을 들어 실이 지나는 자리 보기 → 핀으로 균형점 확인(삼각형 3개) (화면 1~3)', tasks:[1,2,3], max:3, reveal:{},
-   tip:'💬 예측 분포를 보여 주며 "왜 거기라고 생각했나요?" — 실 세 개가 한 점에서 만나면 "이 점이 정말 균형점일까?"로 핀 확인으로 넘어가요.'},
-  {t:'내 방법·정체 파헤치기', d:'작도 도구로 균형점 찾는 방법 만들기 → 선 긋기·길이 재기로 규칙 찾기 (화면 4~5)', tasks:[4,5], max:5, reveal:{},
+  {t:'예측·실에 매달기·핀', d:'예측 → 꼭짓점 들기(실 긋기) → 세 실의 관계 → 핀으로 균형점 확인 (화면 1~4)', tasks:[1,2,3,4], max:4, reveal:{},
+   tip:'💬 예측 분포를 보여 주며 "왜 거기라고 생각했나요?" — 세 실이 한 점에서 만나면 "이 점이 정말 균형점일까?"로 핀 확인으로 넘어가요.'},
+  {t:'내 방법·정체 파헤치기', d:'작도로 균형점 찾는 방법 → 중선(변의 중점) 찾기 → 2:1 찾기 (화면 5~7)', tasks:[5,6,7], max:7, reveal:{},
    tip:'💬 학생들 방법(중점 잇기, 각 이등분선, 수직이등분선…)을 모아 비교해요. 틀린 방법도 "왜 안 될까?"로 살려요.'},
-  {t:'항상 그럴까·정리', d:'모양을 바꿔도 2:1인지 → 이름 붙이기(중선·무게중심) → 정리 (화면 6~7, AI 피드백 통과 시 정리 상자 공개)', tasks:[6,7], max:null, reveal:{},
+  {t:'항상 그럴까·정리', d:'모양을 바꿔도 2:1인지 → 이름 붙이기(무게중심) → 정리 (화면 8~9, AI 피드백 통과 시 정리 상자 공개)', tasks:[8,9], max:null, reveal:{},
    tip:'💬 "왜 항상 2:1일까?" — 7.3 중점연결(DE∥AB, DE=½AB)로 학습하기➊ 증명으로 넘어가요.'}
 ];
 const TASK_LABELS = [
-  {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'실에 매달기'}, {id:3, key:'a3', label:'균형점 찾기'}, {id:4, key:'a4', label:'내 방법'},
-  {id:5, key:'a5', label:'정체 파헤치기'}, {id:6, key:'a6', label:'항상 그럴까'}, {id:7, key:'a7', label:'정리하기'}
+  {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'실에 매달기'}, {id:3, key:'a3', label:'세 실의 관계'}, {id:4, key:'a4', label:'핀으로 균형점'},
+  {id:5, key:'a5', label:'내 방법'}, {id:6, key:'a6', label:'중선 찾기'}, {id:7, key:'a7', label:'2:1 찾기'}, {id:8, key:'a8', label:'항상 그럴까'}, {id:9, key:'a9', label:'정리하기'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
@@ -362,44 +362,48 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 function fmtInt(n){ return Number(n).toLocaleString('ko-KR'); }
 const arrOf = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const TRI_NAMES = ['삼각형 ①','삼각형 ②','삼각형 ③'];
-const TRI1 = [[2,3],[19,4],[9,14]];
+const TRI1 = [[3,2],[19,8],[11,14]];
 const HANG_ANS = {one:'한 점에서 만남', three:'세 점에서 만남', none:'만나지 않음'};
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
+  const h = d.hang || {};
   if(id===1){ const p = arrOf(d.pred); return p.length===2 ? kv('예측한 점', `(${p[0]}, ${p[1]})`) : ''; }
-  if(id===2){ const h = d.hang || {}; const L = [0,1,2].filter(i=>arrOf(h.lines)[i]).map(i=>'ABC'[i]); if(!L.length) return '';
-    return kv('들어 본 꼭짓점', L.join(', ')) + kv('세 선', `${HANG_ANS[h.ans]||'-'} ${h.checked?(h.ok?'✅':'✗'):'(확인 전)'}`); }
-  if(id===3){ const b = arrOf(d.bal); if(!b.some(x=>x && x.tries)) return ''; return b.map((x,i)=> x ? kv(TRI_NAMES[i], `${x.done?'⚖️ 수평':'아직'} · ${x.tries||0}번${arrOf(x.pin).length===2?` · 핀 (${x.pin[0]}, ${x.pin[1]})`:''}`) : '').join(''); }
-  if(id===4){ const g = d.geo4 || {}; const ob = arrOf(g.objects); const cnt = {}; ob.forEach(o=>{ cnt[o.type] = (cnt[o.type]||0)+1; });
+  if(id===2){ const L = [0,1,2].filter(i=>arrOf(h.lines)[i]).map(i=>'ABC'[i]); return L.length ? kv('들어 본 꼭짓점', L.join(', ')) : ''; }
+  if(id===3){ return h.ans ? kv('세 선', `${HANG_ANS[h.ans]||'-'} ${h.checked?(h.ok?'✅':'✗'):'(확인 전)'}`) : ''; }
+  if(id===4){ const b = arrOf(d.bal); if(!b.some(x=>x && x.tries)) return ''; return b.map((x,i)=> x ? kv(TRI_NAMES[i], `${x.done?'⚖️ 수평':'아직'} · ${x.tries||0}번${arrOf(x.pin).length===2?` · 핀 (${x.pin[0]}, ${x.pin[1]})`:''}`) : '').join(''); }
+  if(id===5){ const g = d.geo5 || {}; const ob = arrOf(g.objects); const cnt = {}; ob.forEach(o=>{ cnt[o.type] = (cnt[o.type]||0)+1; });
     const NM = {segment:'선분', line:'직선', circleCP:'원', circleCR:'원', midpoint:'중점', perpBisector:'수직이등분선', angleBisector:'각의 이등분선', intersect:'교점', length:'길이', lengthTool:'길이'};
     const used = Object.keys(cnt).map(k=>`${NM[k]||k} ${cnt[k]}`).join(', ');
-    return (used ? kv('작도한 것', used) : '') + tb(d.t4); }
-  if(id===5){ const c = d.c5 || {}; if(!arrOf(d.lines5).some(Boolean) && !c.a) return '';
-    return kv('그은 선', [0,1,2].filter(i=>arrOf(d.lines5)[i]).map(i=>'ABC'[i]).join(', ')||'-') + kv('잰 길이', arrOf(d.meas5).join(', ')||'-') + kv('규칙', `${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[c.a]||'-'} / ${c.b||'-'} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`); }
-  if(id===6){ if(!d.moves6 && !d.t6) return ''; return kv('모양 바꾼 횟수', d.moves6||0) + tb(d.t6); }
-  if(id===7) return tb(d.t7) + aiFbHTML(d);
+    return (used ? kv('작도한 것', used) : '') + tb(d.t5); }
+  if(id===6){ const c = d.c6 || {}; if(!arrOf(d.lines6).some(Boolean) && !c.a) return '';
+    return kv('그은 선', [0,1,2].filter(i=>arrOf(d.lines6)[i]).map(i=>'ABC'[i]).join(', ')||'-') + kv('변의 어디?', `${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[c.a]||'-'} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`); }
+  if(id===7){ const c = d.c7 || {}; return c.b ? kv('비', `${c.b} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`) : ''; }
+  if(id===8){ if(!d.moves8 && !d.t8) return ''; return kv('모양 바꾼 횟수', d.moves8||0) + tb(d.t8); }
+  if(id===9) return tb(d.t9) + aiFbHTML(d);
   return '';
 }
 function renderAggregate(){ renderStages(); }
 function barsHTML(rows, total){ return rows.map(r=>`<div class="barrow${r.answer?' answer':''}"><span class="bl">${esc(r.label)}</span><span class="bt"><i style="width:${total?Math.round(r.n/total*100):0}%"></i></span><span class="bn">${r.n}명</span></div>`).join(''); }
 function predSVG(pts){
-  const U=14, px=x=>8+x*U, py=y=>262-y*U, g=[10,7];
+  const U=14, px=x=>8+x*U, py=y=>262-y*U, g=[11,8];
   return `<svg viewBox="0 0 320 270" width="320" height="270" style="background:#dff3d2;border-radius:8px;"><path d="M${TRI1.map(p=>px(p[0])+','+py(p[1])).join('L')}Z" fill="rgba(255,193,7,.55)" stroke="#8d6e00" stroke-width="2"/>${pts.map(p=>`<circle cx="${px(p[0])}" cy="${py(p[1])}" r="4" fill="rgba(21,101,192,.5)"/>`).join('')}<circle cx="${px(g[0])}" cy="${py(g[1])}" r="5" fill="none" stroke="#2e7d32" stroke-width="2" stroke-dasharray="3 2"/></svg>`;
 }
 function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
   if(id===1){ const pts = ss.map(d=>arrOf(d.pred)).filter(p=>p.length===2); return box(`반 전체 예측 (${pts.length}명) — 초록 점선 원이 실제 균형점`, pts.length ? predSVG(pts) : '아직 없어요.'); }
-  if(id===2){ const hs = ss.map(d=>d.hang).filter(h=>h && h.checked); const all3 = ss.filter(d=>d.hang && arrOf(d.hang.lines).filter(Boolean).length===3).length;
+  if(id===3){ const hs = ss.map(d=>d.hang).filter(h=>h && h.checked); const all3 = ss.filter(d=>d.hang && arrOf(d.hang.lines).filter(Boolean).length===3).length;
     const rows = [{label:'한 점에서 만남 (정답)', n: hs.filter(h=>h.ans==='one').length, answer:true}, {label:'세 점에서 만남', n: hs.filter(h=>h.ans==='three').length}, {label:'만나지 않음', n: hs.filter(h=>h.ans==='none').length}];
     return box(`세 꼭짓점을 다 들어 본 학생 ${all3}명 · 답한 학생 ${hs.length}명`, hs.length ? barsHTML(rows, hs.length) : '아직 없어요.'); }
-  if(id===3){ const rows = [0,1,2].map(i=>{ const bs = ss.map(d=>arrOf(d.bal)[i]).filter(b=>b && b.tries); const done = bs.filter(b=>b.done); return `<div class="kv">${TRI_NAMES[i]}: 수평 <b>${done.length}명</b> / 시도 ${bs.length}명${done.length?` · 평균 ${(done.reduce((a,b)=>a+(b.tries||0),0)/done.length).toFixed(1)}번`:''}</div>`; }).join('');
+  if(id===4){ const rows = [0,1,2].map(i=>{ const bs = ss.map(d=>arrOf(d.bal)[i]).filter(b=>b && b.tries); const done = bs.filter(b=>b.done); return `<div class="kv">${TRI_NAMES[i]}: 수평 <b>${done.length}명</b> / 시도 ${bs.length}명${done.length?` · 평균 ${(done.reduce((a,b)=>a+(b.tries||0),0)/done.length).toFixed(1)}번`:''}</div>`; }).join('');
     return box('균형점 찾기', rows); }
-  if(id===5){ const cs = ss.map(d=>d.c5).filter(c=>c && c.checked);
-    const rows = [{label:'중점 (정답)', n: cs.filter(c=>c.a==='mid').length, answer:true}, {label:'삼등분점', n: cs.filter(c=>c.a==='tri').length}, {label:'끝점/아무 점', n: cs.filter(c=>c.a==='end'||c.a==='any').length}, {label:'비 2:1 (정답)', n: cs.filter(c=>c.ok).length, answer:true}];
-    return box(`규칙 확인한 학생 ${cs.length}명`, cs.length ? barsHTML(rows, cs.length) : '아직 없어요.'); }
+  if(id===6){ const cs = ss.map(d=>d.c6).filter(c=>c && c.checked);
+    const rows = [{label:'중점 (정답)', n: cs.filter(c=>c.a==='mid').length, answer:true}, {label:'삼등분점', n: cs.filter(c=>c.a==='tri').length}, {label:'끝점/아무 점', n: cs.filter(c=>c.a==='end'||c.a==='any').length}];
+    return box(`확인한 학생 ${cs.length}명`, cs.length ? barsHTML(rows, cs.length) : '아직 없어요.'); }
+  if(id===7){ const cs = ss.map(d=>d.c7).filter(c=>c && c.checked); const ok = cs.filter(c=>c.ok).length;
+    return box(`확인한 학생 ${cs.length}명`, cs.length ? barsHTML([{label:'2:1 (정답)', n: ok, answer:true}, {label:'그 밖', n: cs.length-ok}], cs.length) : '아직 없어요.'); }
   return '';
 }
 /* 학생 화면 공개 버튼 (control/reveal/sum) */
