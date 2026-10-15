@@ -232,6 +232,24 @@
   .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
   .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
+  /* 실에 매달기 */
+  .golf.hangb{background:#f4f1ea;border-color:#d7ccc8;}
+  .golf.rec{max-width:340px;margin-top:4px;}
+  .tools .sbtn:disabled{opacity:.5;cursor:default;}
+  .conj.locked input[type=radio]{pointer-events:none;}
+  /* 핀 기울기: 덜컹 */
+  .shake{animation:shake .35s ease-in-out;}
+  @keyframes shake{0%,100%{transform:translate(0,0);}20%{transform:translate(-6px,2px);}40%{transform:translate(5px,-2px);}60%{transform:translate(-4px,1px);}80%{transform:translate(3px,0);}}
+  /* 작도판(student0의 GeoCanvas) */
+  .geo-board{width:600px;}
+  .geo-board .toolbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;}
+  .geo-board .toolbar button{font-size:12.5px;padding:6px 9px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#333;font-family:inherit;}
+  .geo-board .toolbar button.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .geo-board .toolbar button.reset{margin-left:auto;background:#fff3e0;border-color:#ffcc80;color:#e65100;}
+  .geo-board .toolbar button.undo{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+  .geo-board .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
+  svg.gcanvas{width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
+  body.final-locked .gcanvas, body.final-locked .geo-board .toolbar{pointer-events:none;opacity:.85;}
 </style></style>
 </head>
 <body>
@@ -277,7 +295,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 6</div>
+        <div class="progress-text" id="progressText">완료 0 / 7</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -306,103 +324,127 @@
   <div class="why" id="why1">예측한 점을 찍으면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 2: 균형 시뮬레이터 ===================== -->
+<!-- ===================== 화면 2: 실에 매달기 ===================== -->
 <section class="task activity" id="task-a2" data-task-id="2">
   <div class="card">
-    <div class="act-head"><span class="act-tag">2 균형점 찾기</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <div class="act-head"><span class="act-tag">2 실에 매달기</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>꼭짓점 하나를 들어 올리면, 추를 단 실은 어디를 지날까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf hangb"></svg></div>
+      <div class="g-side">
+        <p class="hint">삼각형의 꼭짓점 하나에 <b>추를 단 실</b>을 함께 걸어 들어 올려요. 삼각형이 흔들리다 멈추면, 실(빨간 선)이 삼각형 위를 <b>똑바로 아래로</b> 지나가요.<br>세 꼭짓점을 차례로 들어 보고, 실이 지나간 자리를 기록판에서 살펴보세요.</p>
+        <div class="tools" id="tools2"><button class="sbtn" data-v="0">✋ A를 들기</button><button class="sbtn" data-v="1">✋ B를 들기</button><button class="sbtn" data-v="2">✋ C를 들기</button></div>
+        <div class="g-msg" id="gm2"></div>
+        <div class="lbl">📋 기록판 <span class="note" style="font-weight:normal;">(처음 놓인 모양으로 되돌려 실이 지난 자리를 그려 둬요 · 빨간 점은 내 예측)</span></div>
+        <svg id="rec2" viewBox="0 0 460 380" class="golf rec"></svg>
+        <div class="conj" id="conj2" style="display:none;">
+          <div class="question" style="font-size:15.5px;">세 번 기록한 실의 자리(세 선)는 어떻게 만나나요?</div>
+          <div class="q5row" id="hangOpts"><label><input type="radio" name="hang2" value="one"> 한 점에서 만난다</label><label><input type="radio" name="hang2" value="three"> 세 점에서 만난다(작은 삼각형이 생긴다)</label><label><input type="radio" name="hang2" value="none"> 만나지 않는다</label></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="h2Check" disabled>✔ 확인하기</button><span id="h2Msg" class="note"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why2">세 꼭짓점을 모두 들어 보고 물음에 답하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 3: 균형 시뮬레이터 ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">3 균형점 찾기</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>핀 위에 올려서 균형 잡기</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf pick"></svg></div>
+      <div class="g-board"><svg id="g3" viewBox="0 0 460 380" class="golf pick"></svg></div>
       <div class="g-side">
         <p class="hint">삼각형을 <b>📍 핀</b> 위에 올려요. 핀이 균형점에서 벗어나면 무거운 쪽으로 <b>기울어져요</b>. 핀 자리를 눌러 옮겨 가며 <b>수평</b>이 될 때까지 찾아보세요.<br>삼각형 세 개에서 모두 균형점을 찾으면 완료예요.</p>
         <div class="ttabs" id="ttabs"></div>
-        <div class="kctrl"><div class="krow"><span class="orow" id="pin2"></span><span class="strokes" id="try2"></span></div>
-          <div class="krow" style="margin-top:8px;"><button class="shoot" id="go2" disabled>📍 올려 보기</button><div class="level" id="lvl2"><div class="bub" id="bub2"></div></div></div></div>
-        <div class="g-msg" id="gm2"></div>
+        <div class="kctrl"><div class="krow"><span class="orow" id="pin3"></span><span class="strokes" id="try3"></span></div>
+          <div class="krow" style="margin-top:8px;"><button class="shoot" id="go3" disabled>📍 올려 보기</button><div class="level" id="lvl3"><div class="bub" id="bub3"></div></div></div></div>
+        <div class="g-msg" id="gm3"></div>
       </div>
     </div>
   </div>
-  <div class="why" id="why2">삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why3">삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 3: 내 방법 만들기 ===================== -->
-<section class="task activity" id="task-a3" data-task-id="3">
-  <div class="card">
-    <div class="act-head"><span class="act-tag">3 내 방법 만들기</span><span class="badge pending" id="badge-a3">미완료</span></div>
-    <h2>핀 없이 균형점을 찾는 방법을 만들어 보자</h2>
-    <div class="g-layout">
-      <div class="g-board"><div class="tools" id="tools3"><button class="sbtn on" data-t="pen">✏️ 자유롭게 그리기</button><button class="sbtn" data-t="line">📏 직선 (두 점 누르기)</button><button class="sbtn" id="undo3">↶ 되돌리기</button><button class="sbtn" id="clr3">🗑 지우기</button></div><svg id="g3" viewBox="0 0 460 380" class="golf"></svg></div>
-      <div class="g-side">
-        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림에 내가 찾은 균형점이 표시되어 있어요. 그림 위에 <b>선을 그려 보면서</b> 어떤 점·선과 관계가 있을지 찾아보세요.</div>
-        <p class="note">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</p>
-        <textarea id="t3" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
-        <div class="share-row"><button class="share-btn" id="sh3" disabled>📤 답변 공유</button><span class="note" id="shn3"></span></div>
-        <div class="friends-box" id="fr3"></div>
-      </div>
-    </div>
-  </div>
-  <div class="why" id="why3">내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
-</section>
-
-<!-- ===================== 화면 4: 정체 파헤치기 ===================== -->
+<!-- ===================== 화면 4: 내 방법 만들기 ===================== -->
 <section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
-    <div class="act-head"><span class="act-tag">4 정체 파헤치기</span><span class="badge pending" id="badge-a4">미완료</span></div>
-    <h2>균형점 G의 정체는?</h2>
+    <div class="act-head"><span class="act-tag">4 내 방법 만들기</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>핀 없이 균형점을 찾는 방법을 만들어 보자</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g4" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-board geo-board"><div class="toolbar" id="geoTools4"></div><svg class="gcanvas" id="geo4" viewBox="0 0 600 400"></svg></div>
       <div class="g-side">
-        <p class="hint">도구가 두 개 있어요. <b>① 선 긋기</b>: 꼭짓점에서 G를 지나 마주 보는 변까지 선을 그어요. <b>② 길이 재기</b>: 그림의 선분을 <b>누르면</b> 길이가 보여요.<br>선을 긋고 여러 선분의 길이를 재면서 규칙을 찾아보세요.</p>
-        <div class="tools" id="tools4">
-          <button class="sbtn" data-v="0">A에서 선 긋기</button><button class="sbtn" data-v="1">B에서 선 긋기</button><button class="sbtn" data-v="2">C에서 선 긋기</button>
-          <button class="sbtn" id="clr4">↺ 잰 길이 지우기</button>
-        </div>
-        <div class="meas" id="meas4"></div>
-        <div class="conj" id="conj4">
-          <div class="question" style="font-size:15.5px;">찾은 규칙을 완성해 보세요.</div>
-          <div class="q5row">균형점 G는 꼭짓점과, 마주 보는 변의
-            <select id="c4a"><option value="">선택</option><option value="mid">중점</option><option value="tri">삼등분점</option><option value="end">끝점</option><option value="any">아무 점</option></select>을 이은 선 위에 있다.</div>
-          <div class="q5row">그 선은 G에 의해 꼭짓점 쪽부터 <input type="text" id="c4b" class="ratio" placeholder="예) 3:1" autocomplete="off"> 로 나누어진다.</div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="c4Check" disabled>✔ 확인하기</button><span id="c4Msg" class="note"></span></div>
-        </div>
+        <div class="question" style="font-size:16px;">핀에 올려 보지 않고, <b>자와 컴퍼스만 가지고</b> 삼각형의 균형점을 찾는 방법을 만들어 보세요. 왼쪽 그림의 G가 내가 찾은 균형점이에요. <b>작도 도구</b>(선분·중점·수직이등분선·각의 이등분선·길이 재기…)로 그려 보면서 어떤 점·선과 관계가 있을지 찾아보세요.</div>
+        <p class="note">정답이 아니어도 괜찮아요. "꼭짓점에서 ~를 긋는다", "~의 중점을 잇는다"처럼 순서대로 써 보세요.</p>
+        <textarea id="t4" placeholder="① 먼저 ~를 긋고 ② 그다음 ~"></textarea>
+        <div class="share-row"><button class="share-btn" id="sh4" disabled>📤 답변 공유</button><span class="note" id="shn4"></span></div>
+        <div class="friends-box" id="fr4"></div>
       </div>
     </div>
   </div>
-  <div class="why" id="why4">선을 긋고, 길이를 두 개 이상 잰 뒤, 규칙을 맞히면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why4">내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 5: 항상 그럴까? ===================== -->
+<!-- ===================== 화면 5: 정체 파헤치기 ===================== -->
 <section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
-    <div class="act-head"><span class="act-tag">5 항상 그럴까?</span><span class="badge pending" id="badge-a5">미완료</span></div>
-    <h2>삼각형 모양을 바꿔도 그럴까?</h2>
+    <div class="act-head"><span class="act-tag">5 정체 파헤치기</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <h2>균형점 G의 정체는?</h2>
     <div class="g-layout">
       <div class="g-board"><svg id="g5" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint"><b>꼭짓점 A, B, C를 끌어서</b> 삼각형 모양을 바꿔 보세요. 균형점 G와 꼭짓점에서 G를 지나는 세 선이 함께 움직여요. 길이 비도 같이 보여요.<br><span class="note">(세 번 이상 바꿔 보세요)</span></p>
-        <div class="meas" id="meas5"></div>
-        <div class="name-box" id="name5" style="display:none;">
-          <b>이름 붙이기</b> 꼭짓점과 마주 보는 변의 중점을 이은 선분을 <b>중선</b>, 세 중선이 만나는 점(균형점)을 <b>무게중심</b>이라고 해요.
+        <p class="hint">도구가 두 개 있어요. <b>① 선 긋기</b>: 꼭짓점에서 G를 지나 마주 보는 변까지 선을 그어요. <b>② 길이 재기</b>: 그림의 선분을 <b>누르면</b> 길이가 보여요.<br>선을 긋고 여러 선분의 길이를 재면서 규칙을 찾아보세요.</p>
+        <div class="tools" id="tools5">
+          <button class="sbtn" data-v="0">A에서 선 긋기</button><button class="sbtn" data-v="1">B에서 선 긋기</button><button class="sbtn" data-v="2">C에서 선 긋기</button>
+          <button class="sbtn" id="clr5">↺ 잰 길이 지우기</button>
         </div>
-        <div class="question" style="font-size:15.5px;margin-top:10px;">💭 모양을 어떻게 바꿔도 비가 항상 같은 값이에요. <b>왜 항상 그럴까요?</b> 내 생각을 써 보세요. (7.3에서 배운 것을 떠올려 봐요)</div>
-        <textarea id="t5" placeholder="두 변의 중점을 이은 선분은 ~ 그래서 ~"></textarea>
+        <div class="meas" id="meas5"></div>
+        <div class="conj" id="conj5">
+          <div class="question" style="font-size:15.5px;">찾은 규칙을 완성해 보세요.</div>
+          <div class="q5row">균형점 G는 꼭짓점과, 마주 보는 변의
+            <select id="c5a"><option value="">선택</option><option value="mid">중점</option><option value="tri">삼등분점</option><option value="end">끝점</option><option value="any">아무 점</option></select>을 이은 선 위에 있다.</div>
+          <div class="q5row">그 선은 G에 의해 꼭짓점 쪽부터 <input type="text" id="c5b" class="ratio" placeholder="예) 3:1" autocomplete="off"> 로 나누어진다.</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="c5Check" disabled>✔ 확인하기</button><span id="c5Msg" class="note"></span></div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="why" id="why5">삼각형을 세 번 이상 바꿔 보고, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why5">선을 긋고, 길이를 두 개 이상 잰 뒤, 규칙을 맞히면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 6: 정리하기 ===================== -->
+<!-- ===================== 화면 6: 항상 그럴까? ===================== -->
 <section class="task activity" id="task-a6" data-task-id="6">
   <div class="card">
-    <div class="act-head"><span class="act-tag">6 정리하기</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <div class="act-head"><span class="act-tag">6 항상 그럴까?</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <h2>삼각형 모양을 바꿔도 그럴까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g6" viewBox="0 0 460 380" class="golf"></svg></div>
+      <div class="g-side">
+        <p class="hint"><b>꼭짓점 A, B, C를 끌어서</b> 삼각형 모양을 바꿔 보세요. 균형점 G와 꼭짓점에서 G를 지나는 세 선이 함께 움직여요. 길이 비도 같이 보여요.<br><span class="note">(세 번 이상 바꿔 보세요)</span></p>
+        <div class="meas" id="meas6"></div>
+        <div class="name-box" id="name6" style="display:none;">
+          <b>이름 붙이기</b> 꼭짓점과 마주 보는 변의 중점을 이은 선분을 <b>중선</b>, 세 중선이 만나는 점(균형점)을 <b>무게중심</b>이라고 해요.
+        </div>
+        <div class="question" style="font-size:15.5px;margin-top:10px;">💭 모양을 어떻게 바꿔도 비가 항상 같은 값이에요. <b>왜 항상 그럴까요?</b> 내 생각을 써 보세요. (7.3에서 배운 것을 떠올려 봐요)</div>
+        <textarea id="t6" placeholder="두 변의 중점을 이은 선분은 ~ 그래서 ~"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why6">삼각형을 세 번 이상 바꿔 보고, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 7: 정리하기 ===================== -->
+<section class="task activity" id="task-a7" data-task-id="7">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">7 정리하기</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>정리하기</h2>
-    <div class="recap" id="recap6"></div>
+    <div class="recap" id="recap7"></div>
     <div class="big-question">오늘 찾은 삼각형의 균형점(무게중심)에 대해 알게 된 것을 내 말로 정리해 보세요. (어떤 선 위에 있는지, 그 선을 어떤 비로 나누는지)</div>
-    <textarea id="t6" placeholder="삼각형의 무게중심은 ~"></textarea>
-    <div class="aifb" id="aifb35"></div>
-    <div class="share-row"><button class="share-btn" id="sh6" disabled>📤 답변 공유</button><span class="note" id="shn6"></span></div>
-    <div class="friends-box" id="fr6"></div>
+    <textarea id="t7" placeholder="삼각형의 무게중심은 ~"></textarea>
+    <div class="aifb" id="aifb36"></div>
+    <div class="share-row"><button class="share-btn" id="sh7" disabled>📤 답변 공유</button><span class="note" id="shn7"></span></div>
+    <div class="friends-box" id="fr7"></div>
     <div class="sum-box" id="sumBox">
       <div class="sum-wait" id="sumWait">🔒 정리 상자는 AI 피드백에서 <b>보완할 점이 없으면</b> 열려요. 피드백을 보고 내 글을 고쳐 다시 받아 보세요.</div>
       <div class="sum-body" id="sumBody" style="display:none;">
@@ -414,7 +456,7 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why6">내 생각을 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why7">내 생각을 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -440,10 +482,11 @@
    교과서식 "중선을 긋고 2:1을 확인하라" 대신, '중선'·'무게중심'·'2:1'을 끝까지 숨기고 학생이 균형점을 찾아 정체를 파헤치게 했다.
    (참고: TI Balancing Act — 균형 → 중선 → 성질 순서, Kasmer & Kim 2011 예측하기, Kapur 2014 생산적 실패)
    student21.html과 같은 틀(게이트·단원 잠금·실시간 저장·일시정지·공지·속도조절·수업 종료·제출/백업·미리보기)을
-   scratchpad의 build.py로 가져오고 화면 6개를 넣었다.
-   ① 예측(삼각형 안의 점 찍기, 친구들 예측 점 공유) ② 균형 시뮬레이터(핀을 놓고 올리면 무게중심 쪽으로 기울어짐, 삼각형 3개)
-   ③ 내 방법 만들기(서술 공유) ④ 정체 파헤치기(꼭짓점→G 선 긋기, 선분 눌러 길이 재기 → 규칙 빈칸: 중점, 2:1)
-   ⑤ 항상 그럴까(꼭짓점 끌기, 비 2:1 유지 확인, 이름 붙이기, 왜 그럴까 서술) ⑥ 정리(공유 + 선생님이 공개하는 정리 상자)
+   scratchpad의 build.py로 가져오고 화면 7개를 넣었다.
+   ① 예측(삼각형 안의 점 찍기, 친구들 예측 점 공유) ② 실에 매달기(꼭짓점을 들면 흔들리다 멈추고, 추를 단 수직 실이 지난 자리를 기록 → 세 선이 한 점에서 만나는지)
+   ③ 핀으로 확인(핀을 놓고 올리면 무게중심 쪽으로 과감하게 기울어짐, 정수 좌표, 삼각형 3개) ④ 내 방법 만들기(student0의 작도 도구 GeoCanvas + 서술 공유)
+   ⑤ 정체 파헤치기(꼭짓점→G 선 긋기, 선분 눌러 길이 재기 → 규칙 빈칸: 중점, 2:1)
+   ⑥ 항상 그럴까(꼭짓점 끌기, 비 2:1 유지 확인, 이름 붙이기, 왜 그럴까 서술) ⑦ 정리(공유 + AI 피드백에서 보완할 점이 없으면 정리 상자 공개)
    단원 번호 35. 방: rooms/{반}__sim35. 공유: share/{pred|method|sum}/{학생키}. 공개: control/reveal/sum
    ACTIVITY_SUFFIX는 teacher35.html과 반드시 동일해야 한다.
    ============================================================ */
@@ -463,33 +506,672 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__sim35'; // teacher35.html과 반드시 동일해야 함
 const UNIT_LABEL = '7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기';
 const UNIT_NO = 35;
+/* ---------- 작도 엔진(student0.html의 GeoCanvas를 그대로 가져옴). 이름 충돌을 막으려고 GEO 안에 감쌌다 ---------- */
+const GEO = (()=>{
+const GRID = 40;
+const TOUCH_TOL = 30; // 모바일에서 점 주변을 터치해도 잡히도록 넉넉하게 잡은 히트 반경(SVG 좌표계 기준)
+let _uid = 0;
+const uid = () => 'o' + (_uid++);
+
+/* ---------- 기하 수학 유틸 ---------- */
+const sub = (a,b) => ({x:a.x-b.x, y:a.y-b.y});
+const add = (a,b) => ({x:a.x+b.x, y:a.y+b.y});
+const scl = (a,s) => ({x:a.x*s, y:a.y*s});
+const norm = a => { const m = Math.hypot(a.x,a.y)||1; return {x:a.x/m,y:a.y/m}; };
+const perp = a => ({x:-a.y, y:a.x});
+const mid = (a,b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const samePt = (a,b,tol=5) => a && b && dist(a,b) < tol;
+
+function distToLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
+  return Math.abs((p.x-a.x)*dy - (p.y-a.y)*dx)/len;
+}
+function distToSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+  let t = len2===0?0:((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t = Math.max(0,Math.min(1,t));
+  return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
+}
+function lineLineIntersection(a1,b1,a2,b2){
+  const x1=a1.x,y1=a1.y,x2=b1.x,y2=b1.y,x3=a2.x,y3=a2.y,x4=b2.x,y4=b2.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-9) return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+}
+function circleLineIntersection(center,r,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const fx=a.x-center.x, fy=a.y-center.y;
+  const A=dx*dx+dy*dy, B=2*(fx*dx+fy*dy), C=fx*fx+fy*fy-r*r;
+  let disc=B*B-4*A*C;
+  if(disc<0) return [];
+  disc=Math.sqrt(disc);
+  const t1=(-B-disc)/(2*A), t2=(-B+disc)/(2*A);
+  const pts=[];
+  [t1,t2].forEach(t=>pts.push({x:a.x+t*dx, y:a.y+t*dy}));
+  return pts;
+}
+function circleCircleIntersection(c1,r1,c2,r2){
+  const d=dist(c1,c2);
+  if(d>r1+r2||d<Math.abs(r1-r2)||d===0) return [];
+  const a=(r1*r1-r2*r2+d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0,r1*r1-a*a));
+  const xm=c1.x+a*(c2.x-c1.x)/d, ym=c1.y+a*(c2.y-c1.y)/d;
+  return [
+    {x:xm+h*(c2.y-c1.y)/d, y:ym-h*(c2.x-c1.x)/d},
+    {x:xm-h*(c2.y-c1.y)/d, y:ym+h*(c2.x-c1.x)/d}
+  ];
+}
+function projectOntoLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoCircle(p,center,r){
+  const d=norm(sub(p,center));
+  return {x:center.x+d.x*r, y:center.y+d.y*r};
+}
+function angleDeg(a,b,c){
+  const v1=sub(a,b), v2=sub(c,b);
+  const mag=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y) || 1;
+  let cos=(v1.x*v2.x+v1.y*v2.y)/mag;
+  cos=Math.max(-1,Math.min(1,cos));
+  return Math.acos(cos)*180/Math.PI;
+}
+function bisectorDir(a,b,c){
+  const u=norm(sub(a,b)), v=norm(sub(c,b));
+  let d=norm(add(u,v));
+  if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
+  return d;
+}
+function arcInfo(b,a,c,r){
+  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+  let diff=a2-a1;
+  while(diff<=-Math.PI) diff+=2*Math.PI;
+  while(diff>Math.PI) diff-=2*Math.PI;
+  const end=a1+diff;
+  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
+  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
+  const sweep = diff>0?1:0;
+  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, deg: Math.abs(diff)*180/Math.PI, mid:{x:b.x+(r+16)*Math.cos(a1+diff/2), y:b.y+(r+16)*Math.sin(a1+diff/2)}};
+}
+const ok = msg => ({ok:true,msg});
+const fail = msg => ({ok:false,msg});
+
+/* ---------- 도구 메타 ---------- */
+const TOOL_META = {
+  move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
+  circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'},
+  intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  angleInput:{label:'각도 입력 작도'}
+};
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
+const TOOL_HELP = {
+  lengthTool: '"길이 재기" 도구를 클릭한 뒤, 선분을 바로 클릭하거나 점 두 개를 순서대로 클릭하세요. 화면에 길이 값이 나타나요.',
+  angleTool: '"각도 재기" 도구를 클릭한 뒤, 점 세 개를 순서대로 클릭하세요(가운데 점이 꼭짓점). 화면에 각도 값이 나타나요.',
+  perp: '"수선" 도구를 클릭한 뒤, 기준이 되는 직선/선분/반직선을 먼저 클릭하고, 그다음 그 직선에 수직인 선이 지나갈 점을 클릭하세요.'
+};
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp'];
+
+/* ---------- GeoCanvas 클래스 ---------- */
+class GeoCanvas{
+  constructor(svgEl, cfg, onChange){
+    this.svg = svgEl;
+    this.width = cfg.width || 600;
+    this.height = cfg.height || 400;
+    this.points = [];
+    this.objects = [];
+    this.history = [];
+    this.tool = 'move';
+    this.pending = [];
+    this.pendingObjs = [];
+    this.dragging = null;
+    this.redoStack = [];
+    this.onChange = onChange || (()=>{});
+    (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
+    (cfg.presetObjects||[]).forEach(o => {
+      const resolved = Object.assign({}, o);
+      ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{
+        if(resolved[k] && typeof resolved[k]==='string'){ const pt=this.points.find(p=>p.label===resolved[k]); if(pt) resolved[k]=pt.id; }
+      });
+      if(resolved.ids) resolved.ids = resolved.ids.map(l=>{ const pt=this.points.find(p=>p.label===l); return pt?pt.id:l; });
+      const obj = Object.assign({id:uid(), locked:true}, resolved);
+      this.objects.push(obj);
+    });
+    this._wire();
+    this.render();
+  }
+  addPoint(x,y,opts={}){
+    const used = new Set(this.points.map(p=>p.label));
+    const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
+    const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, constraint: opts.constraint||null, computed: opts.computed||null};
+    this.points.push(p);
+    if(!opts.locked || opts.trackHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
+    return p;
+  }
+  // computed: {kind:'intersection', o1, o2} 형태의 점은 매 render()마다 두 도형(o1,o2)의 교점을
+  // 다시 계산해서 위치를 갱신한다. 두 점이 만나는 경우(원-원, 원-직선)에는 직전 위치에 더 가까운
+  // 쪽을 골라서, 도형을 움직여도 엉뚱한 교점으로 순간이동하지 않게 한다.
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed || p.computed.kind!=='intersection') return;
+      const o1=this.objects.find(o=>o.id===p.computed.o1), o2=this.objects.find(o=>o.id===p.computed.o2);
+      if(!o1||!o2) return;
+      const pts=this.computeIntersections(o1,o2);
+      if(!pts.length) return; // 교점이 사라지면 마지막 위치를 그대로 유지
+      let best=pts[0], bd=dist(pts[0],p);
+      pts.forEach(cand=>{ const d=dist(cand,p); if(d<bd){bd=d;best=cand;} });
+      p.x=best.x; p.y=best.y;
+    });
+  }
+  addObject(o){
+    const obj = Object.assign({id:uid(), locked:false}, o);
+    this.objects.push(obj);
+    this.history.push({kind:'object', id:obj.id});
+    this.redoStack=[];
+    return obj;
+  }
+  resolvePoint(id){ return this.points.find(p=>p.id===id); }
+  byLabel(label){ return this.points.find(p=>p.label===label); }
+  pickPoint(pt){ return this.findPointNear(pt,TOUCH_TOL) || this.addPoint(pt.x,pt.y); }
+  findPointNear(pt,tol){
+    let best=null,bd=tol;
+    for(const p of this.points){ const d=dist(p,pt); if(d<bd){bd=d;best=p;} }
+    return best;
+  }
+  getObjGeom(o){
+    switch(o.type){
+      case 'line': case 'segment': case 'perpBisector':
+        return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'circleCP': return {center:this.resolvePoint(o.center), through:this.resolvePoint(o.through)};
+      case 'circleCR': return {center:this.resolvePoint(o.center), r1:this.resolvePoint(o.r1), r2:this.resolvePoint(o.r2)};
+      case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
+      case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
+      case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'perp': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
+    }
+  }
+  asLine(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
+    if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
+    if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
+    if(o.type==='perp'){ const d=perp(norm(sub(g.refP2,g.refP1))); return [g.p, add(g.p,d)]; }
+    return null;
+  }
+  asCircle(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='circleCP') return {center:g.center, r: dist(g.center,g.through)};
+    if(o.type==='circleCR') return {center:g.center, r: dist(g.r1,g.r2)};
+    return null;
+  }
+  _projectOntoObject(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(c) return projectOntoCircle(pt,c.center,c.r);
+    if(l) return o.type==='segment' ? projectOntoSegment(pt,l[0],l[1]) : projectOntoLine(pt,l[0],l[1]);
+    return pt;
+  }
+  objDistToPoint(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(l){ return o.type==='segment' ? distToSegment(pt,l[0],l[1]) : distToLine(pt,l[0],l[1]); }
+    if(c){ return Math.abs(dist(c.center,pt)-c.r); }
+    return Infinity;
+  }
+  findObjectNear(pt,tol){
+    let best=null,bd=tol;
+    for(const o of this.objects){
+      if(!INTERSECTABLE.includes(o.type)) continue;
+      const g=this.getObjGeom(o);
+      if(Object.values(g).some(v=>!v)) continue;
+      const d=this.objDistToPoint(o,pt);
+      if(d<bd){bd=d;best=o;}
+    }
+    return best;
+  }
+  computeIntersections(o1,o2){
+    const l1=this.asLine(o1), c1=this.asCircle(o1), l2=this.asLine(o2), c2=this.asCircle(o2);
+    if(l1&&l2){ const p=lineLineIntersection(l1[0],l1[1],l2[0],l2[1]); return p?[p]:[]; }
+    if(l1&&c2) return circleLineIntersection(c2.center,c2.r,l1[0],l1[1]);
+    if(c1&&l2) return circleLineIntersection(c1.center,c1.r,l2[0],l2[1]);
+    if(c1&&c2) return circleCircleIntersection(c1.center,c1.r,c2.center,c2.r);
+    return [];
+  }
+  // 교점 도구 개선: 두 도형을 순서대로 각각 클릭하지 않아도, 두 도형이 실제로 교차하는
+  // 지점 자체를 터치하면 그 두 도형을 자동으로 찾아 바로 교점을 만들어준다(기존의
+  // "도형을 하나씩 순서대로 클릭" 방식도 그대로 남겨둔다 — handleToolClick의 'intersect' 참고).
+  findIntersectionNear(pt, tol){
+    const objs = this.objects.filter(o=>INTERSECTABLE.includes(o.type));
+    let best=null, bd=tol;
+    for(let i=0;i<objs.length;i++){
+      for(let j=i+1;j<objs.length;j++){
+        const o1=objs[i], o2=objs[j];
+        const g1=this.getObjGeom(o1), g2=this.getObjGeom(o2);
+        if(!g1||!g2) continue;
+        if(Object.values(g1).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        if(Object.values(g2).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        this.computeIntersections(o1,o2).forEach(ip=>{
+          if(ip.x<0||ip.x>this.width||ip.y<0||ip.y>this.height) return;
+          const d=dist(pt,ip);
+          if(d<bd){ bd=d; best={o1,o2,point:ip}; }
+        });
+      }
+    }
+    return best;
+  }
+  setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
+  reset(){
+    this.points = this.points.filter(p=>p.locked);
+    this.objects = this.objects.filter(o=>o.locked);
+    this.history=[]; this.redoStack=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
+    this.render();
+  }
+  undo(){
+    const last = this.history.pop();
+    if(!last) return;
+    let entry;
+    if(last.kind==='point'){
+      const point = this.points.find(p=>p.id===last.id);
+      const relatedObjects = this.objects.filter(o=>this._refsPoint(o,last.id));
+      this.points = this.points.filter(p=>p.id!==last.id);
+      this.objects = this.objects.filter(o=>!this._refsPoint(o,last.id));
+      entry = {kind:'point', id:last.id, point, relatedObjects};
+    } else {
+      const object = this.objects.find(o=>o.id===last.id);
+      this.objects = this.objects.filter(o=>o.id!==last.id);
+      entry = {kind:'object', id:last.id, object};
+    }
+    this.redoStack.push(entry);
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  redo(){
+    const last = this.redoStack.pop();
+    if(!last) return;
+    if(last.kind==='point'){
+      if(last.point) this.points.push(last.point);
+      if(last.relatedObjects && last.relatedObjects.length) this.objects.push(...last.relatedObjects);
+    } else if(last.object){
+      this.objects.push(last.object);
+    }
+    this.history.push({kind:last.kind, id:last.id});
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  _refsPoint(o,pid){
+    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c,o.p,o.refP1,o.refP2].includes(pid) || (o.ids && o.ids.includes(pid));
+  }
+  getSvgCoords(e){
+    const pt = this.svg.createSVGPoint();
+    const t = e.touches && e.touches[0] ? e.touches[0] : e;
+    pt.x=t.clientX; pt.y=t.clientY;
+    const ctm = this.svg.getScreenCTM().inverse();
+    const loc = pt.matrixTransform(ctm);
+    return {x:loc.x, y:loc.y};
+  }
+  _wire(){
+    const down = e=>{
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      if(this.tool==='move'){
+        const p=this.findPointNear(pt,TOUCH_TOL);
+        if(p && !p.locked) this.dragging=p;
+        return;
+      }
+      this.handleToolClick(pt);
+    };
+    const move = e=>{
+      if(!this.dragging) return;
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      let nx=pt.x, ny=pt.y;
+      if(this.dragging.constraint){
+        const o=this.objects.find(ob=>ob.id===this.dragging.constraint.objId);
+        if(o){ const proj=this._projectOntoObject(o,pt); nx=proj.x; ny=proj.y; }
+      }
+      this.dragging.x = Math.max(0,Math.min(this.width,nx));
+      this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      this.render();
+    };
+    const up = ()=>{ this.dragging=null; };
+    this.svg.addEventListener('mousedown', down);
+    this.svg.addEventListener('touchstart', down, {passive:false});
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move, {passive:false});
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+  }
+  handleToolClick(pt){
+    switch(this.tool){
+      case 'point': {
+        if(this.findPointNear(pt,TOUCH_TOL)) break;
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o){ const proj=this._projectOntoObject(o,pt); this.addPoint(proj.x,proj.y,{constraint:{objId:o.id}}); }
+        else { this.addPoint(pt.x,pt.y); }
+        break;
+      }
+      case 'line': case 'segment': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; if(a!==b) this.addObject({type:this.tool,p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'circleCP': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [c,t]=this.pending; if(c!==t) this.addObject({type:'circleCP',center:c,through:t}); this.pending=[]; }
+        break;
+      }
+      case 'circleCR': {
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt); this.pending.push(p.id);
+          break;
+        }
+        // 중심을 고른 뒤: 선분을 클릭하면 그 선분의 길이를 반지름으로 바로 사용
+        const segObj=this.findObjectNear(pt,TOUCH_TOL);
+        if(segObj && segObj.type==='segment'){
+          const cId=this.pending[0]; this.pending=[];
+          this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
+          break;
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [c,r1,r2]=this.pending; this.addObject({type:'circleCR',center:c,r1,r2}); this.pending=[]; }
+        break;
+      }
+      case 'perpBisector': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'perpBisector',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleBisector': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleBisector',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'polygon': {
+        const p=this.pickPoint(pt);
+        if(this.pending.length>=3 && p.id===this.pending[0]){ this.addObject({type:'polygon', ids:[...this.pending]}); this.pending=[]; }
+        else this.pending.push(p.id);
+        break;
+      }
+      case 'intersect': {
+        // 두 도형이 만나는 지점을 바로 터치한 경우: 어떤 두 도형인지 자동으로 찾아 바로 교점을 만든다.
+        const direct = this.findIntersectionNear(pt, TOUCH_TOL);
+        if(direct){
+          if(!this.findPointNear(direct.point,6)){
+            this.addPoint(direct.point.x, direct.point.y, {locked:true, trackHistory:true, computed:{kind:'intersection', o1:direct.o1.id, o2:direct.o2.id}});
+          }
+          this.pendingObjs=[];
+          break;
+        }
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o){
+          this.pendingObjs.push(o);
+          if(this.pendingObjs.length>=2){
+            const [o1,o2]=this.pendingObjs;
+            if(o1!==o2){
+              const pts=this.computeIntersections(o1,o2);
+              pts.forEach(ip=>{
+                if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
+                  // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
+                  // 이 교점이 매 render()마다 새 위치로 따라온다.
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
+                }
+              });
+            }
+            this.pendingObjs=[];
+          }
+        }
+        break;
+      }
+      case 'midpoint': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [aId,bId]=this.pending; this.pending=[];
+          if(aId!==bId){
+            const A=this.resolvePoint(aId), B=this.resolvePoint(bId);
+            if(A&&B){
+              const m=mid(A,B);
+              if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true});
+            }
+          }
+        }
+        break;
+      }
+      case 'perp': {
+        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt);
+          this.pending.push(p.id);
+          break;
+        }
+        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        // 주의: 그 점이 클릭한 직선/선분의 끝점(꼭짓점)이어도 수선을 그릴 수 있어야 한다
+        // (예: 선분 AB에서 점 A를 지나는 수선). 예전에는 pId!==o.p1 && pId!==o.p2 조건 때문에
+        // 이 경우가 막혀 있었다.
+        const pId=this.pending[0]; this.pending=[];
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')){
+          this.addObject({type:'perp', p:pId, refP1:o.p1, refP2:o.p2});
+        }
+        break;
+      }
+      case 'lengthTool': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'lengthLabel',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleTool': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleLabel',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'angleInput': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [bId,aId]=this.pending; this.pending=[];
+          const val=window.prompt('꼭짓점 → 팔 순서로 두 점을 선택했어요.\n각의 크기를 입력하세요 (도, 0~360):','60');
+          if(val!==null){
+            const deg=parseFloat(val);
+            if(!isNaN(deg)){
+              const B=this.resolvePoint(bId), A=this.resolvePoint(aId);
+              if(B&&A){
+                const dir=norm(sub(A,B)), rad=deg*Math.PI/180, len=dist(A,B)||100;
+                const rot={x:dir.x*Math.cos(rad)-dir.y*Math.sin(rad), y:dir.x*Math.sin(rad)+dir.y*Math.cos(rad)};
+                const C=this.addPoint(B.x+rot.x*len, B.y+rot.y*len, {});
+                this.addObject({type:'angleLabel', a:aId, b:bId, c:C.id});
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+    this.render();
+  }
+  render(){
+    this._recomputeComputedPoints();
+    const NS='http://www.w3.org/2000/svg';
+    while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+    // grid
+    const g0=document.createElementNS(NS,'g');
+    for(let x=0;x<=this.width;x+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x); l.setAttribute('y1',0); l.setAttribute('x2',x); l.setAttribute('y2',this.height);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    for(let y=0;y<=this.height;y+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',this.width); l.setAttribute('y2',y);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    this.svg.appendChild(g0);
+
+    const extend=(origin,dir,len=1000)=>({x1:origin.x-dir.x*len,y1:origin.y-dir.y*len,x2:origin.x+dir.x*len,y2:origin.y+dir.y*len});
+    const mkLine=(x1,y1,x2,y2,color,dash)=>{
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+      l.setAttribute('stroke',color); l.setAttribute('stroke-width',2);
+      if(dash) l.setAttribute('stroke-dasharray',dash);
+      this.svg.appendChild(l);
+    };
+
+    this.objects.forEach(o=>{
+      const g=this.getObjGeom(o);
+      if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
+      if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
+      else if(o.type==='segment'){ mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#1565c0'); }
+      else if(o.type==='perpBisector'){
+        const M=mid(g.p1,g.p2), d=perp(norm(sub(g.p2,g.p1))); const e=extend(M,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#6a1b9a');
+      }
+      else if(o.type==='angleBisector'){
+        const d=bisectorDir(g.a,g.b,g.c);
+        mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
+      }
+      else if(o.type==='perp'){
+        const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#00838f');
+      }
+      else if(o.type==='circleCP'||o.type==='circleCR'){
+        const c=this.asCircle(o);
+        const el=document.createElementNS(NS,'circle');
+        el.setAttribute('cx',c.center.x); el.setAttribute('cy',c.center.y); el.setAttribute('r',Math.max(c.r,0.1));
+        el.setAttribute('stroke','#2e7d32'); el.setAttribute('fill','none'); el.setAttribute('stroke-width',2);
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='polygon'){
+        const pts=g.pts.map(p=>`${p.x},${p.y}`).join(' ');
+        const el=document.createElementNS(NS,'polygon');
+        el.setAttribute('points',pts); el.setAttribute('fill','#1565c0'); el.setAttribute('fill-opacity','0.12');
+        el.setAttribute('stroke','#1565c0'); el.setAttribute('stroke-width','2');
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='lengthLabel'){
+        mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#999','3,3');
+        const m=mid(g.p1,g.p2);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(2);
+        this.svg.appendChild(t);
+      }
+      else if(o.type==='angleLabel'){
+        const info=arcInfo(g.b,g.a,g.c,28);
+        const path=document.createElementNS(NS,'path');
+        path.setAttribute('d',info.path); path.setAttribute('stroke','#c62828'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+        this.svg.appendChild(path);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',info.mid.x); t.setAttribute('y',info.mid.y); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=info.deg.toFixed(1)+'°';
+        this.svg.appendChild(t);
+      }
+    });
+
+    // pending highlight
+    [...this.pending].forEach(id=>{
+      const p=this.resolvePoint(id); if(!p) return;
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10);
+      c.setAttribute('fill','none'); c.setAttribute('stroke','#fbc02d'); c.setAttribute('stroke-width','3');
+      this.svg.appendChild(c);
+    });
+
+    // points
+    this.points.forEach(p=>{
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+      c.setAttribute('fill', p.locked ? '#212121' : '#0277bd');
+      c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+      this.svg.appendChild(c);
+      const t=document.createElementNS(NS,'text');
+      t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8);
+      t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
+      t.textContent=p.label;
+      this.svg.appendChild(t);
+    });
+
+    this.onChange(this);
+  }
+}
+/* 저장된 도형 스냅샷(objectSnapshots/{taskId})을 캔버스에 다시 그려 넣는다.
+   좌표(x,y)와 점-도형 연결 관계만 복원하고, 제약조건/계산점 메타데이터나 되돌리기 기록까지는
+   복원하지 않는다 — 그 정도만으로도 "다시 접속했더니 그려둔 도형이 사라졌다"는 문제는 해결된다.
+   (제출완료로 잠긴 과제는 캔버스가 pointer-events:none이라 어차피 읽기전용으로만 보인다.) */
+function restoreObjectSnapshot(cv, snapshot){
+  if(!cv || !snapshot) return;
+  const remap = {};
+  (snapshot.points||[]).forEach(sp=>{
+    let target = cv.points.find(p=>p.label===sp.label);
+    if(target){ target.x=sp.x; target.y=sp.y; }
+    else { target = cv.addPoint(sp.x, sp.y, {label:sp.label}); }
+    remap[sp.id] = target.id;
+  });
+  const keys=['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'];
+  (snapshot.objects||[]).forEach(so=>{
+    const obj = {type:so.type};
+    keys.forEach(k=>{ if(so[k]!=null) obj[k] = (remap[so[k]]!==undefined) ? remap[so[k]] : so[k]; });
+    if(so.ids) obj.ids = so.ids.map(id=> remap[id]!==undefined ? remap[id] : id);
+    cv.addObject(obj);
+  });
+  cv.render();
+}
+
+/* ---------- 과제 정의 ---------- */
+function snapshotOf(cv){ return { points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label})), objects: cv.objects.filter(o=>!o.locked).map(o=>{ const s={id:o.id,type:o.type}; ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{ if(o[k]!=null) s[k]=o[k]; }); if(o.ids) s.ids=o.ids; return s; }) }; }
+return { GeoCanvas, TOOL_META, restoreObjectSnapshot, snapshotOf };
+})();
+
 const MIN_TEXT = 5;   // 서술형 최소 글자 수
 
 const TASKS = [
   {id:1, key:'a1', title:'1. 예측하기 — 어디를 받쳐야 할까?'},
-  {id:2, key:'a2', title:'2. 균형점 찾기 — 핀 위에 올리기(삼각형 3개)'},
-  {id:3, key:'a3', title:'3. 내 방법 만들기'},
-  {id:4, key:'a4', title:'4. 정체 파헤치기 — 선 긋기·길이 재기'},
-  {id:5, key:'a5', title:'5. 항상 그럴까? — 모양 바꾸기'},
-  {id:6, key:'a6', title:'6. 정리하기'}
+  {id:2, key:'a2', title:'2. 실에 매달기 — 꼭짓점을 들면 실은 어디를 지날까?'},
+  {id:3, key:'a3', title:'3. 균형점 찾기 — 핀 위에 올리기(삼각형 3개)'},
+  {id:4, key:'a4', title:'4. 내 방법 만들기'},
+  {id:5, key:'a5', title:'5. 정체 파헤치기 — 선 긋기·길이 재기'},
+  {id:6, key:'a6', title:'6. 항상 그럴까? — 모양 바꾸기'},
+  {id:7, key:'a7', title:'7. 정리하기'}
 ];
 /* 삼각형 3개(단위 좌표, 모눈 22×18): 예각·둔각·직각 */
 const TRIS = [
-  {name:'삼각형 ①', v:[[3,3],[19,4],[8,15]]},
-  {name:'삼각형 ②', v:[[2,3],[14,3],[20,14]]},
-  {name:'삼각형 ③', v:[[3,3],[17,3],[3,15]]}
+  {name:'삼각형 ①', v:[[2,3],[19,4],[9,14]]},    // 무게중심 (10, 7)
+  {name:'삼각형 ②', v:[[2,3],[14,3],[20,15]]},    // 무게중심 (12, 7)
+  {name:'삼각형 ③', v:[[3,3],[18,3],[3,15]]}      // 무게중심 (8, 7) — 세 삼각형 모두 무게중심 좌표가 정수(2026-10-15)
 ];
-const PIN_SNAP = 0.5, BAL_TOL = 0.3;   // 핀은 0.5 단위로 놓이고, 무게중심에서 0.3 안이면 수평
+const PIN_SNAP = 1, BAL_TOL = 0.3;   // 핀은 정수 교점에만 놓이고(2026-10-15), 무게중심과 같은 점이면 수평
 const VN = ['A','B','C'], FN = ['D','E','F'];   // 꼭짓점·마주 보는 변의 중점 이름
 
 const state = {
   pred: null,                                   // 예측한 점 [x,y]
   bal: TRIS.map(()=>({pin:null, tries:0, done:false})), cur:0,
-  t3:'', strokes3:[], tool3:'pen', lineStart3:null,
-  lines4:[false,false,false], meas4:[],          // 그은 선(꼭짓점별), 잰 선분 이름들
-  c4:{a:'', b:'', checked:false, ok:false},
-  tri5:[[4,3],[18,4],[9,15]], moves5:0, t5:'',
-  t6:'', shared:{3:false,6:false}, seen:{3:false,6:false}
+  hang:{lines:[false,false,false], ans:'', checked:false, ok:false},   // 화면 2: 매단 꼭짓점, 실선이 만나는 모양
+  t4:'', geo4:null,                              // 화면 4: 작도 도구로 그린 것(스냅샷)
+  lines5:[false,false,false], meas5:[],          // 그은 선(꼭짓점별), 잰 선분 이름들
+  c5:{a:'', b:'', checked:false, ok:false},
+  tri6:[[4,3],[18,4],[9,15]], moves6:0, t6:'',
+  t7:'', shared:{4:false,7:false}, seen:{4:false,7:false}
 };
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
@@ -505,33 +1187,35 @@ function inTri(p, t){ const s = (a,b,c)=> (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*
 
 function isDone(id){
   if(id===1) return !!state.pred;
-  if(id===2) return state.bal.every(b=>b.done);
-  if(id===3) return len(state.t3)>=MIN_TEXT && state.shared[3];
-  if(id===4) return state.lines4.some(Boolean) && state.meas4.length>=2 && state.c4.checked && state.c4.ok;
-  if(id===5) return state.moves5>=3 && len(state.t5)>=MIN_TEXT;
-  if(id===6) return len(state.t6)>=MIN_TEXT && state.shared[6] && aifbList().length>=1;
+  if(id===2) return state.hang.lines.every(Boolean) && state.hang.checked && state.hang.ok;
+  if(id===3) return state.bal.every(b=>b.done);
+  if(id===4) return len(state.t4)>=MIN_TEXT && state.shared[4];
+  if(id===5) return state.lines5.some(Boolean) && state.meas5.length>=2 && state.c5.checked && state.c5.ok;
+  if(id===6) return state.moves6>=3 && len(state.t6)>=MIN_TEXT;
+  if(id===7) return len(state.t7)>=MIN_TEXT && state.shared[7] && aifbList().length>=1;
   return false;
 }
 function valueOf(id){
   if(id===1) return state.pred ? `예측 (${state.pred[0]}, ${state.pred[1]})` : '';
-  if(id===2) return state.bal.some(b=>b.tries) ? state.bal.map((b,i)=>`${TRIS[i].name} ${b.done?'수평':'아직'} ${b.tries}번`).join(' / ') : '';
-  if(id===3) return state.t3.trim();
-  if(id===4){ if(!state.lines4.some(Boolean) && !state.meas4.length) return ''; return `선: ${state.lines4.map((v,i)=>v?VN[i]:null).filter(Boolean).join(',')||'-'} · 잰 길이 ${state.meas4.length}개 · 규칙: ${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[state.c4.a]||'-'}, ${state.c4.b||'-'}${state.c4.checked?(state.c4.ok?' ✓':' ✗'):''}`; }
-  if(id===5) return (state.moves5||state.t5.trim()) ? `[모양 바꾸기 ${state.moves5}번]\n${state.t5.trim()}` : '';
-  if(id===6) return state.t6.trim();
+  if(id===2){ const L = state.hang.lines.map((v,i)=>v?VN[i]:null).filter(Boolean); if(!L.length) return ''; return `들어 본 꼭짓점: ${L.join(',')}${state.hang.ans?` · 세 선: ${({one:'한 점',three:'세 점',none:'안 만남'})[state.hang.ans]}${state.hang.checked?(state.hang.ok?' ✓':' ✗'):''}`:''}`; }
+  if(id===3) return state.bal.some(b=>b.tries) ? state.bal.map((b,i)=>`${TRIS[i].name} ${b.done?'수평':'아직'} ${b.tries}번`).join(' / ') : '';
+  if(id===4) return state.t4.trim();
+  if(id===5){ if(!state.lines5.some(Boolean) && !state.meas5.length) return ''; return `선: ${state.lines5.map((v,i)=>v?VN[i]:null).filter(Boolean).join(',')||'-'} · 잰 길이 ${state.meas5.length}개 · 규칙: ${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[state.c5.a]||'-'}, ${state.c5.b||'-'}${state.c5.checked?(state.c5.ok?' ✓':' ✗'):''}`; }
+  if(id===6) return (state.moves6||state.t6.trim()) ? `[모양 바꾸기 ${state.moves6}번]\n${state.t6.trim()}` : '';
+  if(id===7) return state.t7.trim();
   return '';
 }
 function collectData(){
-  return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, t3: state.t3, strokes3: state.strokes3.slice(0,40).map(st=>st.slice(0,80)),
-    lines4: state.lines4.slice(), meas4: state.meas4.slice(), c4: Object.assign({}, state.c4),
-    tri5: state.tri5.map(p=>[r1(p[0]),r1(p[1])]), moves5: state.moves5, t5: state.t5, t6: state.t6,
+  return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, hang: Object.assign({}, state.hang, {lines: state.hang.lines.slice()}), t4: state.t4, geo4: state.geo4,
+    lines5: state.lines5.slice(), meas5: state.meas5.slice(), c5: Object.assign({}, state.c5),
+    tri6: state.tri6.map(p=>[r1(p[0]),r1(p[1])]), moves6: state.moves6, t6: state.t6, t7: state.t7,
     shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() };
 }
 /* 친구들에게 보여 줄 것(이름 없이): 예측 점은 찍으면 바로, 서술은 공유를 누른 뒤 */
 function shareEntries(){
   return { pred: state.pred ? {x:state.pred[0], y:state.pred[1]} : null,
-    method: state.shared[3] ? {t: state.t3.trim().slice(0,300), s: state.strokes3.slice(0,20).map(st=>st.filter((q,i)=>i%2===0 || i===st.length-1).slice(0,40).map(q=>q.map(v=>Math.round(v*10)/10)))} : null,
-    sum: state.shared[6] ? {t: state.t6.trim().slice(0,300)} : null };
+    method: state.shared[4] ? {t: state.t4.trim().slice(0,300)} : null,
+    sum: state.shared[7] ? {t: state.t7.trim().slice(0,300)} : null };
 }
 function pushShare(rt){
   if(!rt.shareRef) return;
@@ -633,7 +1317,7 @@ function aifbRestore(d){
   Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
   document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
 
-aifbMount($('aifb35'), { unit:35, minLen:10, inputs:[$('t6')], answer: ()=>$('t6').value, ctx: ()=>`화면 4에서 학생이 맞힌 규칙: 균형점 G는 꼭짓점과 마주 보는 변의 중점을 이은 선 위, 그 선을 꼭짓점 쪽부터 2:1로 나눔. 화면 5 서술: ${state.t5.trim().slice(0,200)}` });
+aifbMount($('aifb36'), { unit:35, minLen:10, inputs:[$('t7')], answer: ()=>$('t7').value, ctx: ()=>`화면 4에서 학생이 맞힌 규칙: 균형점 G는 꼭짓점과 마주 보는 변의 중점을 이은 선 위, 그 선을 꼭짓점 쪽부터 2:1로 나눔. 화면 5 서술: ${state.t6.trim().slice(0,200)}` });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -801,7 +1485,7 @@ function renderPred(){
 }
 $('g1').addEventListener('click', ev=>{
   if(finalLocked) return;
-  const q = svgPoint($('g1'), ev).map(v=>Math.round(v*2)/2);
+  const q = svgPoint($('g1'), ev).map(v=>Math.round(v));
   if(!inTri(q, TRIS[0].v)){ $('gm1').innerHTML = '<span class="miss">삼각형 안을 눌러 주세요.</span>'; return; }
   state.pred = q; $('gm1').innerHTML = `<span class="ok">예측한 점: (${q[0]}, ${q[1]})</span> <span class="note">— 친구들의 예측도 파란 점으로 보여요.</span>`;
   renderPred(); renderFriendsPred(); check1({now:true});
@@ -809,7 +1493,71 @@ $('g1').addEventListener('click', ev=>{
 function renderFriendsPred(){ const box = $('fr1'); if(!state.pred){ box.innerHTML=''; return; } const n = Object.keys(shareOf('pred')).filter(k=>k!==RT.studentKey && shareOf('pred')[k]).length; box.innerHTML = `<h4>👥 친구들의 예측 ${n}명</h4><div class="note">파란 점이 친구들이 찍은 곳이에요. 다음 화면에서 진짜 균형점을 찾아봐요.</div>`; }
 function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, '삼각형 안의 한 점을 눌러 예측하면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
 
-/* ---------- 화면 2: 균형 시뮬레이터 ----------
+/* ---------- 화면 2: 실에 매달기 ----------
+   꼭짓점 V를 못(NAIL)에 걸면 삼각형이 흔들리다가 V→G가 똑바로 아래를 향하는 자세에서 멈춘다(감쇠 진동).
+   추를 단 실은 항상 수직이므로, 멈춘 뒤 실이 지나는 자리 = 꼭짓점과 G를 지나는 선(= 마주 보는 변의 중점까지). '중점'이라는 말은 아직 쓰지 않는다. */
+const HS = 13, NAIL = [230, 34];
+let HANG = null;   // {v, t0, a0, a, done}
+const hangLocal = (p, v) => [(p[0]-v[0])*HS, -(p[1]-v[1])*HS];   // 꼭짓점 v를 원점으로 한 화면 좌표
+function hangRest(v){ const g = centroid(TRIS[0].v), q = hangLocal(g, v); return Math.PI/2 - Math.atan2(q[1], q[0]); }
+function renderHang(theta){
+  const t = TRIS[0].v, st = HANG;
+  let s = `<rect x="0" y="0" width="460" height="22" fill="#8d6e63"/><text x="12" y="16" font-size="12" fill="#fff" font-weight="bold">천장</text>`;
+  if(!st){
+    s += `<g transform="translate(70 120) scale(0.75)"><path d="${t.map((p,i)=>(i?'L':'M')+(p[0]*HS)+','+(200-p[1]*HS)).join('')}Z" ${TRI_FILL}/>${t.map((p,i)=>`<text x="${p[0]*HS + (i===1?10:-14)}" y="${200-p[1]*HS + (i===2?-8:14)}" font-size="16" font-weight="bold" fill="#0d47a1">${VN[i]}</text>`).join('')}</g>`;
+    s += `<text x="230" y="350" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👉 오른쪽의 「A를 들기」 같은 버튼을 눌러 보세요</text>`;
+    $('g2').innerHTML = s; return;
+  }
+  const v = t[st.v], deg = theta*180/Math.PI;
+  const loc = t.map(p=>hangLocal(p, v));
+  s += `<line x1="${NAIL[0]}" y1="22" x2="${NAIL[0]}" y2="${NAIL[1]}" stroke="#555" stroke-width="2"/>`;
+  s += `<g transform="translate(${NAIL[0]} ${NAIL[1]}) rotate(${deg.toFixed(2)})"><path d="M${loc.map(q=>q.join(',')).join('L')}Z" ${TRI_FILL}/>`
+    + loc.map((q,i)=>{ const c = loc.reduce((a,b)=>[a[0]+b[0]/3,a[1]+b[1]/3],[0,0]); const dx=q[0]-c[0], dy=q[1]-c[1], d=Math.hypot(dx,dy)||1; const lx=q[0]+dx/d*16, ly=q[1]+dy/d*16; return `<text x="${lx}" y="${ly}" transform="rotate(${(-deg).toFixed(2)} ${lx} ${ly})" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="bold" fill="#0d47a1">${VN[i]}</text>`; }).join('') + `</g>`;
+  // 추를 단 실: 언제나 수직
+  s += `<line x1="${NAIL[0]}" y1="${NAIL[1]}" x2="${NAIL[0]}" y2="352" stroke="#d32f2f" stroke-width="${st.done?3:2}" ${st.done?'':'stroke-dasharray="6 4"'}/><path d="M${NAIL[0]-7},352 L${NAIL[0]+7},352 L${NAIL[0]},368 Z" fill="#555"/>`;
+  s += `<circle cx="${NAIL[0]}" cy="${NAIL[1]}" r="5" fill="#424242"/>`;
+  $('g2').innerHTML = s;
+}
+function renderRec2(){
+  const t = TRIS[0].v, g = centroid(t);
+  let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
+  t.forEach((v,i)=>{ if(!state.hang.lines[i]) return; const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#d32f2f" stroke-width="3"/>`; });
+  s += labelsSVG(t, VN);
+  if(state.pred) s += dotSVG(state.pred, '#e53935', '', 4);
+  if(state.hang.ok) s += dotSVG(g, '#2e7d32', '세 실이 만나는 점', 6);
+  $('rec2').innerHTML = s;
+  document.querySelectorAll('#tools2 [data-v]').forEach(b=>{ b.classList.toggle('used', state.hang.lines[+b.dataset.v]); b.disabled = !!(HANG && !HANG.done); });
+  const all = state.hang.lines.every(Boolean);
+  $('conj2').style.display = all ? '' : 'none';
+  $('conj2').classList.toggle('locked', state.hang.ok || finalLocked);
+  document.querySelectorAll('input[name=hang2]').forEach(r=>{ r.checked = r.value===state.hang.ans; });
+  $('h2Check').disabled = !state.hang.ans || state.hang.ok || finalLocked;
+  $('h2Msg').innerHTML = !state.hang.checked ? '' : state.hang.ok
+    ? '<span class="ok">✅ 맞아요! 어느 꼭짓점을 들어도 실은 <b>같은 한 점</b>을 지나요. 이 점이 정말 균형점일까요? 다음 화면에서 핀으로 확인해 봐요.</span>'
+    : '<span class="bad">기록판을 다시 잘 보세요. 세 빨간 선이 지나는 곳을 확대해 보듯 살펴봐요.</span>';
+}
+function liftVertex(i){
+  if(finalLocked || (HANG && !HANG.done)) return;
+  const a = hangRest(TRIS[0].v[i]), a0 = a + (i===1 ? -1.0 : 1.0);
+  HANG = {v:i, t0: performance.now(), a0, a, done:false};
+  $('gm2').innerHTML = `<span class="note">${VN[i]}를 들어 올렸어요… 흔들흔들</span>`; renderRec2();
+  const TAU = 0.75, W = 2*Math.PI/1.15, DUR = 3000;
+  const step = now => { if(!HANG || HANG.v!==i) return; const el = now - HANG.t0, tt = el/1000;
+    if(el < DUR){ renderHang(a + (a0-a)*Math.exp(-tt/TAU)*Math.cos(W*tt)); requestAnimationFrame(step); return; }
+    HANG.done = true; renderHang(a);
+    const first = !state.hang.lines[i]; state.hang.lines[i] = true;
+    if(state.hang.checked && !state.hang.ok){ state.hang.checked = false; }
+    const n = state.hang.lines.filter(Boolean).length;
+    $('gm2').innerHTML = `<span class="ok">멈췄어요! 실이 꼭짓점 ${VN[i]}에서 삼각형을 가로질러 똑바로 내려가요.</span> <span class="note">${first?'기록판에 실이 지난 자리를 그렸어요.':''} ${n<3?`(${n}/3) 다른 꼭짓점도 들어 보세요.`:'세 꼭짓점을 모두 들어 봤어요. 기록판을 보고 물음에 답해 보세요.'}</span>`;
+    renderRec2(); check2({now:true}); };
+  requestAnimationFrame(step);
+}
+document.querySelectorAll('#tools2 [data-v]').forEach(b=> b.addEventListener('click', ()=> liftVertex(+b.dataset.v)));
+document.querySelectorAll('input[name=hang2]').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked || state.hang.ok) return; state.hang.ans = r.value; state.hang.checked = false; renderRec2(); check2(); }));
+$('h2Check').addEventListener('click', ()=>{ if(finalLocked || !state.hang.ans) return; state.hang.checked = true; state.hang.ok = state.hang.ans==='one'; renderRec2(); check2({now:true}); });
+function check2(opts){ const n = state.hang.lines.filter(Boolean).length; setWhy(2, '✅ 완료! '+NEXT, n<3 ? `세 꼭짓점을 모두 들어 보세요. (지금 ${n}/3)` : '세 선이 어떻게 만나는지 고르고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
+
+/* ---------- 화면 3: 균형 시뮬레이터 ----------
    핀이 무게중심 G에서 벗어나면 G 쪽으로 기울어진다. 기울기는 핀→G 방향으로 눌러 그린다(그 방향을 축에 수직으로 cosθ 배 줄이기). */
 let ANIM2 = null;
 function tiltTransform(pin, g, theta){
@@ -817,116 +1565,121 @@ function tiltTransform(pin, g, theta){
   const dx = g[0]-pin[0], dy = -(g[1]-pin[1]); const phi = Math.atan2(dy, dx)*180/Math.PI, c = Math.cos(theta);
   return `translate(${px(pin[0])} ${py(pin[1])}) rotate(${phi}) scale(${c} 1) rotate(${-phi}) translate(${-px(pin[0])} ${-py(pin[1])})`;
 }
-function renderBal(theta){
+function renderBal(theta, slide){
   const i = state.cur, t = TRIS[i].v, b = state.bal[i], g = centroid(t);
   const off = b.pin ? [g[0]-b.pin[0], g[1]-b.pin[1]] : [0,0];
   let s = gridSVG();
-  if(b.pin && theta){ const d = Math.hypot(off[0],off[1])||1, sh = 0.9*theta; s += `<g transform="${tiltTransform(b.pin, g, theta)}"><path d="${triPath(t.map(p=>[p[0]+off[0]/d*sh, p[1]+off[1]/d*sh-0.3]))}" fill="rgba(0,0,0,.10)"/></g>`; }
-  s += `<g class="tri" transform="${b.pin ? tiltTransform(b.pin, g, theta||0) : ''}"><path d="${triPath(t)}" ${TRI_FILL}/>${labelsSVG(t, VN)}</g>`;
+  const dd = Math.hypot(off[0],off[1])||1, sl = (slide||0) * Math.min(1.6, 0.4 + dd*0.25);   // 무거운 쪽으로 미끄러지듯 내려앉음
+  const mv = b.pin && theta ? `translate(${off[0]/dd*sl*U} ${-off[1]/dd*sl*U}) ` : '';
+  if(b.pin && theta){ const sh = 1.6*theta; s += `<g transform="${mv}${tiltTransform(b.pin, g, theta)}"><path d="${triPath(t.map(p=>[p[0]+off[0]/dd*sh, p[1]+off[1]/dd*sh-0.5]))}" fill="rgba(0,0,0,${(0.10+theta*0.12).toFixed(2)})"/></g>`; }
+  s += `<g class="tri" transform="${b.pin ? mv + tiltTransform(b.pin, g, theta||0) : ''}"><path d="${triPath(t)}" ${TRI_FILL}${theta?` style="filter:brightness(${(1-theta*0.25).toFixed(2)})"`:''}/>${labelsSVG(t, VN)}</g>`;
   if(b.pin){ s += `<g class="pin"><line x1="${px(b.pin[0])}" y1="${py(b.pin[1])+14}" x2="${px(b.pin[0])}" y2="${py(b.pin[1])}" stroke="#555" stroke-width="2"/><circle cx="${px(b.pin[0])}" cy="${py(b.pin[1])}" r="6" fill="#e53935" stroke="#fff" stroke-width="1.5"/></g>`;
     if(theta && !b.done){ const d = Math.hypot(off[0],off[1])||1, ex = px(b.pin[0]+off[0]/d*2.2), ey = py(b.pin[1]+off[1]/d*2.2); s += `<line x1="${px(b.pin[0])}" y1="${py(b.pin[1])}" x2="${ex}" y2="${ey}" stroke="#c62828" stroke-width="3" marker-end="url(#arr)"/><defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#c62828"/></marker></defs>`; } }
   if(b.done) s += dotSVG(b.pin, '#2e7d32', '균형점!', 7);
   if(!b.pin) s += `<text x="${px(BW/2)}" y="${py(BH)+18}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 삼각형 안을 눌러 핀을 놓으세요</text>`;
-  $('g2').innerHTML = s;
+  $('g3').innerHTML = s;
 }
 function renderTabs(){ $('ttabs').innerHTML = TRIS.map((t,i)=>`<button type="button" data-i="${i}" class="${i===state.cur?'on':''}${state.bal[i].done?' ok':''}">${state.bal[i].done?'✅ ':''}${t.name}</button>`).join(''); }
 function renderCtrl2(){
   const b = state.bal[state.cur];
-  $('pin2').innerHTML = b.pin ? `핀: <b>(${b.pin[0]}, ${b.pin[1]})</b>` : '핀: <b>아직 안 놓음</b>';
-  $('try2').textContent = `올려 본 횟수 ${b.tries}`;
-  $('go2').disabled = !b.pin || finalLocked || !!ANIM2;
-  $('lvl2').classList.toggle('ok', b.done);
+  $('pin3').innerHTML = b.pin ? `핀: <b>(${b.pin[0]}, ${b.pin[1]})</b>` : '핀: <b>아직 안 놓음</b>';
+  $('try3').textContent = `올려 본 횟수 ${b.tries}`;
+  $('go3').disabled = !b.pin || finalLocked || !!ANIM2;
+  $('lvl3').classList.toggle('ok', b.done);
   const g = centroid(TRIS[state.cur].v); const off = b.pin && !b.done ? [g[0]-b.pin[0], g[1]-b.pin[1]] : [0,0]; const d = Math.hypot(off[0],off[1]);
-  const k = d ? Math.min(1, d/6)/d : 0; $('bub2').style.left = `calc(50% - 9px + ${off[0]*k*60}px)`;
+  const k = d ? Math.min(1, d/6)/d : 0; $('bub3').style.left = `calc(50% - 9px + ${off[0]*k*60}px)`;
 }
-$('ttabs').addEventListener('click', e=>{ const bt = e.target.closest('button'); if(!bt || ANIM2) return; state.cur = +bt.dataset.i; renderTabs(); renderCtrl2(); renderBal(0); $('gm2').innerHTML=''; refreshAll(); });
-$('g2').addEventListener('click', ev=>{
+$('ttabs').addEventListener('click', e=>{ const bt = e.target.closest('button'); if(!bt || ANIM2) return; state.cur = +bt.dataset.i; renderTabs(); renderCtrl2(); renderBal(0); $('gm3').innerHTML=''; refreshAll(); });
+$('g3').addEventListener('click', ev=>{
   if(finalLocked || ANIM2) return;
-  const t = TRIS[state.cur].v, q = svgPoint($('g2'), ev).map(v=>Math.round(v/PIN_SNAP)*PIN_SNAP);
-  if(!inTri(q, t)){ $('gm2').innerHTML = '<span class="miss">삼각형 안에 핀을 놓아 주세요.</span>'; return; }
-  const b = state.bal[state.cur]; if(b.done){ $('gm2').innerHTML = '<span class="note">이 삼각형은 이미 균형점을 찾았어요. 다른 삼각형을 골라 보세요.</span>'; return; }
-  b.pin = q; $('gm2').innerHTML = ''; renderBal(0); renderCtrl2(); refreshAll();
+  const t = TRIS[state.cur].v, q = svgPoint($('g3'), ev).map(v=>Math.round(v/PIN_SNAP)*PIN_SNAP);
+  if(!inTri(q, t)){ $('gm3').innerHTML = '<span class="miss">삼각형 안에 핀을 놓아 주세요.</span>'; return; }
+  const b = state.bal[state.cur]; if(b.done){ $('gm3').innerHTML = '<span class="note">이 삼각형은 이미 균형점을 찾았어요. 다른 삼각형을 골라 보세요.</span>'; return; }
+  b.pin = q; $('gm3').innerHTML = ''; renderBal(0); renderCtrl2(); refreshAll();
 });
-$('go2').addEventListener('click', ()=>{
+$('go3').addEventListener('click', ()=>{
   const i = state.cur, b = state.bal[i]; if(!b.pin || finalLocked || ANIM2) return;
   const g = centroid(TRIS[i].v), d = dist(b.pin, g), hit = d < BAL_TOL;
-  b.tries++; const target = hit ? 0 : Math.min(0.9, 0.25 + d*0.12);
-  ANIM2 = {t0: performance.now()}; $('go2').disabled = true;
-  const step = now => { const t = hit ? 1 : Math.min(1, (now-ANIM2.t0)/600), e = 1-Math.pow(1-t,3);
-    if(!hit) renderBal(target*e);
+  b.tries++; const target = hit ? 0 : Math.min(1.2, 0.55 + d*0.16);   // 과감하게 기울기(최대 약 70°로 눌러 보이게)
+  ANIM2 = {t0: performance.now()}; $('go3').disabled = true;
+  const step = now => { const t = hit ? 1 : Math.min(1, (now-ANIM2.t0)/900);
+    // 쿵! 하고 기울어졌다가 살짝 튕기고 멈춘다(덜컹거림)
+    const e = t<0.55 ? Math.pow(t/0.55, 2) : 1 + 0.12*Math.sin((t-0.55)/0.45*Math.PI*3)*(1-t)/0.45;
+    if(!hit){ renderBal(target*e, Math.min(1, t*1.6)); if(t>0.5 && t<0.6) { const el = $('g3'); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } }
     if(t<1) requestAnimationFrame(step); else { ANIM2 = null; if(hit){ b.done = true; renderBal(0); }
       const dirName = (()=>{ const dx = g[0]-b.pin[0], dy = g[1]-b.pin[1]; const h = Math.abs(dx)>Math.abs(dy)*1.5 ? (dx>0?'오른쪽':'왼쪽') : Math.abs(dy)>Math.abs(dx)*1.5 ? (dy>0?'위쪽':'아래쪽') : `${dy>0?'위':'아래'}·${dx>0?'오른':'왼'}쪽`; return h; })();
-      $('gm2').innerHTML = hit ? `<div class="hit">⚖️ 수평! 균형점을 찾았어요. (${b.tries}번 만에) 핀 (${b.pin[0]}, ${b.pin[1]})${state.bal.every(x=>x.done)?'<br><span style="font-weight:normal;">삼각형 세 개 모두 찾았어요!</span>':'<br><span style="font-weight:normal;">위의 다른 삼각형도 찾아보세요.</span>'}</div>`
+      $('gm3').innerHTML = hit ? `<div class="hit">⚖️ 수평! 균형점을 찾았어요. (${b.tries}번 만에) 핀 (${b.pin[0]}, ${b.pin[1]})${state.bal.every(x=>x.done)?'<br><span style="font-weight:normal;">삼각형 세 개 모두 찾았어요!</span>':'<br><span style="font-weight:normal;">위의 다른 삼각형도 찾아보세요.</span>'}</div>`
         : `<span class="miss">기울어졌어요 — <b>${dirName}</b>이 더 무거워요. 핀을 그쪽으로 옮겨 보세요.</span>`;
-      renderTabs(); renderCtrl2(); check2({now:true}); } };
+      renderTabs(); renderCtrl2(); check3({now:true}); } };
   requestAnimationFrame(step);
 });
-function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, `삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요. (지금 ${state.bal.filter(b=>b.done).length}/3)`); refreshAll(opts); }
+function check3(opts){ setWhy(3, '✅ 완료! '+NEXT, `삼각형 세 개의 균형점을 모두 찾으면 다음으로 넘어갈 수 있어요. (지금 ${state.bal.filter(b=>b.done).length}/3)`); refreshAll(opts); }
 
-/* ---------- 화면 3: 내 방법 ---------- */
-/* 화면 3 그림판: ✏️ 자유 그리기(끌기) / 📏 직선(두 점 누르기, 0.5 단위로 맞춤). strokes: [[x,y],...] 단위 좌표 */
-const strokeD = pts => pts.length ? 'M' + pts.map(q=>`${r1(px(q[0]))},${r1(py(q[1]))}`).join('L') : '';
-function strokesSVG(strokes, color){ return strokes.map(st=>`<path d="${strokeD(st)}" fill="none" stroke="${color||'#e53935'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`).join(''); }
-function renderG3(){ const t = TRIS[0].v, g = centroid(t);
-  $('g3').innerHTML = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>` + labelsSVG(t, VN) + strokesSVG(state.strokes3) + (state.lineStart3 ? dotSVG(state.lineStart3, '#e53935', '', 5) : '') + dotSVG(g, '#2e7d32', '균형점 G', 7);
-  document.querySelectorAll('#tools3 [data-t]').forEach(b=> b.classList.toggle('on', b.dataset.t===state.tool3));
-  $('g3').classList.toggle('pick', true); }
-let draw3 = null;
-$('tools3').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b || finalLocked) return;
-  if(b.dataset.t){ state.tool3 = b.dataset.t; state.lineStart3 = null; }
-  if(b.id==='undo3'){ state.strokes3.pop(); state.lineStart3 = null; }
-  if(b.id==='clr3'){ state.strokes3 = []; state.lineStart3 = null; }
-  renderG3(); check3(); });
-$('g3').addEventListener('pointerdown', ev=>{ if(finalLocked) return; const q = svgPoint($('g3'), ev); if(q[0]<0||q[0]>BW||q[1]<0||q[1]>BH) return;
-  if(state.tool3==='line'){ const s = q.map(v=>Math.round(v*2)/2); if(!state.lineStart3){ state.lineStart3 = s; } else { if(dist(s, state.lineStart3)>0.4) state.strokes3.push([state.lineStart3, s]); state.lineStart3 = null; check3(); } renderG3(); return; }
-  draw3 = [[r1(q[0]), r1(q[1])]]; state.strokes3.push(draw3); $('g3').setPointerCapture(ev.pointerId); ev.preventDefault(); });
-$('g3').addEventListener('pointermove', ev=>{ if(!draw3) return; const q = svgPoint($('g3'), ev); const last = draw3[draw3.length-1]; if(Math.hypot(q[0]-last[0], q[1]-last[1])<0.15) return; draw3.push([r1(q[0]), r1(q[1])]); renderG3(); });
-const endDraw3 = ()=>{ if(!draw3) return; if(draw3.length<2) state.strokes3.pop(); draw3 = null; renderG3(); check3(); };
-$('g3').addEventListener('pointerup', endDraw3); $('g3').addEventListener('pointercancel', endDraw3);
-function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, '내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
-$('t3').addEventListener('input', ()=>check3());
+/* ---------- 화면 4: 내 방법 — student0의 작도 도구(GeoCanvas)로 그려 보며 방법 만들기 ---------- */
+const GEO_S = 24, GX = u => 40 + u*GEO_S, GY = u => 380 - u*GEO_S;   // 단위 좌표 → 작도판(600×400) 좌표
+const GEO_TOOLS = ['point','segment','line','circleCP','circleCR','intersect','midpoint','perpBisector','angleBisector','lengthTool'];
+let geo4 = null, geo4Timer = null;
+function initGeo4(){
+  const t = TRIS[0].v, g = centroid(t);
+  const pts = t.map((p,i)=>({label:VN[i], x:GX(p[0]), y:GY(p[1])})).concat([{label:'G', x:GX(g[0]), y:GY(g[1])}]);
+  geo4 = new GEO.GeoCanvas($('geo4'), {points: pts, presetObjects:[{type:'polygon', ids:['A','B','C']}]}, inst=>{
+    clearTimeout(geo4Timer); geo4Timer = setTimeout(()=>{ state.geo4 = GEO.snapshotOf(inst); refreshAll(); }, 600);
+  });
+  if(state.geo4) GEO.restoreObjectSnapshot(geo4, state.geo4);
+  const bar = $('geoTools4'); bar.innerHTML = '';
+  const mk = (t, label, cls) => { const x = document.createElement('button'); x.type = 'button'; x.textContent = label; if(cls) x.className = cls; bar.appendChild(x); return x; };
+  const btns = {};
+  btns.move = mk('move', '이동'); btns.move.classList.add('active');
+  GEO_TOOLS.forEach(k=> btns[k] = mk(k, GEO.TOOL_META[k].label));
+  Object.entries(btns).forEach(([k,x])=> x.addEventListener('click', ()=>{ if(finalLocked) return; geo4.setTool(k); Object.values(btns).forEach(y=>y.classList.remove('active')); x.classList.add('active'); }));
+  mk('', '↩️', 'undo').addEventListener('click', ()=>{ if(!finalLocked) geo4.undo(); });
+  mk('', '↪️', 'redo').addEventListener('click', ()=>{ if(!finalLocked) geo4.redo(); });
+  mk('', '초기화', 'reset').addEventListener('click', ()=>{ if(!finalLocked) geo4.reset(); });
+}
+function check4(opts){ state.t4 = $('t4').value; setWhy(4, '✅ 완료! '+NEXT, '작도 도구로 그려 보며 내 방법을 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(4); renderFriends(4); refreshAll(opts); }
+$('t4').addEventListener('input', ()=>check4());
 
 /* ---------- 화면 4: 정체 파헤치기 ---------- */
 function segs4(){
   const t = TRIS[0].v, g = centroid(t), out = [];
-  t.forEach((v,i)=>{ if(!state.lines4[i]) return; const o1 = t[(i+1)%3], o2 = t[(i+2)%3], m = mid(o1,o2);
+  t.forEach((v,i)=>{ if(!state.lines5[i]) return; const o1 = t[(i+1)%3], o2 = t[(i+2)%3], m = mid(o1,o2);
     const n1 = VN[(i+1)%3], n2 = VN[(i+2)%3], f = FN[i];
     out.push({name:`${VN[i]}G`, a:v, b:g}, {name:`G${f}`, a:g, b:m}, {name:`${n1}${f}`, a:o1, b:m}, {name:`${f}${n2}`, a:m, b:o2}); });
   return out;
 }
-function renderG4(){
+function renderG5(){
   const t = TRIS[0].v, g = centroid(t);
   let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
   const S = segs4();
-  t.forEach((v,i)=>{ if(!state.lines4[i]) return; const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 5); });
-  S.forEach(sg=>{ const mx = (sg.a[0]+sg.b[0])/2, my = (sg.a[1]+sg.b[1])/2, d = dist(sg.a,sg.b), measured = state.meas4.includes(sg.name);
+  t.forEach((v,i)=>{ if(!state.lines5[i]) return; const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 5); });
+  S.forEach(sg=>{ const mx = (sg.a[0]+sg.b[0])/2, my = (sg.a[1]+sg.b[1])/2, d = dist(sg.a,sg.b), measured = state.meas5.includes(sg.name);
     s += `<line class="seg" data-seg="${sg.name}" x1="${px(sg.a[0])}" y1="${py(sg.a[1])}" x2="${px(sg.b[0])}" y2="${py(sg.b[1])}"><title>${sg.name} 길이 재기</title></line>`;
     if(measured) s += `<rect x="${px(mx)-20}" y="${py(my)-9}" width="40" height="18" rx="5" fill="#fff" stroke="#1565c0"/><text x="${px(mx)}" y="${py(my)+4}" text-anchor="middle" font-size="12" font-weight="bold" fill="#0d47a1">${r1(d)}</text>`; });
   s += labelsSVG(t, VN) + dotSVG(g, '#2e7d32', 'G', 7);
-  $('g4').innerHTML = s;
-  document.querySelectorAll('#tools4 [data-v]').forEach(b=> b.classList.toggle('used', state.lines4[+b.dataset.v]));
-  const S2 = segs4(); const txt = state.meas4.map(n=>{ const sg = S2.find(x=>x.name===n); return sg ? `<span class="m">${n} = ${r1(dist(sg.a,sg.b))}</span>` : ''; }).join('');
-  $('meas4').innerHTML = txt ? `📏 잰 길이: ${txt}` : (state.lines4.some(Boolean) ? '<span class="note">선분을 누르면 길이를 잴 수 있어요. (파란 선의 각 부분, 변의 각 부분)</span>' : '');
+  $('g5').innerHTML = s;
+  document.querySelectorAll('#tools5 [data-v]').forEach(b=> b.classList.toggle('used', state.lines5[+b.dataset.v]));
+  const S2 = segs4(); const txt = state.meas5.map(n=>{ const sg = S2.find(x=>x.name===n); return sg ? `<span class="m">${n} = ${r1(dist(sg.a,sg.b))}</span>` : ''; }).join('');
+  $('meas5').innerHTML = txt ? `📏 잰 길이: ${txt}` : (state.lines5.some(Boolean) ? '<span class="note">선분을 누르면 길이를 잴 수 있어요. (파란 선의 각 부분, 변의 각 부분)</span>' : '');
 }
-document.querySelectorAll('#tools4 [data-v]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; state.lines4[+b.dataset.v] = true; renderG4(); check4(); }));
-$('clr4').addEventListener('click', ()=>{ if(finalLocked) return; state.meas4 = []; renderG4(); check4(); });
-$('g4').addEventListener('click', ev=>{ if(finalLocked) return; const el = ev.target.closest('.seg'); if(!el) return; const n = el.dataset.seg; if(!state.meas4.includes(n)) state.meas4.push(n); renderG4(); check4(); });
+document.querySelectorAll('#tools5 [data-v]').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; state.lines5[+b.dataset.v] = true; renderG5(); check5(); }));
+$('clr5').addEventListener('click', ()=>{ if(finalLocked) return; state.meas5 = []; renderG5(); check5(); });
+$('g5').addEventListener('click', ev=>{ if(finalLocked) return; const el = ev.target.closest('.seg'); if(!el) return; const n = el.dataset.seg; if(!state.meas5.includes(n)) state.meas5.push(n); renderG5(); check5(); });
 function parseRatio(s){ const m = String(s||'').replace(/\s/g,'').match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/); if(!m) return null; const a=Number(m[1]), b=Number(m[2]); return (a>0&&b>0) ? a/b : null; }
-function paintC4(){ const c = state.c4; $('conj4').classList.toggle('locked', (c.checked && c.ok) || finalLocked); $('c4Check').disabled = !(c.a && parseRatio(c.b)!=null) || (c.checked && c.ok) || finalLocked || !state.lines4.some(Boolean); }
-function check4(opts){
-  paintC4();
-  if(state.c4.checked){ const okA = state.c4.a==='mid', okB = Math.abs((parseRatio(state.c4.b)||0) - 2) < 1e-6;
-    $('c4Msg').innerHTML = (okA && okB) ? '<span class="ok">✅ 맞았어요! G는 꼭짓점과 마주 보는 변의 중점을 이은 선 위에 있고, 그 선을 2:1로 나눠요.</span>' : `<span class="bad">다시 재 보세요 — ${[!okA&&'마주 보는 변의 어떤 점인지(변의 두 부분 길이를 비교)', !okB&&'비(꼭짓점~G와 G~변의 길이를 비교)'].filter(Boolean).join(', ')}</span>`; }
-  setWhy(4, '✅ 완료! '+NEXT, !state.lines4.some(Boolean) ? '먼저 「A에서 선 긋기」 같은 버튼으로 선을 그어 보세요.' : state.meas4.length<2 ? '선분을 눌러 길이를 두 개 이상 재 보세요.' : '찾은 규칙을 채우고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.');
+function paintC5(){ const c = state.c5; $('conj5').classList.toggle('locked', (c.checked && c.ok) || finalLocked); $('c5Check').disabled = !(c.a && parseRatio(c.b)!=null) || (c.checked && c.ok) || finalLocked || !state.lines5.some(Boolean); }
+function check5(opts){
+  paintC5();
+  if(state.c5.checked){ const okA = state.c5.a==='mid', okB = Math.abs((parseRatio(state.c5.b)||0) - 2) < 1e-6;
+    $('c5Msg').innerHTML = (okA && okB) ? '<span class="ok">✅ 맞았어요! G는 꼭짓점과 마주 보는 변의 중점을 이은 선 위에 있고, 그 선을 2:1로 나눠요.</span>' : `<span class="bad">다시 재 보세요 — ${[!okA&&'마주 보는 변의 어떤 점인지(변의 두 부분 길이를 비교)', !okB&&'비(꼭짓점~G와 G~변의 길이를 비교)'].filter(Boolean).join(', ')}</span>`; }
+  setWhy(5, '✅ 완료! '+NEXT, !state.lines5.some(Boolean) ? '먼저 「A에서 선 긋기」 같은 버튼으로 선을 그어 보세요.' : state.meas5.length<2 ? '선분을 눌러 길이를 두 개 이상 재 보세요.' : '찾은 규칙을 채우고 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
-$('c4a').addEventListener('change', ()=>{ if(finalLocked) return; state.c4.a = $('c4a').value; state.c4.checked = false; $('c4Msg').textContent=''; check4(); });
-$('c4b').addEventListener('input', ()=>{ if(finalLocked) return; state.c4.b = $('c4b').value; state.c4.checked = false; $('c4Msg').textContent=''; check4(); });
-$('c4Check').addEventListener('click', ()=>{ if(finalLocked) return; state.c4.checked = true; state.c4.ok = state.c4.a==='mid' && Math.abs((parseRatio(state.c4.b)||0) - 2) < 1e-6; check4({now:true}); });
+$('c5a').addEventListener('change', ()=>{ if(finalLocked) return; state.c5.a = $('c5a').value; state.c5.checked = false; $('c5Msg').textContent=''; check5(); });
+$('c5b').addEventListener('input', ()=>{ if(finalLocked) return; state.c5.b = $('c5b').value; state.c5.checked = false; $('c5Msg').textContent=''; check5(); });
+$('c5Check').addEventListener('click', ()=>{ if(finalLocked) return; state.c5.checked = true; state.c5.ok = state.c5.a==='mid' && Math.abs((parseRatio(state.c5.b)||0) - 2) < 1e-6; check5({now:true}); });
 
 /* ---------- 화면 5: 항상 그럴까? (꼭짓점 끌기) ---------- */
-function renderG5(){
-  const t = state.tri5, g = centroid(t);
+function renderG6(){
+  const t = state.tri6, g = centroid(t);
   let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
   const rows = [];
   t.forEach((v,i)=>{ const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 4);
@@ -934,25 +1687,25 @@ function renderG5(){
   s += dotSVG(g, '#2e7d32', 'G', 7);
   t.forEach((v,i)=>{ s += `<circle class="vtx" data-i="${i}" cx="${px(v[0])}" cy="${py(v[1])}" r="11" fill="rgba(21,101,192,.25)" stroke="#1565c0" stroke-width="2"/>`; });
   s += labelsSVG(t, VN);
-  $('g5').innerHTML = s;
-  $('meas5').innerHTML = rows.join(' ') + `<br><span class="note">모양 바꾼 횟수: ${state.moves5}</span>`;
-  $('name5').style.display = isDone(5) || (state.moves5>=3) ? '' : 'none';
+  $('g6').innerHTML = s;
+  $('meas6').innerHTML = rows.join(' ') + `<br><span class="note">모양 바꾼 횟수: ${state.moves6}</span>`;
+  $('name6').style.display = isDone(5) || (state.moves6>=3) ? '' : 'none';
 }
-let drag5 = null;
-$('g5').addEventListener('pointerdown', ev=>{ if(finalLocked) return; const el = ev.target.closest('.vtx'); if(!el) return; drag5 = {i:+el.dataset.i, moved:false}; $('g5').setPointerCapture(ev.pointerId); ev.preventDefault(); });
-$('g5').addEventListener('pointermove', ev=>{ if(!drag5) return; const r = svgPoint($('g5'), ev); const x = Math.min(BW, Math.max(0, Math.round(r[0]*2)/2)), y = Math.min(BH, Math.max(0, Math.round(r[1]*2)/2));
-  const t = state.tri5; if(t[drag5.i][0]===x && t[drag5.i][1]===y) return; const nt = t.map(p=>p.slice()); nt[drag5.i] = [x,y];
+let drag6 = null;
+$('g6').addEventListener('pointerdown', ev=>{ if(finalLocked) return; const el = ev.target.closest('.vtx'); if(!el) return; drag6 = {i:+el.dataset.i, moved:false}; $('g6').setPointerCapture(ev.pointerId); ev.preventDefault(); });
+$('g6').addEventListener('pointermove', ev=>{ if(!drag6) return; const r = svgPoint($('g6'), ev); const x = Math.min(BW, Math.max(0, Math.round(r[0]*2)/2)), y = Math.min(BH, Math.max(0, Math.round(r[1]*2)/2));
+  const t = state.tri6; if(t[drag6.i][0]===x && t[drag6.i][1]===y) return; const nt = t.map(p=>p.slice()); nt[drag6.i] = [x,y];
   const area = Math.abs((nt[1][0]-nt[0][0])*(nt[2][1]-nt[0][1]) - (nt[2][0]-nt[0][0])*(nt[1][1]-nt[0][1]))/2; if(area < 6) return;
-  state.tri5 = nt; drag5.moved = true; renderG5(); });
-const endDrag5 = ()=>{ if(!drag5) return; if(drag5.moved){ state.moves5++; renderG5(); check5(); } drag5 = null; };
-$('g5').addEventListener('pointerup', endDrag5); $('g5').addEventListener('pointercancel', endDrag5);
-function check5(opts){ state.t5 = $('t5').value; setWhy(5, '✅ 완료! '+NEXT, state.moves5<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.moves5}번)` : '왜 항상 그런지 내 생각을 쓰면 다음으로 넘어갈 수 있어요.'); renderG5(); refreshAll(opts); }
-$('t5').addEventListener('input', ()=>check5());
+  state.tri6 = nt; drag6.moved = true; renderG6(); });
+const endDrag6 = ()=>{ if(!drag6) return; if(drag6.moved){ state.moves6++; renderG6(); check6(); } drag6 = null; };
+$('g6').addEventListener('pointerup', endDrag6); $('g6').addEventListener('pointercancel', endDrag6);
+function check6(opts){ state.t6 = $('t6').value; setWhy(6, '✅ 완료! '+NEXT, state.moves6<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.moves6}번)` : '왜 항상 그런지 내 생각을 쓰면 다음으로 넘어갈 수 있어요.'); renderG6(); refreshAll(opts); }
+$('t6').addEventListener('input', ()=>check6());
 
 /* ---------- 화면 6: 정리 ---------- */
 function renderRecap(){
-  $('recap6').innerHTML = `<div class="rc"><b>⚖️ 내가 찾은 균형점</b>${state.bal.map((b,i)=>`${TRIS[i].name}: ${b.done?`(${b.pin[0]}, ${b.pin[1]}) · ${b.tries}번`:'-'}`).join('<br>')}</div>`
-    + `<div class="rc"><b>🔍 찾은 규칙</b>${state.c4.checked && state.c4.ok ? '균형점은 꼭짓점과 마주 보는 변의 중점을 이은 선 위, 그 선을 2:1로 나눔' : '<span class="note">(화면 4의 규칙을 아직 맞히지 않았어요)</span>'}</div>`;
+  $('recap7').innerHTML = `<div class="rc"><b>⚖️ 내가 찾은 균형점</b>${state.bal.map((b,i)=>`${TRIS[i].name}: ${b.done?`(${b.pin[0]}, ${b.pin[1]}) · ${b.tries}번`:'-'}`).join('<br>')}</div>`
+    + `<div class="rc"><b>🔍 찾은 규칙</b>${state.c5.checked && state.c5.ok ? '균형점은 꼭짓점과 마주 보는 변의 중점을 이은 선 위, 그 선을 2:1로 나눔' : '<span class="note">(화면 4의 규칙을 아직 맞히지 않았어요)</span>'}</div>`;
 }
 function renderSumFig(){
   const t = [[30,160],[270,160],[120,30]], g = centroid(t), m = [mid(t[1],t[2]), mid(t[2],t[0]), mid(t[0],t[1])], Q = p=>`${p[0]},${p[1]}`;
@@ -962,11 +1715,11 @@ function renderSumFig(){
     + `<text x="${m[0][0]+8}" y="${m[0][1]}" font-size="13" font-weight="bold" fill="#1565c0">D</text><text x="${m[1][0]-16}" y="${m[1][1]}" font-size="13" font-weight="bold" fill="#1565c0">E</text><text x="${m[2][0]-4}" y="${m[2][1]+18}" font-size="13" font-weight="bold" fill="#1565c0">F</text>`;
 }
 function paintSum(){ const on = aifbPassed() || !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; if(on) renderSumFig(); }
-function check6(opts){ state.t6 = $('t6').value; setWhy(6, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(6); renderFriends(6); refreshAll(opts); }
-$('t6').addEventListener('input', ()=>check6());
+function check7(opts){ state.t7 = $('t7').value; setWhy(7, '✅ 완료! 마지막 화면에서 제출하세요.', '내 생각을 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(7); renderFriends(7); refreshAll(opts); }
+$('t7').addEventListener('input', ()=>check7());
 
 /* ---------- 친구들의 생각(내 답을 쓴 뒤 자동 공개, 이름 없이) ---------- */
-const KIND = {3:'method', 6:'sum'};
+const KIND = {4:'method', 7:'sum'};
 function renderFriends(n){
   const box = $('fr'+n); if(!box) return;
   if(!state.seen[n]){ box.innerHTML = ''; return; }
@@ -974,10 +1727,10 @@ function renderFriends(n){
   const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
   if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
   const mini = k => { const st = arr(all[k].s).map(x=>arr(x).map(q=>arr(q).map(Number))).filter(x=>x.length>=2); if(!st.length) return ''; const t = TRIS[0].v; return `<svg viewBox="0 0 460 380" width="120" height="99" style="float:right;margin-left:8px;background:#dff3d2;border-radius:6px;"><path d="${triPath(t)}" ${TRI_FILL}/>${strokesSVG(st)}</svg>`; };
-  box.innerHTML = `<h4>👥 친구들의 ${n===3?'방법':'생각'} (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${n===3?mini(k):''}${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
+  box.innerHTML = `<h4>👥 친구들의 ${n===4?'방법':'생각'} (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
 }
-const SH_FIELDS = {3:['t3'], 6:['t6']};
-const SH_READY = {3:()=> len(state.t3)>=MIN_TEXT, 6:()=> len(state.t6)>=MIN_TEXT};
+const SH_FIELDS = {4:['t4'], 7:['t7']};
+const SH_READY = {4:()=> len(state.t4)>=MIN_TEXT, 7:()=> len(state.t7)>=MIN_TEXT};
 function paintShare(n){
   const b = $('sh'+n); if(!b) return;
   const sh = state.shared[n];
@@ -987,20 +1740,20 @@ function paintShare(n){
   b.disabled = !sh && (!SH_READY[n]() || finalLocked);
   $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
 }
-[3,6].forEach(n=> $('sh'+n).addEventListener('click', ()=>{
+[4,7].forEach(n=> $('sh'+n).addEventListener('click', ()=>{
   if(finalLocked) return;
   if(state.shared[n]) state.shared[n] = false;
   else { if(!SH_READY[n]()) return; state.shared[n] = true; state.seen[n] = true; }
-  paintShare(n); renderFriends(n); ({3:check3,6:check6})[n]({now:true});
+  paintShare(n); renderFriends(n); ({4:check4,7:check7})[n]({now:true});
 }));
 
-function onShareChanged(){ renderPred(); renderFriendsPred(); renderFriends(3); renderFriends(6); }
+function onShareChanged(){ renderPred(); renderFriendsPred(); renderFriends(4); renderFriends(7); }
 function onRevealChanged(){ paintSum(); }
-function aifbOnChange(){ paintSum(); check6({noSave:true}); }
-function onShowPage(taskId){ if(taskId===1) renderPred(); if(taskId===2) renderBal(0); if(taskId===3) renderG3(); if(taskId===4) renderG4(); if(taskId===5) renderG5(); if(taskId===6){ renderRecap(); paintSum(); } }
+function aifbOnChange(){ paintSum(); check7({noSave:true}); }
+function onShowPage(taskId){ if(taskId===1) renderPred(); if(taskId===2){ if(!HANG) renderHang(0); renderRec2(); } if(taskId===3) renderBal(0); if(taskId===4 && !geo4) initGeo4(); if(taskId===5) renderG5(); if(taskId===6) renderG6(); if(taskId===7){ renderRecap(); paintSum(); } }
 
-function renderAll(){ renderPred(); renderFriendsPred(); renderTabs(); renderCtrl2(); renderBal(0); renderG3(); renderG4(); paintC4(); renderG5(); paintSum(); }
-function checkAll(opts){ check1(opts); check2(opts); check3(opts); check4(opts); check5(opts); check6(opts); }
+function renderAll(){ renderPred(); renderFriendsPred(); if(!HANG) renderHang(0); renderRec2(); renderTabs(); renderCtrl2(); renderBal(0); renderG5(); paintC5(); renderG6(); paintSum(); }
+function checkAll(opts){ check1(opts); check2(opts); check3(opts); check4(opts); check5(opts); check6(opts); check7(opts); }
 function initActivity(){ renderAll(); checkAll({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 function restoreData(d){
@@ -1008,16 +1761,17 @@ function restoreData(d){
   const pr = arr(d.pred).map(Number); state.pred = (pr.length===2 && pr.every(Number.isFinite)) ? pr : null;
   arr(d.bal).forEach((b,i)=>{ if(!b || !state.bal[i]) return; const p = arr(b.pin).map(Number); state.bal[i] = {pin: (p.length===2 && p.every(Number.isFinite)) ? p : null, tries: Number(b.tries)||0, done: !!b.done}; });
   state.cur = Number.isInteger(d.cur) && TRIS[d.cur] ? d.cur : 0;
-  state.t3 = d.t3 || ''; $('t3').value = state.t3;
-  state.strokes3 = arr(d.strokes3).map(st=>arr(st).map(q=>arr(q).map(Number)).filter(q=>q.length===2 && q.every(Number.isFinite))).filter(st=>st.length>=2);
-  state.lines4 = [0,1,2].map(i=>!!arr(d.lines4)[i]); state.meas4 = arr(d.meas4).map(String);
-  if(d.c4) state.c4 = {a: String(d.c4.a||''), b: String(d.c4.b||''), checked: !!d.c4.checked, ok: !!d.c4.ok};
-  $('c4a').value = state.c4.a; $('c4b').value = state.c4.b;
-  const t5 = arr(d.tri5).map(p=>arr(p).map(Number)); if(t5.length===3 && t5.every(p=>p.length===2 && p.every(Number.isFinite))) state.tri5 = t5;
-  state.moves5 = Number(d.moves5)||0; state.t5 = d.t5 || ''; $('t5').value = state.t5;
-  state.t6 = d.t6 || ''; $('t6').value = state.t6;
+  state.t4 = d.t4 || ''; $('t4').value = state.t4;
+  if(d.hang) state.hang = {lines:[0,1,2].map(i=>!!arr(d.hang.lines)[i]), ans:String(d.hang.ans||''), checked:!!d.hang.checked, ok:!!d.hang.ok};
+  state.geo4 = (d.geo4 && typeof d.geo4==='object') ? {points: arr(d.geo4.points), objects: arr(d.geo4.objects).map(o=> Object.assign({}, o, o.ids ? {ids: arr(o.ids)} : {}))} : null;
+  state.lines5 = [0,1,2].map(i=>!!arr(d.lines5)[i]); state.meas5 = arr(d.meas5).map(String);
+  if(d.c5) state.c5 = {a: String(d.c5.a||''), b: String(d.c5.b||''), checked: !!d.c5.checked, ok: !!d.c5.ok};
+  $('c5a').value = state.c5.a; $('c5b').value = state.c5.b;
+  const t6 = arr(d.tri6).map(p=>arr(p).map(Number)); if(t6.length===3 && t6.every(p=>p.length===2 && p.every(Number.isFinite))) state.tri6 = t6;
+  state.moves6 = Number(d.moves6)||0; state.t6 = d.t6 || ''; $('t6').value = state.t6;
+  state.t7 = d.t7 || ''; $('t7').value = state.t7;
   aifbRestore(d);
-  [3,6].forEach(n=>{ state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
+  [4,7].forEach(n=>{ state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
   renderAll(); checkAll({noSave:true});
 }
 
