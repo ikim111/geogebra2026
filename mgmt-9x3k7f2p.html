@@ -84,7 +84,7 @@
 </head>
 <body>
 
-<a id="seatFabBtn" href="teacher20.html?tab=presentation" title="발표 기록·주문 승인·멘토멘티 자리배치" style="position:fixed;top:10px;right:118px;z-index:99999;background:#ffca28;color:#1a237e;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🎤 발표·🪑 자리</a>
+<a id="seatFabBtn" href="t20-szos0jo.html?tab=presentation" title="발표 기록·주문 승인·멘토멘티 자리배치" style="position:fixed;top:10px;right:118px;z-index:99999;background:#ffca28;color:#1a237e;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🎤 발표·🪑 자리</a>
 <button id="qrFabBtn" type="button" title="QR코드 보기" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1a237e;color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">📱 QR코드</button>
 <div id="qrModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);">
@@ -149,7 +149,7 @@
 const BASE_URL = '';
 // 단원이 늘어날 때는 STANDALONE_UNITS나 SECTIONS 안의 items 배열에 항목만 추가하면 된다.
 const STANDALONE_UNITS = [
-  {n:0, label:0, title:'지오지브라 연습', file:'teacher0.html'}
+  {n:0, label:0, title:'지오지브라 연습', file:'t0-mspd6au.html'}
 ];
 /* n = 실제 단원 번호(잠금 토글이 Firebase에 저장할 때 쓰는 키, 절대 바꾸면 안 됨)
    label = 목차에 보여지는 번호(챕터가 바뀌면 1부터 다시 시작) */
@@ -158,47 +158,47 @@ const SECTIONS = [
   //     Snorkl 같은 외부 링크는 파일 번호와 겹치지 않게 9, 91, 92처럼 따로 번호를 붙였다.
   { chapter:'VI. 삼각형의 성질', groups:[
       { title:'', items:[
-        {n:1, label:1, title:'이등변삼각형의 성질', file:'teacher1.html'},
-        {n:2, label:2, title:'수직이등분선의 성질', file:'teacher2.html'},
-        {n:3, label:3, title:'각이등분선의 성질', file:'teacher3.html'},
-        {n:4, label:4, title:'삼각형의 외심', file:'teacher4.html'},
-        {n:5, label:5, title:'삼각형의 내심', file:'teacher5.html'},
-        {n:6, label:6, title:'생각 넓히기', file:'teacher6.html'},
-        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'teacher7.html'},
-        {n:8, label:8, title:'문제해결력 수행평가', file:'teacherpa1.html'},
+        {n:1, label:1, title:'이등변삼각형의 성질', file:'t1-ptykvae.html'},
+        {n:2, label:2, title:'수직이등분선의 성질', file:'t2-ucpuz2s.html'},
+        {n:3, label:3, title:'각이등분선의 성질', file:'t3-1b7c569.html'},
+        {n:4, label:4, title:'삼각형의 외심', file:'t4-ymxzzjw.html'},
+        {n:5, label:5, title:'삼각형의 내심', file:'t5-ubt3une.html'},
+        {n:6, label:6, title:'생각 넓히기', file:'t6-iekcrp0.html'},
+        {n:7, label:7, title:'외심 내심 그리기 수행평가 연습', file:'t7-n2qwudt.html'},
+        {n:8, label:8, title:'문제해결력 수행평가', file:'tpa1-mi9d8al.html'},
         {n:10, label:'📊', title:'문제해결평가 점수 확인', file:'resultpa1.html'},
         {n:9, label:'🔗', title:'문제풀이 (Snorkl)', external:true, url:'https://student.snorkl.app/zee6zw'}
       ]}
   ]},
   { chapter:'VI. 사각형의 성질', groups:[
       { title:'', items:[
-        {n:11, label:1, title:'평행사변형의 성질', file:'teacher11.html'},
-        {n:12, label:2, title:'평행사변형의 성질 의사소통', file:'teacher12.html'},
-        {n:13, label:3, title:'평행사변형이 되는 조건 찾기', file:'teacher13.html'},
-        {n:14, label:4, title:'평행사변형의 조건 의사소통', file:'teacher14.html'},
-        {n:15, label:5, title:'여러 가지 사각형의 성질', file:'teacher15.html'},
-        {n:16, label:6, title:'여러 가지 사각형 그려보기', file:'teacher16.html'},
-        {n:17, label:7, title:'여러 가지 사각형의 성질 정리하기', file:'teacher17.html'},
+        {n:11, label:1, title:'평행사변형의 성질', file:'t11-1u8753u.html'},
+        {n:12, label:2, title:'평행사변형의 성질 의사소통', file:'t12-aepu2hx.html'},
+        {n:13, label:3, title:'평행사변형이 되는 조건 찾기', file:'t13-4h4gzs2.html'},
+        {n:14, label:4, title:'평행사변형의 조건 의사소통', file:'t14-zfawi7g.html'},
+        {n:15, label:5, title:'여러 가지 사각형의 성질', file:'t15-v1wykyv.html'},
+        {n:16, label:6, title:'여러 가지 사각형 그려보기', file:'t16-1ua1ycx.html'},
+        {n:17, label:7, title:'여러 가지 사각형의 성질 정리하기', file:'t17-z0tukd8.html'},
         {n:91, label:'🔗', title:'6. 사각형의 성질 (Snorkl)', external:true, url:'https://student.snorkl.app/cmenaz'},
         {n:92, label:'🔗', title:'6단원 마무리하기 (Snorkl)', external:true, url:'https://student.snorkl.app/u8f4yb'},
-        {n:33, label:'📊', title:'배움노트 정리 수행평가 결과 보기', file:'bnteacher.html'}  // 교사는 교사용 보기(비밀번호·학생 선택), 학생 목차는 bnview.html
+        {n:33, label:'📊', title:'배움노트 정리 수행평가 결과 보기', file:'bnt-nr158fu.html'}  // 교사는 교사용 보기(비밀번호·학생 선택), 학생 목차는 bnview.html
       ]}
   ]},
   { chapter:'VII. 도형의 닮음과 피타고라스 정리', groups:[
       { title:'', items:[
-        {n:31, label:1, title:'7.1. 도형의 닮음 생각열기 - 복사기가 고장나면?', file:'teacher31.html'},
-        {n:32, label:2, title:'7.2. 삼각형의 닮음 조건 생각열기 - 닮음 조건 찾기', file:'teacher32.html'},
-        {n:34, label:3, title:'7.3. 삼각형과 평행선 생각열기 - 확대 골프 게임', file:'teacher34.html'},
-        {n:35, label:4, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'teacher35.html'}
+        {n:31, label:1, title:'7.1. 도형의 닮음 생각열기 - 복사기가 고장나면?', file:'t31-bwznaq2.html'},
+        {n:32, label:2, title:'7.2. 삼각형의 닮음 조건 생각열기 - 닮음 조건 찾기', file:'t32-u6pfzrq.html'},
+        {n:34, label:3, title:'7.3. 삼각형과 평행선 생각열기 - 확대 골프 게임', file:'t34-yacpxfx.html'},
+        {n:35, label:4, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'t35-u4d6c5i.html'}
       ]}
   ]},
   { chapter:'VIII. 경우의 수와 확률', groups:[
       { title:'', items:[
-        {n:21, label:1, title:'8.2. 확률의 뜻 생각열기 - 동전을 계속 던지면 어떻게 될까?', file:'teacher21.html'},
-        {n:22, label:2, title:'8.2. 확률의 뜻 의사소통 - 공정한 상금 분배와 타자 영입', file:'teacher22.html'},
-        {n:23, label:3, title:'8.3. 확률의 기본 성질 의사소통 - 말 속에서 확률 찾기', file:'teacher23.html'},
-        {n:24, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'teacherpa2.html'},
-        {n:25, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ② 보고서 제출', file:'teacherpa3.html'}
+        {n:21, label:1, title:'8.2. 확률의 뜻 생각열기 - 동전을 계속 던지면 어떻게 될까?', file:'t21-m8n6qlg.html'},
+        {n:22, label:2, title:'8.2. 확률의 뜻 의사소통 - 공정한 상금 분배와 타자 영입', file:'t22-ufqhpr5.html'},
+        {n:23, label:3, title:'8.3. 확률의 기본 성질 의사소통 - 말 속에서 확률 찾기', file:'t23-4b8rxi4.html'},
+        {n:24, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'tpa2-r4qikt7.html'},
+        {n:25, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ② 보고서 제출', file:'tpa3-oyppv9j.html'}
       ]}
   ]}
 ];
@@ -477,10 +477,10 @@ document.getElementById('editBtn').addEventListener('click', ()=>{
   if(btn) btn.classList.add('selected');
   goToUnitPage(classNo);
 })();
-/* 🪑 자리배치(teacher20.html): 반을 골라 둔 상태면 그 반으로 바로 연다 */
+/* 🪑 자리배치(t20-szos0jo.html): 반을 골라 둔 상태면 그 반으로 바로 연다 */
 document.getElementById('seatFabBtn').addEventListener('click', e=>{
   const c = (document.getElementById('classNo').value || currentRoom || '').trim();
-  e.preventDefault(); location.href = 'teacher20.html?' + (c ? 'classNo=' + encodeURIComponent(c) + '&' : '') + 'tab=presentation'; // 발표 기록 탭이 먼저
+  e.preventDefault(); location.href = 't20-szos0jo.html?' + (c ? 'classNo=' + encodeURIComponent(c) + '&' : '') + 'tab=presentation'; // 발표 기록 탭이 먼저
 });
 </script>
 </body>

@@ -1674,7 +1674,7 @@ if(PREVIEW_MODE){
   document.getElementById('previewCloseBtn').addEventListener('click', ()=>{
     window.close();
     setTimeout(()=>{
-      if(!window.closed) location.href = 'teacherpa1.html';
+      if(!window.closed){ if(history.length>1) history.back(); else location.href = 'student.html'; }
     }, 250);
   });
   const pp = PREVIEW_PARAMS;
