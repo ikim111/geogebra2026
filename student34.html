@@ -272,7 +272,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g1" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이 골프는 공을 치지 않고 <b>확대·축소해서</b> 보내요. <span class="o-mark">◎ 중심</span>에서 공까지의 거리를 <b>비율 k배</b>로 늘이거나 줄이면, 공은 중심에서 공을 지나는 직선을 따라 <span class="ghost-mark">○ 점선 공</span> 자리로 날아가요.<br>슬라이더를 움직이거나 <b>점선 공을 직접 끌어서</b> 비율을 바꾸고, 「⛳ 치기」를 눌러 <b>⛳ 홀</b>에 넣어 보세요.</p>
+        <p class="hint">이 골프는 공을 치지 않고 <b>확대·축소해서</b> 보내요. <span class="o-mark">◎ 중심</span>에서 공까지의 거리를 <b>비율 k배</b>로 늘이거나 줄이면, 공은 중심에서 공을 지나는 직선을 따라 <span class="ghost-mark">○ 점선 공</span> 자리로 날아가요.<br>슬라이더를 끌거나, <b>판 위를 끌거나</b>, 칸에 <b>숫자를 직접 입력</b>해서 비율을 바꾸고, 「⛳ 치기」를 눌러 <b>⛳ 홀</b>에 넣어 보세요.</p>
         <div class="kctrl" id="kc1"></div>
         <div class="g-msg" id="gm1"></div>
       </div>
@@ -289,7 +289,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이번에는 홀이 공보다 <b>중심에 가까워요</b>. 비율을 1보다 작게(축소) 해야겠죠?<br>슬라이더 대신 <b>분수나 소수로 직접 입력</b>할 수도 있어요. (예: 1/2, 0.5)</p>
+        <p class="hint">이번에는 홀이 공보다 <b>중심에 가까워요</b>. 비율을 1보다 작게(축소) 해야겠죠?<br>비율은 <b>0부터 2까지</b>예요. 슬라이더·판 위 끌기로 바꾸거나 <b>분수나 소수로 직접 입력</b>할 수 있어요. (예: 1/2, 0.5)</p>
         <div class="kctrl" id="kc2"></div>
         <div class="g-msg" id="gm2"></div>
       </div>
@@ -448,13 +448,17 @@ const TASKS = [
 /* 골프판: 모눈 22×18 (단위 좌표, 왼쪽 아래가 (0,0)). o 중심, p 공, h 홀. fixK: 비율 고정, pickO: 중심을 학생이 놓음
    pond: 연못 [x, y, 너비, 높이]. 홀 4(id 5)는 삼각형 공: a 중심, b·c 꼭짓점, ans 비율 */
 const HOLES = {
-  1:{o:[2,2],  p:[6,4],  h:[10,6], ans:2},
-  2:{o:[20,4], p:[8,14], h:[14,9], ans:0.5, typeK:true},
+  1:{o:[2,2],  p:[6,4],  h:[10,6], ans:2, typeK:true},
+  2:{o:[20,4], p:[8,14], h:[14,9], ans:0.5, typeK:true, kMax:2},   // 선생님 요청: 0~2
   3:{o:null,   p:[6,5],  h:[12,11], fixK:3, pickO:true, ansO:[3,2]},
   4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3], noPreview:true},   // 미리 보기 없음: 어디 떨어질지 생각해서 쳐야 함   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
-  5:{a:[3,3],  b:[9,4],  c:[6,9],  ans:2}
+  5:{a:[3,3],  b:[9,4],  c:[6,9],  ans:2, typeK:true}
 };
-const K_MIN = 0.25, K_MAX = 4, K_STEP = 0.25;
+const K_MIN = 0, K_MAX = 4, K_STEP = 0.1;   // 슬라이더·끌기는 0.1 간격(2026-10-15)
+const kMaxOf = n => HOLES[n].kMax || K_MAX;
+/* 0.1 간격으로 맞추되, 1/3·2/3·1/4 같은 분수 가까이에서는 그 분수에 자석처럼 붙는다(0.1 간격으로는 1/3을 정확히 못 만들어서) */
+const K_FRACS = [1/3,2/3,4/3,5/3,7/3,8/3,10/3,11/3,1/4,3/4,5/4,7/4,1/6,5/6];
+function snapK(v){ const f = K_FRACS.find(x=> Math.abs(v-x) < 0.035); return f!=null ? f : Math.round(v*10)/10; }
 const HIT_TOL = 0.35;   // 홀인 판정 거리(단위)
 
 const state = {
@@ -830,13 +834,20 @@ function renderCtrl(n){
   const H = HOLES[n], h = state.h[n], o = n===5 ? H.a : oOf(n);
   let s = '';
   if(H.fixK) s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(H.fixK)}</b></span><span class="note">(이번 홀은 비율이 정해져 있어요)</span><span class="strokes">타수 ${h.strokes}</span></div>`;
-  else s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(h.k)}</b></span><input type="range" id="kr${n}" min="${K_MIN}" max="${K_MAX}" step="${K_STEP}" value="${Math.min(K_MAX,Math.max(K_MIN,h.k))}">${H.typeK?`<input type="text" class="kin" id="ki${n}" placeholder="예) 1/2" autocomplete="off" title="분수나 소수로 직접 입력">`:''}<span class="strokes">타수 ${h.strokes}</span></div>`;
+  else s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(h.k)}</b></span><input type="range" id="kr${n}" min="${K_MIN}" max="${kMaxOf(n)}" step="0.01" value="${Math.min(kMaxOf(n),Math.max(K_MIN,h.k))}">${H.typeK?`<input type="text" class="kin" id="ki${n}" placeholder="예) 1/2" autocomplete="off" title="분수나 소수로 직접 입력">`:''}<span class="strokes">타수 ${h.strokes}</span></div>`;
   if(H.pickO) s += `<div class="orow">중심: ${o ? `<b>(${o[0]}, ${o[1]})</b> — 다른 교점을 누르면 옮겨져요` : '<b>아직 안 놓음</b> — 모눈의 교점을 누르세요'}</div>`;
   s += `<div class="krow" style="margin-top:8px;"><button class="shoot" id="go${n}" ${(!o || finalLocked) ? 'disabled' : ''}>⛳ 치기</button>${h.done ? '<span class="ok">홀인 완료! 더 쳐 봐도 돼요.</span>' : ''}</div>`;
   box.innerHTML = s;
-  const r = $('kr'+n); if(r) r.addEventListener('input', ()=>{ if(finalLocked) return; state.h[n].k = Number(r.value); state.h[n].landed = false; renderCtrl(n); renderHole(n); refreshAll(); });
-  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 1/2, 0.75, 3 처럼 써 주세요.</span>'; return; } state.h[n].k = v; state.h[n].landed = false; renderCtrl(n); renderHole(n); refreshAll(); });
+  const r = $('kr'+n); if(r){ r.addEventListener('input', ()=>{ if(finalLocked) return; setK(n, snapK(Number(r.value)), {fromSlider:true}); }); r.addEventListener('change', ()=> refreshAll()); }
+  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 1/2, 0.75, 3 처럼 써 주세요.</span>'; return; } if(v > 20){ $('gm'+n).innerHTML = '<span class="miss">비율이 너무 커요.</span>'; return; } setK(n, v); refreshAll(); });
   $('go'+n).addEventListener('click', ()=> shoot(n));
+}
+/* 비율만 바꿀 때는 조작판을 다시 그리지 않는다(슬라이더를 끄는 도중에 다시 그리면 끌기가 끊긴다) */
+function setK(n, k, opt){
+  state.h[n].k = k; state.h[n].landed = false;
+  const lab = document.querySelector('#kc'+n+' .klab b'); if(lab) lab.textContent = 'k = ' + fmtK(k);
+  const r = $('kr'+n); if(r && !(opt && opt.fromSlider)) r.value = Math.min(kMaxOf(n), Math.max(K_MIN, k));
+  renderHole(n);
 }
 function targetOf(n){ const H = HOLES[n]; if(n===5) return null; return H.h; }
 function shoot(n){
@@ -892,18 +903,20 @@ function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.
   const svg = $('g'+n);
   svg.addEventListener('pointerdown', ev=>{
     if(finalLocked || ANIM[n] || HOLES[n].fixK) return;
-    const el = ev.target.closest('.drag'); if(!el) return;
+    const el = ev.target.closest('.drag');
     const H = HOLES[n], o = n===5 ? H.a : oOf(n); if(!o) return;
-    const p = n===5 ? (el.dataset.v==='c' ? H.c : H.b) : H.p;
+    if(!el && H.pickO) return;   // 중심을 놓는 홀은 점선 공을 잡을 때만 비율을 바꾼다(빈 곳을 누르면 중심 놓기)
+    let p = H.p;
+    if(n===5){ if(el) p = el.dataset.v==='c' ? H.c : H.b; else { const q = svgPt(svg, ev), kb = imgOf(o,H.b,state.h[5].k), kc = imgOf(o,H.c,state.h[5].k); p = dist(q,kc) < dist(q,kb) ? H.c : H.b; } }
     kdrag = {n, o, p}; svg.setPointerCapture(ev.pointerId); ev.preventDefault();
   });
   svg.addEventListener('pointermove', ev=>{
     if(!kdrag || kdrag.n!==n) return;
     const q = svgPt(svg, ev), dx = kdrag.p[0]-kdrag.o[0], dy = kdrag.p[1]-kdrag.o[1], L2 = dx*dx+dy*dy;
     let k = ((q[0]-kdrag.o[0])*dx + (q[1]-kdrag.o[1])*dy) / L2;   // 중심→공 방향으로 정사영한 비율
-    k = Math.round(k/K_STEP)*K_STEP; k = Math.min(8, Math.max(K_MIN, k));
+    k = snapK(k); k = Math.min(HOLES[n].kMax ? HOLES[n].kMax : 8, Math.max(K_MIN, k));
     if(Math.abs(k - state.h[n].k) < 1e-9) return;
-    state.h[n].k = k; renderCtrl(n); renderHole(n);
+    setK(n, k);
   });
   const end = ()=>{ if(kdrag && kdrag.n===n){ kdrag = null; refreshAll(); } };
   svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
