@@ -294,7 +294,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g2" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint">이번에는 홀이 공보다 <b>중심에 가까워요</b>. 비율을 1보다 작게(축소) 해야겠죠?<br>비율은 <b>0부터 2까지</b>예요. 슬라이더·판 위 끌기로 바꾸거나 <b>분수나 소수로 직접 입력</b>할 수 있어요. (예: 1/2, 0.5)</p>
+        <p class="hint">이번에는 홀이 공보다 <b>중심에 가까워요</b>. 비율을 1보다 작게(축소) 해야겠죠?<br>비율은 <b>0부터 2까지</b>예요. 슬라이더·판 위 끌기로 바꾸거나 <b>숫자로 직접 입력</b>할 수도 있어요.</p>
         <div class="kctrl" id="kc2"></div>
         <div class="g-msg" id="gm2"></div>
       </div>
@@ -541,7 +541,7 @@ const HOLES = {
   1:{o:[2,2],  p:[6,4],  h:[10,6], ans:2, typeK:true},
   2:{o:[20,4], p:[8,14], h:[14,9], ans:0.5, typeK:true, kMax:2},   // 선생님 요청: 0~2
   3:{o:null,   p:[6,5],  h:[12,11], fixK:3, pickO:true, ansO:[3,2]},
-  4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3], noPreview:true},   // 미리 보기 없음: 어디 떨어질지 생각해서 쳐야 함   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
+  4:{o:null,   p:[6,6],  h:[14,10], pickO:true, typeK:true, pond:[8,6.6,4,3], noPreview:true, kMax:8},   // 미리 보기 없음: 어디 떨어질지 생각해서 쳐야 함   // 답: (2,4)·k=3, (18,12)·k=1/3, (4,5)·k=5, (16,11)·k=1/5 …
   5:{a:[3,3],  b:[9,4],  c:[6,9],  ans:2, typeK:true, two:true},
   6:{a:[3,3],  b:[17,5], c:[11,15], ans:1/2, typeK:true, two:true, kMax:2},                // 두 공 축소: 홀이 A와 BC 사이
   7:{o1:[8,6], o2:[12,5], p:[10,8], ans:3, typeK:true, two:true, dual:true, qwant:1/2},   // 공 1개·중심 2개·홀 2개: 같은 k=3으로 O₁·O₂에서 쳐야 H₁(14,12)·H₂(6,14)에 동시에 → H₁H₂ ∥ O₁O₂, PO₁:PH₁ = O₁O₂:H₁H₂ = 1:2 (P를 사이에 둔 X자)
@@ -951,13 +951,13 @@ function renderCtrl(n){
   const H = HOLES[n], h = state.h[n], o = TWO(n) ? OB(n) : oOf(n);
   let s = '';
   if(H.fixK) s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(H.fixK)}</b></span><span class="note">(이번 홀은 비율이 정해져 있어요)</span><span class="strokes">타수 ${h.strokes}</span></div>`;
-  else s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(h.k)}</b></span><button type="button" class="knud" data-d="-1" id="km${n}" title="0.1 줄이기">◀</button><input type="range" id="kr${n}" min="${kMinOf(n)}" max="${kMaxOf(n)}" step="0.1" value="${Math.min(kMaxOf(n),Math.max(kMinOf(n),h.k))}"><button type="button" class="knud" data-d="1" id="kp${n}" title="0.1 늘리기">▶</button>${H.typeK?`<input type="text" class="kin" id="ki${n}" placeholder="예) 0.5" autocomplete="off" title="숫자로 직접 입력">`:''}<span class="strokes">타수 ${h.strokes}</span></div>`;
+  else s += `<div class="krow"><span class="klab">비율 <b>k = ${fmtK(h.k)}</b></span><button type="button" class="knud" data-d="-1" id="km${n}" title="0.1 줄이기">◀</button><input type="range" id="kr${n}" min="${kMinOf(n)}" max="${kMaxOf(n)}" step="0.1" value="${Math.min(kMaxOf(n),Math.max(kMinOf(n),h.k))}"><button type="button" class="knud" data-d="1" id="kp${n}" title="0.1 늘리기">▶</button>${H.typeK?`<input type="text" class="kin" id="ki${n}" placeholder="예) 1.3" autocomplete="off" title="숫자로 직접 입력">`:''}<span class="strokes">타수 ${h.strokes}</span></div>`;
   if(H.pickO) s += `<div class="orow">중심: ${o ? `<b>(${o[0]}, ${o[1]})</b> — 다른 교점을 누르면 옮겨져요` : '<b>아직 안 놓음</b> — 모눈의 교점을 누르세요'}</div>`;
   s += `<div class="krow" style="margin-top:8px;"><button class="shoot" id="go${n}" ${(!o || finalLocked) ? 'disabled' : ''}>⛳ 치기</button>${h.done ? '<span class="ok">홀인 완료! 더 쳐 봐도 돼요.</span>' : ''}</div>`;
   box.innerHTML = s;
   const r = $('kr'+n); if(r){ r.addEventListener('input', ()=>{ if(finalLocked) return; { const v = Number(r.value); setK(n, snapK(Math.abs(v))*Math.sign(v||1), {fromSlider:true}); } }); r.addEventListener('change', ()=> refreshAll()); }
   [['km'+n,-1],['kp'+n,1]].forEach(([id,d])=>{ const b = $(id); if(b) b.addEventListener('click', ()=>{ if(finalLocked || ANIM[n]) return; const v = Math.min(kMaxOf(n), Math.max(kMinOf(n), snapK(state.h[n].k + d*0.1))); if(Math.abs(v)<1e-9) return; setK(n, v); refreshAll(); }); });
-  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 0.5, 1.5, 3 처럼 써 주세요.</span>'; return; } if(v > 20){ $('gm'+n).innerHTML = '<span class="miss">비율이 너무 커요.</span>'; return; } setK(n, v); refreshAll(); });
+  const ki = $('ki'+n); if(ki) ki.addEventListener('change', ()=>{ if(finalLocked) return; const v = parseK(ki.value); if(v==null){ $('gm'+n).innerHTML = '<span class="miss">비율은 1.3, 2.4 처럼 숫자로 써 주세요.</span>'; return; } if(v > 20){ $('gm'+n).innerHTML = '<span class="miss">비율이 너무 커요.</span>'; return; } setK(n, v); refreshAll(); });
   $('go'+n).addEventListener('click', ()=> shoot(n));
 }
 /* 비율만 바꿀 때는 조작판을 다시 그리지 않는다(슬라이더를 끄는 도중에 다시 그리면 끌기가 끊긴다) */
