@@ -299,7 +299,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 8</span>
+            <span id="previewLabel">1 / 9</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -348,13 +348,13 @@ const STAGES = [
    tip:'💬 "중심에서 공까지 거리와 홀까지 거리는 몇 배인가요?", "비율이 1보다 작으면 공은 어디로 가나요?"'},
   {t:'중심 찾기', d:'홀 2 중심 놓기 → 홀 3 연못 건너기 (화면 3~4)', tasks:[3,4], max:4, reveal:{},
    tip:'💬 "중심·공·홀은 어떤 위치에 있어야 하나요?" — 한 직선 위! 홀 3은 답이 여러 가지예요(반 전체 모음을 보여 주세요).'},
-  {t:'공 두 개·정리', d:'홀 4 확대 → 홀 5 축소 → 홀 6 반대쪽 → 정리하기 (화면 5~8)', tasks:[5,6,7,8], max:null, reveal:{},
-   tip:'💬 "BC와 B′C′는 왜 평행할까요?", "AB:AB′와 BC:B′C′가 같은 이유는?" — 정리 후 학습지 학습하기➊(평행선과 선분의 비)로 넘어가요.'}
+  {t:'공 두 개·정리', d:'홀 4 확대 → 홀 5 축소 → 홀 6 반대쪽 → 홀 7 평행하지 않은 홀 → 정리하기 (화면 5~9)', tasks:[5,6,7,8,9], max:null, reveal:{},
+   tip:'💬 "BC와 B′C′는 왜 평행할까요?", 홀 7: "왜 한 번에 못 넣을까?" → 두 비가 다르면 평행하지 않다(거꾸로), "AB:AB′와 BC:B′C′가 같은 이유는?" — 정리 후 학습지 학습하기➊(평행선과 선분의 비)로 넘어가요.'}
 ];
 const TASK_LABELS = [
   {id:1, key:'a1', label:'연습 홀'}, {id:2, key:'a2', label:'홀 1 축소'}, {id:3, key:'a3', label:'홀 2 중심 찾기'},
   {id:4, key:'a4', label:'홀 3 연못'}, {id:5, key:'a5', label:'홀 4 두 공 확대'}, {id:6, key:'a6', label:'홀 5 두 공 축소'},
-  {id:7, key:'a7', label:'홀 6 반대쪽'}, {id:8, key:'a8', label:'정리하기'}
+  {id:7, key:'a7', label:'홀 6 반대쪽'}, {id:8, key:'a8', label:'홀 7 평행 아님'}, {id:9, key:'a9', label:'정리하기'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
@@ -362,8 +362,7 @@ function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtInt(n){ return Number(n).toLocaleString('ko-KR'); }
 const arrOf = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
-function fmtK(k){ k = Number(k); if(!Number.isFinite(k)) return '?'; if(k<0) return '−'+fmtK(-k); if(Math.abs(k-Math.round(k))<1e-9) return String(Math.round(k));
-  for(let d=2; d<=12; d++){ const n = k*d; if(Math.abs(n-Math.round(n))<1e-9) return `${Math.round(n)}/${d}`; } return String(Math.round(k*100)/100); }
+function fmtK(k){ k = Number(k); if(!Number.isFinite(k)) return '?'; if(k<0) return '−'+fmtK(-k); const r = Math.round(k*100)/100; return (Math.abs(k*100-Math.round(k*100))<1e-6?'':'≈')+String(r); }
 const HOLE_O = {1:'(2,2)', 2:'(20,4)', 5:'A(3,3)', 6:'A(3,3)', 7:'A(11,9)'};
 const REL = {par:'평행', perp:'수직', none:'관계없음'};
 function holeLine(h, id){
@@ -377,7 +376,10 @@ function activityDetailHTML(s, id){
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
   if(id>=1 && id<=4){ let s2 = holeLine(d['h'+id], id); if(id===4){ const sols = arrOf(d.h4 && d.h4.sols); if(sols.length) s2 += kv('넣은 방법', sols.map(x=>{ const [o,k]=String(x).split('|'); return `중심(${o}) k=${k}`; }).join(' / ')); } return s2; }
   if(id>=5 && id<=7){ const q = d['q'+id] || {}; let s2 = holeLine(d['h'+id], id); if(q.rel || q.ra || q.rb) s2 += kv('⑴ BC와 B′C′', REL[q.rel]||'-') + kv('⑵ AB:AB′', q.ra||'-') + kv('⑶ BC:B′C′', q.rb||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); return s2; }
-  if(id===8) return tb(d.t8) + aiFbHTML(d);
+  if(id===8){ const h = d.h8 || {}, q = d.q8 || {}; if(!(Number(h.strokes)>0) && !q.checked) return '';
+    const W = {ratio:'두 비가 달라서(평행 아님)', far:'너무 멀어서', center:'중심 위치'};
+    return kv('타수', h.strokes||0) + kv('흰 공 / 노란 공', `${h.inB?'⛳':'-'} / ${h.inC?'⛳':'-'}`) + kv('⑴ AB:AB′', q.ra||'-') + kv('⑵ AC:AC′', q.rb||'-') + kv('⑶ 까닭', W[q.why]||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); }
+  if(id===9) return tb(d.t9 || d.t8) + aiFbHTML(d);
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -397,6 +399,9 @@ function taskAggregateHTML(id){
       inner += `<div style="margin-top:6px;">물음 확인한 학생 ${qs.length}명</div>` + (qs.length ? barsHTML(rows, qs.length) : ''); }
     return box(`${taskLabelOf(id)}`, inner);
   }
+  if(id===8){ const hs = ss.map(d=>d.h8).filter(h=>h && Number(h.strokes)>0); const both = hs.filter(h=>h.inB && h.inC).length; const qs = ss.map(d=>d.q8).filter(q=>q && q.checked);
+    const rows = [{label:'두 비가 달라서 (정답)', n: qs.filter(q=>q.why==='ratio').length, answer:true}, {label:'너무 멀어서', n: qs.filter(q=>q.why==='far').length}, {label:'중심 위치', n: qs.filter(q=>q.why==='center').length}];
+    return box(taskLabelOf(8), `두 공 각각 넣어 본 학생 <b>${both}명</b> / 시도 ${hs.length}명<div style="margin-top:6px;">물음 확인한 학생 ${qs.length}명</div>` + (qs.length ? barsHTML(rows, qs.length) : '')); }
   return '';
 }
 /* 학생 화면 공개 버튼 (control/reveal/sum) */
