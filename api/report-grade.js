@@ -28,11 +28,11 @@ const PROMPT = `너는 중학교 2학년 확률·통계 탐구 보고서를 채�
 - data.score는 프로그램이 dchecks의 O 개수로 다시 계산한다(인정되는 자료가 없으면 0).
 
 [자료 분석 4항목 판단]
-- achecks: [채점 기준] 3번의 4항목((1) 자료 1 활용 (2) 자료 2 활용 (3) 확률 계산 방법 (4) 확률값 해석)을 순서대로 "O"·"X"로 판단한 배열(4개). 본론을 보고 너그럽게 판단한다.
+- achecks: [채점 기준] 3번의 4항목((1) 자료 1 활용 (2) 자료 2 활용 (3) 분자·분모를 올바르게 선택 (4) 분수·소수로 올바르게 계산)을 순서대로 "O"·"X"로 판단한 배열(4개). 본론을 보고 너그럽게 판단한다. 실수 하나로 (3)·(4)를 함께 깎지 않는다(분자·분모가 틀려도 그 식대로 맞게 계산했으면 (4)는 O).
 - analysis.score는 프로그램이 achecks의 O 개수로 다시 계산한다.
 
 [글의 논리 판단]
-- lchecks: [채점 기준] 4번의 (4) 결론에 질문에 대한 답, (5) 확률 해석 — 2개를 "O"·"X"로 판단한 배열(2개). (5)는 너그럽게: 엉뚱하거나 질문·자료와 상관없는 결론일 때만 X.
+- lchecks: [채점 기준] 4번의 (4) 확률값의 뜻을 알맞게 해석, (5) 결론에 질문에 대한 답 — 이 순서로 2개를 "O"·"X"로 판단한 배열(2개). (4)는 학생이 구한 값을 기준으로 너그럽게: 해석이 없거나 값과 전혀 맞지 않을 때만 X.
   (1)~(3) 글자 수는 프로그램이 센다. logic.score는 프로그램이 다시 계산한다.
 
 [항목마다 쓰는 것]
@@ -103,13 +103,13 @@ module.exports = async (req, res) => {
     if (k === 'question' && qchecks) sc = qScore(qchecks);
     if (k === 'data' && dchecks) sc = goodSrc ? dchecks.filter(x => x === 'O').length : 0;
     if (k === 'data' && !goodSrc) sc = 0;
-    if (k === 'analysis' && achecks) sc = achecks.filter(x => x === 'O').length; // 본론에서 자료1·자료2 활용, 계산, 해석 (2026-10-12)
+    if (k === 'analysis' && achecks) sc = achecks.filter(x => x === 'O').length; // 자료1·자료2 활용, 분자·분모 선택, 분수·소수 계산 (2026-10-15)
     if (k === 'logic') sc = lchecks5.filter(x => x === 'O').length;
     scores[k] = sc; reasons[k] = String(e.reason || '').slice(0, 300);
     fb[k] = { good: clean(e.good, 2), fix: clean(e.fix, 2), ask: clean(e.ask, 1) };
     total += sc;
   }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model });
 };

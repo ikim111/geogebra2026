@@ -503,13 +503,14 @@ const Q3 = ["탐구 질문을 썼는가? (기본 1점)", "확률을 구하는 �
 const Q3S = ['질문을 씀(기본)','확률을 구함','예측형·비교선택형'];
 const D3S = ["자료 1이 질문에 맞음", "자료 2가 맞고 다른 정보", "계산에 필요한 수치 모두"];
 const A4S = { '비교·선택형': ['확률1 수치','확률2 수치','확률1 식·결과','확률2 식·결과'], '예측형': ['분자 수치','분모 수치','분수(식)','계산 결과'] };
-const L5S = ['서론 150자','본론 500자','결론 150자','결론에 답','확률 해석'];
-const A4N = ['자료1 활용','자료2 활용','확률 계산','확률값 해석']; // 2026-10-12: 본론에서 판단
+const L5S = ['서론 150자','본론 500자','결론 150자','확률값 해석','결론에 답'];   // 2026-10-15 기준(rv 3)
+const A4N = ['자료1 활용','자료2 활용','분자·분모 선택','분수·소수 계산']; // 2026-10-15 기준(rv 3)
 /* 자료 분석·글의 논리: 항목별 1/0 칩 */
 function binChips(k, ai, sc){
   if(!ai) return '';
   let names = null, c = '';
-  if(k==='analysis'){ if(typeof ai.achecks==='string' && ai.achecks.length===4 && !ai.qtype){ names = A4N; c = ai.achecks; } else return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(본론에서 자료1·자료2 활용, 계산, 해석)으로 채점해요.</small></div>`; }
+  if((k==='analysis' || k==='logic') && ai.rv!==3) return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(분자·분모 선택, 분수·소수 계산, 확률값 해석, 결론의 답)으로 채점해요.</small></div>`;
+  if(k==='analysis' && typeof ai.achecks==='string' && ai.achecks.length===4){ names = A4N; c = ai.achecks; }
   if(k==='logic' && typeof ai.lchecks==='string' && ai.lchecks){ names = L5S; c = ai.lchecks; }
   if(!names) return '';
   return `<div class="gr-q">${names.map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}">${i+1}. ${esc(t)} <b>${c[i]==='O'?'1':'0'}</b></span>`).join('')}<small>합계 ${sc}점${k==='logic'?' (글자 수 3칸은 프로그램이 셈)':''}</small></div>`;
