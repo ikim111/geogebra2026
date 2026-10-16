@@ -1173,7 +1173,7 @@ function renderPlay(){
   const ok = n >= 10;
   document.querySelectorAll('#autoBtns button').forEach(b=> b.disabled = !ok || state.playing || !!state.running);
   $('customN').disabled = !ok;
-  $('autoHint').className = ok ? 'hint' : 'lockhint'; $('autoHint').innerHTML = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. 경기 한 번이 결과판의 칸 하나예요.' : `🔒 위의 「▶ 남은 경기 하기」를 <b>직접 10번</b> 눌러야 이 버튼들이 켜져요. <b>(지금 ${n}번)</b>`;
+  $('autoHint').className = ok ? 'hint' : 'lockhint'; $('autoHint').innerHTML = ok ? `버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. 경기 한 번이 결과판의 칸 하나예요.<br><b>꼭 해 볼 것:</b> ${hasRun(1000)?'✅':'⬜'} 1,000번 &nbsp; ${hasRun(10000)?'✅':'⬜'} 10,000번 <span class="note">(컴퓨터가 하는 중에는 다른 버튼이 잠시 꺼져요. 「⏩ 바로 결과 보기」를 누르면 바로 끝나요)</span>` : `🔒 위의 「▶ 남은 경기 하기」를 <b>직접 10번</b> 눌러야 이 버튼들이 켜져요. <b>(지금 ${n}번)</b>`;
   renderAutoTable();
 }
 function renderAutoTable(){

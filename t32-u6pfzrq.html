@@ -369,12 +369,13 @@ const MIN = [
 ];
 const ob = v => (v && typeof v==='object') ? v : {};
 const ar = v => Array.isArray(v) ? v : Object.values(ob(v));
-const KS = [{id:2, f:'k1', a:'SSS'}, {id:3, f:'k2', a:'SAS'}, {id:4, f:'k3', a:'ASA'}];
+const KS = [{id:2, f:'c1', a:'SSS', n:4}, {id:3, f:'c2', a:'SAS', n:3}, {id:4, f:'c3', a:'ASA', n:4}];
+const missSum = k => ar(k.miss).reduce((s,x)=>s+(+x||0),0);
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
-  if(id===1){ const f = ob(d.f1), fd = ar(f.found); if(!fd.length && !f.draws) return ''; return kv('찾은 최소 조건', `${fd.length}/7`) + kv('그려 본 횟수', f.draws||0) + `<div style="font-size:13px;">${MIN.map(m=>`${fd.includes(m.k)?'⭐':'—'} ${m.n}`).join(' · ')}</div>`; }
-  const K = KS.find(x=>x.id===id); if(K){ const k = ob(d[K.f]); if(!k.cong) return ''; return kv('합동 조건', `${esc(k.cong)} 합동 ${k.cong===K.a?'✅':'❌'}`) + (k.miss ? kv('틀린 횟수', k.miss) : ''); }
+  if(id===1){ const f = ob(d.p1), fd = ar(f.found); if(!fd.length && !f.draws) return ''; return kv('찾은 최소 조건', `${fd.length}/7`) + kv('그려 본 횟수', f.draws||0) + `<div style="font-size:13px;">${MIN.map(m=>`${fd.includes(m.k)?'⭐':'—'} ${m.n}`).join(' · ')}</div>`; }
+  const K = KS.find(x=>x.id===id); if(K){ const k = ob(d[K.f]); if(!k.step && !missSum(k)) return ''; return kv('작도', `${Math.min(+k.step||0, K.n)}/${K.n}단계`) + (missSum(k) ? kv('확인에서 틀린 횟수', missSum(k)) : '') + (k.cong ? kv('합동 조건', `${esc(k.cong)} 합동 ${k.cong===K.a?'✅':'❌'}`) + (k.cmiss ? kv('합동 틀린 횟수', k.cmiss) : '') : ''); }
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -382,10 +383,10 @@ function barsHTML(rows, total){ return rows.map(r=>`<div class="barrow${r.answer
 function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
-  if(id===1){ const fs = ss.map(d=>ar(ob(d.f1).found)).filter(x=>x.length || true); const n = ss.filter(d=>ob(d.f1).draws).length;
+  if(id===1){ const fs = ss.map(d=>ar(ob(d.p1).found)); const n = ss.filter(d=>ob(d.p1).draws).length;
     return box(`최소 조건 찾기 (그려 본 학생 ${n}명)`, barsHTML(MIN.map(m=>({label:m.n, n:fs.filter(f=>f.includes(m.k)).length, answer:true})), Math.max(1,n)) + `<div class="kv">7가지 모두 찾은 학생 <b>${fs.filter(f=>f.length>=7).length}</b>명</div>`); }
-  const K = KS.find(x=>x.id===id); if(K){ const ks = ss.map(d=>ob(d[K.f])); const ok = ks.filter(k=>k.cong===K.a).length, miss = ks.filter(k=>k.miss).length;
-    return box(`${taskLabelOf(id)}`, `<div class="kv">합동 조건(${K.a}) 맞힌 학생 <b>${ok}</b>명 · 한 번 이상 틀린 학생 <b>${miss}</b>명</div>`); }
+  const K = KS.find(x=>x.id===id); if(K){ const ks = ss.map(d=>ob(d[K.f])); const ok = ks.filter(k=>k.cong===K.a).length, miss = ks.filter(k=>k.cmiss).length, built = ks.filter(k=>(+k.step||0)>=K.n).length, sm = ks.filter(k=>missSum(k)>=2).length;
+    return box(`${taskLabelOf(id)}`, `<div class="kv">작도를 마친 학생 <b>${built}</b>명 · 확인에서 2번 이상 틀린 학생 <b>${sm}</b>명</div><div class="kv">합동 조건(${K.a}) 맞힌 학생 <b>${ok}</b>명 · 한 번 이상 틀린 학생 <b>${miss}</b>명</div>`); }
   return '';
 }
 function updateRevealBtns(){ renderStages(); renderTeacherView(); }
