@@ -459,17 +459,18 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g8" viewBox="0 0 460 380" class="golf"></svg></div>
       <div class="g-side">
-        <p class="hint"><b>꼭짓점 A, B, C를 끌어서</b> 삼각형 모양을 바꿔 보세요. 균형점 G와 꼭짓점에서 G를 지나는 세 선이 함께 움직여요. 길이 비도 같이 보여요.<br><span class="note">(세 번 이상 바꿔 보세요)</span></p>
+        <p class="hint"><b>꼭짓점 A, B, C를 끌어서</b> 삼각형 모양을 바꿔 보세요. 균형점 G와 꼭짓점에서 G를 지나는 세 선이 함께 움직여요. 나뉜 길이도 같이 보여요.<br><span class="note">(세 번 이상 바꿔 보세요)</span></p>
         <div class="meas" id="meas8"></div>
         <div class="name-box" id="name8" style="display:none;">
           <b>이름 붙이기</b> 세 중선이 만나는 점(균형점)을 삼각형의 <b>무게중심</b>이라고 해요.
         </div>
-        <div class="question" style="font-size:15.5px;margin-top:10px;">💭 모양을 어떻게 바꿔도 비가 항상 같은 값이에요. <b>왜 항상 그럴까요?</b> 내 생각을 써 보세요. (7.3에서 배운 것을 떠올려 봐요)</div>
-        <textarea id="t8" placeholder="두 변의 중점을 이은 선분은 ~ 그래서 ~"></textarea>
+        <div class="question" style="font-size:15.5px;margin-top:10px;">💭 모양을 바꿔도 세 비는 <b>항상 같은 값</b>이에요. 가장 간단한 자연수의 비로 나타내 보세요.</div>
+        <div class="q5row" style="margin-top:6px;">꼭짓점에서 G까지 : G에서 변의 중점까지 = <input type="text" class="ratio" id="r8" placeholder="○ : ○" autocomplete="off"></div>
+        <div class="g-msg" id="r8msg"></div>
       </div>
     </div>
   </div>
-  <div class="why" id="why8">삼각형을 세 번 이상 바꿔 보고, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why8">삼각형을 세 번 이상 바꿔 보고, 비를 바르게 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 9: 정리하기 ===================== -->
@@ -1211,7 +1212,7 @@ const state = {
   t5:'', geo5:null,                              // 화면 5: 작도 도구로 그린 것(스냅샷)
   lines6:[false,false,false],                    // 화면 6: 그은 선(꼭짓점별)
   c6:{a:'', checked:false, ok:false}, c7:{b:'', checked:false, ok:false},
-  tri8:[[4,3],[18,4],[9,15]], moves8:0, t8:'',
+  tri8:[[4,3],[18,4],[9,15]], moves8:0, t8:'', r8:'',
   t9:'', shared:{5:false,9:false}, seen:{5:false,9:false}
 };
 let REVEAL = {};
@@ -1234,7 +1235,7 @@ function isDone(id){
   if(id===5) return len(state.t5)>=MIN_TEXT && state.shared[5];
   if(id===6) return state.lines6.every(Boolean) && state.c6.checked && state.c6.ok;
   if(id===7) return state.c7.checked && state.c7.ok;
-  if(id===8) return state.moves8>=3 && len(state.t8)>=MIN_TEXT;
+  if(id===8) return state.moves8>=3 && (r8Ok() || len(state.t8)>=MIN_TEXT);   // t8: 예전 서술형으로 이미 쓴 학생
   if(id===9) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbList().length>=1;
   return false;
 }
@@ -1246,14 +1247,14 @@ function valueOf(id){
   if(id===5) return state.t5.trim();
   if(id===6){ if(!state.lines6.some(Boolean) && !state.c6.a) return ''; return `선: ${state.lines6.map((v,i)=>v?VN[i]:null).filter(Boolean).join(',')||'-'} · 규칙: ${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[state.c6.a]||'-'}${state.c6.checked?(state.c6.ok?' ✓':' ✗'):''}`; }
   if(id===7) return state.c7.b ? `비: ${state.c7.b}${state.c7.checked?(state.c7.ok?' ✓':' ✗'):''}` : '';
-  if(id===8) return (state.moves8||state.t8.trim()) ? `[모양 바꾸기 ${state.moves8}번]\n${state.t8.trim()}` : '';
+  if(id===8) return (state.moves8||state.r8.trim()||state.t8.trim()) ? `[모양 바꾸기 ${state.moves8}번]` + (state.r8.trim()?` 찾은 비 ${state.r8.trim()}${r8Ok()?' ✅':''}`:'') + (state.t8.trim()?`\n${state.t8.trim()}`:'') : '';
   if(id===9) return state.t9.trim();
   return '';
 }
 function collectData(){
   return { pred: state.pred, bal: state.bal.map(b=>({pin:b.pin, tries:b.tries, done:b.done})), cur: state.cur, hang: Object.assign({}, state.hang, {lines: state.hang.lines.slice()}), t5: state.t5, geo5: state.geo5,
     lines6: state.lines6.slice(), c6: Object.assign({}, state.c6), c7: Object.assign({}, state.c7),
-    tri8: state.tri8.map(p=>[r1(p[0]),r1(p[1])]), moves8: state.moves8, t8: state.t8, t9: state.t9,
+    tri8: state.tri8.map(p=>[r1(p[0]),r1(p[1])]), moves8: state.moves8, t8: state.t8, r8: state.r8, t9: state.t9,
     shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() };
 }
 /* 친구들에게 보여 줄 것(이름 없이): 예측 점은 찍으면 바로, 서술은 공유를 누른 뒤 */
@@ -1737,7 +1738,7 @@ function renderG8(){
   let s = gridSVG() + `<path d="${triPath(t)}" ${TRI_FILL}/>`;
   const rows = [];
   t.forEach((v,i)=>{ const m = mid(t[(i+1)%3], t[(i+2)%3]); s += `<line x1="${px(v[0])}" y1="${py(v[1])}" x2="${px(m[0])}" y2="${py(m[1])}" stroke="#1565c0" stroke-width="2"/>` + dotSVG(m, '#1565c0', FN[i], 4);
-    rows.push(`<span class="m eq">${VN[i]}G : G${FN[i]} = ${r1(dist(v,g))} : ${r1(dist(g,m))} = 2 : 1</span>`); });
+    rows.push(`<span class="m eq">${VN[i]}G : G${FN[i]} = ${r1(dist(v,g))} : ${r1(dist(g,m))}${r8Ok()?' = 2 : 1':''}</span>`); });
   s += dotSVG(g, '#2e7d32', 'G', 7);
   t.forEach((v,i)=>{ s += `<circle class="vtx" data-i="${i}" cx="${px(v[0])}" cy="${py(v[1])}" r="11" fill="rgba(21,101,192,.25)" stroke="#1565c0" stroke-width="2"/>`; });
   s += labelsSVG(t, VN);
@@ -1753,8 +1754,16 @@ $('g8').addEventListener('pointermove', ev=>{ if(!drag8) return; const r = svgPo
   state.tri8 = nt; drag8.moved = true; renderG8(); });
 const endDrag8 = ()=>{ if(!drag8) return; if(drag8.moved){ state.moves8++; renderG8(); check8(); } drag8 = null; };
 $('g8').addEventListener('pointerup', endDrag8); $('g8').addEventListener('pointercancel', endDrag8);
-function check8(opts){ state.t8 = $('t8').value; setWhy(8, '✅ 완료! '+NEXT, state.moves8<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.moves8}번)` : '왜 항상 그런지 내 생각을 쓰면 다음으로 넘어갈 수 있어요.'); renderG8(); refreshAll(opts); }
-$('t8').addEventListener('input', ()=>check8());
+function r8Ok(){ const v = parseRatio(state.r8); return v!=null && Math.abs(v-2)<1e-9 && /^\s*2\s*:\s*1\s*$/.test(state.r8); }
+function check8(opts){
+  state.r8 = $('r8').value; const v = parseRatio(state.r8);
+  $('r8').readOnly = finalLocked;
+  $('r8msg').innerHTML = !state.r8.trim() ? '' : r8Ok() ? '<span class="ok">✅ 맞아요! 어떤 모양이어도 2 : 1 이에요.</span>' : v==null ? '<span class="bad">「○ : ○」 꼴로 써 보세요.</span>' : Math.abs(v-2)<0.02 ? '<span class="bad">값은 맞아요! 가장 간단한 자연수의 비로 써 보세요.</span>' : '<span class="bad">위의 길이를 다시 보고 써 보세요.</span>';
+  renderG8();
+  setWhy(8, '✅ 완료! '+NEXT, state.moves8<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.moves8}번)` : '세 비를 가장 간단한 자연수의 비로 쓰면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+$('r8').addEventListener('input', ()=>check8());
 
 /* ---------- 화면 8: 정리 ---------- */
 function renderRecap(){
@@ -1823,7 +1832,7 @@ function restoreData(d){
   if(d.c7) state.c7 = {b: String(d.c7.b||''), checked: !!d.c7.checked, ok: !!d.c7.ok};
   $('c6a').value = state.c6.a; $('c7b').value = state.c7.b;
   const t8 = arr(d.tri8).map(p=>arr(p).map(Number)); if(t8.length===3 && t8.every(p=>p.length===2 && p.every(Number.isFinite))) state.tri8 = t8;
-  state.moves8 = Number(d.moves8)||0; state.t8 = d.t8 || ''; $('t8').value = state.t8;
+  state.moves8 = Number(d.moves8)||0; state.t8 = d.t8 || ''; state.r8 = String(d.r8||''); $('r8').value = state.r8;
   state.t9 = d.t9 || ''; $('t9').value = state.t9;
   aifbRestore(d);
   [5,9].forEach(n=>{ state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
