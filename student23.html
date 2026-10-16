@@ -217,6 +217,9 @@
   .q .row{display:flex;align-items:center;gap:8px;}
   .q input{width:110px;font-size:19px;padding:5px 8px;border:1.5px solid #c5cad1;border-radius:8px;font-family:inherit;text-align:center;}
   .q .fb{font-size:13px;line-height:1.5;min-height:18px;color:#b23b3b;} .q.right .fb{color:#2e7d32;}
+  .mfrac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 3px;}
+  .mfrac>span{padding:0 4px;} .mfrac>span:first-child{border-bottom:2px solid currentColor;}
+  .q .say .mfrac{font-size:22px;} .mfrac.sm{font-size:14px;} .mfrac.sm>span:first-child{border-bottom-width:1.5px;}
 </style></style>
 </head>
 <body>
@@ -262,7 +265,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 4</div>
+        <div class="progress-text" id="progressText">완료 0 / 5</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -274,22 +277,27 @@
 
     <div id="taskContainer">
 
-<!-- ===================== 활동 1: 확률이 0인 사건, 1인 사건 ===================== -->
+<!-- ===================== 화면 1: 분수 바르게 입력하기 ===================== -->
 <section class="task activity" id="task-a1" data-task-id="1">
   <div class="card" id="fracCard">
-    <div class="act-head"><span class="act-tag">먼저 연습</span><span class="badge pending" id="badge-frac">미완료</span></div>
+    <div class="act-head"><span class="act-tag">먼저 연습</span><span class="badge pending" id="badge-a1">미완료</span></div>
     <h2>✏️ 분수 바르게 입력하기 (4문제)</h2>
     <div class="rulebox">
-      <div class="rule-main"><b>○분의 △</b> 는 <b class="big">△/○</b> 로 써요. <span class="ex">예) 3분의 2 → <b>2/3</b></span></div>
+      <div class="rule-main"><span class="mfrac"><span>△</span><span>○</span></span> 는 <b class="big">△/○</b> 로 써요. <span class="ex">예) <span class="mfrac sm"><span>2</span><span>3</span></span> → <b>2/3</b></span></div>
       <ul>
-        <li><b>분자</b>(읽을 때 나중) → <b>/</b> → <b>분모</b>(읽을 때 먼저) 순서예요. 글자(분, 의)나 ÷ 는 쓰지 않아요.</li>
+        <li><b>분자</b>(위) → <b>/</b> → <b>분모</b>(아래) 순서예요. ÷ 나 : 는 쓰지 않아요.</li>
         <li>📱 태블릿에서는 <b>123</b> 키를 누르면 <b>/</b> 가 있어요. 쓰고 <b>Enter</b>를 누르면 채점돼요.</li>
       </ul>
     </div>
     <div class="qgrid" id="qgrid"></div>
   </div>
+  <div class="why" id="why1">4문제를 모두 맞히면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 2: 확률이 0인 사건, 1인 사건 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
   <div class="card">
-    <div class="act-head"><span class="act-tag">활동 1</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <div class="act-head"><span class="act-tag">활동 1</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>일상에서 확률 찾기</h2>
     <p class="hint">우리 주변에서 일어날 확률이 <b>0</b>인 사건과 <b>1</b>인 사건의 예를 찾아 보세요.</p>
     <table class="extable">
@@ -309,33 +317,33 @@
       <div><div class="exh o">확률이 1인 사건</div><div class="exlist" id="exList1"></div></div>
     </div>
   </div>
-  <div class="why" id="why1">두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 2: 말 속의 가능성을 수직선에 ===================== -->
-<section class="task activity" id="task-a2" data-task-id="2">
+<section class="task activity" id="task-a3" data-task-id="3">
   <div class="card">
-    <div class="act-head"><span class="act-tag">활동 2</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <div class="act-head"><span class="act-tag">활동 2</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>말 속에서 확률 찾기</h2>
     <p class="hint">일상생활에서는 어떤 일이 일어날 가능성을 여러 가지 말로 표현해요. 각 표현에 나타난 가능성을 <b>확률</b>로 나타내 보세요.</p>
     <ol class="howto">
       <li>아래 표현 카드를 누른 뒤, 수직선 위를 누르면 그 자리에 놓여요. 놓은 표시는 끌어서 옮길 수 있어요.</li>
       <li>정확한 값은 <b>확률 칸</b>에 분수나 소수로 써요. 칸에 쓰면 표시도 그 자리로 옮겨져요.</li>
     </ol>
-    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.75, 백분율 75%도 돼요)</div>
+    <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) <span class="mfrac sm"><span>2</span><span>3</span></span> → <b>2/3</b>, <span class="mfrac sm"><span>1</span><span>4</span></span> → <b>1/4</b> (소수 0.75, 백분율 75%도 돼요)</div>
     <div class="nlwrap">
       <div class="nl" id="nl"><div class="nlbar"></div><div id="nlTicks"></div><div id="nlMarks"></div></div>
     </div>
     <div class="exprs" id="exprs"></div>
     <div class="error" id="err2"></div>
   </div>
-  <div class="why" id="why2">네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why3">네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 3: 친구들은 어디에 놓았을까? ===================== -->
-<section class="task activity" id="task-a3" data-task-id="3">
+<section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
-    <div class="act-head"><span class="act-tag">활동 3</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <div class="act-head"><span class="act-tag">활동 3</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>친구들은 어디에 놓았을까?</h2>
     <div class="waitbox" id="lineWait">⏳ 선생님이 다음 단계를 열면 우리 반 친구들이 놓은 자리가 여기에 나타나요.</div>
     <div id="lineBox" style="display:none;">
@@ -347,19 +355,19 @@
     <div class="big-question">친구들과 생각이 가장 많이 달랐던 표현은 무엇인가요? 왜 생각이 달라졌을까요?</div>
     <textarea id="a3Text" placeholder="친구들의 생각이 공개되면 쓸 수 있어요."></textarea>
   </div>
-  <div class="why" id="why3">선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why4">선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 4: 내가 찾은 표현 ===================== -->
-<section class="task activity" id="task-a4" data-task-id="4">
+<section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
-    <div class="act-head"><span class="act-tag">활동 4</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <div class="act-head"><span class="act-tag">활동 4</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>내가 찾은 확률 표현</h2>
     <p class="hint">우리 주변에서 확률(가능성)과 관련된 표현을 하나 찾아, 그 의미를 확률로 나타내 보세요.<br>
       <span class="note">예: 속담, 사자성어, 일기 예보, 광고, 친구들끼리 쓰는 말 …</span></p>
     <div class="chk-field"><label>일상 표현</label><input type="text" id="myExpr" style="width:320px;text-align:left;" placeholder="예) 일기 예보: 내일 비 올 확률 30%"></div>
     <div class="chk-field"><label>확률</label><input type="text" id="myVal" style="width:140px;" placeholder="분수나 소수"> <span class="mark" id="myValMsg"></span>
-      <span class="fractip" style="margin:0 0 0 4px;font-size:13px;padding:4px 10px;">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.3, 백분율 30%도 돼요)</span></div>
+      <span class="fractip" style="margin:0 0 0 4px;font-size:13px;padding:4px 10px;">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) <span class="mfrac sm"><span>2</span><span>3</span></span> → <b>2/3</b>, <span class="mfrac sm"><span>1</span><span>4</span></span> → <b>1/4</b> (소수 0.3, 백분율 30%도 돼요)</span></div>
     <p class="hint"><b>이렇게 나타낸 이유 (표현의 뜻)</b></p>
     <textarea id="myWhy" placeholder="이 표현은 ~라는 뜻이라서 확률을 ~로 나타냈다."></textarea>
     <div class="aifb" id="aifb23"></div>
@@ -372,7 +380,7 @@
       <div class="gallery" id="gallery"></div>
     </div>
   </div>
-  <div class="why" id="why4">표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why5">표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -422,10 +430,11 @@ const UNIT_NO = 23;
 const MIN_TEXT = 5;   // 서술형 최소 글자 수
 
 const TASKS = [
-  {id:1, key:'a1', title:'활동 1. 확률이 0인 사건과 1인 사건'},
-  {id:2, key:'a2', title:'활동 2. 말 속의 가능성을 확률로 나타내기'},
-  {id:3, key:'a3', title:'활동 3. 친구들은 어디에 놓았을까?'},
-  {id:4, key:'a4', title:'활동 4. 내가 찾은 확률 표현'}
+  {id:1, key:'a1', title:'먼저 연습. 분수 바르게 입력하기'},
+  {id:2, key:'a2', title:'활동 1. 확률이 0인 사건과 1인 사건'},
+  {id:3, key:'a3', title:'활동 2. 말 속의 가능성을 확률로 나타내기'},
+  {id:4, key:'a4', title:'활동 3. 친구들은 어디에 놓았을까?'},
+  {id:5, key:'a5', title:'활동 4. 내가 찾은 확률 표현'}
 ];
 /* 표현 카드와 기준값(선생님이 「기준값 공개」를 누르면 활동 3에 표시) */
 const CARDS = [
@@ -456,8 +465,8 @@ function fdiag(raw, q){
   const [p, d] = q, m = s.match(/^(\d+)\/(\d+)$/);
   if(m){ const a = +m[1], b = +m[2];
     if(a===p && b===d) return {ok:true};
-    if(a===d && b===p) return {msg:'분자와 분모가 바뀌었어요. 먼저 읽는 수(분모)는 / 뒤에 써요.'};
-    if(b && a*d===b*p) return {msg:'값은 같아요! 그래도 읽은 그대로 써 보세요.'};
+    if(a===d && b===p) return {msg:'분자와 분모가 바뀌었어요. 위의 수(분자)를 먼저, 아래 수(분모)는 / 뒤에 써요.'};
+    if(b && a*d===b*p) return {msg:'값은 같아요! 그래도 보이는 그대로 써 보세요.'};
     return {msg:'숫자를 다시 확인해 보세요.'}; }
   if(/[분의]/.test(s)) return {msg:'글자(분, 의) 말고 숫자와 / 만 써요.'};
   if(/[÷:\\]/.test(s)) return {msg:'÷, : 대신 / 를 써요.'};
@@ -480,17 +489,19 @@ const valOf = t => { const r = parseRel(t); return r.value!==undefined ? r.value
 const fmtV = v => { if(v===0||v===1) return String(v); const r = Math.round(v*10000)/10000; return String(r); };
 
 function isDone(id){
-  if(id===1) return fracDone() && len(state.ex0)>=MIN_TEXT && len(state.ex1)>=MIN_TEXT;
-  if(id===2) return CARDS.every(c=>valOf(state.vals[c.k])!==null);
-  if(id===3) return state.sawLine && len(state.a3Text)>=MIN_TEXT;
-  if(id===4) return len(state.myExpr)>=2 && valOf(state.myVal)!==null && len(state.myWhy)>=MIN_TEXT;
+  if(id===1) return fracDone();
+  if(id===2) return len(state.ex0)>=MIN_TEXT && len(state.ex1)>=MIN_TEXT;
+  if(id===3) return CARDS.every(c=>valOf(state.vals[c.k])!==null);
+  if(id===4) return state.sawLine && len(state.a3Text)>=MIN_TEXT;
+  if(id===5) return len(state.myExpr)>=2 && valOf(state.myVal)!==null && len(state.myWhy)>=MIN_TEXT;
   return false;
 }
 function valueOf(id){
-  if(id===1){ const fr = state.fq.some(x=>x.tries) ? `[분수 연습 ${state.fq.filter(x=>x.ok).length}/4${state.fq.some(x=>x.wrong.length)?' · 틀린 답: '+state.fq.flatMap(x=>x.wrong).join(', '):''}]\n` : ''; return (fr || len(state.ex0)||len(state.ex1)) ? fr + ((len(state.ex0)||len(state.ex1)) ? `확률 0: ${state.ex0.trim()||'-'}\n확률 1: ${state.ex1.trim()||'-'}` : '') : ''; }
-  if(id===2) return CARDS.some(c=>state.vals[c.k]) ? CARDS.map(c=>`${c.w} ${state.vals[c.k]||'-'}`).join(' · ') : '';
-  if(id===3) return state.a3Text.trim();
-  if(id===4) return (len(state.myExpr)||len(state.myVal)||len(state.myWhy)) ? `${state.myExpr.trim()||'-'} → ${state.myVal||'-'}` + (len(state.myWhy)?`\n${state.myWhy.trim()}`:'') : '';
+  if(id===1) return state.fq.some(x=>x.tries) ? `분수 연습 ${state.fq.filter(x=>x.ok).length}/4` + (state.fq.some(x=>x.wrong.length)?' · 틀린 답: '+state.fq.flatMap(x=>x.wrong).join(', '):'') : '';
+  if(id===2) return (len(state.ex0)||len(state.ex1)) ? `확률 0: ${state.ex0.trim()||'-'}\n확률 1: ${state.ex1.trim()||'-'}` : '';
+  if(id===3) return CARDS.some(c=>state.vals[c.k]) ? CARDS.map(c=>`${c.w} ${state.vals[c.k]||'-'}`).join(' · ') : '';
+  if(id===4) return state.a3Text.trim();
+  if(id===5) return (len(state.myExpr)||len(state.myVal)||len(state.myWhy)) ? `${state.myExpr.trim()||'-'} → ${state.myVal||'-'}` + (len(state.myWhy)?`\n${state.myWhy.trim()}`:'') : '';
   return '';
 }
 function collectData(){
@@ -500,9 +511,9 @@ function collectData(){
 function shareEntries(){
   const line = {}; CARDS.forEach(c=>{ const v=valOf(state.vals[c.k]); if(v!==null) line[c.k]=v; });
   return {
-    ex: isDone(1) ? {z: state.ex0.trim().slice(0,150), o: state.ex1.trim().slice(0,150)} : null,
+    ex: isDone(2) ? {z: state.ex0.trim().slice(0,150), o: state.ex1.trim().slice(0,150)} : null,
     line: Object.keys(line).length ? line : null,
-    mine: isDone(4) ? {e: state.myExpr.trim().slice(0,80), v: valOf(state.myVal), w: state.myWhy.trim().slice(0,200)} : null
+    mine: isDone(5) ? {e: state.myExpr.trim().slice(0,80), v: valOf(state.myVal), w: state.myWhy.trim().slice(0,200)} : null
   };
 }
 function pushShare(rt){
@@ -765,7 +776,7 @@ function dotLineHTML(values, color, band){
 
 /* ------------------------- 활동 1 ------------------------- */
 function renderFrac(){
-  $('qgrid').innerHTML = FQS.map((q,i)=>`<div class="q" id="fq${i}"><span class="say">${q[1]}분의 ${q[0]}</span>
+  $('qgrid').innerHTML = FQS.map((q,i)=>`<div class="q" id="fq${i}"><span class="say"><span class="mfrac"><span>${q[0]}</span><span>${q[1]}</span></span></span>
     <div class="row"><input type="text" id="fin${i}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="△/○"><span id="fmk${i}"></span></div><div class="fb" id="ffb${i}"></div></div>`).join('');
   FQS.forEach((q,i)=>{ const inp = $('fin'+i); inp.value = state.fq[i].a;
     inp.addEventListener('input', ()=>{ if(finalLocked) return; state.fq[i].a = inp.value; if(!state.fq[i].ok){ $('ffb'+i).textContent=''; $('fmk'+i).textContent=''; $('fq'+i).classList.remove('wrong'); } });
@@ -779,7 +790,7 @@ function fpaint(i){ const x = state.fq[i], r = fdiag(x.a, FQS[i]);
   $('fmk'+i).textContent = x.ok ? '✅' : (r.msg && x.tries ? '❌' : '');
   $('ffb'+i).textContent = x.ok ? '맞았어요!' : (x.tries && r.msg ? r.msg : '');
   $('fin'+i).readOnly = !!x.ok || finalLocked; }
-function fbadge(){ const b = $('badge-frac'), d = state.fq.every(x=>x.ok); b.textContent = d ? '완료' : `${state.fq.filter(x=>x.ok).length}/4`; b.className = 'badge ' + (d ? 'done' : 'pending'); }
+function fbadge(){}
 function fgrade(i){
   if(finalLocked) return; const x = state.fq[i]; if(x.ok) return;
   x.a = $('fin'+i).value; const r = fdiag(x.a, FQS[i]); if(r.empty) return;
@@ -788,13 +799,14 @@ function fgrade(i){
 }
 function check1(opts){
   state.ex0 = $('ex0').value; state.ex1 = $('ex1').value;
-  setWhy(1, '✅ 완료! '+NEXT, !fracDone() ? `먼저 위의 분수 입력 연습 4문제를 모두 맞혀 보세요. (지금 ${state.fq.filter(x=>x.ok).length}/4)` : '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(1, '✅ 완료! '+NEXT, `4문제를 모두 맞히면 다음으로 넘어갈 수 있어요. (지금 ${state.fq.filter(x=>x.ok).length}/4)`);
+  setWhy(2, '✅ 완료! '+NEXT, '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
   renderEx();
   refreshAll(opts);
 }
 ['ex0','ex1'].forEach(id=> $(id).addEventListener('input', ()=>check1()));
 function renderEx(){
-  const show = !!REVEAL.ex || isDone(1);   // 내 예를 다 쓰면 자동으로 보인다
+  const show = !!REVEAL.ex || isDone(2);   // 내 예를 다 쓰면 자동으로 보인다
   $('exWait').style.display = show ? 'none' : 'block';
   $('exCols').style.display = show ? 'flex' : 'none';
   if(!show) return;
@@ -834,7 +846,7 @@ function check2(opts){
   });
   showErr('err2', msg);
   renderMarks();
-  setWhy(2, '✅ 완료! '+NEXT, '네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(3, '✅ 완료! '+NEXT, '네 표현의 확률을 모두 쓰면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 CARDS.forEach(c=> $('v_'+c.k).addEventListener('input', ()=>{ state.vals[c.k] = $('v_'+c.k).value.trim(); state.sel = c.k; check2(); }));
@@ -865,7 +877,7 @@ function renderLines(){
   $('lineBox').style.display = show ? 'block' : 'none';
   $('a3Text').disabled = !state.sawLine;
   $('a3Text').placeholder = state.sawLine ? '예) 「○○」은 친구들마다 놓은 자리가 많이 달랐다. 왜냐하면 ~' : '친구들의 생각이 공개되면 쓸 수 있어요.';
-  setWhy(3, '✅ 완료! '+NEXT, state.sawLine ? '내 생각을 쓰면 다음으로 넘어갈 수 있어요.' : '선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(4, '✅ 완료! '+NEXT, state.sawLine ? '내 생각을 쓰면 다음으로 넘어갈 수 있어요.' : '선생님이 친구들의 자리를 공개한 뒤, 내 생각을 쓰면 다음으로 넘어갈 수 있어요.');
   if(!show) return;
   const all = shareOf('line'), me = RT.studentKey;
   $('classLines').innerHTML = CARDS.map(c=>{
@@ -883,12 +895,12 @@ function check4(opts){
   const r = parseRel(state.myVal);
   $('myValMsg').innerHTML = r.empty ? '' : r.bad ? '<span class="bad">분수(3/10)나 소수(0.3), 백분율(30%)로 써 주세요.</span>' : r.range ? '<span class="bad">확률은 0 이상 1 이하예요.</span>' : `<span class="ok">✓ ${fmtV(r.value)}</span>`;
   renderGallery();
-  setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', '표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.');
+  setWhy(5, '✅ 완료! 마지막 화면에서 제출하세요.', '표현, 확률, 이유를 모두 쓰면 완료돼요. 마지막 화면에서 제출하세요.');
   refreshAll(opts);
 }
 ['myExpr','myVal','myWhy'].forEach(id=> $(id).addEventListener('input', ()=>check4()));
 function renderGallery(){
-  const show = !!REVEAL.mine || isDone(4);   // 내 표현을 다 쓰면 자동으로 보인다
+  const show = !!REVEAL.mine || isDone(5);   // 내 표현을 다 쓰면 자동으로 보인다
   $('myWait').style.display = show ? 'none' : 'block';
   $('myBox').style.display = show ? 'block' : 'none';
   if(!show) return;
@@ -901,7 +913,7 @@ function renderGallery(){
 /* ------------------------- 공유·공개가 바뀔 때 ------------------------- */
 function onShareChanged(){ renderEx(); renderLines(); renderGallery(); }
 function onRevealChanged(){ renderEx(); renderLines(); renderGallery(); }
-function onShowPage(taskId){ if(taskId===2) renderMarks(); }
+function onShowPage(taskId){ if(taskId===3) renderMarks(); }
 
 function initActivity(){
   renderFrac(); renderEx(); renderLines(); renderGallery();
