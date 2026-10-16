@@ -301,7 +301,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 8</span>
+            <span id="previewLabel">1 / 9</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -350,9 +350,9 @@ const CONFIG = {
 const STAGES = [
   {t:'내 생각', d:'상금 64만 원을 어떻게 나눌까? (활동 1)', tasks:[1], max:1, reveal:{},
    tip:'충분히 생각하게 하고, 대부분 제출하면 다음 단계를 열어요. (다음 단계를 열면 친구들의 생각이 자동으로 공개돼요)'},
-  {t:'상금 분배 탐구', d:'친구 생각 보기 → 남은 경기 시뮬레이션 → 실험 결과로 생각 → 경우의 수·다시 생각 (활동 2~5)', tasks:[2,3,4,5], max:5, reveal:{split:true},
+  {t:'상금 분배 탐구', d:'친구 생각 보기 → 남은 경기 시뮬레이션 → 실험 결과로 생각 → 경우의 수 → 다시 생각 (활동 2~6)', tasks:[2,3,4,5,6], max:6, reveal:{split:true},
    tip:'💬 "똑같이 나누기와 2:1 나누기, 어느 쪽이 더 공정할까?" — 시뮬레이션 뒤에는 경기 흐름 나무로 1/2 + 1/4 = 3/4를 짚어 주세요.'},
-  {t:'타자 영입', d:'예상 → 실제 타율 계산 → 왜 그럴까 (활동 6~8)', tasks:[6,7,8], max:null, reveal:{},
+  {t:'타자 영입', d:'예상 → 실제 타율 계산 → 왜 그럴까 (활동 7~9)', tasks:[7,8,9], max:null, reveal:{},
    tip:'💬 "두 시기 모두 A가 높은데 왜 전체는 B가 높을까?" — 계산을 마친 학생에게는 반 예상 결과가 자동으로 보여요.'}
 ];
 const TASK_LABELS = [
@@ -360,10 +360,11 @@ const TASK_LABELS = [
   {id:2, key:'a2', label:'상금 분배 ② 친구들의 생각'},
   {id:3, key:'a3', label:'상금 분배 ③ 남은 경기 시뮬레이션'},
   {id:4, key:'a4', label:'상금 분배 ③-2 실험 결과로 생각'},
-  {id:5, key:'a5', label:'상금 분배 ④ 경우의 수·다시 생각'},
-  {id:6, key:'a6', label:'타자 영입 ① 예상'},
-  {id:7, key:'a7', label:'타자 영입 ② 실제 타율 계산'},
-  {id:8, key:'a8', label:'타자 영입 ③ 왜 그럴까'}
+  {id:5, key:'a5', label:'상금 분배 ④ 경우의 수'},
+  {id:6, key:'a6', label:'상금 분배 ⑤ 다시 생각'},
+  {id:7, key:'a7', label:'타자 영입 ① 예상'},
+  {id:8, key:'a8', label:'타자 영입 ② 실제 타율 계산'},
+  {id:9, key:'a9', label:'타자 영입 ③ 왜 그럴까'}
 ];
 const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
   if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
@@ -412,16 +413,16 @@ function activityDetailHTML(s, id){
   }
   if(id===5){
     const o = (typeof d.outs==='string' && d.outs) ? d.outs.split(',') : []; const f = d.f || {};
-    if(!o.length && !Object.values(f).some(Boolean) && !d.s5Reason) return '';
+    if(!o.length && !Object.values(f).some(Boolean)) return '';
     return kv('나열한 경우', o.length ? o.map(x=>`${x.slice(0,2)}→${x[2]==='_'?'?':x[2]}`).join(', ') : '-')
       + kv('모든 경우의 수 / A 우승', `${esc(f.tot||'-')} / ${esc(f.aw||'-')}`)
       + kv('P(A) / P(B)', `${esc(f.pa||'-')} / ${esc(f.pb||'-')}`)
-      + kv('공정한 상금', sp(f.ma, f.mb))
-      + (d.s5Reason ? kv('처음 생각', sp(d.s1a,d.s1b)) + textBox(d.s5Reason) : '') + aiFbHTML(d);
+      + kv('공정한 상금', sp(f.ma, f.mb));
   }
-  if(id===6){ if(!d.vote && !d.voteReason) return ''; return kv('예상', esc(d.vote ? (d.vote==='같다'?'같다':'선수 '+d.vote) : '-')) + textBox(d.voteReason); }
-  if(id===7){ const b=d.bat||{}; if(!Object.values(b).some(Boolean)) return ''; return kv('선수 A', `${esc(b.aT||'-')}타수 ${esc(b.aH||'-')}안타 · 타율 ${esc(b.aV||'-')}`) + kv('선수 B', `${esc(b.bT||'-')}타수 ${esc(b.bH||'-')}안타 · 타율 ${esc(b.bV||'-')}`); }
-  if(id===8){ if(!d.a8Text) return ''; return textBox(d.a8Text) + kv('정리 보기', d.a8Concept?'✅':'아직') + aiFbHTML({aiFb: d.aiFb_p7}); }
+  if(id===6){ if(!d.s5Reason) return ''; return kv('처음 생각', sp(d.s1a,d.s1b)) + textBox(d.s5Reason) + aiFbHTML(d); }
+  if(id===7){ if(!d.vote && !d.voteReason) return ''; return kv('예상', esc(d.vote ? (d.vote==='같다'?'같다':'선수 '+d.vote) : '-')) + textBox(d.voteReason); }
+  if(id===8){ const b=d.bat||{}; if(!Object.values(b).some(Boolean)) return ''; return kv('선수 A', `${esc(b.aT||'-')}타수 ${esc(b.aH||'-')}안타 · 타율 ${esc(b.aV||'-')}`) + kv('선수 B', `${esc(b.bT||'-')}타수 ${esc(b.bH||'-')}안타 · 타율 ${esc(b.bV||'-')}`); }
+  if(id===9){ if(!d.a8Text) return ''; return textBox(d.a8Text) + kv('정리 보기', d.a8Concept?'✅':'아직') + aiFbHTML({aiFb: d.aiFb_p7}); }
   return '';
 }
 function renderAggregate(){ renderStages(); /* 22번은 상단 합계 패널 대신 ② 교사용 뷰의 집계(taskAggregateHTML)를 쓴다 */ }
@@ -446,13 +447,13 @@ function taskAggregateHTML(id){
     return box('남은 경기 시뮬레이션', n ? `직접 한 경기(반 전체): <b>${fmtInt(n)}회</b> 중 A 우승 <b>${fmtInt(a)}회</b> → 상대도수 <b>${relDec(a,n)}</b> (${people}명)` + (big.length ? `<br>10,000번 시뮬레이션 ${big.length}명 평균: <b>${(big.reduce((x,y)=>x+y,0)/big.length).toFixed(3)}</b>` : '') : '아직 경기한 학생이 없어요.');
   }
   if(id===5){
-    const done = Object.values(allStudents).filter(s=>s.progress&&s.progress.a5&&s.progress.a4.done).length;
+    const done = Object.values(allStudents).filter(s=>s.progress&&s.progress.a5&&s.progress.a5.done).length;
     return box('경우의 수', `완료 <b>${done}명</b> / ${Object.keys(allStudents).length}명 — 정답: AA·AB·BA → A 우승, BB → B 우승, P(A)=3/4, 48 : 16`);
   }
-  if(id===6 || id===7){
+  if(id===7 || id===8){
     const v = ss.filter(d=>d.vote);
     const rows = [['A','선수 A'],['B','선수 B (실제 결과)'],['같다','같다']].map(([k,l])=>({label:l, n:v.filter(d=>d.vote===k).length, answer:k==='B'}));
-    const done7 = Object.values(allStudents).filter(s=>s.progress&&s.progress.a7&&s.progress.a7.done).length;
+    const done7 = Object.values(allStudents).filter(s=>s.progress&&s.progress.a8&&s.progress.a8.done).length;
     return box('예상 투표' + (reveal.vote?' — 🔓 학생에게 공개 중':' — 🔒 아직 공개 안 함'), (v.length ? barsHTML(rows, v.length) : '아직 예상한 학생이 없어요.') + (id===7 ? `<div style="margin-top:6px;">타율 계산 완료 <b>${done7}명</b></div>` : ''));
   }
   return '';

@@ -335,7 +335,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 8</div>
+        <div class="progress-text" id="progressText">완료 0 / 9</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -514,20 +514,27 @@
       그래서 경우의 수로 확률을 구할 수 있어요. 이 문제는 1654년 수학자 <b>파스칼</b>과 <b>페르마</b>가 편지를 주고받으며 해결했고, 확률 이론이 시작된 계기로 알려져 있어요.</div>
     </div>
   </div>
+  <div class="why" id="why5">경우를 모두 나열하고 확률과 상금을 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 상금 분배 ⑤ 다시 생각해 보기 (2026-10-16: 경우의 수 화면에서 분리) ===================== -->
+<section class="task activity" id="task-a6" data-task-id="6">
   <div class="card" id="a4Re">
-    <h3>✍️ 다시 생각해 보기</h3>
+    <div class="act-head"><span class="act-tag">상금 분배 ⑤</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <h2>✍️ 다시 생각해 보기</h2>
+    <div class="note" style="margin-bottom:6px;">경우의 수로 구한 공정한 상금: <b>A 48만 원, B 16만 원</b> (3 : 1)</div>
     <div class="kvline" id="my1Line5"></div>
     <p class="hint"><b>처음 내 생각과 비교해서 무엇이 달라졌나요? 왜 이렇게 나누는 것이 공정한가요?</b></p>
     <textarea id="s5Reason" placeholder="처음에는 ~라고 생각했는데, ~"></textarea>
     <div class="aifb" id="aifb22"></div>
   </div>
-  <div class="why" id="why5">경우를 모두 나열하고 확률과 상금을 바르게 구한 뒤, 처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why6">처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 6: 타자 영입 — 예상 ===================== -->
-<section class="task activity" id="task-a6" data-task-id="6">
+<section class="task activity" id="task-a7" data-task-id="7">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>어떤 타자를 영입할까?</h2>
     <p class="hint">프로야구팀에서 새로운 타자 한 명을 영입하려고 해요. 후보는 선수 A와 선수 B예요.<br>
       <span class="note">타율 = (안타 수) ÷ (타수) — 타석에서 공을 친 횟수 중 안타를 친 비율이에요.</span></p>
@@ -545,13 +552,13 @@
     <p class="hint" style="margin-top:12px;"><b>그렇게 예상한 이유</b></p>
     <textarea id="voteReason" placeholder="왜 그렇게 생각했나요?"></textarea>
   </div>
-  <div class="why" id="why6">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why7">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 7: 실제 기록으로 계산 ===================== -->
-<section class="task activity" id="task-a7" data-task-id="7">
+<section class="task activity" id="task-a8" data-task-id="8">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a7">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a8">미완료</span></div>
     <h2>실제 기록을 확인해 보자</h2>
     <p class="hint">빈칸에 시즌 전체 타수와 안타 수, 타율을 구해 써 보세요. 타율은 소수(0.○○)나 분수로 써요.</p>
     <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.25도 돼요)</div>
@@ -574,13 +581,13 @@
     <div class="waitbox" id="voteWait">⏳ 위의 타율을 모두 구하면 우리 반의 예상 결과가 여기에 나타나요.</div>
     <div class="bars" id="voteBars" style="display:none;"></div>
   </div>
-  <div class="why" id="why7">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why8">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 8: 왜 그럴까? ===================== -->
-<section class="task activity" id="task-a8" data-task-id="8">
+<section class="task activity" id="task-a9" data-task-id="9">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a8">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a9">미완료</span></div>
     <h2>왜 예상과 다른 결과가 나왔을까?</h2>
     <div class="howread">
       <b>📖 그림 읽는 법</b>
@@ -596,7 +603,7 @@
     <textarea id="a8Text" placeholder="A는 전반기에 ~타수, 후반기에 ~타수를 쳤고, ~"></textarea>
     <div class="aifb" id="aifb22b"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
-      <span class="note" id="why8">✏️ 내 생각을 쓰고 AI 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」 버튼이 켜져요.</span>
+      <span class="note" id="why9">✏️ 내 생각을 쓰고 AI 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」 버튼이 켜져요.</span>
       <button class="btn concept-btn" id="a8Btn" disabled>💡 정리 보기</button>
     </div>
     <div class="concept" id="concept8">
@@ -664,9 +671,10 @@ const TASKS = [
   {id:3, key:'a3', title:'상금 분배 ③ 남은 경기를 이어서 해 보자'},
   {id:4, key:'a4', title:'상금 분배 ③-2 실험 결과로 생각하기'},
   {id:5, key:'a5', title:'상금 분배 ④ 경우의 수로 따져 보자'},
-  {id:6, key:'a6', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
-  {id:7, key:'a7', title:'타자 영입 ② 실제 기록으로 계산하기'},
-  {id:8, key:'a8', title:'타자 영입 ③ 왜 예상과 다를까?'}
+  {id:6, key:'a6', title:'상금 분배 ⑤ 다시 생각해 보기'},
+  {id:7, key:'a7', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
+  {id:8, key:'a8', title:'타자 영입 ② 실제 기록으로 계산하기'},
+  {id:9, key:'a9', title:'타자 영입 ③ 왜 예상과 다를까?'}
 ];
 
 /* 학생 한 명의 활동 상태(메모리). Firebase에는 collectData()로 저장한다. */
@@ -771,10 +779,11 @@ function isDone(id){
   if(id===2) return state.sawSplit && len(state.a2Text)>=MIN_TEXT;
   if(id===3) return state.games.length>=10 && hasRun(1000) && hasRun(10000);
   if(id===4) return len(state.a3Text)>=MIN_TEXT;
-  if(id===5) return calc4Ok() && len(state.s5Reason)>=MIN_TEXT;
-  if(id===6) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
-  if(id===7) return batOk();
-  if(id===8) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
+  if(id===5) return calc4Ok();
+  if(id===6) return len(state.s5Reason)>=MIN_TEXT;
+  if(id===7) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
+  if(id===8) return batOk();
+  if(id===9) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
   return false;
 }
 /* 교사 화면 요약·구글 설문에 쓰는 한 줄 값 */
@@ -793,9 +802,10 @@ function valueOf(id){
     if(!state.outs.length && !Object.values(state.f).some(Boolean)) return '';
     return `경우: ${state.outs.map(o=>o.s+'→'+(o.w||'?')).join(', ')||'-'}\n경우의 수 ${state.f.tot||'-'}, A 우승 ${state.f.aw||'-'}, P(A)=${state.f.pa||'-'}, P(B)=${state.f.pb||'-'}, 상금 A ${state.f.ma||'-'} : B ${state.f.mb||'-'}`;
   }
-  if(id===6) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
-  if(id===7){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
-  if(id===8) return state.a8Text.trim();
+  if(id===6) return state.s5Reason.trim();
+  if(id===7) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
+  if(id===8){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
+  if(id===9) return state.a8Text.trim();
   return '';
 }
 function collectData(){
@@ -1092,7 +1102,8 @@ function renderMyFirst(){
 }
 function check5(opts){   // 활동 4 아래 「다시 생각해 보기」(처음 생각과 비교)
   state.s5Reason = $('s5Reason').value;
-  check4(opts);
+  setWhy(6, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, '처음 내 생각과 비교해서 쓰면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
 }
 $('s5Reason').addEventListener('input', ()=>check5());
 
@@ -1399,7 +1410,7 @@ function renderFields(){
 }
 Object.keys(F_CHECK).forEach(k=> $('f_'+k).addEventListener('input', ()=>{ state.f[k] = $('f_'+k).value; renderFields(); check4(); }));
 function check4(opts){
-  setWhy(5, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, !outsOk() ? '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.' : !fieldsOk() ? '확률과 상금을 바르게 구해 보세요.' : '맨 아래 「다시 생각해 보기」에 처음 생각과 비교해 써 보세요.');
+  setWhy(5, '✅ 완료! 다음 화면에서 처음 생각과 비교해 봐요. '+NEXT, !outsOk() ? '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.' : '확률과 상금을 바르게 구해 보세요.');
   refreshAll(opts);
 }
 
@@ -1419,7 +1430,7 @@ document.querySelectorAll('#voteRow .choice').forEach(b=> b.addEventListener('cl
 $('voteReason').addEventListener('input', ()=>check6());
 function check6(opts){
   state.voteReason = $('voteReason').value;
-  setWhy(6, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(7, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 
@@ -1438,7 +1449,7 @@ function check7(opts){
       <p style="margin:10px 0 0;font-size:16px;font-weight:bold;">➡ 시즌 전체 타율은 <span style="color:var(--orange);">선수 B</span>가 더 높아요! <span class="note" style="font-weight:normal;">(내 예상: ${esc(pred)} — ${state.vote==='B'?'예상이 맞았어요 🎯':'예상과 달랐어요 😮'})</span></p>`;
   }
   lockVote(); renderVote();
-  setWhy(7, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
+  setWhy(8, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 function renderVote(){
@@ -1466,13 +1477,13 @@ $('a8Text').addEventListener('input', ()=>check8());
 $('a8Btn').addEventListener('click', ()=>{ state.a8Concept = true; $('concept8').classList.add('show'); refreshAll({now:true}); $('concept8').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 function check8(opts){
   state.a8Text = $('a8Text').value;
-  const ok = isDone(8), open = aifbPassed('p7') || !!REVEAL.simpson;
+  const ok = isDone(9), open = aifbPassed('p7') || !!REVEAL.simpson;
   $('a8Btn').disabled = !(ok && open);
-  $('why8').textContent = len(state.a8Text) < MIN_TEXT ? '✏️ 위 칸에 내 생각을 먼저 써 보세요.'
+  $('why9').textContent = len(state.a8Text) < MIN_TEXT ? '✏️ 위 칸에 내 생각을 먼저 써 보세요.'
     : !aifbList('p7').length ? '🤖 「AI 피드백 받기」를 눌러 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」가 켜져요.'
     : !open ? '✅ 완료! AI 피드백에 「보완할 점」이 남아 있어요. 내 글을 고친 뒤 다시 받아 보세요. (선생님이 정리를 공개해도 켜져요)'
     : '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.';
-  $('why8').className = 'note' + (ok?' ok':'');
+  $('why9').className = 'note' + (ok?' ok':'');
   if(state.a8Concept) $('concept8').classList.add('show');
   refreshAll(opts);
 }
@@ -1481,7 +1492,7 @@ function check8(opts){
 function onShareChanged(){ renderSplit(); renderClassSim(); renderVote(); }
 function onRevealChanged(){ renderSplit(); renderVote(); check8({noSave:true}); }
 function aifbOnChange(){ check8({noSave:true}); }
-function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===4) renderRecap3(); if(taskId===7) renderVote(); }
+function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===4) renderRecap3(); if(taskId===8) renderVote(); }
 
 /* 처음 화면 */
 function initActivity(){
