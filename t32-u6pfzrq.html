@@ -353,25 +353,24 @@ const CONFIG = {
 };
 
 const STAGES = [
-  {t:'예측·조건 실험', d:'몇 가지를 확인해야 할까 예측 → 조건 카드 4장 시험 (화면 1~2)', tasks:[1,2], max:2, reveal:{},
-   tip:'💬 "④ 카드에서 닮지 않은 삼각형을 만든 사람?" — E가 두 자리에 올 수 있다는 걸 함께 보여 주세요.'},
+  {t:'예측·조건 실험', d:'몇 가지를 확인해야 할까 예측 → 친구에게 정보 보내기 7가지 조합 (화면 1~2)', tasks:[1,2], max:2, reveal:{},
+   tip:'💬 "가장 적은 정보로 성공한 조합은?" — 두 변 + 끼인각 아닌 각은 정보 3개인데도 왜 실패했는지 함께 보세요.'},
   {t:'결과판·정리', d:'반 전체 결과판 → 닮음 조건 정리 → ④가 부족한 까닭 한 줄 (화면 3)', tasks:[3], max:null, reveal:{},
    tip:'💬 "왜 끼인각이어야 할까?" → 학습지에서 2배 확대한 △A′B′C′과 △DEF의 합동(SSS·SAS·ASA)으로 정당화해요.'}
 ];
-const TASK_LABELS = [ {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'조건 실험'}, {id:3, key:'a3', label:'결과판·정리'} ];
+const TASK_LABELS = [ {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'친구에게 보내기'}, {id:3, key:'a3', label:'결과판·정리'} ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtInt(n){ return Number(n).toLocaleString('ko-KR'); }
-const CN = [{k:'c1',n:'① 세 변',a:'ok'},{k:'c2',n:'② 두 변+끼인각',a:'ok'},{k:'c3',n:'③ 두 각',a:'ok'},{k:'c4',n:'④ 두 변+끼인각 아닌 각',a:'no'}];
+const CN = [{k:'sss',n:'세 변',w:1},{k:'sas',n:'두 변+끼인각',w:1},{k:'aa',n:'두 각',w:1},{k:'aaa',n:'세 각',w:1},{k:'ss',n:'두 변',w:0},{k:'sa',n:'한 변+한 각',w:0},{k:'ssa',n:'두 변+끼인각 아닌 각',w:0}];
 const JW = {ok:'충분', no:'부족'};
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   if(id===1) return d.pred ? kv('예측', d.pred==='6'?'6가지 모두':d.pred+'가지') : '';
-  if(id===2){ const c = d.cards || {}; if(!CN.some(x=>c[x.k] && c[x.k].moved)) return '';
-    return CN.map(x=>{ const v = c[x.k] || {}; return kv(x.n, `${JW[v.j]||'-'}${v.j?(v.j===x.a?' ✅':' ✗'):''}${x.k==='c4'&&v.sawNo?' · 닮지 않은 삼각형 만들어 봄':''}`); }).join('') + kv('확인', d.checked ? (d.ok?'✅ 정답':'✗ 다시') : '아직'); }
+  if(id===2){ const tr = d.tried || {}; const L = CN.filter(x=>tr[x.k]); if(!L.length) return ''; return kv('보내 본 조합', `${L.length}/7`) + `<div style="font-size:13px;">${CN.map(x=>`${tr[x.k]?(x.w?'⭕':'❌'):'—'} ${x.n}`).join(' · ')}</div>`; }
   if(id===3) return d.t3 && String(d.t3).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;">${esc(d.t3)}</div>` : '';
   return '';
 }
@@ -381,8 +380,8 @@ function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
   if(id===1){ const ps = ss.map(d=>d.pred).filter(Boolean); return box(`예측 (${ps.length}명)`, ps.length ? barsHTML(['1','2','3','6'].map(v=>({label:v==='6'?'6가지 모두':v+'가지', n:ps.filter(p=>p===v).length, answer:v==='2'||v==='3'})), ps.length) : '아직 없어요.'); }
-  if(id===2){ const cs = ss.map(d=>d.cards||{}); const tot = cs.filter(c=>CN.some(x=>c[x.k]&&c[x.k].j)).length;
-    return box(`카드별 판정 (${tot}명)`, tot ? CN.map(x=>{ const ok = cs.filter(c=>c[x.k]&&c[x.k].j==='ok').length, no = cs.filter(c=>c[x.k]&&c[x.k].j==='no').length; return `<div class="kv">${x.n}: 충분 <b>${ok}</b> · 부족 <b>${no}</b> (정답 ${JW[x.a]})${x.k==='c4'?` · 닮지 않은 삼각형 만든 학생 <b>${cs.filter(c=>c.c4&&c.c4.sawNo).length}</b>명`:''}</div>`; }).join('') : '아직 없어요.'); }
+  if(id===2){ const all = ss.filter(d=>d.tried && Object.keys(d.tried).length); const done = all.filter(d=>CN.every(x=>d.tried[x.k])).length;
+    return box(`친구에게 보내기 (${all.length}명 참여)`, `7가지 모두 보내 본 학생 <b>${done}명</b>` + CN.map(x=>`<div class="kv">${x.w?'⭕':'❌'} ${x.n}: 보내 본 학생 <b>${all.filter(d=>d.tried[x.k]).length}</b>명</div>`).join('')); }
   return '';
 }
 function updateRevealBtns(){ renderStages(); renderTeacherView(); }
