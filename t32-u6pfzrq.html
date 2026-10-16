@@ -309,7 +309,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 3</span>
+            <span id="previewLabel">1 / 5</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -353,25 +353,30 @@ const CONFIG = {
 };
 
 const STAGES = [
-  {t:'예측·조건 실험', d:'몇 가지를 확인해야 할까 예측 → 친구에게 정보 보내기 7가지 조합 (화면 1~2)', tasks:[1,2], max:2, reveal:{},
-   tip:'💬 "가장 적은 정보로 성공한 조합은?" — 두 변 + 끼인각 아닌 각은 정보 3개인데도 왜 실패했는지 함께 보세요.'},
-  {t:'결과판·정리', d:'반 전체 결과판 → 닮음 조건 정리 → ④가 부족한 까닭 한 줄 (화면 3)', tasks:[3], max:null, reveal:{},
-   tip:'💬 "왜 끼인각이어야 할까?" → 학습지에서 2배 확대한 △A′B′C′과 △DEF의 합동(SSS·SAS·ASA)으로 정당화해요.'}
+  {t:'예측', d:'닮았는지 알려면 최소 몇 가지를 확인해야 할까? (화면 1)', tasks:[1], max:1, reveal:{},
+   tip:'💬 "6가지를 다 재야 할까?" — 합동 조건(SSS·SAS·ASA)을 떠올리게 해 주세요.'},
+  {t:'직접 만들어 보기', d:'두 변+끼인각 → 세 변 → 두 각: 일부만 맞추면 나머지가 저절로 맞을까? (화면 2~4)', tasks:[2,3,4], max:4, reveal:{},
+   tip:'💬 "두 변만 2배로 했는데 셋째 변은?" "두 각만 같은데 크기가 달라도 같은 모양?" — 끼인각이 왜 중요한지 짚어 주세요.'},
+  {t:'합동으로 설명·정리', d:'△ABC를 확대한 △A′B′C′을 △DEF에 겹쳐 합동 조건 고르기 → 닮음 조건 정리 (화면 5)', tasks:[5], max:null, reveal:{},
+   tip:'💬 "확대한 삼각형이 △DEF와 합동이니까 닮음" — AA는 B′C′=EF가 되게 확대하면 ASA 합동인 점을 강조해 주세요.'}
 ];
-const TASK_LABELS = [ {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'친구에게 보내기'}, {id:3, key:'a3', label:'결과판·정리'} ];
+const TASK_LABELS = [ {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'두 변과 끼인각'}, {id:3, key:'a3', label:'세 변'}, {id:4, key:'a4', label:'두 각'}, {id:5, key:'a5', label:'합동으로 설명·정리'} ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtInt(n){ return Number(n).toLocaleString('ko-KR'); }
-const CN = [{k:'sss',n:'세 변',w:1},{k:'sas',n:'두 변+끼인각',w:1},{k:'aa',n:'두 각',w:1},{k:'aaa',n:'세 각',w:1},{k:'ss',n:'두 변',w:0},{k:'sa',n:'한 변+한 각',w:0},{k:'ssa',n:'두 변+끼인각 아닌 각',w:0}];
-const JW = {ok:'충분', no:'부족'};
+const CS = [{k:'sas', n:'두 변+끼인각', a:'SAS'}, {k:'sss', n:'세 변', a:'SSS'}, {k:'aa', n:'두 각', a:'ASA'}];
+const AW = v => v==='same' ? '같다' : v==='diff' ? '다르다' : '-';
+const ob = v => (v && typeof v==='object') ? v : {};
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   if(id===1) return d.pred ? kv('예측', d.pred==='6'?'6가지 모두':d.pred+'가지') : '';
-  if(id===2){ const tr = d.tried || {}; const L = CN.filter(x=>tr[x.k]); if(!L.length) return ''; return kv('보내 본 조합', `${L.length}/7`) + `<div style="font-size:13px;">${CN.map(x=>`${tr[x.k]?(x.w?'⭕':'❌'):'—'} ${x.n}`).join(' · ')}</div>`; }
-  if(id===3) return d.t3 && String(d.t3).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;">${esc(d.t3)}</div>` : '';
+  if(id===2){ const x = ob(d.s2); if(!x.ok && !x.k && !x.ang) return ''; return kv('2배 만들기', x.ok?'✅':'아직') + kv('DF는 AC의', esc(x.k||'-')+'배') + kv('나머지 두 각', AW(x.ang)); }
+  if(id===3){ const x = ob(d.s3); if(!x.ok && !x.ang) return ''; return kv('2배 만들기', x.ok?'✅':'아직') + kv('세 각', AW(x.ang)); }
+  if(id===4){ const x = ob(d.s4); const n = Array.isArray(x.seen) ? x.seen.length : Object.keys(ob(x.seen)).length; if(!n && !x.ans) return ''; return kv('크기 바꾼 횟수', n) + kv('세 변의 비', x.ans==='same'?'항상 같다':x.ans==='diff'?'다르다':'-'); }
+  if(id===5){ const x = ob(d.s5), p = ob(x.pick), m = ob(x.miss); if(!Object.keys(p).length) return ''; return CS.map(c=> kv(c.n, p[c.k] ? `${esc(p[c.k])} 합동 ${p[c.k]===c.a?'✅':'❌'}${m[c.k]?` (틀림 ${m[c.k]}번)`:''}` : '-')).join(''); }
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -380,8 +385,12 @@ function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
   if(id===1){ const ps = ss.map(d=>d.pred).filter(Boolean); return box(`예측 (${ps.length}명)`, ps.length ? barsHTML(['1','2','3','6'].map(v=>({label:v==='6'?'6가지 모두':v+'가지', n:ps.filter(p=>p===v).length, answer:v==='2'||v==='3'})), ps.length) : '아직 없어요.'); }
-  if(id===2){ const all = ss.filter(d=>d.tried && Object.keys(d.tried).length); const done = all.filter(d=>CN.every(x=>d.tried[x.k])).length;
-    return box(`친구에게 보내기 (${all.length}명 참여)`, `7가지 모두 보내 본 학생 <b>${done}명</b>` + CN.map(x=>`<div class="kv">${x.w?'⭕':'❌'} ${x.n}: 보내 본 학생 <b>${all.filter(d=>d.tried[x.k]).length}</b>명</div>`).join('')); }
+  if(id===2){ const a = ss.map(d=>ob(d.s2)).filter(x=>x.ok); const ks = a.map(x=>String(x.k||'').trim()).filter(Boolean);
+    return box(`두 변과 끼인각 (2배 만든 학생 ${a.length}명)`, `DF는 AC의 몇 배? ` + (ks.length ? [...new Set(ks)].map(v=>`<b>${esc(v)}</b>배 ${ks.filter(k=>k===v).length}명`).join(' · ') : '-') + `<br>나머지 두 각: 같다 <b>${a.filter(x=>x.ang==='same').length}</b>명 · 다르다 <b>${a.filter(x=>x.ang==='diff').length}</b>명`); }
+  if(id===3){ const a = ss.map(d=>ob(d.s3)).filter(x=>x.ok); return box(`세 변 (2배 만든 학생 ${a.length}명)`, `세 각: 같다 <b>${a.filter(x=>x.ang==='same').length}</b>명 · 다르다 <b>${a.filter(x=>x.ang==='diff').length}</b>명`); }
+  if(id===4){ const a = ss.map(d=>ob(d.s4)).filter(x=>x.ans); return box(`두 각 (답한 학생 ${a.length}명)`, `세 변의 비: 항상 같다 <b>${a.filter(x=>x.ans==='same').length}</b>명 · 다르다 <b>${a.filter(x=>x.ans==='diff').length}</b>명`); }
+  if(id===5){ const a = ss.map(d=>ob(ob(d.s5).pick)), m = ss.map(d=>ob(ob(d.s5).miss));
+    return box('합동 조건 고르기', CS.map(c=>`<div class="kv">${c.n} → ${c.a} 합동: 맞힌 학생 <b>${a.filter(p=>p[c.k]===c.a).length}</b>명 · 한 번 이상 틀린 학생 <b>${m.filter(x=>x[c.k]).length}</b>명</div>`).join('')); }
   return '';
 }
 function updateRevealBtns(){ renderStages(); renderTeacherView(); }

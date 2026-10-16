@@ -146,10 +146,10 @@
   .stat{margin-top:8px;border:1px solid #d6dbe1;border-radius:10px;padding:8px 12px;font-size:14.5px;line-height:1.75;background:#fafbfc;}
   .stat .sim{font-size:17px;font-weight:bold;}
   .stat .sim.y{color:#2e7d32;} .stat .sim.n{color:#c62828;}
-  .judge{margin-top:10px;border-top:1px dashed #d6dbe1;padding-top:8px;}
-  .judge .jq{font-weight:bold;margin-bottom:4px;}
-  .judge label{display:block;margin:5px 0;font-size:15px;cursor:pointer;}
-  .judge.locked{opacity:.5;pointer-events:none;}
+  .x-judge{margin-top:10px;border-top:1px dashed #d6dbe1;padding-top:8px;}
+  .x-judge .jq{font-weight:bold;margin-bottom:4px;}
+  .x-judge label{display:block;margin:5px 0;font-size:15px;cursor:pointer;}
+  .x-judge.locked{opacity:.5;pointer-events:none;}
   .board3{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
   .board3 .bx{flex:1;min-width:240px;border:1px solid #d6dbe1;border-radius:10px;padding:10px 12px;background:#fafbfc;font-size:14px;}
   .board3 h4{margin:0 0 6px;font-size:14.5px;}
@@ -164,18 +164,33 @@
   .sumt td.f{white-space:nowrap;color:#555;}
   .sum-fig{width:420px;max-width:100%;display:block;margin:6px auto;}
   @media (max-width:640px){ .g-board{width:100%;} }
-  .combos{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;}
-  .combos button{border:1.5px solid #c5cad1;background:#fff;border-radius:12px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit;color:#1f2328;display:flex;align-items:center;gap:6px;}
-  .combos button .n{background:#eceff3;border-radius:10px;padding:1px 8px;font-size:12.5px;color:#555;}
-  .combos button.on{border-color:#1565c0;box-shadow:0 0 0 2px #1565c0 inset;}
-  .combos button.win{background:#f1f9f1;border-color:#66bb6a;}
-  .combos button.lose{background:#fff6f6;border-color:#ef9a9a;}
-  .mine{flex:0 0 230px;} .friend{flex:1;min-width:300px;max-width:470px;}
-  .cap{font-weight:bold;font-size:14.5px;margin-bottom:4px;}
-  .sent{font-size:14px;margin-top:6px;line-height:1.6;}
-  .result{margin-top:8px;font-size:17px;font-weight:bold;min-height:26px;}
-  .result.win{color:#2e7d32;} .result.lose{color:#c62828;}
-  .tried{margin-top:12px;font-size:14px;color:#555;}
+  .goal{border:1px solid #d6dbe1;background:#fafbfc;border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.8;margin:8px 0;}
+  .qbox{margin-top:10px;border-top:1px dashed #d6dbe1;padding-top:8px;}
+  .qbox .jq{font-weight:bold;margin:6px 0 2px;font-size:15px;}
+  .qbox.locked{opacity:.45;pointer-events:none;}
+  .q5row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:4px 0 8px;font-size:15.5px;}
+  .q5row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+  .q5row input[type=radio]{width:17px;height:17px;}
+  .num{width:70px;padding:6px 8px;border:1.5px solid #c5cad1;border-radius:8px;font-size:16px;font-family:inherit;text-align:center;}
+  .hdl{cursor:grab;touch-action:none;}
+  .ratios{border:1px solid #d6dbe1;border-radius:10px;padding:8px 12px;background:#fafbfc;font-size:15px;margin:8px 0;}
+  .ratios .rt{display:flex;gap:12px;align-items:baseline;margin:3px 0;} .ratios .rt span:first-child{min-width:76px;font-weight:bold;} .ratios .rt span:nth-child(2){min-width:100px;color:#555;}
+  .ratios .rt b{color:#1565c0;font-size:16.5px;}
+  .cases{display:flex;flex-direction:column;gap:12px;margin-top:8px;}
+  .case{border:1.5px solid #d6dbe1;border-radius:12px;padding:10px 14px;background:#fff;}
+  .case.done{border-color:#66bb6a;background:#f6fbf6;}
+  .case-h{font-size:15.5px;margin-bottom:4px;}
+  .mini{width:400px;max-width:100%;display:block;}
+  .mini .mv{transition:transform 1s ease;}
+  .zoomb{border:1.5px solid #1565c0;background:#e3f2fd;color:#0d47a1;border-radius:10px;padding:8px 14px;font-size:15px;cursor:pointer;font-family:inherit;font-weight:bold;}
+  .aft{font-size:14.5px;margin:2px 0 6px;}
+  .pickc{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:15px;}
+  .pickc.locked{opacity:.4;pointer-events:none;}
+  .pickc button{border:1.5px solid #c5cad1;background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;cursor:pointer;font-family:inherit;color:#1f2328;}
+  .pickc button.on.ok{background:#2e7d32;border-color:#2e7d32;color:#fff;font-weight:bold;}
+  .pickc button.on.no{background:#fff6f6;border-color:#ef9a9a;color:#c62828;}
+  #sumCard .board3{margin-top:12px;}
+  .activity .qbox input.num{width:80px;display:inline-block;flex:0 0 auto;}
 </style></style>
 </head>
 <body>
@@ -221,7 +236,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 3</div>
+        <div class="progress-text" id="progressText">완료 0 / 5</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -241,7 +256,7 @@
     <div class="g-layout">
       <div class="g-board"><svg id="g1" viewBox="0 0 460 300" class="board"></svg></div>
       <div class="g-side">
-        <p class="hint">닮은 두 삼각형은 <b>세 쌍의 변의 길이의 비</b>가 같고, <b>세 쌍의 각의 크기</b>가 같아요. 모두 6가지예요.<br>그런데 정말 6가지를 <b>다</b> 확인해야 할까요? <b>최소 몇 가지</b>만 맞으면 닮았다고 할 수 있을지 예측해 보세요.</p>
+        <p class="hint">닮은 두 삼각형은 <b>세 쌍의 대응변의 길이의 비</b>가 같고, <b>세 쌍의 대응각의 크기</b>가 같아요. 모두 6가지예요.<br>그런데 정말 6가지를 <b>다</b> 확인해야 할까요? <b>최소 몇 가지</b>만 맞으면 닮았다고 할 수 있을지 예측해 보세요.</p>
         <div class="pick" id="pick1">
           <button type="button" data-v="1">1가지</button><button type="button" data-v="2">2가지</button><button type="button" data-v="3">3가지</button><button type="button" data-v="6">6가지 모두</button>
         </div>
@@ -252,43 +267,93 @@
   <div class="why" id="why1">예측을 고르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 2: 친구에게 보내기 ===================== -->
+<!-- ===================== 화면 2: 두 변 + 끼인각 ===================== -->
 <section class="task activity" id="task-a2" data-task-id="2">
   <div class="card">
-    <div class="act-head"><span class="act-tag">2 친구에게 보내기</span><span class="badge pending" id="badge-a2">미완료</span></div>
-    <h2>정보 몇 개만 보내서, 친구가 <u>같은 모양</u>을 그리게 할 수 있을까?</h2>
-    <p class="hint">친구는 <b>2배 큰 종이</b>에 그려요(변은 2배 길이로, 각은 그대로 전해져요). 아래 카드를 눌러 정보를 보내면, 친구가 <b>그 정보만으로 그릴 수 있는 삼각형들</b>이 친구 종이에 나타나요. 모두 내 삼각형과 <b>같은 모양</b>이면 성공!</p>
-    <div class="combos" id="combos"></div>
+    <div class="act-head"><span class="act-tag">2 두 변과 끼인각</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>∠E = ∠B 로 두고, 두 변만 2배로 늘리면?</h2>
     <div class="g-layout">
-      <div class="mine"><div class="cap">📐 내 삼각형</div><svg id="gMine" viewBox="0 0 220 170" class="board"></svg><div class="sent" id="sent2"></div></div>
-      <div class="friend"><div class="cap">📨 친구 종이 — 그릴 수 있는 삼각형들</div><svg id="g2" viewBox="0 0 460 260" class="board"></svg><div class="result" id="res2"></div></div>
+      <div class="g-board"><svg id="g2" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint">∠E는 ∠B와 같게 고정돼 있어요. <b>점 D, F를 끌어서</b><br>ED는 AB의 <b>2배</b>, EF는 BC의 <b>2배</b>가 되게 만들어 보세요.</p>
+        <div class="goal" id="goal2"></div>
+        <div class="qbox locked" id="q2">
+          <div class="jq">① DF의 길이는 AC의 몇 배인가요?</div>
+          <div class="q5row">DF는 AC의 <input type="text" class="num" id="k2" inputmode="decimal" autocomplete="off"> 배</div>
+          <div class="jq">② ∠D와 ∠A, ∠F와 ∠C의 크기는?</div>
+          <div class="q5row"><label><input type="radio" name="ang2" value="same"> 각각 같다</label><label><input type="radio" name="ang2" value="diff"> 다르다</label></div>
+          <div class="g-msg" id="gm2"></div>
+        </div>
+      </div>
     </div>
-    <div class="tried" id="tried2"></div>
   </div>
-  <div class="why" id="why2">카드 7장을 모두 보내 보면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">두 변을 2배로 만들고, 두 질문에 답하면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 3: 결과판·정리 ===================== -->
+<!-- ===================== 화면 3: 세 변 ===================== -->
 <section class="task activity" id="task-a3" data-task-id="3">
   <div class="card">
-    <div class="act-head"><span class="act-tag">3 정리하기</span><span class="badge pending" id="badge-a3">미완료</span></div>
-    <h2>우리 반 결과판</h2>
-    <div class="board3" id="board3"></div>
+    <div class="act-head"><span class="act-tag">3 세 변</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>세 변을 모두 2배로 하면, 각은 어떻게 될까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint">EF는 BC의 2배로 놓여 있어요. <b>점 D를 끌어서</b><br>DE는 AB의 <b>2배</b>, DF는 AC의 <b>2배</b>가 되게 만들어 보세요.</p>
+        <div class="goal" id="goal3"></div>
+        <div class="qbox locked" id="q3">
+          <div class="jq">세 각 ∠D, ∠E, ∠F를 ∠A, ∠B, ∠C와 비교하면?</div>
+          <div class="q5row"><label><input type="radio" name="ang3" value="same"> 각각 같다</label><label><input type="radio" name="ang3" value="diff"> 다르다</label></div>
+          <div class="g-msg" id="gm3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why3">세 변을 2배로 만들고, 질문에 답하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 4: 두 각 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">4 두 각</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>두 각만 같게 하면, 크기를 바꿔도 같은 모양일까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g4" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint">∠E = ∠B, ∠F = ∠C 로 고정돼 있어요. <b>점 F를 끌어서</b> 삼각형의 크기를 바꿔 보세요. 각 변이 △ABC의 변의 몇 배인지 보여요.<br><span class="note">(크기를 세 번 이상 바꿔 보세요)</span></p>
+        <div class="ratios" id="rat4"></div>
+        <div class="qbox locked" id="q4">
+          <div class="jq">크기를 바꿔도 세 변의 길이의 비는?</div>
+          <div class="q5row"><label><input type="radio" name="ans4" value="same"> 항상 서로 같다</label><label><input type="radio" name="ans4" value="diff"> 그때그때 다르다</label></div>
+          <div class="g-msg" id="gm4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why4">크기를 세 번 이상 바꿔 보고, 질문에 답하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 5: 합동으로 설명하기·정리 ===================== -->
+<section class="task activity" id="task-a5" data-task-id="5">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">5 합동으로 설명하기</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <h2>왜 닮았다고 할 수 있을까? — 확대해서 겹쳐 보자</h2>
+    <p class="hint">각 경우에서 <b>「△ABC 확대해서 겹치기」</b>를 누르면, △ABC를 확대한 △A′B′C′이 △DEF 위로 옮겨 가요. 이때 △A′B′C′과 △DEF는 <b>어떤 합동 조건</b>으로 합동일까요?</p>
+    <div class="cases" id="cases5"></div>
+  </div>
+  <div class="card" id="sumCard" style="display:none;">
     <div class="sum-body">
       <h4>📦 정리: 삼각형의 닮음 조건</h4>
-      <p>두 삼각형은 다음 중 하나만 맞으면 닮은 도형이에요. (6가지를 다 확인하지 않아도 돼요!)</p>
+      <p>두 삼각형은 다음 중 하나만 맞으면 닮은 도형이에요. 6가지를 다 확인하지 않아도 돼요!</p>
       <table class="sumt">
         <tr><th>① SSS 닮음</th><td>세 쌍의 대응변의 길이의 비가 같다</td><td class="f">a : a′ = b : b′ = c : c′</td></tr>
         <tr><th>② SAS 닮음</th><td>두 쌍의 대응변의 길이의 비가 같고, 그 <b>끼인각</b>의 크기가 같다</td><td class="f">a : a′ = c : c′, ∠B = ∠B′</td></tr>
         <tr><th>③ AA 닮음</th><td>두 쌍의 대응각의 크기가 각각 같다</td><td class="f">∠B = ∠B′, ∠C = ∠C′</td></tr>
       </table>
-      <svg viewBox="0 0 420 135" class="sum-fig" id="sumFig"></svg>
-      <p class="note">왜 이 조건이면 닮을까? △ABC를 2배로 확대한 △A′B′C′은 △DEF와 <b>합동</b>(SSS·SAS·ASA)이 되기 때문이에요. 학습지에서 이어서 확인해요.</p>
+      <p class="note">S는 Side(변), A는 Angle(각)의 첫 글자예요. 확대한 삼각형이 합동(SSS·SAS·ASA)이 되기 때문에 닮음이에요.</p>
     </div>
-    <div class="question" style="font-size:16px;margin-top:12px;">💭 「두 변 + 끼인각이 <b>아닌</b> 각」을 보냈을 때는 왜 실패했을까요? 한 줄로 써 보세요.</div>
-    <textarea id="t3" placeholder="끼인각이 아니면 ~"></textarea>
+    <div class="board3" id="board5"></div>
   </div>
-  <div class="why" id="why3">한 줄을 쓰면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why5">세 경우 모두 합동 조건을 바르게 고르면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -310,13 +375,14 @@
 
 <script>
 /* ============================================================
-   32. 7.2 삼각형의 닮음 조건 생각열기 — 닮음 조건 찾기 (10분 활동, 2026-10-16 새로 만듦)
+   32. 7.2 삼각형의 닮음 조건 생각열기 — 닮음 조건 찾기 (10~12분 활동, 2026-10-16 다시 만듦: 교과서 SAS 발견형 + 합동 연결)
    ① 예측: 닮았는지 알려면 최소 몇 가지(1·2·3·6)를 확인하면 될까?
-   ② 친구에게 보내기: 조합 카드 7장(세 변/두 변+끼인각/두 각/세 각/두 변/한 변+한 각/두 변+끼인각 아닌 각)을 보내면
-      친구가 그 정보만으로 그릴 수 있는 삼각형들을 겹쳐 보여 주고 성공(모두 같은 모양)/실패를 알려 준다. 7장 모두 보내면 완료
-   ③ 반 전체 결과판(예측 분포·카드별 판정) + 닮음 조건 정리(SSS·SAS·AA, 2배 확대 → 합동 그림) + ④가 부족한 까닭 한 줄
+   ② 두 변+끼인각: ∠E=∠B 고정, D·F를 반직선 위로 끌어 ED=2AB, EF=2BC → DF·∠D·∠F를 재어 보여 줌 → "DF는 AC의 몇 배?"(2), "각은?"(같다)
+   ③ 세 변: EF=2BC 고정, D를 끌어 DE=2AB, DF=2CA → 세 각 비교(같다)
+   ④ 두 각: ∠E=∠B, ∠F=∠C 고정, F를 끌어 크기 3번 이상 바꾸기 → 세 변의 비(항상 같다)
+   ⑤ 경우마다 △ABC를 확대한 △A′B′C′을 △DEF 위로 옮겨 겹치고 합동 조건(SAS/SSS/ASA) 고르기 → 닮음 조건 정리 + 반 예측 결과
    student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim32c. 공유: share/pred/{학생키}
-   (예전 작도 활동판은 __sim32를 썼다 — 기록이 섞이지 않게 바꿈)
+   (예전 「친구에게 보내기」 판과 같은 방을 쓴다 — 예측(pred)은 그대로 이어지고, 나머지 기록은 새 칸(s2~s5)에 저장)
    ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
@@ -338,65 +404,69 @@ const UNIT_NO = 32;
 const MIN_TEXT = 5;
 const TASKS = [
   {id:1, key:'a1', title:'1. 예측하기 — 몇 가지를 확인해야 할까?'},
-  {id:2, key:'a2', title:'2. 친구에게 보내기 — 정보 몇 개면 같은 모양?'},
-  {id:3, key:'a3', title:'3. 결과판·정리 — 삼각형의 닮음 조건'}
+  {id:2, key:'a2', title:'2. 두 변과 끼인각 — 두 변만 2배로 하면?'},
+  {id:3, key:'a3', title:'3. 세 변 — 세 변을 2배로 하면?'},
+  {id:4, key:'a4', title:'4. 두 각 — 두 각만 같게 하면?'},
+  {id:5, key:'a5', title:'5. 합동으로 설명하기·정리'}
 ];
-/* 좌표(단위): △ABC 참고 그림 B(1,9) C(6,9) A(2.5,11.5) → AB≈2.92, BC=5, CA≈4.30, ∠B≈59.0°, ∠C≈35.5°
-   △DEF는 2배: E(5,1) F(15,1), 정답 D(8,6) */
-const ABC = {A:[2.5,11.5], B:[1,9], C:[6,9]};
-const E0 = [5,1], F0 = [15,1], D0 = [8,6];
+/* 좌표(단위, y는 위로): △ABC  B(1,9) C(5,9) A(2.5, 9+1.5√3) → AB=3, BC=4, ∠B=60°, CA=√13≈3.61, ∠A≈74°, ∠C≈46°
+   △DEF는 E(5,1)에서 시작. 2배이면 F(13,1), D(8, 1+3√3) */
+const SQ3 = Math.sqrt(3);
+const ABC = {A:[2.5, 9+1.5*SQ3], B:[1,9], C:[5,9]};
+const E0 = [5,1];
 const dist = (p,q) => Math.hypot(p[0]-q[0], p[1]-q[1]);
 const angAt = (P,Q,R) => { const a=[Q[0]-P[0],Q[1]-P[1]], b=[R[0]-P[0],R[1]-P[1]]; return Math.acos(Math.max(-1,Math.min(1,(a[0]*b[0]+a[1]*b[1])/Math.hypot(...a)/Math.hypot(...b))))*180/Math.PI; };
-const AB = dist(ABC.A,ABC.B), BC = dist(ABC.B,ABC.C), CA = dist(ABC.C,ABC.A);
-const ANG_B = angAt(ABC.B,ABC.A,ABC.C), ANG_C = angAt(ABC.C,ABC.A,ABC.B), ANG_A = 180-ANG_B-ANG_C;
+const AB = 3, BC = 4, CA = dist(ABC.C,ABC.A);
+const ANG_B = 60, ANG_C = angAt(ABC.C,ABC.A,ABC.B), ANG_A = 180-ANG_B-ANG_C;
 const r1 = v => Math.round(v*10)/10, r2 = v => Math.round(v*100)/100;
-/* 조건 카드: drag = 끄는 꼭짓점('D' 자유 / 'F'·'E' 밑변 위), tri(p) = 그 위치에서의 {D,E,F}, conds = [{t, ok(tri)}], ans = 충분(ok)/부족(no) */
-const rayPt = (P, deg, len) => [P[0]+len*Math.cos(deg*Math.PI/180), P[1]+len*Math.sin(deg*Math.PI/180)];
-function aaD(F){ // ∠E=∠B, ∠F=∠C 인 D (E 고정, F 밑변 위)
-  const w = F[0]-E0[0], tb = Math.tan(ANG_B*Math.PI/180), tc = Math.tan(ANG_C*Math.PI/180);
-  const x = w*tc/(tb+tc); return [E0[0]+x, E0[1]+x*tb];
+const deg = v => Math.round(v)+'°';
+const rayPt = (P, d, l) => [P[0]+l*Math.cos(d*Math.PI/180), P[1]+l*Math.sin(d*Math.PI/180)];
+const D2 = rayPt(E0, 60, 6);             // 2배일 때 D
+function aaD(w){ // ∠E=∠B, ∠F=∠C, EF=w 인 D
+  const tb = Math.tan(ANG_B*Math.PI/180), tc = Math.tan(ANG_C*Math.PI/180), x = w*tc/(tb+tc); return [E0[0]+x, E0[1]+x*tb];
 }
-/* 친구에게 보낼 조합 7장. 친구 종이(1단위=20px, 원점 (20,240))에서 E(=B′)를 (4,1)에 두고 밑변 EF를 오른쪽으로.
-   send: 보낸 정보(내 삼각형에서 빨갛게), cands(): 친구가 그릴 수 있는 삼각형들 [{D,E,F}], win: 모두 같은 모양인가 */
-const E1 = [4,1], F1 = [14,1];
-const c2 = 2*AB, a2 = 2*BC, b2 = 2*CA;
-const COMBOS = [
-  {k:'sss', name:'세 변', n:3, send:{s:['AB','BC','CA']}, win:true,
-   cands:()=>[{E:E1, F:F1, D:rayPt(E1, ANG_B, c2)}], note:'그릴 수 있는 삼각형이 하나뿐 — 내 삼각형과 같은 모양이에요.'},
-  {k:'sas', name:'두 변 + 끼인각', n:3, send:{s:['AB','BC'], a:['B']}, win:true,
-   cands:()=>[{E:E1, F:F1, D:rayPt(E1, ANG_B, c2)}], note:'두 변 사이의 각이 정해지니 삼각형이 하나로 정해져요.'},
-  {k:'aa', name:'두 각', n:2, send:{a:['B','C']}, win:true,
-   cands:()=>[0.65,1,1.35].map(k=>({E:E1, F:[E1[0]+a2*k,1], D:rayPt(E1, ANG_B, c2*k)})), note:'크기는 제각각이지만 모두 같은 모양이에요! (나머지 한 각도 저절로 같아져요)'},
-  {k:'aaa', name:'세 각', n:3, send:{a:['A','B','C']}, win:true,
-   cands:()=>[0.65,1,1.35].map(k=>({E:E1, F:[E1[0]+a2*k,1], D:rayPt(E1, ANG_B, c2*k)})), note:'같은 모양이지만, 세 각 중 두 각만 보내도 충분했어요.'},
-  {k:'ss', name:'두 변', n:2, send:{s:['AB','BC']}, win:false,
-   cands:()=>[30, ANG_B, 95, 130].map(t=>({E:E1, F:F1, D:rayPt(E1, t, c2)})), note:'두 변 사이의 각을 모르니 모양이 제각각이에요.'},
-  {k:'sa', name:'한 변 + 한 각', n:2, send:{s:['BC'], a:['B']}, win:false,
-   cands:()=>[3, c2, 8.5].map(l=>({E:E1, F:F1, D:rayPt(E1, ANG_B, l)})), note:'변 하나와 각 하나로는 모양이 정해지지 않아요.'},
-  {k:'ssa', name:'두 변 + 끼인각 아닌 각', n:3, send:{s:['AB','CA'], a:['C']}, win:false,
-   cands:()=>{ const D = rayPt(F1, 180-ANG_C, b2), dx = Math.sqrt(c2*c2 - (D[1]-1)*(D[1]-1)); return [{E:[D[0]-dx,1], F:F1, D}, {E:[D[0]+dx,1], F:F1, D}]; },
-   note:'정보 3개를 보냈는데도 모양이 다른 삼각형이 2개나 생겨요!'}
+const CASES = [
+  {k:'sas', t:'② 두 변 + 끼인각', from:'화면 2', give:'ED = 2AB, EF = 2BC, ∠E = ∠B', after:'A′B′ = 2AB = ED, B′C′ = 2BC = EF, ∠B′ = ∠B = ∠E', ans:'SAS', mark:{s:['DE','EF'], a:['E']}},
+  {k:'sss', t:'③ 세 변', from:'화면 3', give:'DE = 2AB, EF = 2BC, FD = 2CA', after:'A′B′ = 2AB = DE, B′C′ = 2BC = EF, C′A′ = 2CA = FD', ans:'SSS', mark:{s:['DE','EF','FD'], a:[]}},
+  {k:'aa', t:'④ 두 각', from:'화면 4', give:'∠E = ∠B, ∠F = ∠C', after:'B′C′ = EF 가 되게 확대하면, B′C′ = EF 이고 ∠B′ = ∠B = ∠E, ∠C′ = ∠C = ∠F', ans:'ASA', mark:{s:['EF'], a:['E','F']}}
 ];
-const state = { pred:'', cur:-1, tried:{}, t3:'' };
+const CONG = ['SSS','SAS','ASA'];
+
+const state = {
+  pred:'',
+  s2:{d:3, f:4, ok:false, k:'', ang:''},
+  s3:{D:[7,4], ok:false, ang:''},
+  s4:{w:4, seen:[], ans:''},
+  s5:{shown:{}, pick:{}, miss:{}}
+};
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const len = s => String(s||'').trim().length;
+const k2Ok = () => /^\s*2(\.0*)?\s*$/.test(state.s2.k);
 
 function isDone(id){
   if(id===1) return !!state.pred;
-  if(id===2) return COMBOS.every(c=>state.tried[c.k]);
-  if(id===3) return len(state.t3)>=MIN_TEXT;
+  if(id===2) return state.s2.ok && k2Ok() && state.s2.ang==='same';
+  if(id===3) return state.s3.ok && state.s3.ang==='same';
+  if(id===4) return state.s4.seen.length>=3 && state.s4.ans==='same';
+  if(id===5) return CASES.every(c=>state.s5.pick[c.k]===c.ans);
   return false;
 }
 function valueOf(id){
   if(id===1) return state.pred ? `예측: ${state.pred==='6'?'6가지 모두':state.pred+'가지'}` : '';
-  if(id===2){ const t = COMBOS.filter(c=>state.tried[c.k]); return t.length ? `보내 본 조합 ${t.length}/7: ` + t.map(c=>`${c.name}${c.win?'⭕':'❌'}`).join(', ') : ''; }
-  if(id===3) return state.t3.trim();
+  if(id===2) return (state.s2.ok||state.s2.k||state.s2.ang) ? `${state.s2.ok?'2배 만듦':'만드는 중'} · DF는 AC의 ${state.s2.k||'-'}배 · 각: ${state.s2.ang==='same'?'같다':state.s2.ang==='diff'?'다르다':'-'}` : '';
+  if(id===3) return (state.s3.ok||state.s3.ang) ? `${state.s3.ok?'2배 만듦':'만드는 중'} · 세 각: ${state.s3.ang==='same'?'같다':state.s3.ang==='diff'?'다르다':'-'}` : '';
+  if(id===4) return (state.s4.seen.length||state.s4.ans) ? `크기 바꾸기 ${state.s4.seen.length}번 · 비: ${state.s4.ans==='same'?'항상 같다':state.s4.ans==='diff'?'다르다':'-'}` : '';
+  if(id===5){ const t = CASES.filter(c=>state.s5.pick[c.k]); return t.length ? t.map(c=>`${c.t.slice(2)}→${state.s5.pick[c.k]} 합동${state.s5.pick[c.k]===c.ans?'✅':'❌'}${state.s5.miss[c.k]?`(틀림 ${state.s5.miss[c.k]})`:''}`).join(', ') : ''; }
   return '';
 }
-function collectData(){ return { pred: state.pred, cur: state.cur, tried: Object.assign({}, state.tried), t3: state.t3 }; }
+function collectData(){
+  return { pred: state.pred, s2: Object.assign({}, state.s2), s3: {D:[r2(state.s3.D[0]), r2(state.s3.D[1])], ok:state.s3.ok, ang:state.s3.ang},
+    s4: {w:state.s4.w, seen:state.s4.seen.slice(0,20), ans:state.s4.ans},
+    s5: {shown:Object.assign({}, state.s5.shown), pick:Object.assign({}, state.s5.pick), miss:Object.assign({}, state.s5.miss)} };
+}
 function shareEntries(){ return { pred: state.pred ? {v: state.pred} : null }; }
 function pushShare(rt){
   if(!rt.shareRef) return;
@@ -548,95 +618,195 @@ const px = x => OX + x*U, py = y => OY - y*U, P = p => `${px(p[0])},${py(p[1])}`
 function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
 function gridSVG(){ let s=''; for(let x=0;x<=21;x++) s+=`<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(14)}" stroke="#eef1f5"/>`; for(let y=0;y<=14;y++) s+=`<line x1="${px(0)}" y1="${py(y)}" x2="${px(21)}" y2="${py(y)}" stroke="#eef1f5"/>`; return s; }
 function lab(p, c, t, col){ const dx=p[0]-c[0], dy=p[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*0.8)}" y="${py(p[1]+dy/d*0.8)+5}" text-anchor="middle" font-size="15" font-weight="bold" fill="${col||'#0d47a1'}">${t}</text>`; }
-function arcSVG(V, P1, P2, col){ const a1 = Math.atan2(P1[1]-V[1],P1[0]-V[0]), a2 = Math.atan2(P2[1]-V[1],P2[0]-V[0]); let s=a1,e=a2; let d=e-s; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; const r=0.9;
-  const p1=[V[0]+r*Math.cos(s),V[1]+r*Math.sin(s)], p2=[V[0]+r*Math.cos(s+d),V[1]+r*Math.sin(s+d)];
+function arcSVG(V, P1, P2, col, r){ r = r||0.9; const a1 = Math.atan2(P1[1]-V[1],P1[0]-V[0]), a2 = Math.atan2(P2[1]-V[1],P2[0]-V[0]); let d=a2-a1; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+  const p1=[V[0]+r*Math.cos(a1),V[1]+r*Math.sin(a1)], p2=[V[0]+r*Math.cos(a1+d),V[1]+r*Math.sin(a1+d)];
   return `<path d="M${P(p1)} A${r*U},${r*U} 0 0 ${d>0?0:1} ${P(p2)}" fill="none" stroke="${col}" stroke-width="3"/>`; }
-function abcSVG(){
-  const {A,B,C} = ABC, g=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];
-  return `<text x="${px(0.4)}" y="${py(13.2)}" font-size="13" fill="#555">△ABC (기준)</text><path d="M${P(A)}L${P(B)}L${P(C)}Z" fill="rgba(255,193,7,.35)" stroke="#8d6e00" stroke-width="2"/>`
-    + lab(A,g,'A','#8d6e00') + lab(B,g,'B','#8d6e00') + lab(C,g,'C','#8d6e00')
-    + `<text x="${px(6.6)}" y="${py(11.4)}" font-size="12.5" fill="#555">AB ${r1(AB)} · BC ${r1(BC)} · CA ${r1(CA)}</text><text x="${px(6.6)}" y="${py(10.4)}" font-size="12.5" fill="#555">∠A ${Math.round(ANG_A)}° · ∠B ${Math.round(ANG_B)}° · ∠C ${Math.round(ANG_C)}°</text>`;
+function sideLab(p, q, c, t, col){ const m=[(p[0]+q[0])/2,(p[1]+q[1])/2], dx=m[0]-c[0], dy=m[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(m[0]+dx/d*0.75)}" y="${py(m[1]+dy/d*0.75)+5}" text-anchor="middle" font-size="13.5" font-weight="bold" fill="${col||'#1565c0'}">${t}</text>`; }
+const cen = (a,b,c) => [(a[0]+b[0]+c[0])/3,(a[1]+b[1]+c[1])/3];
+function abcSVG(opt){
+  opt = opt || {};
+  const {A,B,C} = ABC, g = cen(A,B,C);
+  let s = `<text x="${px(0.4)}" y="${py(13.4)}" font-size="13" fill="#555">△ABC (기준)</text><path d="M${P(A)}L${P(B)}L${P(C)}Z" fill="rgba(255,193,7,.35)" stroke="#8d6e00" stroke-width="2"/>`
+    + lab(A,g,'A','#8d6e00') + lab(B,g,'B','#8d6e00') + lab(C,g,'C','#8d6e00');
+  const info = [];
+  if(opt.sides) info.push(`AB ${AB} · BC ${BC}` + (opt.ca ? ` · CA ${r1(CA)}` : ''));
+  if(opt.angs) info.push(opt.angs);
+  info.forEach((t,i)=> s += `<text x="${px(6.4)}" y="${py(11.6-i*1.05)}" font-size="13" fill="#5d4500">${t}</text>`);
+  if(opt.arcB) s += arcSVG(B, C, A, '#c62828', 0.7);
+  if(opt.arcC) s += arcSVG(C, A, B, '#6a1b9a', 0.7);
+  return s;
 }
+const handle = (p, id) => `<circle class="hdl" data-h="${id}" cx="${px(p[0])}" cy="${py(p[1])}" r="12" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`;
+const triPath = (D,E,F) => `<path d="M${P(D)}L${P(E)}L${P(F)}Z" fill="rgba(21,101,192,.13)" stroke="#1565c0" stroke-width="2.5"/>`;
+function dragOn(svg, pick, move, end){   // pick(pt) → 잡은 손잡이 이름 또는 null
+  let cur = null;
+  svg.addEventListener('pointerdown', ev=>{ if(finalLocked) return; const h = ev.target.closest && ev.target.closest('.hdl'); if(!h) return; cur = h.dataset.h; if(!pick(cur)){ cur=null; return; } ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(!cur) return; ev.preventDefault(); move(cur, svgPt(svg, ev)); });
+  const fin = ()=>{ if(!cur) return; const c = cur; cur = null; end(c); };
+  svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin);
+}
+const radios = name => Array.from(document.querySelectorAll(`input[name="${name}"]`));
+function setRadios(name, v){ radios(name).forEach(r=>{ r.checked = r.value===v; }); }
+
 /* ---------- 화면 1 ---------- */
 function render1(){
-  const D=D0,E=E0,F=F0, g=[(D[0]+E[0]+F[0])/3,(D[1]+E[1]+F[1])/3];
-  $('g1').innerHTML = gridSVG() + abcSVG() + `<text x="${px(5)}" y="${py(7.3)}" font-size="13" fill="#555">△DEF</text><path d="M${P(D)}L${P(E)}L${P(F)}Z" fill="rgba(21,101,192,.15)" stroke="#1565c0" stroke-width="2"/>` + lab(D,g,'D') + lab(E,g,'E') + lab(F,g,'F');
+  const D=D2, E=E0, F=[13,1], g=cen(D,E,F);
+  $('g1').innerHTML = gridSVG() + abcSVG() + `<text x="${px(5)}" y="${py(8.2)}" font-size="13" fill="#555">△DEF</text>` + triPath(D,E,F) + lab(D,g,'D') + lab(E,g,'E') + lab(F,g,'F');
   document.querySelectorAll('#pick1 button').forEach(b=> b.classList.toggle('on', b.dataset.v===state.pred));
-  $('gm1').innerHTML = state.pred ? `<span class="ok">예측: ${state.pred==='6'?'6가지 모두':state.pred+'가지'}</span> <span class="note">— 다음 화면에서 직접 시험해 봐요.</span>` : '';
+  $('gm1').innerHTML = state.pred ? `<span class="ok">예측: ${state.pred==='6'?'6가지 모두':state.pred+'가지'}</span> <span class="note">— 다음 화면부터 직접 만들어 확인해 봐요.</span>` : '';
 }
 document.querySelectorAll('#pick1 button').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; state.pred = b.dataset.v; render1(); check1({now:true}); }));
 function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, '예측을 고르면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
 
-/* ---------- 화면 2: 친구에게 보내기 ---------- */
-const QX = x => 20 + x*20, QY = y => 240 - y*20, QP = p => `${QX(p[0])},${QY(p[1])}`;
-const MX = x => 15 + (x-1)*36, MY = y => 150 - (y-9)*36, MP = p => `${MX(p[0])},${MY(p[1])}`;
-const CAND_COL = ['#1565c0','#e65100','#2e7d32','#6a1b9a'];
-let anim2 = null;
-function mineSVG(c){
-  const {A,B,C} = ABC, send = c ? c.send : {}, S = send.s||[], An = send.a||[];
-  const side = (n, p, q) => `<line x1="${MX(p[0])}" y1="${MY(p[1])}" x2="${MX(q[0])}" y2="${MY(q[1])}" stroke="${S.includes(n)?'#c62828':'#8d6e00'}" stroke-width="${S.includes(n)?5:2}"/>`;
-  const arc = (V, P1, P2) => { const a1 = Math.atan2(P1[1]-V[1],P1[0]-V[0]); let d = Math.atan2(P2[1]-V[1],P2[0]-V[0]) - a1; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; const r = 0.55;
-    const p1=[V[0]+r*Math.cos(a1),V[1]+r*Math.sin(a1)], p2=[V[0]+r*Math.cos(a1+d),V[1]+r*Math.sin(a1+d)]; return `<path d="M${MP(p1)} A${r*36},${r*36} 0 0 ${d>0?0:1} ${MP(p2)}" fill="none" stroke="#c62828" stroke-width="4"/>`; };
-  let s = `<path d="M${MP(A)}L${MP(B)}L${MP(C)}Z" fill="rgba(255,193,7,.35)" stroke="none"/>` + side('AB',A,B) + side('BC',B,C) + side('CA',C,A);
-  if(An.includes('A')) s += arc(A,B,C); if(An.includes('B')) s += arc(B,C,A); if(An.includes('C')) s += arc(C,A,B);
-  s += `<text x="${MX(A[0])}" y="${MY(A[1])-8}" text-anchor="middle" font-size="15" font-weight="bold" fill="#8d6e00">A</text><text x="${MX(B[0])-12}" y="${MY(B[1])+5}" font-size="15" font-weight="bold" fill="#8d6e00">B</text><text x="${MX(C[0])+5}" y="${MY(C[1])+5}" font-size="15" font-weight="bold" fill="#8d6e00">C</text>`;
-  $('gMine').innerHTML = s;
-  const L = {AB:`AB = ${r1(AB)} → 친구 종이 ${r1(2*AB)}`, BC:`BC = ${r1(BC)} → 친구 종이 ${r1(2*BC)}`, CA:`CA = ${r1(CA)} → 친구 종이 ${r1(2*CA)}`, A:`∠A = ${Math.round(ANG_A)}°`, B:`∠B = ${Math.round(ANG_B)}°`, C:`∠C = ${Math.round(ANG_C)}°`};
-  $('sent2').innerHTML = c ? `<b>📨 보낸 정보 ${c.n}개</b><br>` + S.concat(An).map(x=>`· ${L[x]}`).join('<br>') : '<span class="note">위의 카드를 눌러 보세요.</span>';
-}
-function friendSVG(c, upto){
-  let s = ''; for(let x=0;x<=21;x++) s+=`<line x1="${QX(x)}" y1="${QY(0)}" x2="${QX(x)}" y2="${QY(11.5)}" stroke="#eef1f5"/>`; for(let y=0;y<=11;y++) s+=`<line x1="${QX(0)}" y1="${QY(y)}" x2="${QX(21)}" y2="${QY(y)}" stroke="#eef1f5"/>`;
-  if(c){ const cs = c.cands().slice(0, upto); cs.forEach((t,i)=>{ const col = CAND_COL[i%4]; s += `<path d="M${QP(t.D)}L${QP(t.E)}L${QP(t.F)}Z" fill="${col}" fill-opacity=".10" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>`; }); }
-  $('g2').innerHTML = s;
-}
+/* ---------- 화면 2: 두 변 + 끼인각 ---------- */
+const snap = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(v*2)/2));
 function render2(){
-  const c = COMBOS[state.cur] || null;
-  $('combos').innerHTML = COMBOS.map((x,i)=>`<button type="button" data-i="${i}" class="${i===state.cur?'on':''}${state.tried[x.k]?(x.win?' win':' lose'):''}">${state.tried[x.k]?(x.win?'⭕ ':'❌ '):''}${x.name}<span class="n">정보 ${x.n}개</span></button>`).join('');
-  mineSVG(c);
-  if(!anim2){ friendSVG(c, c ? c.cands().length : 0); paintRes(c); }
-  const t = COMBOS.filter(x=>state.tried[x.k]);
-  $('tried2').innerHTML = t.length ? `보내 본 조합 <b>${t.length}/7</b> · 성공: ${t.filter(x=>x.win).map(x=>`<b style="color:#2e7d32">${x.name}</b>`).join(', ')||'-'}` : '';
+  const s = state.s2, E = E0, D = rayPt(E,60,s.d), F = [E[0]+s.f, E[1]], g = cen(D,E,F);
+  let h = gridSVG() + abcSVG({sides:true, angs:`∠B ${ANG_B}°` + (s.ok ? ` · ∠A ${deg(ANG_A)} · ∠C ${deg(ANG_C)} · CA ${r1(CA)}` : ''), arcB:true})
+    + `<line x1="${P(E).split(',')[0]}" y1="${py(E[1])}" x2="${px(rayPt(E,60,8.6)[0])}" y2="${py(rayPt(E,60,8.6)[1])}" stroke="#90a4ae" stroke-dasharray="5 4"/>`
+    + `<line x1="${px(E[0])}" y1="${py(E[1])}" x2="${px(15.6)}" y2="${py(E[1])}" stroke="#90a4ae" stroke-dasharray="5 4"/>`
+    + triPath(D,E,F) + arcSVG(E, F, D, '#c62828') + `<text x="${px(E[0]+1.2)}" y="${py(E[1]+0.35)}" font-size="12.5" fill="#c62828">${ANG_B}°</text>`
+    + sideLab(E,D,g,`ED ${s.d}`) + sideLab(E,F,g,`EF ${s.f}`);
+  if(s.ok) h += sideLab(D,F,g,`DF ${r1(dist(D,F))}`,'#2e7d32') + `<text x="${px(D[0]+0.5)}" y="${py(D[1]-1.3)}" font-size="12.5" fill="#2e7d32">∠D ${deg(angAt(D,E,F))}</text><text x="${px(F[0]-2.6)}" y="${py(F[1]+1.1)}" font-size="12.5" fill="#2e7d32">∠F ${deg(angAt(F,D,E))}</text>`;
+  h += lab(D,g,'D') + lab(E,g,'E') + lab(F,g,'F');
+  if(!s.ok) h += handle(D,'D') + handle(F,'F');
+  $('g2').innerHTML = h;
+  const ck = (ok, t) => `<span class="${ok?'ok':''}">${ok?'✅':'⬜'} ${t}</span>`;
+  $('goal2').innerHTML = s.ok ? `<span class="ok">✅ 두 변을 2배로 만들었어요! 초록색으로 DF와 나머지 두 각을 재어 보여 줘요. △ABC의 CA와 각도 위에 나타났어요.</span>`
+    : ck(s.d===2*AB, `ED = AB의 2배`) + '<br>' + ck(s.f===2*BC, `EF = BC의 2배`);
+  $('q2').classList.toggle('locked', !s.ok || finalLocked);
 }
-function paintRes(c){ const r = $('res2'); if(!c){ r.className='result'; r.innerHTML=''; return; }
-  r.className = 'result ' + (c.win?'win':'lose'); r.innerHTML = (c.win ? '🎉 성공! 모두 같은 모양' : '😢 실패! 모양이 다른 삼각형이 생겨요') + `<div class="note" style="font-weight:normal;font-size:14px;">${c.note}</div>`; }
-$('combos').addEventListener('click', e=>{
-  const b = e.target.closest('button'); if(!b || finalLocked) return;
-  const i = +b.dataset.i, c = COMBOS[i]; state.cur = i;
-  if(anim2) clearInterval(anim2);
-  const n = c.cands().length; let k = 0; paintRes(null); friendSVG(c, 0);
-  anim2 = setInterval(()=>{ k++; friendSVG(c, k); if(k>=n){ clearInterval(anim2); anim2 = null; state.tried[c.k] = true; paintRes(c); render2(); check2({now:true}); } }, 380);
+dragOn($('g2'), h=>!state.s2.ok, (h, p)=>{
+  const s = state.s2;
+  if(h==='D'){ const v = [p[0]-E0[0], p[1]-E0[1]]; s.d = snap(v[0]*0.5 + v[1]*SQ3/2, 1, 8); }
+  else s.f = snap(p[0]-E0[0], 1, 10);
   render2();
-});
-function check2(opts){ const n = COMBOS.filter(c=>state.tried[c.k]).length; setWhy(2, '✅ 완료! '+NEXT, `카드 7장을 모두 보내 보세요. (지금 ${n}/7)`); refreshAll(opts); }
-/* ---------- 화면 3: 결과판·정리 ---------- */
+}, ()=>{ const s = state.s2; if(s.d===2*AB && s.f===2*BC) s.ok = true; render2(); check2({now:true}); });
+$('k2').addEventListener('input', ()=>{ if(finalLocked) return; state.s2.k = $('k2').value; check2(); });
+radios('ang2').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked) return; state.s2.ang = r.value; check2({now:true}); }));
+function check2(opts){
+  const s = state.s2;
+  $('gm2').innerHTML = !s.ok ? '' : isDone(2) ? '<span class="ok">✅ 맞아요! 두 변만 2배로 하고 끼인각을 같게 했더니, 나머지 변도 2배, 나머지 각도 같아졌어요.</span>'
+    : (len(s.k) && !k2Ok()) ? '<span class="bad">DF와 CA의 길이(초록·노란 글씨)를 비교해 보세요.</span>' : s.ang==='diff' ? '<span class="bad">∠D와 ∠A, ∠F와 ∠C의 각도를 다시 비교해 보세요.</span>' : '';
+  setWhy(2, '✅ 완료! '+NEXT, !s.ok ? '점 D, F를 끌어 ED와 EF를 각각 2배로 만들어 보세요.' : '두 질문에 답하면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+
+/* ---------- 화면 3: 세 변 ---------- */
+const F3 = [13,1];
 function render3(){
+  const s = state.s3, E = E0, F = F3, D = s.ok ? D2 : s.D, g = cen(D,E,F);
+  const de = dist(D,E), df = dist(D,F);
+  let h = gridSVG() + abcSVG({sides:true, ca:true, angs: s.ok ? `∠A ${deg(ANG_A)} · ∠B ${ANG_B}° · ∠C ${deg(ANG_C)}` : ''})
+    + triPath(D,E,F) + sideLab(E,D,g,`DE ${r1(de)}`) + sideLab(D,F,g,`DF ${r1(df)}`) + sideLab(E,F,g,'EF 8');
+  if(s.ok) h += arcSVG(D,E,F,'#2e7d32',0.8) + arcSVG(E,F,D,'#2e7d32',0.8) + arcSVG(F,D,E,'#2e7d32',0.8)
+    + `<text x="${px(D[0]+0.6)}" y="${py(D[1]+0.3)}" font-size="12.5" fill="#2e7d32">∠D ${deg(angAt(D,E,F))}</text><text x="${px(E[0]+1.1)}" y="${py(E[1]+0.35)}" font-size="12.5" fill="#2e7d32">∠E ${deg(angAt(E,D,F))}</text><text x="${px(F[0]-2.9)}" y="${py(F[1]+0.35)}" font-size="12.5" fill="#2e7d32">∠F ${deg(angAt(F,D,E))}</text>`;
+  h += lab(D,g,'D') + lab(E,g,'E') + lab(F,g,'F');
+  if(!s.ok) h += handle(D,'D');
+  $('g3').innerHTML = h;
+  const ck = (ok, t) => `<span class="${ok?'ok':''}">${ok?'✅':'⬜'} ${t}</span>`;
+  $('goal3').innerHTML = s.ok ? '<span class="ok">✅ 세 변을 모두 2배로 만들었어요! 세 각을 초록색으로 재어 보여 줘요.</span>'
+    : ck(Math.abs(de-2*AB)<0.25, 'DE = AB의 2배') + '<br>' + ck(Math.abs(df-2*CA)<0.25, 'DF = CA의 2배') + '<br><span class="note">EF = 8 (BC의 2배) ✅</span>';
+  $('q3').classList.toggle('locked', !s.ok || finalLocked);
+}
+dragOn($('g3'), h=>!state.s3.ok, (h, p)=>{ state.s3.D = [Math.min(20, Math.max(0.5, p[0])), Math.min(8.4, Math.max(1.6, p[1]))]; render3(); },
+  ()=>{ const s = state.s3; if(Math.abs(dist(s.D,E0)-2*AB)<0.25 && Math.abs(dist(s.D,F3)-2*CA)<0.25){ s.ok = true; s.D = D2.slice(); } render3(); check3({now:true}); });
+radios('ang3').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked) return; state.s3.ang = r.value; check3({now:true}); }));
+function check3(opts){
+  const s = state.s3;
+  $('gm3').innerHTML = !s.ok ? '' : isDone(3) ? '<span class="ok">✅ 맞아요! 세 변만 2배로 맞췄는데, 세 각이 저절로 같아졌어요.</span>' : s.ang==='diff' ? '<span class="bad">초록색 각도와 위의 ∠A, ∠B, ∠C를 다시 비교해 보세요.</span>' : '';
+  setWhy(3, '✅ 완료! '+NEXT, !s.ok ? '점 D를 끌어 DE와 DF를 각각 2배로 만들어 보세요.' : '질문에 답하면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+
+/* ---------- 화면 4: 두 각 ---------- */
+function render4(){
+  const s = state.s4, E = E0, F = [E[0]+s.w, E[1]], D = aaD(s.w), g = cen(D,E,F), k = s.w/BC;
+  let h = gridSVG() + abcSVG({sides:true, ca:true, angs:`∠B ${ANG_B}° · ∠C ${deg(ANG_C)}`, arcB:true, arcC:true})
+    + `<line x1="${px(E[0])}" y1="${py(E[1])}" x2="${px(17.6)}" y2="${py(E[1])}" stroke="#90a4ae" stroke-dasharray="5 4"/>`
+    + triPath(D,E,F) + arcSVG(E,F,D,'#c62828') + arcSVG(F,D,E,'#6a1b9a')
+    + `<text x="${px(E[0]+1.2)}" y="${py(E[1]+0.35)}" font-size="12.5" fill="#c62828">${ANG_B}°</text><text x="${px(F[0]-2.4)}" y="${py(F[1]+0.35)}" font-size="12.5" fill="#6a1b9a">${deg(ANG_C)}</text>`
+    + sideLab(E,D,g,`${r1(dist(D,E))}`) + sideLab(D,F,g,`${r1(dist(D,F))}`) + sideLab(E,F,g,`${r1(s.w)}`)
+    + lab(D,g,'D') + lab(E,g,'E') + lab(F,g,'F') + handle(F,'F');
+  $('g4').innerHTML = h;
+  const row = (a, b, va, vb) => `<div class="rt"><span>${a} ÷ ${b}</span><span>${r1(va)} ÷ ${r1(vb)}</span><b>= ${r2(va/vb)}</b></div>`;
+  $('rat4').innerHTML = row('DE','AB',dist(D,E),AB) + row('EF','BC',s.w,BC) + row('FD','CA',dist(D,F),CA) + `<div class="note">크기를 바꾼 횟수: ${s.seen.length}번</div>`;
+  $('q4').classList.toggle('locked', s.seen.length<3 || finalLocked);
+}
+dragOn($('g4'), ()=>true, (h, p)=>{ state.s4.w = snap(p[0]-E0[0], 3, 12); render4(); },
+  ()=>{ const s = state.s4; if(s.w!==4 && !s.seen.includes(s.w)) s.seen.push(s.w); render4(); check4({now:true}); });
+radios('ans4').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked) return; state.s4.ans = r.value; check4({now:true}); }));
+function check4(opts){
+  const s = state.s4;
+  $('gm4').innerHTML = s.seen.length<3 ? '' : isDone(4) ? '<span class="ok">✅ 맞아요! 두 각만 같게 했는데, 크기가 달라도 세 변의 비가 항상 같아요. 같은 모양이에요.</span>' : s.ans==='diff' ? '<span class="bad">위의 세 나눗셈 값을 다시 보세요.</span>' : '';
+  setWhy(4, '✅ 완료! '+NEXT, s.seen.length<3 ? `점 F를 끌어 크기를 세 번 이상 바꿔 보세요. (지금 ${s.seen.length}번)` : '질문에 답하면 다음으로 넘어갈 수 있어요.');
+  refreshAll(opts);
+}
+
+/* ---------- 화면 5: 확대해서 겹치기 → 합동 조건 ---------- */
+const MS = 12;   // 작은 그림 1단위 = 12px
+const MB = [[1.5,1.5*SQ3],[0,0],[4,0]];   // A, B, C (B 원점)
+function miniSVG(c){
+  const show = !!state.s5.shown[c.k];
+  const Q = (p, k, ox) => `${ox + p[0]*MS*k},${120 - p[1]*MS*k}`;
+  const tri = (k, ox, fill, stroke, dash) => `<polygon points="${MB.map(p=>Q(p,k,ox)).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="2"${dash?' stroke-dasharray="6 4"':''}/>`;
+  const L = (p, k, ox, t, col, dx, dy) => `<text x="${ox + p[0]*MS*k + (dx||0)}" y="${120 - p[1]*MS*k + (dy||0)}" font-size="13" font-weight="bold" fill="${col}" text-anchor="middle">${t}</text>`;
+  const ED = 250, [Dm, Em, Fm] = MB;   // △DEF: D=A자리, E=B자리, F=C자리 (2배)
+  let s = tri(1, 20, 'rgba(255,193,7,.35)', '#8d6e00') + L(MB[0],1,20,'A','#8d6e00',0,-6) + L(MB[1],1,20,'B','#8d6e00',-8,14) + L(MB[2],1,20,'C','#8d6e00',8,14);
+  // △DEF와 주어진 조건(빨강)
+  const seg = (a, b) => `<line x1="${ED+a[0]*MS*2}" y1="${120-a[1]*MS*2}" x2="${ED+b[0]*MS*2}" y2="${120-b[1]*MS*2}" stroke="#c62828" stroke-width="4"/>`;
+  s += tri(2, ED, 'rgba(21,101,192,.12)', '#1565c0');
+  const V = {D:Dm, E:Em, F:Fm};
+  c.mark.s.forEach(n=>{ s += seg(V[n[0]], V[n[1]]); });
+  c.mark.a.forEach(n=>{ const v = V[n], o = n==='E' ? [V.F, V.D] : [V.D, V.E]; const a1 = Math.atan2(o[0][1]-v[1], o[0][0]-v[0]), a2 = Math.atan2(o[1][1]-v[1], o[1][0]-v[0]), r = 14;
+    const x = ED + v[0]*MS*2, y = 120 - v[1]*MS*2; let d = a2-a1; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+    s += `<path d="M${x+r*Math.cos(a1)},${y-r*Math.sin(a1)} A${r},${r} 0 0 ${d>0?0:1} ${x+r*Math.cos(a1+d)},${y-r*Math.sin(a1+d)}" fill="none" stroke="#c62828" stroke-width="3"/>`; });
+  s += L(Dm,2,ED,'D','#0d47a1',0,-6) + L(Em,2,ED,'E','#0d47a1',-8,14) + L(Fm,2,ED,'F','#0d47a1',8,14);
+  // 확대한 △A′B′C′ (처음엔 △ABC 옆, 누르면 △DEF 위로)
+  s += `<g class="mv" style="transform:translate(${show ? ED-100 : 0}px,0)">${tri(2, 100, 'rgba(255,193,7,.28)', '#8d6e00', true)}`
+    + (show ? '' : L(MB[0],2,100,'A′','#8d6e00',0,-6) + L(MB[1],2,100,'B′','#8d6e00',-10,14) + L(MB[2],2,100,'C′','#8d6e00',10,14)) + `</g>`;
+  return `<svg viewBox="0 40 400 98" class="mini" id="mini_${c.k}">${s}</svg>`;
+}
+function render5(){
+  $('cases5').innerHTML = CASES.map(c=>{
+    const show = !!state.s5.shown[c.k], pick = state.s5.pick[c.k], ok = pick===c.ans;
+    return `<div class="case${ok?' done':''}"><div class="case-h"><b>${c.t}</b> <span class="note">(${c.from}) · 주어진 것: <span class="red">${c.give}</span></span></div>
+      ${miniSVG(c)}
+      <div class="case-a">${show ? `<div class="aft">겹쳐 보니 <b>${c.after}</b></div>` : `<button type="button" class="zoomb" data-k="${c.k}">🔍 △ABC 확대해서 겹치기</button>`}
+        <div class="pickc${show?'':' locked'}">△A′B′C′ ≡ △DEF 의 합동 조건: ${CONG.map(v=>`<button type="button" data-k="${c.k}" data-v="${v}" class="${pick===v?(ok?'on ok':'on no'):''}">${v} 합동</button>`).join('')}</div>
+        <div class="g-msg">${!pick ? '' : ok ? `<span class="ok">✅ ${c.ans} 합동이므로 △ABC ∽ △DEF 예요.</span>` : '<span class="bad">같은 것이 변 몇 개, 각 몇 개인지 세어 보고, 각이 변 사이에 있는지 확인해 보세요.</span>'}</div></div></div>`;
+  }).join('');
+  $('cases5').querySelectorAll('.zoomb').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; const k = b.dataset.k; state.s5.shown[k] = true; render5();
+    const g = document.querySelector(`#mini_${k} .mv`); if(g){ g.style.transform = 'translate(0px,0)'; void g.getBoundingClientRect(); g.style.transform = 'translate(150px,0)'; } check5({now:true}); }));
+  $('cases5').querySelectorAll('.pickc button').forEach(b=> b.addEventListener('click', ()=>{ if(finalLocked) return; const k = b.dataset.k, c = CASES.find(x=>x.k===k);
+    if(!state.s5.shown[k] || state.s5.pick[k]===c.ans) return; state.s5.pick[k] = b.dataset.v; if(b.dataset.v!==c.ans) state.s5.miss[k] = (state.s5.miss[k]||0)+1; render5(); check5({now:true}); }));
+  renderBoard5();
+}
+function renderBoard5(){
+  $('sumCard').style.display = isDone(5) ? '' : 'none';
   const preds = Object.values(shareOf('pred')).filter(Boolean);
   const bar = (l, n, tot, col) => `<div class="bar"><span class="l">${l}</span><span class="t"><i style="width:${tot?Math.round(n/tot*100):0}%;background:${col}"></i></span><span class="n">${n}명</span></div>`;
-  const pv = ['1','2','3','6'];
-  $('board3').innerHTML = `<div class="bx"><h4>🤔 우리 반 처음 예측 (${preds.length}명)</h4>${pv.map(v=>bar(v==='6'?'6가지 모두':v+'가지', preds.filter(p=>p.v===v).length, preds.length, v==='2'||v==='3'?'#1565c0':'#90a4ae')).join('')}</div>`
-    + `<div class="bx"><h4>📨 실험 결과</h4>${COMBOS.map(c=>`<div>${c.win?'⭕':'❌'} ${c.name} <span class="note">(정보 ${c.n}개)</span></div>`).join('')}<div class="note" style="margin-top:4px;">가장 적게: <b>두 각(2개)</b> · 변이 들어가면: <b>세 변</b>, <b>두 변 + 끼인각</b>(3개)</div></div>`;
-  // 확대해서 겹쳐 보기 그림: △ABC를 2배 확대한 △A'B'C' = △DEF
-  const S = 14, ox = 60, oy = 112, Q = (p,k,dx) => `${ox+dx+(p[0]-1)*S*k},${oy-(p[1]-9)*S*k}`;
-  const {A,B,C} = ABC;
-  $('sumFig').innerHTML = `<polygon points="${Q(A,1,0)} ${Q(B,1,0)} ${Q(C,1,0)}" fill="rgba(255,193,7,.35)" stroke="#8d6e00" stroke-width="2"/><text x="${ox+10}" y="${oy+16}" font-size="12">△ABC</text>`
-    + `<text x="${ox+96}" y="${oy-30}" font-size="22" fill="#8d6e00">→</text><text x="${ox+86}" y="${oy-48}" font-size="11" fill="#8d6e00">2배 확대</text>`
-    + `<polygon points="${Q(A,2,120)} ${Q(B,2,120)} ${Q(C,2,120)}" fill="rgba(255,193,7,.25)" stroke="#8d6e00" stroke-width="2" stroke-dasharray="6 4"/><polygon points="${Q(A,2,124)} ${Q(B,2,124)} ${Q(C,2,124)}" fill="rgba(21,101,192,.12)" stroke="#1565c0" stroke-width="2"/>`
-    + `<text x="${ox+130}" y="${oy+16}" font-size="12">△A′B′C′ ≡ △DEF (합동!)</text>`;
+  $('board5').innerHTML = `<div class="bx"><h4>🤔 우리 반 처음 예측 (${preds.length}명)</h4>${['1','2','3','6'].map(v=>bar(v==='6'?'6가지 모두':v+'가지', preds.filter(p=>p.v===v).length, preds.length, v==='2'||v==='3'?'#1565c0':'#90a4ae')).join('')}</div>`
+    + `<div class="bx"><h4>🔎 실험해 보니</h4><div>세 변 → <b>3가지</b>로 충분</div><div>두 변 + 끼인각 → <b>3가지</b>로 충분</div><div>두 각 → <b>2가지</b>만으로 충분!</div><div class="note" style="margin-top:4px;">내 예측: ${state.pred ? (state.pred==='6'?'6가지 모두':state.pred+'가지') : '-'}</div></div>`;
 }
-function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! 마지막 화면에서 제출하세요.', '한 줄을 쓰면 완료돼요.'); refreshAll(opts); }
-$('t3').addEventListener('input', ()=>check3());
+function check5(opts){ setWhy(5, '✅ 완료! 마지막 화면에서 제출하세요.', `세 경우 모두 확대해서 겹쳐 보고 합동 조건을 고르세요. (맞힌 것 ${CASES.filter(c=>state.s5.pick[c.k]===c.ans).length}/3)`); renderBoard5(); refreshAll(opts); }
 
-function onShareChanged(){ render3(); }
+function onShareChanged(){ renderBoard5(); }
 function onRevealChanged(){}
-function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); }
-function initActivity(){ render1(); render2(); render3(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
+function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); if(taskId===4) render4(); if(taskId===5) render5(); }
+function syncInputs(){ $('k2').value = state.s2.k; $('k2').readOnly = finalLocked; setRadios('ang2', state.s2.ang); setRadios('ang3', state.s3.ang); setRadios('ans4', state.s4.ans); }
+function initActivity(){ syncInputs(); render1(); render2(); render3(); render4(); render5(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); check5({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+const obj = v => (v && typeof v==='object') ? v : {};
 function restoreData(d){
   if(!d) return;
-  state.pred = ['1','2','3','6'].includes(String(d.pred)) ? String(d.pred) : '';
-  state.cur = Number.isInteger(d.cur) && COMBOS[d.cur] ? d.cur : -1;
-  state.tried = {}; COMBOS.forEach(c=>{ if(d.tried && d.tried[c.k]) state.tried[c.k] = true; });
-  state.t3 = d.t3 || ''; $('t3').value = state.t3;
+  state.pred = ['1','2','3','6'].includes(String(d.pred)) ? String(d.pred) : '';   // 예전 판(친구에게 보내기)의 예측도 그대로 이어진다
+  const s2 = obj(d.s2), s3 = obj(d.s3), s4 = obj(d.s4), s5 = obj(d.s5);
+  state.s2 = {d: snap(Number(s2.d)||3,1,8), f: snap(Number(s2.f)||4,1,10), ok: !!s2.ok, k: String(s2.k||''), ang: ['same','diff'].includes(s2.ang) ? s2.ang : ''};
+  const D = arr(s3.D).map(Number); state.s3 = {D: (D.length===2 && D.every(Number.isFinite)) ? D : [7,4], ok: !!s3.ok, ang: ['same','diff'].includes(s3.ang) ? s3.ang : ''};
+  state.s4 = {w: snap(Number(s4.w)||4,3,12), seen: arr(s4.seen).map(Number).filter(Number.isFinite), ans: ['same','diff'].includes(s4.ans) ? s4.ans : ''};
+  state.s5 = {shown:{}, pick:{}, miss:{}};
+  CASES.forEach(c=>{ if(obj(s5.shown)[c.k]) state.s5.shown[c.k] = true; const p = obj(s5.pick)[c.k]; if(CONG.includes(p)) state.s5.pick[c.k] = p; const m = Number(obj(s5.miss)[c.k]); if(m) state.s5.miss[c.k] = m; });
   initActivity();
 }
 
