@@ -286,6 +286,10 @@
   .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
   .aifb-wrong{margin-left:6px;border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:1px 8px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .lockhint{background:#fff3e0;border:2px solid #ffb74d;color:#8a4b00;border-radius:10px;padding:10px 14px;font-size:16px;margin:6px 0 10px;}
+  .cnt-need{display:inline-block;background:#fff3e0;border:1.5px solid #ffb74d;color:#8a4b00;border-radius:8px;padding:6px 12px;font-size:15px;}
+  .recap3{margin-bottom:12px;}
+  .steps5{margin:4px 0 10px;padding-left:22px;font-size:15px;line-height:1.75;}
 </style></style>
 </head>
 <body>
@@ -416,7 +420,7 @@
   </div>
   <div class="card" id="autoCard">
     <h3>컴퓨터로 아주 많이 해 보자</h3>
-    <p class="hint" id="autoHint">직접 10번을 해 보면 버튼이 켜져요.</p>
+    <div class="lockhint" id="autoHint">🔒 위의 「▶ 남은 경기 하기」를 <b>직접 10번</b> 눌러야 이 버튼들이 켜져요.</div>
     <div class="sim-buttons" id="autoBtns">
       <button class="btn" data-n="100" disabled>100번</button>
       <button class="btn" data-n="1000" disabled>1,000번 *</button>
@@ -448,17 +452,25 @@
     </div>
     <p class="note" style="margin:6px 0 0;"><span style="color:var(--orange);">*</span> 1,000번과 10,000번은 꼭 해 보세요. 실험한 결과는 표에 차례로 쌓이고, 「보기」를 누르면 그때의 결과판을 다시 볼 수 있어요.</p>
   </div>
+  <div class="why" id="why3">직접 10번, 컴퓨터로 1,000번·10,000번을 하면 다음으로 넘어갈 수 있어요. (생각 쓰기는 다음 화면에서 해요)</div>
+</section>
+
+<!-- ===================== 활동 3-2: 실험 결과로 생각하기 (2026-10-16: 실험 화면에서 분리) ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
+    <div class="act-head"><span class="act-tag">상금 분배 ③-2</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>실험 결과로 생각해 보자</h2>
+    <div class="recap3" id="recap3"></div>
     <div class="big-question">A가 우승하는 상대도수는 어떤 값에 가까워지나요? 이 결과로 보면 상금을 어떻게 나누는 것이 공정할까요?</div>
     <textarea id="a3Text" placeholder="표를 보고 내 생각을 적어 보세요."></textarea>
   </div>
-  <div class="why" id="why3">직접 10번, 컴퓨터로 1,000번·10,000번을 하고 내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why4">내 생각을 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 4: 경우의 수로 따져 보기 ===================== -->
-<section class="task activity" id="task-a4" data-task-id="4">
+<section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
-    <div class="act-head"><span class="act-tag">상금 분배 ④</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <div class="act-head"><span class="act-tag">상금 분배 ④</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>경우의 수로 따져 보자</h2>
     <div class="recall">
       <div>🏆 상금 <b>64만 원</b> · <b>먼저 3번 이기는 사람</b>이 우승 · 한 경기에서 A와 B가 이길 확률은 같아요.</div>
@@ -467,19 +479,20 @@
         <span class="pl">B <i class="win onB"></i><i class="win"></i><i class="win"></i> 1승 → <b>2번</b> 더 이겨야 우승</span>
       </div>
     </div>
-    <p class="hint">이미 3경기를 했으니 남은 경기는 <b>4경기</b>와 <b>5경기</b>예요.
-      우승자가 먼저 정해지더라도 <b>5경기까지 모두 한다고 생각</b>하고, 두 경기의 승자를 차례로 나열해 봅시다.</p>
+    <div class="big-question" style="font-size:17px;">앞으로 남은 경기(4경기, 5경기)를 <u>모두 한다고</u> 할 때, 두 경기의 결과로 나올 수 있는 <b>모든 경우</b>는 몇 가지일까요?</div>
+    <p class="hint">우승자가 4경기에서 먼저 정해지더라도 <b>5경기까지 모두 한다고 생각</b>해요.</p>
+    <ol class="steps5"><li>4경기 승자를 고르고, 5경기 승자를 골라요.</li><li><b>「＋ 표에 넣기」</b>를 누르면 그 경우가 아래 표에 한 줄 생겨요. <span class="note">예) 4경기 A, 5경기 B → <b>AB</b></span></li><li>나올 수 있는 경우를 <b>모두</b> 넣고, 각 경우의 우승자를 골라요.</li></ol>
     <div class="adder">
       <span class="ag">4경기 승자 <button class="pick" data-g="4" data-v="A">A</button><button class="pick" data-g="4" data-v="B">B</button></span>
       <span class="ag">5경기 승자 <button class="pick" data-g="5" data-v="A">A</button><button class="pick" data-g="5" data-v="B">B</button></span>
-      <button class="btn" id="addOut" style="padding:8px 16px;font-size:15px;" disabled>＋ 경우 추가</button>
+      <button class="btn" id="addOut" style="padding:8px 16px;font-size:15px;" disabled>＋ 표에 넣기</button>
     </div>
     <table class="outt" id="outsTable" style="display:none;">
       <thead><tr><th>경우</th><th>4경기</th><th>5경기</th><th>우승자는? (먼저 3승 하는 사람)</th><th></th></tr></thead>
       <tbody id="outs"></tbody>
     </table>
     <div class="error" id="err4"></div>
-    <div class="note" id="outsNote">나올 수 있는 경우를 모두 추가하고, 각 경우의 우승자를 골라 보세요.</div>
+    <div class="note" id="outsNote">나올 수 있는 경우를 모두 표에 넣고, 각 경우의 우승자를 골라 보세요.</div>
   </div>
   <div class="card" id="a4Calc">
     <h3>확률로 계산하기</h3>
@@ -508,13 +521,13 @@
     <textarea id="s5Reason" placeholder="처음에는 ~라고 생각했는데, ~"></textarea>
     <div class="aifb" id="aifb22"></div>
   </div>
-  <div class="why" id="why4">경우를 모두 나열하고 확률과 상금을 바르게 구한 뒤, 처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why5">경우를 모두 나열하고 확률과 상금을 바르게 구한 뒤, 처음 생각과 비교해 쓰면 타자 영입 활동으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 6: 타자 영입 — 예상 ===================== -->
-<section class="task activity" id="task-a5" data-task-id="5">
+<section class="task activity" id="task-a6" data-task-id="6">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ①</span><span class="badge pending" id="badge-a6">미완료</span></div>
     <h2>어떤 타자를 영입할까?</h2>
     <p class="hint">프로야구팀에서 새로운 타자 한 명을 영입하려고 해요. 후보는 선수 A와 선수 B예요.<br>
       <span class="note">타율 = (안타 수) ÷ (타수) — 타석에서 공을 친 횟수 중 안타를 친 비율이에요.</span></p>
@@ -532,13 +545,13 @@
     <p class="hint" style="margin-top:12px;"><b>그렇게 예상한 이유</b></p>
     <textarea id="voteReason" placeholder="왜 그렇게 생각했나요?"></textarea>
   </div>
-  <div class="why" id="why5">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why6">예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 7: 실제 기록으로 계산 ===================== -->
-<section class="task activity" id="task-a6" data-task-id="6">
+<section class="task activity" id="task-a7" data-task-id="7">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ②</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>실제 기록을 확인해 보자</h2>
     <p class="hint">빈칸에 시즌 전체 타수와 안타 수, 타율을 구해 써 보세요. 타율은 소수(0.○○)나 분수로 써요.</p>
     <div class="fractip">✏️ 분수는 <b>분자/분모</b> 순서로 써요. 예) 3분의 2 → <b>2/3</b>, 4분의 1 → <b>1/4</b> (소수 0.25도 돼요)</div>
@@ -561,13 +574,13 @@
     <div class="waitbox" id="voteWait">⏳ 위의 타율을 모두 구하면 우리 반의 예상 결과가 여기에 나타나요.</div>
     <div class="bars" id="voteBars" style="display:none;"></div>
   </div>
-  <div class="why" id="why6">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why7">시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 활동 8: 왜 그럴까? ===================== -->
-<section class="task activity" id="task-a7" data-task-id="7">
+<section class="task activity" id="task-a8" data-task-id="8">
   <div class="card">
-    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a7">미완료</span></div>
+    <div class="act-head"><span class="act-tag" style="background:var(--orange);">타자 영입 ③</span><span class="badge pending" id="badge-a8">미완료</span></div>
     <h2>왜 예상과 다른 결과가 나왔을까?</h2>
     <div class="howread">
       <b>📖 그림 읽는 법</b>
@@ -583,7 +596,7 @@
     <textarea id="a8Text" placeholder="A는 전반기에 ~타수, 후반기에 ~타수를 쳤고, ~"></textarea>
     <div class="aifb" id="aifb22b"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
-      <span class="note" id="why7">✏️ 내 생각을 쓰고 AI 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」 버튼이 켜져요.</span>
+      <span class="note" id="why8">✏️ 내 생각을 쓰고 AI 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」 버튼이 켜져요.</span>
       <button class="btn concept-btn" id="a8Btn" disabled>💡 정리 보기</button>
     </div>
     <div class="concept" id="concept8">
@@ -649,10 +662,11 @@ const TASKS = [
   {id:1, key:'a1', title:'상금 분배 ① 상금을 어떻게 나눌까? (내 생각)'},
   {id:2, key:'a2', title:'상금 분배 ② 반 친구들은 어떻게 나눴을까?'},
   {id:3, key:'a3', title:'상금 분배 ③ 남은 경기를 이어서 해 보자'},
-  {id:4, key:'a4', title:'상금 분배 ④ 경우의 수로 따져 보자'},
-  {id:5, key:'a5', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
-  {id:6, key:'a6', title:'타자 영입 ② 실제 기록으로 계산하기'},
-  {id:7, key:'a7', title:'타자 영입 ③ 왜 예상과 다를까?'}
+  {id:4, key:'a4', title:'상금 분배 ③-2 실험 결과로 생각하기'},
+  {id:5, key:'a5', title:'상금 분배 ④ 경우의 수로 따져 보자'},
+  {id:6, key:'a6', title:'타자 영입 ① 시즌 전체 타율 예상하기'},
+  {id:7, key:'a7', title:'타자 영입 ② 실제 기록으로 계산하기'},
+  {id:8, key:'a8', title:'타자 영입 ③ 왜 예상과 다를까?'}
 ];
 
 /* 학생 한 명의 활동 상태(메모리). Firebase에는 collectData()로 저장한다. */
@@ -755,11 +769,12 @@ const calc4Ok = () => outsOk() && fieldsOk();
 function isDone(id){
   if(id===1) return splitOf(state.s1a, state.s1b).ok && len(state.s1Reason)>=MIN_TEXT;
   if(id===2) return state.sawSplit && len(state.a2Text)>=MIN_TEXT;
-  if(id===3) return state.games.length>=10 && hasRun(1000) && hasRun(10000) && len(state.a3Text)>=MIN_TEXT;
-  if(id===4) return calc4Ok() && len(state.s5Reason)>=MIN_TEXT;
-  if(id===5) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
-  if(id===6) return batOk();
-  if(id===7) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
+  if(id===3) return state.games.length>=10 && hasRun(1000) && hasRun(10000);
+  if(id===4) return len(state.a3Text)>=MIN_TEXT;
+  if(id===5) return calc4Ok() && len(state.s5Reason)>=MIN_TEXT;
+  if(id===6) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
+  if(id===7) return batOk();
+  if(id===8) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
   return false;
 }
 /* 교사 화면 요약·구글 설문에 쓰는 한 줄 값 */
@@ -771,15 +786,16 @@ function valueOf(id){
     const parts = [];
     if(state.games.length) parts.push(`직접 ${state.games.length}회 중 A 우승 ${gamesA()}회`);
     state.runs.forEach(r=> parts.push(`${fmtInt(r.n)}번: ${relDec(r.a,r.n)}`));
-    return (parts.length?`[${parts.join(' · ')}]`:'') + (len(state.a3Text)?`\n${state.a3Text.trim()}`:'');
+    return parts.length?`[${parts.join(' · ')}]`:'';
   }
-  if(id===4){
+  if(id===4) return state.a3Text.trim();
+  if(id===5){
     if(!state.outs.length && !Object.values(state.f).some(Boolean)) return '';
     return `경우: ${state.outs.map(o=>o.s+'→'+(o.w||'?')).join(', ')||'-'}\n경우의 수 ${state.f.tot||'-'}, A 우승 ${state.f.aw||'-'}, P(A)=${state.f.pa||'-'}, P(B)=${state.f.pb||'-'}, 상금 A ${state.f.ma||'-'} : B ${state.f.mb||'-'}`;
   }
-  if(id===5) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
-  if(id===6){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
-  if(id===7) return state.a8Text.trim();
+  if(id===6) return state.vote ? `예상: ${state.vote==='같다'?'같다':'선수 '+state.vote}` + (len(state.voteReason)?`\n이유: ${state.voteReason.trim()}`:'') : '';
+  if(id===7){ const b=state.bat; if(!Object.values(b).some(Boolean)) return ''; return `A: ${b.aT||'-'}타수 ${b.aH||'-'}안타 타율 ${b.aV||'-'} · B: ${b.bT||'-'}타수 ${b.bH||'-'}안타 타율 ${b.bV||'-'}`; }
+  if(id===8) return state.a8Text.trim();
   return '';
 }
 function collectData(){
@@ -1138,7 +1154,7 @@ async function playOnce(){
 $('playBtn').addEventListener('click', playOnce);
 function renderPlay(){
   const n = state.games.length, a = gamesA();
-  $('playCount').innerHTML = `직접 한 횟수: <b>${n}회</b> ${n<10?`<span class="note">(10회 이상 해 보세요)</span>`:'✓'}`;
+  $('playCount').innerHTML = n<10 ? `<span class="cnt-need">직접 한 횟수 <b>${n} / 10회</b> — 10회가 되면 아래 「컴퓨터로 아주 많이 해 보자」 버튼이 켜져요 👇</span>` : `직접 한 횟수: <b>${n}회</b> ✓`;
   $('playHist').innerHTML = state.games.map((g,i)=>`<span class="${winnerOf(g)}">${i+1}회 ${winnerOf(g)}</span>`).join('');
   $('playStat').style.display = n ? 'block' : 'none';
   if(n) $('playStat').innerHTML = `<div class="result-row"><div class="stat"><div class="k">A 우승</div><div class="v">${a}회</div></div><div class="stat"><div class="k">B 우승</div><div class="v">${n-a}회</div></div><div class="stat"><div class="k">A가 우승한 상대도수</div><div class="v frac">${relText(a,n)}</div></div></div>`;
@@ -1146,7 +1162,7 @@ function renderPlay(){
   const ok = n >= 10;
   document.querySelectorAll('#autoBtns button').forEach(b=> b.disabled = !ok || state.playing || !!state.running);
   $('customN').disabled = !ok;
-  $('autoHint').textContent = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. 경기 한 번이 결과판의 칸 하나예요.' : `직접 10번을 해 보면 버튼이 켜져요. (지금 ${n}번)`;
+  $('autoHint').className = ok ? 'hint' : 'lockhint'; $('autoHint').innerHTML = ok ? '버튼을 누르면 컴퓨터가 남은 경기를 그 횟수만큼 해요. 경기 한 번이 결과판의 칸 하나예요.' : `🔒 위의 「▶ 남은 경기 하기」를 <b>직접 10번</b> 눌러야 이 버튼들이 켜져요. <b>(지금 ${n}번)</b>`;
   renderAutoTable();
 }
 function renderAutoTable(){
@@ -1312,10 +1328,18 @@ function renderClassSim(){
 function check3(opts){
   state.a3Text = $('a3Text').value;
   const need = [];
-  if(state.games.length<10) need.push('직접 10번'); if(!hasRun(1000)) need.push('1,000번'); if(!hasRun(10000)) need.push('10,000번');
-  if(len(state.a3Text)<MIN_TEXT) need.push('내 생각 쓰기');
-  setWhy(3, '✅ 완료! '+NEXT, `남은 것: ${need.join(', ')}`);
+  if(state.games.length<10) need.push(`직접 10번 (지금 ${state.games.length}번)`); if(!hasRun(1000)) need.push('1,000번'); if(!hasRun(10000)) need.push('10,000번');
+  setWhy(3, '✅ 완료! 다음 화면에서 내 생각을 써요. '+NEXT, `남은 것: ${need.join(', ')}`);
+  setWhy(4, '✅ 완료! '+NEXT, '위 칸에 내 생각을 쓰면 다음으로 넘어갈 수 있어요.');
+  renderRecap3();
   refreshAll(opts);
+}
+/* 활동 3-2: 실험 결과 요약(앞 화면 결과를 다시 보여 준다) */
+function renderRecap3(){
+  const box = $('recap3'); if(!box) return;
+  const n = state.games.length, a = gamesA();
+  const rows = state.runs.map(r=>`<tr><td>${fmtInt(r.n)}번</td><td>${fmtInt(r.a)}회</td><td>${relText(r.a, r.n)}</td></tr>`).join('');
+  box.innerHTML = `<div class="note" style="margin-bottom:4px;">앞 화면에서 한 실험 결과예요.</div><table class="simtable"><tr><th>횟수</th><th>A 우승</th><th>A가 우승한 상대도수</th></tr>${n?`<tr><td>직접 ${n}번</td><td>${a}회</td><td>${relText(a,n)}</td></tr>`:''}${rows}</table>`;
 }
 $('a3Text').addEventListener('input', ()=>check3());
 
@@ -1375,7 +1399,7 @@ function renderFields(){
 }
 Object.keys(F_CHECK).forEach(k=> $('f_'+k).addEventListener('input', ()=>{ state.f[k] = $('f_'+k).value; renderFields(); check4(); }));
 function check4(opts){
-  setWhy(4, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, !outsOk() ? '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.' : !fieldsOk() ? '확률과 상금을 바르게 구해 보세요.' : '맨 아래 「다시 생각해 보기」에 처음 생각과 비교해 써 보세요.');
+  setWhy(5, '✅ 완료! 이제 타자 영입 활동으로 넘어가요. '+NEXT, !outsOk() ? '먼저 나올 수 있는 경우를 모두 바르게 나열해 보세요.' : !fieldsOk() ? '확률과 상금을 바르게 구해 보세요.' : '맨 아래 「다시 생각해 보기」에 처음 생각과 비교해 써 보세요.');
   refreshAll(opts);
 }
 
@@ -1395,7 +1419,7 @@ document.querySelectorAll('#voteRow .choice').forEach(b=> b.addEventListener('cl
 $('voteReason').addEventListener('input', ()=>check6());
 function check6(opts){
   state.voteReason = $('voteReason').value;
-  setWhy(5, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(6, '✅ 완료! '+NEXT, '예상을 고르고 이유를 쓰면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 
@@ -1414,7 +1438,7 @@ function check7(opts){
       <p style="margin:10px 0 0;font-size:16px;font-weight:bold;">➡ 시즌 전체 타율은 <span style="color:var(--orange);">선수 B</span>가 더 높아요! <span class="note" style="font-weight:normal;">(내 예상: ${esc(pred)} — ${state.vote==='B'?'예상이 맞았어요 🎯':'예상과 달랐어요 😮'})</span></p>`;
   }
   lockVote(); renderVote();
-  setWhy(6, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
+  setWhy(7, '✅ 완료! '+NEXT, '시즌 전체 타수·안타 수·타율을 모두 바르게 구하면 다음으로 넘어갈 수 있어요.');
   refreshAll(opts);
 }
 function renderVote(){
@@ -1442,13 +1466,13 @@ $('a8Text').addEventListener('input', ()=>check8());
 $('a8Btn').addEventListener('click', ()=>{ state.a8Concept = true; $('concept8').classList.add('show'); refreshAll({now:true}); $('concept8').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 function check8(opts){
   state.a8Text = $('a8Text').value;
-  const ok = isDone(7), open = aifbPassed('p7') || !!REVEAL.simpson;
+  const ok = isDone(8), open = aifbPassed('p7') || !!REVEAL.simpson;
   $('a8Btn').disabled = !(ok && open);
-  $('why7').textContent = len(state.a8Text) < MIN_TEXT ? '✏️ 위 칸에 내 생각을 먼저 써 보세요.'
+  $('why8').textContent = len(state.a8Text) < MIN_TEXT ? '✏️ 위 칸에 내 생각을 먼저 써 보세요.'
     : !aifbList('p7').length ? '🤖 「AI 피드백 받기」를 눌러 피드백을 받아 보세요. 보완할 점이 없으면 「💡 정리 보기」가 켜져요.'
     : !open ? '✅ 완료! AI 피드백에 「보완할 점」이 남아 있어요. 내 글을 고친 뒤 다시 받아 보세요. (선생님이 정리를 공개해도 켜져요)'
     : '✅ 완료! 「💡 정리 보기」를 눌러 내 생각과 비교해 보세요. 다 했으면 마지막 화면에서 제출해요.';
-  $('why7').className = 'note' + (ok?' ok':'');
+  $('why8').className = 'note' + (ok?' ok':'');
   if(state.a8Concept) $('concept8').classList.add('show');
   refreshAll(opts);
 }
@@ -1457,7 +1481,7 @@ function check8(opts){
 function onShareChanged(){ renderSplit(); renderClassSim(); renderVote(); }
 function onRevealChanged(){ renderSplit(); renderVote(); check8({noSave:true}); }
 function aifbOnChange(){ check8({noSave:true}); }
-function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===6) renderVote(); }
+function onShowPage(taskId){ if(taskId===2) renderSplit(); if(taskId===4) renderRecap3(); if(taskId===7) renderVote(); }
 
 /* 처음 화면 */
 function initActivity(){
