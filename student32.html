@@ -222,6 +222,9 @@
   .okb{border:none;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 18px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .tapmsg{font-size:15px;font-weight:bold;color:#2e7d32;}
   .steps .val{display:inline-block;margin-left:4px;background:#e8f5e9;border-radius:6px;padding:0 6px;font-size:13.5px;}
+  .refcap{font-size:13.5px;font-weight:bold;color:#5d4500;margin:2px 0 3px;}
+  .refcap + svg + .refcap{color:#0d47a1;margin-top:8px;}
+  .board.ref{background:#fffdf3;border-color:#ecd98a;}
 </style></style>
 </head>
 <body>
@@ -286,7 +289,7 @@
     <h2>어떤 조건만 있으면 △ABC ∽ △DEF 일까?</h2>
     <p class="hint">닮은 두 삼각형은 대응변의 길이의 비가 같고(1 : 2), 대응각의 크기가 같아요. 모두 6가지예요.<br>△ABC는 그대로 있고, 아래 조건을 누를 때마다 그 조건<b>만</b> 지키는 △DEF를 △ABC와 <b>되도록 다른 모양</b>으로 그려 줘요. 그래도 <b>항상</b> △ABC와 닮은 삼각형이 나오는 <b>가장 적은 조건</b>을 모두 찾아보세요.</p>
     <div class="g-layout">
-      <div class="g-board"><svg id="g1" viewBox="0 0 460 300" class="board"></svg>
+      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r1" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 조건만 지켜 그린 △DEF</div><svg id="g1" viewBox="0 0 460 320" class="board"></svg>
         <div class="ratios" id="rat1"></div></div>
       <div class="g-side">
         <div class="items" id="pickItems">
@@ -323,7 +326,7 @@
     <div class="act-head"><span class="act-tag">2 SSS 닮음 작도</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>세 변을 2배로 — 컴퍼스로 △DEF 작도하기</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g2" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r2" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g2" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps2"></ol>
         <div class="ctl" id="ctl2"></div>
@@ -340,7 +343,7 @@
     <div class="act-head"><span class="act-tag">3 SAS 닮음 작도</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>두 변을 2배로, 끼인각은 그대로 — △DEF 작도하기</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g3" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r3" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g3" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps3"></ol>
         <div class="ctl" id="ctl3"></div>
@@ -357,7 +360,7 @@
     <div class="act-head"><span class="act-tag">4 AA 닮음 작도</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>두 각을 그대로 — △DEF 작도하기</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g4" viewBox="0 0 460 300" class="board"></svg></div>
+      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r4" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g4" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps4"></ol>
         <div class="ctl" id="ctl4"></div>
@@ -433,7 +436,7 @@ const rayPt = (P, d, l) => [P[0]+l*Math.cos(d*RAD), P[1]+l*Math.sin(d*RAD)];
    2배인 △DEF: DE = 10, EF = 16, FD = 14 */
 const T0 = (()=>{ const a = 8, b = 7, c = 5, C = Math.acos((a*a+b*b-c*c)/(2*a*b))/RAD; return {a, b, c, B:60, C, A:180-60-C}; })();
 const ABC = {B:[1,12.6], C:[9,12.6]}; ABC.A = rayPt(ABC.B, 60, 5);
-const E0 = [8,1];
+const E2 = [4,1.5], E3 = [7,1.5], E4 = [5,1.5];   // 화면별 작도 시작점 E
 
 /* ---------- 화면 1: 조건 6가지와 최소 조건 7가지 ---------- */
 const ITEMS = [{i:'ab',t:'AB : DE'},{i:'bc',t:'BC : EF'},{i:'ca',t:'CA : FD'},{i:'a',t:'∠A = ∠D'},{i:'b',t:'∠B = ∠E'},{i:'c',t:'∠C = ∠F'}];
@@ -633,10 +636,10 @@ function setWhy(id, doneMsg, todoMsg){ const el = $('why'+id); const d = isDone(
 const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
 
 /* ---------- 그리기 (SVG 460×300, 1단위 = 16px, 원점 (10,292)) ---------- */
-const U = 16, OX = 10, OY = 292;
+const U = 16, OX = 10, OY = 312;
 const px = x => OX + x*U, py = y => OY - y*U, P = p => `${px(p[0])},${py(p[1])}`;
 function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
-function gridSVG(){ let s=''; for(let x=0;x<=28;x++) s+=`<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(18)}" stroke="#eef1f5"/>`; for(let y=0;y<=18;y++) s+=`<line x1="${px(0)}" y1="${py(y)}" x2="${px(28)}" y2="${py(y)}" stroke="#eef1f5"/>`; return s; }
+function gridSVG(){ let s=''; for(let x=0;x<=28;x++) s+=`<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(19)}" stroke="#eef1f5"/>`; for(let y=0;y<=19;y++) s+=`<line x1="${px(0)}" y1="${py(y)}" x2="${px(28)}" y2="${py(y)}" stroke="#eef1f5"/>`; return s; }
 const cen = (a,b,c) => [(a[0]+b[0]+c[0])/3,(a[1]+b[1]+c[1])/3];
 function lab(p, c, t, col){ const dx=p[0]-c[0], dy=p[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*1)}" y="${py(p[1]+dy/d*1)+5}" text-anchor="middle" font-size="15" font-weight="bold" fill="${col||'#0d47a1'}">${t}</text>`; }
 function sideLab(p, q, c, t, col, fs){ const m=[(p[0]+q[0])/2,(p[1]+q[1])/2], dx=m[0]-c[0], dy=m[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(m[0]+dx/d*0.9)}" y="${py(m[1]+dy/d*0.9)+5}" text-anchor="middle" font-size="${fs||13}" font-weight="bold" fill="${col||'#1565c0'}">${t}</text>`; }
@@ -674,6 +677,14 @@ function abcSVG(show, red){
   return s;
 }
 
+const inView = p => p[0]>=0.6 && p[0]<=27.4 && p[1]>=0.6 && p[1]<=18.6;
+function rayHandle(V, a, L){ let l = L; while(l>2 && !inView(rayPt(V,a,l))) l -= 0.5; return rayPt(V,a,l); }   // 손잡이가 판 밖으로 나가지 않게
+function circHandle(O, r, prefer){ for(const a of prefer){ const q = rayPt(O,a,r); if(inView(q)) return q; } return rayPt(O,prefer[0],r); }
+/* 원래 도형 △ABC는 위쪽 작은 판(r1~r4)에 따로 그린다. info: 오른쪽에 적을 줄들 */
+function drawRef(id, show, red, info){
+  $('r'+id).innerHTML = `<g transform="translate(117.5,-30) scale(1.25)">${abcSVG(show, red)}</g>`
+    + (info||[]).map((t,i)=>`<text x="330" y="${44+i*22}" font-size="14" font-weight="bold" fill="#2e7d32">${t}</text>`).join('');
+}
 /* ================= 화면 1: 조건을 누를 때마다 △DEF를 다시 그린다 ================= */
 const rand = (lo, hi) => lo + Math.random()*(hi-lo);
 /* 변: p=EF(↔BC=a), q=FD(↔CA=b), r=DE(↔AB=c). 각: D(↔A), E(↔B), F(↔C) */
@@ -699,13 +710,11 @@ function genDEF(set){   // 고른 조건만 지키는 △DEF의 세 변(닮음�
 }
 function ptsOf(v){ const {p,q,r} = v; const x = (r*r+p*p-q*q)/(2*p), y2 = r*r-x*x; if(!(y2>1)) return null; return {E:[0,0], F:[p,0], D:[x, Math.sqrt(y2)]}; }
 const similarV = v => { const k = [v.p/T0.a, v.q/T0.b, v.r/T0.c]; return Math.max(...k)/Math.min(...k) < 1.03; };
-function placeDEF(t){   // 기준 △ABC(왼쪽 위)와 겹치지 않게 놓는다. 못 넣으면 null
+function placeDEF(t){   // 판 가운데 놓는다. 못 넣으면 null
   const xs = [t.E[0], t.F[0], t.D[0]], minx = Math.min(...xs), maxx = Math.max(...xs);
-  if(maxx-minx > 27 || t.D[1] > 16.5) return null;
-  let sx = 0.6 - minx;
-  if(t.D[1] > 10.6 && t.D[0]+sx < 11){ sx = 11 - t.D[0]; }
-  if(maxx+sx > 27.6) return null;
-  const sh = p => [p[0]+sx, p[1]+0.9]; return {D:sh(t.D), E:sh(t.E), F:sh(t.F)};
+  if(maxx-minx > 25.5 || t.D[1] > 16.8) return null;
+  const sx = (28 - (maxx-minx))/2 - minx, sy = 1.2;
+  const sh = p => [p[0]+sx, p[1]+sy]; return {D:sh(t.D), E:sh(t.E), F:sh(t.F)};
 }
 function angsOf(pl){ const {D,E,F} = pl; return {D:angAt(D,E,F), E:angAt(E,D,F), F:angAt(F,D,E)}; }
 let draw1 = null;   // 마지막 그림 (저장하지 않음)
@@ -730,9 +739,10 @@ function render1(){
   const sel = state.p1.sel;
   document.querySelectorAll('#pickItems button').forEach(b=>{ b.classList.toggle('on', sel.includes(b.dataset.i)); b.disabled = isLocked(); });
   $('drawN').textContent = state.p1.draws ? `그린 횟수 ${state.p1.draws}번` : '';
-  let h = gridSVG() + abcSVG(['ab','bc','ca','a','b','c'], draw1 ? draw1.set : sel);
+  drawRef(1, ['ab','bc','ca','a','b','c'], draw1 ? draw1.set : sel);
+  let h = gridSVG();
   if(!draw1){
-    h += `<text x="${px(16)}" y="${py(6)}" text-anchor="middle" font-size="15" fill="#90a4ae">위의 조건을 눌러 보세요</text>`;
+    h += `<text x="${px(14)}" y="${py(9)}" text-anchor="middle" font-size="15" fill="#90a4ae">위의 조건을 눌러 보세요</text>`;
     $('g1').innerHTML = h; $('rat1').innerHTML = ''; $('res1').innerHTML = '';
   } else {
     const {def, set} = draw1, {D,E,F} = def, g2 = cen(D,E,F), RED = '#c62828';
@@ -814,67 +824,70 @@ const RENDER = {};
 
 /* ================= 화면 2: SSS 작도 ================= */
 RENDER[2] = function(){
-  const c = state.c1, v = c.vals, st = c.step, E = E0, F = [E[0]+v.f, E[1]];
-  let h = gridSVG() + abcSVG(['ab','bc','ca']);
+  const c = state.c1, v = c.vals, st = c.step, E = E2, F = [E[0]+v.f, E[1]];
+  drawRef(2, ['ab','bc','ca'], null, st>=4 ? ['∠A '+deg(T0.A), '∠B 60°', '∠C '+deg(T0.C)] : []);
+  let h = gridSVG();
   const circ = (o, r, col, dash) => `<circle cx="${px(o[0])}" cy="${py(o[1])}" r="${r*U}" fill="none" stroke="${col}" stroke-width="2"${dash?' stroke-dasharray="6 5"':''}/>`;
-  if(st>=1){ h += circ(E, v.r1, st>1?'#90a4ae':'#1565c0', st===1); const hp = rayPt(E,118,v.r1); h += `<text x="${px(hp[0])-6}" y="${py(hp[1])-16}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="end">반지름 ${v.r1}</text>`; if(st===1) h += handle(hp,'r1'); }
-  if(st>=2){ h += circ(F, v.r2, st>2?'#90a4ae':'#e65100', st===2); const hp = rayPt(F,64,v.r2); h += `<text x="${px(hp[0])+14}" y="${py(hp[1])+4}" font-size="13" font-weight="bold" fill="#e65100">반지름 ${v.r2}</text>`; if(st===2) h += handle(hp,'r2'); }
+  if(st>=1){ h += circ(E, v.r1, st>1?'#90a4ae':'#1565c0', st===1); const hp = circHandle(E, v.r1, [75,60,90,45,105,30,120,15]); h += `<text x="${px(hp[0])-6}" y="${py(hp[1])-16}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="end">반지름 ${v.r1}</text>`; if(st===1) h += handle(hp,'r1'); }
+  if(st>=2){ h += circ(F, v.r2, st>2?'#90a4ae':'#e65100', st===2); const hp = circHandle(F, v.r2, [105,120,90,135,75,150,60,165]); h += `<text x="${px(hp[0])+14}" y="${py(hp[1])+4}" font-size="13" font-weight="bold" fill="#e65100">반지름 ${v.r2}</text>`; if(st===2) h += handle(hp,'r2'); }
   const X = st>=3 ? (()=>{ const d = v.f, x = (v.r1*v.r1 - v.r2*v.r2 + d*d)/(2*d), y2 = v.r1*v.r1 - x*x; return y2>0 ? [E[0]+x, E[1]+Math.sqrt(y2)] : null; })() : null;
   if(st===3 && X) h += tapSVG(X);
   if(st>=4 && X){ const D = X, g = cen(D,E,F); h += triPath(D,E,F) + lab(D,g,'D') + arcSVG(D,E,F,'#2e7d32') + arcSVG(E,F,D,'#2e7d32') + arcSVG(F,D,E,'#2e7d32')
       + angLab(D,g,'∠D '+deg(angAt(D,E,F))) + angLab(E,g,'∠E '+deg(angAt(E,D,F))) + angLab(F,g,'∠F '+deg(angAt(F,D,E))) + sideLab(E,D,g,'10') + sideLab(D,F,g,'14');
-    h += `<text x="${px(12)}" y="${py(16.6)}" font-size="13" fill="#2e7d32" font-weight="bold">△ABC의 각: ∠A ${deg(T0.A)}, ∠B 60°, ∠C ${deg(T0.C)}</text>`; }
+  }
   h += seg(E,F,'#1565c0',3) + dot(E) + dot(F) + ptLab(E,'E') + ptLab(F,'F') + `<text x="${(px(E[0])+px(F[0]))/2}" y="${py(E[1])+20}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="middle">EF = ${v.f}</text>`;
   if(st===0) h += handle(F,'f');
   $('g2').innerHTML = h; renderSide(2);
 };
 dragOn($('g2'), (h, p)=>{ const c = state.c1, s = PG[2].steps;
-  if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E0[0], 0.5, s[0].lo, s[0].hi);
-  if(h==='r1' && c.step===1) c.vals.r1 = snapTo(dist(p,E0), 0.5, s[1].lo, s[1].hi);
-  if(h==='r2' && c.step===2) c.vals.r2 = snapTo(dist(p,[E0[0]+c.vals.f,E0[1]]), 0.5, s[2].lo, s[2].hi);
+  if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E2[0], 0.5, s[0].lo, s[0].hi);
+  if(h==='r1' && c.step===1) c.vals.r1 = snapTo(dist(p,E2), 0.5, s[1].lo, s[1].hi);
+  if(h==='r2' && c.step===2) c.vals.r2 = snapTo(dist(p,[E2[0]+c.vals.f,E2[1]]), 0.5, s[2].lo, s[2].hi);
   const m = $('msg2'); if(m) m.innerHTML = ''; RENDER[2](); });
 $('g2').addEventListener('click', ev=>{ if(ev.target.closest && ev.target.closest('.tap')) tapDone(2); });
 
 /* ================= 화면 3: SAS 작도 ================= */
 RENDER[3] = function(){
-  const c = state.c2, v = c.vals, st = c.step, E = E0, D = rayPt(E, v.ang, v.d), F = [E[0]+v.f, E[1]];
-  let h = gridSVG() + abcSVG(['ab','bc','b']);
-  h += seg(E, [27.5, E[1]], '#90a4ae', 1.5, '5 4') + seg(E, rayPt(E, v.ang, 15), st>0?'#90a4ae':'#c62828', st>0?1.5:2, '5 4');
+  const c = state.c2, v = c.vals, st = c.step, E = E3, D = rayPt(E, v.ang, v.d), F = [E[0]+v.f, E[1]];
+  drawRef(3, ['ab','bc','b'], null, st>=3 ? ['CA = 7', '∠A '+deg(T0.A), '∠C '+deg(T0.C)] : []);
+  let h = gridSVG();
+  h += seg(E, [27.4, E[1]], '#90a4ae', 1.5, '5 4') + seg(E, rayPt(E, v.ang, 15), st>0?'#90a4ae':'#c62828', st>0?1.5:2, '5 4');
   const mid = rayPt(E, v.ang/2, 2.4);
   h += arcSVG(E, [E[0]+1,E[1]], rayPt(E,v.ang,1), '#c62828', 1.4) + `<text x="${px(mid[0])}" y="${py(mid[1])+5}" font-size="13" font-weight="bold" fill="#c62828" text-anchor="middle">${v.ang}°</text>`;
-  if(st===0) h += handle(rayPt(E, v.ang, 9), 'ang');
+  if(st===0) h += handle(rayHandle(E, v.ang, 9), 'ang');
   if(st>=1){ h += seg(E, D, '#1565c0', 3) + dot(D) + sideLab(E, D, [E[0]+4, E[1]], `ED = ${v.d}`) + `<text x="${px(D[0])-12}" y="${py(D[1])-8}" font-size="15" font-weight="bold" fill="#0d47a1">D</text>`; if(st===1) h += handle(D, 'd'); }
   if(st>=2){ h += seg(E, F, '#1565c0', 3) + dot(F) + `<text x="${(px(E[0])+px(F[0]))/2}" y="${py(E[1])+20}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="middle">EF = ${v.f}</text>` + ptLab(F,'F'); if(st===2) h += handle(F, 'f'); }
   if(st>=3){ const g = cen(D,E,F); h += triPath(D,E,F) + seg(D,F,'#2e7d32',3) + sideLab(D,F,g,`DF = ${r1(dist(D,F))}`,'#2e7d32') + arcSVG(D,E,F,'#2e7d32') + arcSVG(F,D,E,'#2e7d32') + angLab(D,g,'∠D '+deg(angAt(D,E,F))) + angLab(F,g,'∠F '+deg(angAt(F,D,E)));
-    h += `<text x="${px(12)}" y="${py(16.6)}" font-size="13" fill="#2e7d32" font-weight="bold">△ABC: CA = 7, ∠A ${deg(T0.A)}, ∠C ${deg(T0.C)}</text>`; }
+  }
   h += ptLab(E,'E') + dot(E);
   $('g3').innerHTML = h; renderSide(3);
 };
 dragOn($('g3'), (h, p)=>{ const c = state.c2, s = PG[3].steps;
-  if(h==='ang' && c.step===0) c.vals.ang = snapTo(Math.atan2(p[1]-E0[1], p[0]-E0[0])/RAD, 1, s[0].lo, s[0].hi);
-  if(h==='d' && c.step===1){ const w = [p[0]-E0[0], p[1]-E0[1]]; c.vals.d = snapTo(w[0]*Math.cos(c.vals.ang*RAD)+w[1]*Math.sin(c.vals.ang*RAD), 0.5, s[1].lo, s[1].hi); }
-  if(h==='f' && c.step===2) c.vals.f = snapTo(p[0]-E0[0], 0.5, s[2].lo, s[2].hi);
+  if(h==='ang' && c.step===0) c.vals.ang = snapTo(Math.atan2(p[1]-E3[1], p[0]-E3[0])/RAD, 1, s[0].lo, s[0].hi);
+  if(h==='d' && c.step===1){ const w = [p[0]-E3[0], p[1]-E3[1]]; c.vals.d = snapTo(w[0]*Math.cos(c.vals.ang*RAD)+w[1]*Math.sin(c.vals.ang*RAD), 0.5, s[1].lo, s[1].hi); }
+  if(h==='f' && c.step===2) c.vals.f = snapTo(p[0]-E3[0], 0.5, s[2].lo, s[2].hi);
   const m = $('msg3'); if(m) m.innerHTML = ''; RENDER[3](); });
 
 /* ================= 화면 4: AA 작도 ================= */
 function lineX(P1, a1, P2, a2){ const d1 = [Math.cos(a1*RAD), Math.sin(a1*RAD)], d2 = [Math.cos(a2*RAD), Math.sin(a2*RAD)], den = d1[0]*d2[1]-d1[1]*d2[0]; if(Math.abs(den)<1e-9) return null;
   const t = ((P2[0]-P1[0])*d2[1]-(P2[1]-P1[1])*d2[0])/den; return t>0 ? [P1[0]+t*d1[0], P1[1]+t*d1[1]] : null; }
 RENDER[4] = function(){
-  const c = state.c3, v = c.vals, st = c.step, E = E0, F = [E[0]+v.f, E[1]], fdir = 180-v.fa;
-  let h = gridSVG() + abcSVG(['b','c']);
+  const c = state.c3, v = c.vals, st = c.step, E = E4, F = [E[0]+v.f, E[1]], fdir = 180-v.fa;
+  drawRef(4, ['b','c'], null, st>=4 ? ['AB = 5', 'CA = 7', '∠A '+deg(T0.A)] : []);
+  let h = gridSVG();
   h += seg(E,F,'#1565c0',3) + dot(E) + dot(F) + ptLab(E,'E') + ptLab(F,'F') + `<text x="${(px(E[0])+px(F[0]))/2}" y="${py(E[1])+20}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="middle">EF = ${v.f}</text>`;
   if(st===0) h += handle(F,'f');
-  if(st>=1){ const m = rayPt(E,v.e/2,2.4); h += seg(E, rayPt(E,v.e,15), st>1?'#90a4ae':'#c62828', st>1?1.5:2, '5 4') + arcSVG(E,F,rayPt(E,v.e,1),'#c62828',1.4) + `<text x="${px(m[0])}" y="${py(m[1])+5}" font-size="13" font-weight="bold" fill="#c62828" text-anchor="middle">${v.e}°</text>`; if(st===1) h += handle(rayPt(E,v.e,8),'e'); }
-  if(st>=2){ const m = rayPt(F,180-v.fa/2,2.6); h += seg(F, rayPt(F,fdir,15), st>2?'#90a4ae':'#6a1b9a', st>2?1.5:2, '5 4') + arcSVG(F,rayPt(F,fdir,1),E,'#6a1b9a',1.4) + `<text x="${px(m[0])}" y="${py(m[1])+5}" font-size="13" font-weight="bold" fill="#6a1b9a" text-anchor="middle">${v.fa}°</text>`; if(st===2) h += handle(rayPt(F,fdir,8),'fa'); }
+  if(st>=1){ const m = rayPt(E,v.e/2,2.4); h += seg(E, rayPt(E,v.e,15), st>1?'#90a4ae':'#c62828', st>1?1.5:2, '5 4') + arcSVG(E,F,rayPt(E,v.e,1),'#c62828',1.4) + `<text x="${px(m[0])}" y="${py(m[1])+5}" font-size="13" font-weight="bold" fill="#c62828" text-anchor="middle">${v.e}°</text>`; if(st===1) h += handle(rayHandle(E,v.e,8),'e'); }
+  if(st>=2){ const m = rayPt(F,180-v.fa/2,2.6); h += seg(F, rayPt(F,fdir,15), st>2?'#90a4ae':'#6a1b9a', st>2?1.5:2, '5 4') + arcSVG(F,rayPt(F,fdir,1),E,'#6a1b9a',1.4) + `<text x="${px(m[0])}" y="${py(m[1])+5}" font-size="13" font-weight="bold" fill="#6a1b9a" text-anchor="middle">${v.fa}°</text>`; if(st===2) h += handle(rayHandle(F,fdir,8),'fa'); }
   const X = st>=3 ? lineX(E, v.e, F, fdir) : null;
   if(st===3 && X) h += tapSVG(X);
   if(st>=4 && X){ const g = cen(X,E,F); h += triPath(X,E,F) + sideLab(E,X,g,`DE ≈ ${Math.round(dist(X,E))}`,'#2e7d32') + sideLab(X,F,g,`DF ≈ ${Math.round(dist(X,F))}`,'#2e7d32') + lab(X,g,'D') + angLab(X,g,'∠D '+deg(angAt(X,E,F)));
-    h += `<text x="${px(12)}" y="${py(16.6)}" font-size="13" fill="#2e7d32" font-weight="bold">△ABC: AB = 5, CA = 7, ∠A ${deg(T0.A)}</text>`; }
+  }
   $('g4').innerHTML = h; renderSide(4);
 };
-dragOn($('g4'), (h, p)=>{ const c = state.c3, s = PG[4].steps, F = [E0[0]+c.vals.f, E0[1]];
-  if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E0[0], 0.5, s[0].lo, s[0].hi);
-  if(h==='e' && c.step===1) c.vals.e = snapTo(Math.atan2(p[1]-E0[1], p[0]-E0[0])/RAD, 1, s[1].lo, s[1].hi);
+dragOn($('g4'), (h, p)=>{ const c = state.c3, s = PG[4].steps, F = [E4[0]+c.vals.f, E4[1]];
+  if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E4[0], 0.5, s[0].lo, s[0].hi);
+  if(h==='e' && c.step===1) c.vals.e = snapTo(Math.atan2(p[1]-E4[1], p[0]-E4[0])/RAD, 1, s[1].lo, s[1].hi);
   if(h==='fa' && c.step===2) c.vals.fa = snapTo(180 - Math.atan2(p[1]-F[1], p[0]-F[0])/RAD, 1, s[2].lo, s[2].hi);
   const m = $('msg4'); if(m) m.innerHTML = ''; RENDER[4](); });
 $('g4').addEventListener('click', ev=>{ if(ev.target.closest && ev.target.closest('.tap')) tapDone(4); });
