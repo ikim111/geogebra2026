@@ -205,6 +205,18 @@
   .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
   .aifb-wrong{margin-left:6px;border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:1px 8px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .rulebox{background:#f3f0ff;border:1px solid #c9bff0;color:#2d2366;border-radius:12px;padding:10px 14px;margin:6px 0 10px;}
+  .rulebox .rule-main{font-size:17px;}
+  .rulebox .rule-main .big{font-size:20px;color:#4527a0;}
+  .rulebox .ex{font-size:15px;color:#5a4e9a;margin-left:6px;}
+  .rulebox ul{margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;}
+  .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:8px;}
+  .q{border:1.5px solid #d6dbe1;border-radius:12px;padding:10px 12px;background:#fff;display:flex;flex-direction:column;gap:6px;}
+  .q.right{border-color:#66bb6a;background:#f1f9f1;} .q.wrong{border-color:#ef9a9a;background:#fff6f6;}
+  .q .say{font-size:21px;font-weight:bold;color:#1f2328;}
+  .q .row{display:flex;align-items:center;gap:8px;}
+  .q input{width:110px;font-size:19px;padding:5px 8px;border:1.5px solid #c5cad1;border-radius:8px;font-family:inherit;text-align:center;}
+  .q .fb{font-size:13px;line-height:1.5;min-height:18px;color:#b23b3b;} .q.right .fb{color:#2e7d32;}
 </style></style>
 </head>
 <body>
@@ -264,6 +276,18 @@
 
 <!-- ===================== 활동 1: 확률이 0인 사건, 1인 사건 ===================== -->
 <section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card" id="fracCard">
+    <div class="act-head"><span class="act-tag">먼저 연습</span><span class="badge pending" id="badge-frac">미완료</span></div>
+    <h2>✏️ 분수 바르게 입력하기 (4문제)</h2>
+    <div class="rulebox">
+      <div class="rule-main"><b>○분의 △</b> 는 <b class="big">△/○</b> 로 써요. <span class="ex">예) 3분의 2 → <b>2/3</b></span></div>
+      <ul>
+        <li><b>분자</b>(읽을 때 나중) → <b>/</b> → <b>분모</b>(읽을 때 먼저) 순서예요. 글자(분, 의)나 ÷ 는 쓰지 않아요.</li>
+        <li>📱 태블릿에서는 <b>123</b> 키를 누르면 <b>/</b> 가 있어요. 쓰고 <b>Enter</b>를 누르면 채점돼요.</li>
+      </ul>
+    </div>
+    <div class="qgrid" id="qgrid"></div>
+  </div>
   <div class="card">
     <div class="act-head"><span class="act-tag">활동 1</span><span class="badge pending" id="badge-a1">미완료</span></div>
     <h2>일상에서 확률 찾기</h2>
@@ -412,7 +436,7 @@ const CARDS = [
 ];
 
 const state = {
-  ex0:'', ex1:'',
+  ex0:'', ex1:'', fq: null, fracLegacy:false,
   vals:{c1:'', c2:'', c3:'', c4:''}, sel:'c1',
   a3Text:'', sawLine:false,
   myExpr:'', myVal:'', myWhy:''
@@ -423,6 +447,24 @@ const SHARE = { all:{}, sent:{} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const len = s => String(s||'').trim().length;
+/* 1페이지 앞부분: 분수 바르게 입력하기 4문제 (2026-10-16 26번 연습을 합침). [분자, 분모] */
+const FQS = [[2,3],[1,4],[7,10],[5,12]];
+state.fq = FQS.map(()=>({a:'', ok:false, tries:0, wrong:[]}));
+function fdiag(raw, q){
+  const s = String(raw==null?'':raw).trim().replace(/／/g,'/').replace(/\s+/g,'');
+  if(!s) return {empty:true};
+  const [p, d] = q, m = s.match(/^(\d+)\/(\d+)$/);
+  if(m){ const a = +m[1], b = +m[2];
+    if(a===p && b===d) return {ok:true};
+    if(a===d && b===p) return {msg:'분자와 분모가 바뀌었어요. 먼저 읽는 수(분모)는 / 뒤에 써요.'};
+    if(b && a*d===b*p) return {msg:'값은 같아요! 그래도 읽은 그대로 써 보세요.'};
+    return {msg:'숫자를 다시 확인해 보세요.'}; }
+  if(/[분의]/.test(s)) return {msg:'글자(분, 의) 말고 숫자와 / 만 써요.'};
+  if(/[÷:\\]/.test(s)) return {msg:'÷, : 대신 / 를 써요.'};
+  if(/^\d*\.\d+$/.test(s)) return {msg:'이번 연습은 소수 말고 분수로 써요.'};
+  return {msg:'숫자와 / 로만 써 주세요.'};
+}
+const fracDone = () => state.fracLegacy || state.fq.every(x=>x.ok);
 function parseRel(str){ // 소수(0.47), 분수(47/100), 백분율(47%)
   const s = String(str==null?'':str).trim().replace(/\s+/g, '');
   if(s === '') return {empty:true};
@@ -438,21 +480,21 @@ const valOf = t => { const r = parseRel(t); return r.value!==undefined ? r.value
 const fmtV = v => { if(v===0||v===1) return String(v); const r = Math.round(v*10000)/10000; return String(r); };
 
 function isDone(id){
-  if(id===1) return len(state.ex0)>=MIN_TEXT && len(state.ex1)>=MIN_TEXT;
+  if(id===1) return fracDone() && len(state.ex0)>=MIN_TEXT && len(state.ex1)>=MIN_TEXT;
   if(id===2) return CARDS.every(c=>valOf(state.vals[c.k])!==null);
   if(id===3) return state.sawLine && len(state.a3Text)>=MIN_TEXT;
   if(id===4) return len(state.myExpr)>=2 && valOf(state.myVal)!==null && len(state.myWhy)>=MIN_TEXT;
   return false;
 }
 function valueOf(id){
-  if(id===1) return (len(state.ex0)||len(state.ex1)) ? `확률 0: ${state.ex0.trim()||'-'}\n확률 1: ${state.ex1.trim()||'-'}` : '';
+  if(id===1){ const fr = state.fq.some(x=>x.tries) ? `[분수 연습 ${state.fq.filter(x=>x.ok).length}/4${state.fq.some(x=>x.wrong.length)?' · 틀린 답: '+state.fq.flatMap(x=>x.wrong).join(', '):''}]\n` : ''; return (fr || len(state.ex0)||len(state.ex1)) ? fr + ((len(state.ex0)||len(state.ex1)) ? `확률 0: ${state.ex0.trim()||'-'}\n확률 1: ${state.ex1.trim()||'-'}` : '') : ''; }
   if(id===2) return CARDS.some(c=>state.vals[c.k]) ? CARDS.map(c=>`${c.w} ${state.vals[c.k]||'-'}`).join(' · ') : '';
   if(id===3) return state.a3Text.trim();
   if(id===4) return (len(state.myExpr)||len(state.myVal)||len(state.myWhy)) ? `${state.myExpr.trim()||'-'} → ${state.myVal||'-'}` + (len(state.myWhy)?`\n${state.myWhy.trim()}`:'') : '';
   return '';
 }
 function collectData(){
-  return { ex0: state.ex0, ex1: state.ex1, vals: Object.assign({}, state.vals), a3Text: state.a3Text, sawLine: state.sawLine,
+  return { fq: state.fq.map(x=>({a:x.a, ok:x.ok, tries:x.tries, wrong:x.wrong.slice(-6)})), fracLegacy: state.fracLegacy, ex0: state.ex0, ex1: state.ex1, vals: Object.assign({}, state.vals), a3Text: state.a3Text, sawLine: state.sawLine,
     myExpr: state.myExpr, myVal: state.myVal, myWhy: state.myWhy, aiFb: AIFB, aiReq: AIFB_REQ || null };
 }
 function shareEntries(){
@@ -722,9 +764,31 @@ function dotLineHTML(values, color, band){
 }
 
 /* ------------------------- 활동 1 ------------------------- */
+function renderFrac(){
+  $('qgrid').innerHTML = FQS.map((q,i)=>`<div class="q" id="fq${i}"><span class="say">${q[1]}분의 ${q[0]}</span>
+    <div class="row"><input type="text" id="fin${i}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="△/○"><span id="fmk${i}"></span></div><div class="fb" id="ffb${i}"></div></div>`).join('');
+  FQS.forEach((q,i)=>{ const inp = $('fin'+i); inp.value = state.fq[i].a;
+    inp.addEventListener('input', ()=>{ if(finalLocked) return; state.fq[i].a = inp.value; if(!state.fq[i].ok){ $('ffb'+i).textContent=''; $('fmk'+i).textContent=''; $('fq'+i).classList.remove('wrong'); } });
+    inp.addEventListener('change', ()=> fgrade(i));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); fgrade(i); const nx = $('fin'+(i+1)); if(nx && state.fq[i].ok) nx.focus(); } });
+    fpaint(i); });
+  fbadge();
+}
+function fpaint(i){ const x = state.fq[i], r = fdiag(x.a, FQS[i]);
+  $('fq'+i).classList.toggle('right', !!x.ok); $('fq'+i).classList.toggle('wrong', !x.ok && !!r.msg && x.tries>0);
+  $('fmk'+i).textContent = x.ok ? '✅' : (r.msg && x.tries ? '❌' : '');
+  $('ffb'+i).textContent = x.ok ? '맞았어요!' : (x.tries && r.msg ? r.msg : '');
+  $('fin'+i).readOnly = !!x.ok || finalLocked; }
+function fbadge(){ const b = $('badge-frac'), d = state.fq.every(x=>x.ok); b.textContent = d ? '완료' : `${state.fq.filter(x=>x.ok).length}/4`; b.className = 'badge ' + (d ? 'done' : 'pending'); }
+function fgrade(i){
+  if(finalLocked) return; const x = state.fq[i]; if(x.ok) return;
+  x.a = $('fin'+i).value; const r = fdiag(x.a, FQS[i]); if(r.empty) return;
+  if(x.last !== x.a.trim()){ x.last = x.a.trim(); x.tries++; if(r.ok) x.ok = true; else x.wrong.push(x.a.trim().slice(0,20)); }
+  fpaint(i); fbadge(); check1({now:true});
+}
 function check1(opts){
   state.ex0 = $('ex0').value; state.ex1 = $('ex1').value;
-  setWhy(1, '✅ 완료! '+NEXT, '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
+  setWhy(1, '✅ 완료! '+NEXT, !fracDone() ? `먼저 위의 분수 입력 연습 4문제를 모두 맞혀 보세요. (지금 ${state.fq.filter(x=>x.ok).length}/4)` : '두 가지 예를 모두 쓰면 다음으로 넘어갈 수 있어요.');
   renderEx();
   refreshAll(opts);
 }
@@ -840,13 +904,18 @@ function onRevealChanged(){ renderEx(); renderLines(); renderGallery(); }
 function onShowPage(taskId){ if(taskId===2) renderMarks(); }
 
 function initActivity(){
-  renderEx(); renderLines(); renderGallery();
+  renderFrac(); renderEx(); renderLines(); renderGallery();
   check1({noSave:true}); check2({noSave:true}); check4({noSave:true});
 }
 function restoreData(d){
   if(!d) return;
   const setv = (id, v) => { $(id).value = v || ''; };
   setv('ex0', d.ex0); setv('ex1', d.ex1);
+  const fqArr = Array.isArray(d.fq) ? d.fq : (d.fq && typeof d.fq==='object' ? Object.values(d.fq) : null);
+  if(fqArr) fqArr.forEach((x,i)=>{ if(x && state.fq[i]) state.fq[i] = {a:String(x.a||''), ok:!!x.ok && !!fdiag(x.a, FQS[i]).ok, tries:+x.tries||0, wrong:(Array.isArray(x.wrong)?x.wrong:Object.values(x.wrong||{})).map(String)}; });
+  // 연습을 넣기 전에 1페이지를 이미 끝낸 학생은 연습 없이도 완료로 둔다(중간에 들어와도 막히지 않게)
+  state.fracLegacy = !!d.fracLegacy || (!fqArr && len(d.ex0)>=MIN_TEXT && len(d.ex1)>=MIN_TEXT);
+  renderFrac();
   CARDS.forEach(c=>{ state.vals[c.k] = (d.vals && d.vals[c.k]) || ''; setv('v_'+c.k, state.vals[c.k]); });
   state.sawLine = !!d.sawLine; state.a3Text = d.a3Text || ''; setv('a3Text', state.a3Text);
   setv('myExpr', d.myExpr); setv('myVal', d.myVal); setv('myWhy', d.myWhy); aifbRestore(d);

@@ -405,7 +405,10 @@ function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   const textBox = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
-  if(id===1){ if(!d.ex0 && !d.ex1) return ''; return `<div class="kv">확률 0:</div>${textBox(d.ex0)||'-'}<div class="kv" style="margin-top:6px;">확률 1:</div>${textBox(d.ex1)||'-'}`; }
+  const FQS = [[2,3],[1,4],[7,10],[5,12]], fq = Array.isArray(d.fq) ? d.fq : (d.fq ? Object.values(d.fq) : []);
+  const fracLine = fq.some(x=>x&&x.tries) ? `<div class="kv">분수 연습: ${FQS.map((q,i)=>{ const x = fq[i]||{}; const w = Array.isArray(x.wrong)?x.wrong:Object.values(x.wrong||{}); return `${q[1]}분의 ${q[0]} ${x.ok?'✅':'❌'}${w.length?` <span style="color:#b23b3b;">(${w.map(esc).join(', ')})</span>`:''}`; }).join(' · ')}</div>` : '';
+  if(id===1 && fracLine && !d.ex0 && !d.ex1) return fracLine;
+  if(id===1){ if(!d.ex0 && !d.ex1) return ''; return fracLine + `<div class="kv">확률 0:</div>${textBox(d.ex0)||'-'}<div class="kv" style="margin-top:6px;">확률 1:</div>${textBox(d.ex1)||'-'}`; }
   if(id===2){ const v=d.vals||{}; if(!Object.values(v).some(Boolean)) return ''; return CARDS.map(c=>kv(c.w, esc(v[c.k]||'-'))).join(''); }
   if(id===3){ if(!d.a3Text && !d.sawLine) return ''; return kv('친구들 자리 봄', d.sawLine?'✅':'아직') + textBox(d.a3Text); }
   if(id===4){ if(!d.myExpr && !d.myVal && !d.myWhy) return ''; return kv('표현', esc(d.myExpr||'-')) + kv('확률', esc(d.myVal||'-')) + textBox(d.myWhy) + aiFbHTML(d); }
