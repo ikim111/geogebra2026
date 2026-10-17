@@ -268,7 +268,9 @@ function applyAccessAndCompletion(profile){
       // 선생님이 이 반 목차를 접고 펴면 실시간으로 따라간다.
       firebase.database().ref('rooms/'+accessKey+'/fold2').on('value', snap=>{ tocFoldRemote = snap.val() || {}; applyFoldToDom(); });
       showMyPresentScore(profile);
-      firebase.database().ref('rooms/'+accessKey+'/units').once('value').then(snap=>{
+      // 선생님이 단원을 열고 닫으면 새로고침 없이 바로 따라간다(2026-10-17: 예전에는 처음 한 번만 확인해서, 연 뒤에도 새로고침 전까지 잠겨 보였다).
+      let firstAccess = true;
+      firebase.database().ref('rooms/'+accessKey+'/units').on('value', snap=>{
         const access = snap.val() || {};
         document.querySelectorAll('.task-link').forEach(el=>{
           const n = parseInt(el.dataset.n, 10);
@@ -276,12 +278,13 @@ function applyAccessAndCompletion(profile){
           const isOpen = access[n] === true;
           if(isOpen){
             unlockTaskLink(el);
-            if(ACTIVITY_SUFFIX[n]) showCompletionBadge(el, n, uid, profile);
+            if(ACTIVITY_SUFFIX[n] && !el.dataset.badgeOn){ el.dataset.badgeOn = '1'; showCompletionBadge(el, n, uid, profile); }
           } else {
             lockTaskLink(el);
           }
         });
-      }).catch(()=>{ unlockAllPending(); });
+        firstAccess = false;
+      }, ()=>{ if(firstAccess) unlockAllPending(); });
     }).catch(()=>{ unlockAllPending(); });
   }catch(e){ unlockAllPending(); }
 }
@@ -347,7 +350,7 @@ function setPendingLock(a){
 // 선생님이 실제로 잠가둔 것으로 최종 확인된 상태 - 클릭 방지까지 확실히 걸어둔다.
 function lockTaskLink(a){
   setPendingLock(a);
-  a.addEventListener('click', e=> e.preventDefault());
+  if(!a.dataset.lockGuard){ a.dataset.lockGuard = '1'; a.addEventListener('click', e=>{ if(a.classList.contains('locked')) e.preventDefault(); }); }   // 나중에 풀리면 다시 눌리게
 }
 // 열려있는 것으로 확인된 상태 - 원래 목적지로 다시 이어준다.
 function unlockTaskLink(a){
