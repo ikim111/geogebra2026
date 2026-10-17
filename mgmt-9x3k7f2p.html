@@ -64,6 +64,12 @@
   .chapter-body.closed{display:none;}
   .group-title{font-size:13px;font-weight:bold;color:#1a237e;padding:4px 4px 0;margin-top:4px;}
   .group-items{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;}
+  .fx-box{background:#fff;border-radius:14px;padding:12px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1.5px solid #90caf9;}
+  .fx-box .rp-head b{color:#0d47a1;}
+  .fx-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:14px;}
+  .fx-row input{width:70px;padding:5px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:14px;font-family:inherit;} .fx-row input.nm{width:110px;}
+  .fx-btn{border:none;background:#1565c0;color:#fff;border-radius:8px;padding:6px 14px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;} .fx-btn.go{background:#c62828;} .fx-btn:disabled{background:#b0bec5;}
+  .fx-res{font-size:13.5px;line-height:1.7;} .fx-res .cf{color:#c62828;font-weight:bold;} .fx-res .ok{color:#2e7d32;font-weight:bold;}
   .rp-box{background:#fff;border-radius:14px;padding:12px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1.5px solid #ef9a9a;}
   .rp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .rp-head b{color:#c62828;font-size:16px;}
@@ -138,6 +144,15 @@
         <label class="rp-all"><input type="checkbox" id="rpShowDone"> 처리한 것도 보기</label>
         <button type="button" id="rpToggle" class="rp-tg">펼치기</button></div>
       <div id="rpList" class="rp-list" style="display:none;"></div>
+    </div>
+    <div class="fx-box" id="fxBox">
+      <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">학생이 잘못 입력한 번호·이름을 모든 활동에서 한꺼번에 바꿔요</span>
+        <button type="button" id="fxToggle" class="rp-tg" style="margin-left:auto;">펼치기</button></div>
+      <div id="fxBody" style="display:none;">
+        <div class="fx-row">예전(잘못 입력): 번호 <input id="fxON" inputmode="numeric"> 이름 <input id="fxONm" class="nm"> → 바꿀 것: 번호 <input id="fxNN" inputmode="numeric"> 이름 <input id="fxNNm" class="nm">
+          <button type="button" class="fx-btn" id="fxFind">🔍 찾기</button></div>
+        <div class="fx-res" id="fxRes">반은 지금 선택한 반이에요. 먼저 「찾기」로 어떤 활동에 기록이 있는지 확인한 뒤 바꿔요.</div>
+      </div>
     </div>
     <div class="unit-list" id="unitList"></div>
   </div>
@@ -483,6 +498,62 @@ document.getElementById('seatFabBtn').addEventListener('click', e=>{
   const c = (document.getElementById('classNo').value || currentRoom || '').trim();
   e.preventDefault(); location.href = 't20-szos0jo.html?' + (c ? 'classNo=' + encodeURIComponent(c) + '&' : '') + 'tab=presentation'; // 발표 기록 탭이 먼저
 });
+
+/* ---------- 🧑 학생 번호·이름 고치기 (2026-10-17): 학생이 잘못 입력한 번호·이름으로 남은 기록을 모든 활동 방에서 찾아 새 키로 옮긴다 ----------
+   옮기는 곳(방마다): students/{키}(안의 number·name도 고침), share/{종류}/{키}, a1summary/{키}, control/aiBonus/{키}, rosterCodes/{키}
+   새 키에 이미 기록이 있는 방은 덮어쓰지 않고 건너뛴다(목록에 빨갛게 표시). */
+const FIX_SUFFIX_MAP = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
+const FIX_SUFFIXES = [...new Set(Object.values(FIX_SUFFIX_MAP).concat(['__prob26','__sim32','__sim36']))];
+const fxKeyPart = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
+let fxPlan = null;
+document.getElementById('fxToggle').addEventListener('click', ()=>{ const b = document.getElementById('fxBody'), open = b.style.display==='none'; b.style.display = open ? '' : 'none'; document.getElementById('fxToggle').textContent = open ? '접기' : '펼치기'; });
+async function fxScan(cls, oldK, newK){
+  const db = firebase.database(), rooms = [];
+  await Promise.all(FIX_SUFFIXES.map(async sfx=>{
+    const base = 'rooms/'+fxKeyPart(cls)+sfx, r = db.ref(base);
+    const [st, sh, a1, ai, rc, stNew] = await Promise.all(['students/'+oldK, 'share', 'a1summary/'+oldK, 'control/aiBonus/'+oldK, 'rosterCodes/'+oldK, 'students/'+newK]
+      .map(p=> r.child(p).once('value').then(x=>x.val()).catch(()=>null)));
+    const moves = [];
+    if(st!=null) moves.push(['students/'+oldK, 'students/'+newK, st]);
+    if(sh && typeof sh==='object') Object.keys(sh).forEach(kind=>{ const v = sh[kind] && sh[kind][oldK]; if(v!=null) moves.push(['share/'+kind+'/'+oldK, 'share/'+kind+'/'+newK, v]); });
+    if(a1!=null) moves.push(['a1summary/'+oldK, 'a1summary/'+newK, a1]);
+    if(ai!=null) moves.push(['control/aiBonus/'+oldK, 'control/aiBonus/'+newK, ai]);
+    if(rc!=null) moves.push(['rosterCodes/'+oldK, 'rosterCodes/'+newK, rc]);
+    if(moves.length) rooms.push({sfx, base, moves, conflict: stNew!=null && st!=null});
+  }));
+  return rooms.sort((a,b)=>a.sfx.localeCompare(b.sfx));
+}
+const fxUnitName = sfx => { const n = Object.keys(FIX_SUFFIX_MAP).find(k=>FIX_SUFFIX_MAP[k]===sfx); return n ? n+'번 활동' : sfx; };
+document.getElementById('fxFind').addEventListener('click', async ()=>{
+  const res = document.getElementById('fxRes'), cls = (document.getElementById('viewClass').textContent||'').trim();
+  const on = document.getElementById('fxON').value.trim(), onm = document.getElementById('fxONm').value.trim(), nn = document.getElementById('fxNN').value.trim(), nnm = document.getElementById('fxNNm').value.trim();
+  if(!cls || !on || !onm || !nn || !nnm){ res.innerHTML = '<span class="cf">반을 고르고 네 칸을 모두 채워 주세요.</span>'; return; }
+  const oldK = fxKeyPart(on)+'_'+fxKeyPart(onm), newK = fxKeyPart(nn)+'_'+fxKeyPart(nnm);
+  if(oldK===newK){ res.innerHTML = '<span class="cf">예전과 바꿀 것이 같아요.</span>'; return; }
+  res.textContent = '⏳ 모든 활동에서 찾는 중…'; fxPlan = null;
+  try{ const rooms = await fxScan(cls, oldK, newK);
+    if(!rooms.length){ res.innerHTML = `${cls}반 「${rpEsc(oldK)}」 기록을 어느 활동에서도 찾지 못했어요. 번호·이름을 학생이 입력한 그대로 넣었는지 확인해 주세요.`; return; }
+    fxPlan = {cls, oldK, newK, nn, nnm, rooms};
+    const okRooms = rooms.filter(r=>!r.conflict);
+    res.innerHTML = `${cls}반 <b>${rpEsc(oldK)}</b> → <b>${rpEsc(newK)}</b><br>` + rooms.map(r=>`${r.conflict?'<span class="cf">⚠️ ':'✅ '}${rpEsc(fxUnitName(r.sfx))}: ${r.moves.map(m=>rpEsc(m[0].split('/')[0])).join(', ')}${r.conflict?' — 새 번호·이름으로 된 기록이 이미 있어서 건너뛰어요</span>':''}`).join('<br>')
+      + (okRooms.length ? `<div style="margin-top:6px;"><button type="button" class="fx-btn go" id="fxGo">✏️ ${okRooms.length}개 활동에서 바꾸기</button></div>` : '');
+    const go = document.getElementById('fxGo'); if(go) go.addEventListener('click', fxApply);
+  }catch(e){ res.innerHTML = '<span class="cf">찾는 중 오류: '+rpEsc(e.message)+'</span>'; }
+});
+async function fxApply(){
+  const res = document.getElementById('fxRes'), p = fxPlan; if(!p) return;
+  const go = document.getElementById('fxGo'); if(go) go.disabled = true;
+  let done = 0; const fails = [];
+  for(const r of p.rooms.filter(x=>!x.conflict)){
+    const up = {};
+    r.moves.forEach(([from, to, val])=>{ let v = val;
+      if(from.startsWith('students/') && v && typeof v==='object'){ v = Object.assign({}, v); if('number' in v) v.number = p.nn; if('name' in v) v.name = p.nnm; }
+      up[to] = v; up[from] = null; });
+    try{ await firebase.database().ref(r.base).update(up); done++; }catch(e){ fails.push(fxUnitName(r.sfx)+'('+e.message+')'); }
+  }
+  res.innerHTML = `<span class="ok">✅ ${done}개 활동에서 ${rpEsc(p.oldK)} → ${rpEsc(p.newK)}(으)로 바꿨어요.</span>` + (fails.length ? `<br><span class="cf">바꾸지 못한 곳: ${rpEsc(fails.join(', '))}</span>` : '') + '<br>학생에게 새 번호·이름으로 다시 들어오라고 알려 주세요.';
+  fxPlan = null;
+}
 </script>
 </body>
 </html>
