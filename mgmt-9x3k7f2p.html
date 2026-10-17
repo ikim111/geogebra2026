@@ -72,6 +72,7 @@
   .fx-res{font-size:13.5px;line-height:1.7;}
   .fx-tab{border-collapse:collapse;margin-top:6px;font-size:13.5px;} .fx-tab td,.fx-tab th{border:1px solid #e0e4ea;padding:4px 8px;} .fx-tab th{background:#f3f6fa;}
   .fx-tab select{font-size:13.5px;padding:3px 6px;border-radius:6px;border:1px solid #c5cad1;font-family:inherit;} .fx-res .cf{color:#c62828;font-weight:bold;} .fx-res .ok{color:#2e7d32;font-weight:bold;}
+  #smClsBtns .smc.on{background:#1565c0;color:#fff;border-color:#1565c0;font-weight:bold;}
   .rp-box{background:#fff;border-radius:14px;padding:12px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1.5px solid #ef9a9a;}
   .rp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .rp-head b{color:#c62828;font-size:16px;}
@@ -93,6 +94,25 @@
 <body>
 
 <a id="seatFabBtn" href="t20-szos0jo.html?tab=presentation" title="발표 기록·주문 승인·멘토멘티 자리배치" style="position:fixed;top:10px;right:118px;z-index:99999;background:#ffca28;color:#1a237e;text-decoration:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;">🎤 발표·🪑 자리</a>
+<button id="smFabBtn" type="button" title="학생 비밀번호 초기화·명단 고치기" style="position:fixed;top:10px;right:252px;z-index:99999;background:#e3f2fd;color:#0d47a1;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">🧑 학생 관리<span id="smBadge" style="display:none;background:#c62828;color:#fff;border-radius:10px;padding:0 7px;font-size:12px;"></span></button>
+<div id="smModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:flex-start;justify-content:center;padding:56px 12px 20px;overflow:auto;">
+  <div style="background:#f4f6f9;border-radius:16px;max-width:820px;width:100%;padding:14px 16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.3);">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <b style="font-size:18px;color:#0d47a1;">🧑 학생 관리</b><span id="smClsBtns" style="display:flex;gap:4px;flex-wrap:wrap;"></span>
+      <button type="button" id="smClose" class="rp-tg" style="margin-left:auto;">✕ 닫기</button>
+    </div>
+    <div class="fx-box pq-box" id="pqBox">
+      <div class="rp-head"><b>🔑 학생 비밀번호 초기화 요청</b><span id="pqCount" class="rp-count">요청 없음</span></div>
+      <div id="pqList" class="fx-res"></div>
+      <div class="rp-count" style="margin-top:4px;">처음 비밀번호는 0000이에요. 승인하면 그 학생은 0000으로 들어와 새 비밀번호를 만들어요. 학생 목록(아래)의 🔑로 바로 초기화할 수도 있어요.</div>
+    </div>
+    <div class="fx-box" id="fxBox">
+      <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">이 반 학생 목록에서 잘못 입력한 번호·이름을 모든 활동에 한꺼번에 고쳐요</span>
+</div>
+        <div class="fx-res" id="fxAuto"></div>
+    </div>
+  </div>
+</div>
 <button id="qrFabBtn" type="button" title="QR코드 보기" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1a237e;color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:6px;">📱 QR코드</button>
 <div id="qrModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3);">
@@ -146,18 +166,6 @@
         <label class="rp-all"><input type="checkbox" id="rpShowDone"> 처리한 것도 보기</label>
         <button type="button" id="rpToggle" class="rp-tg">펼치기</button></div>
       <div id="rpList" class="rp-list" style="display:none;"></div>
-    </div>
-    <div class="fx-box pq-box" id="pqBox">
-      <div class="rp-head"><b>🔑 학생 비밀번호 초기화 요청</b><span id="pqCount" class="rp-count">요청 없음</span></div>
-      <div id="pqList" class="fx-res"></div>
-      <div class="rp-count" style="margin-top:4px;">처음 비밀번호는 0000이에요. 승인하면 그 학생은 0000으로 들어와 새 비밀번호를 만들어요. 학생 목록(아래)의 🔑로 바로 초기화할 수도 있어요.</div>
-    </div>
-    <div class="fx-box" id="fxBox">
-      <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">이 반 학생 목록에서 잘못 입력한 번호·이름을 모든 활동에 한꺼번에 고쳐요</span>
-        <button type="button" id="fxToggle" class="rp-tg" style="margin-left:auto;">펼치기</button></div>
-      <div id="fxBody" style="display:none;">
-        <div class="fx-res" id="fxAuto">펼치면 이 반의 모든 활동에 나온 학생 목록을 보여 줘요.</div>
-      </div>
     </div>
     <div class="unit-list" id="unitList"></div>
   </div>
@@ -511,12 +519,18 @@ const FIX_SUFFIX_MAP = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__inc
 const FIX_SUFFIXES = [...new Set(Object.values(FIX_SUFFIX_MAP).concat(['__prob26','__sim32','__sim36']))];
 const fxKeyPart = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
 let fxPlan = null;
-document.getElementById('fxToggle').addEventListener('click', ()=>{ const b = document.getElementById('fxBody'), open = b.style.display==='none'; b.style.display = open ? '' : 'none'; document.getElementById('fxToggle').textContent = open ? '접기' : '펼치기'; if(open) fxAutoScan(); });
+let smCls = '';   // 학생 관리 창에서 고른 반
+function smSetCls(c){ smCls = String(c||''); document.querySelectorAll('#smClsBtns button').forEach(b=> b.classList.toggle('on', b.dataset.c===smCls)); if(smCls){ watchPinReq(smCls); fxAutoScan(); } else document.getElementById('fxAuto').textContent = '반을 골라 주세요.'; }
+(function(){ const w = document.getElementById('smClsBtns'); for(let i=1;i<=12;i++){ const b = document.createElement('button'); b.type='button'; b.className='rp-tg smc'; b.dataset.c = String(i); b.textContent = i+'반'; b.addEventListener('click', ()=>smSetCls(i)); w.appendChild(b); } })();
+document.getElementById('smFabBtn').addEventListener('click', ()=>{ document.getElementById('smModal').style.display = 'flex'; ensureFirebaseApp(); firebase.auth().signInAnonymously().then(()=> smSetCls(smCls || currentRoom || document.getElementById('classNo').value || '')).catch(()=>{}); });
+document.getElementById('smClose').addEventListener('click', ()=>{ document.getElementById('smModal').style.display = 'none'; });
+document.getElementById('smModal').addEventListener('click', e=>{ if(e.target.id==='smModal') document.getElementById('smModal').style.display = 'none'; });
+
 /* 자동 찾기: 모든 활동 방의 students 키를 모아서, 명단(외심내심 수행평가 rosterCodes)에 없는 키나
    같은 번호에 이름이 여러 개 / 같은 이름에 번호가 여러 개인 키를 「고칠 것 같은 기록」으로 보여 주고, 옮길 곳을 미리 골라 둔다 */
 const fxSplit = k => { const i = k.indexOf('_'); return i<0 ? {no:'', nm:k} : {no:k.slice(0,i), nm:k.slice(i+1)}; };
 async function fxAutoScan(){
-  const box = document.getElementById('fxAuto'), cls = (document.getElementById('viewClass').textContent||'').trim(); if(!cls) return;
+  const box = document.getElementById('fxAuto'), cls = smCls; if(!cls) return;
   box.textContent = '⏳ 이 반의 모든 활동에서 학생 이름을 모으는 중…';
   const db = firebase.database(), seen = {};   // key → [활동 이름]
   let roster = null;
@@ -615,12 +629,13 @@ function watchPinReq(room){
   pqRef.on('value', snap=>{
     const v = snap.val() || {}, ks = Object.keys(v).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
     const c = document.getElementById('pqCount'); c.textContent = ks.length ? `요청 ${ks.length}건` : '요청 없음'; c.classList.toggle('has', !!ks.length);
+    const bd = document.getElementById('smBadge'); bd.textContent = ks.length; bd.style.display = ks.length ? '' : 'none';
     document.getElementById('pqList').innerHTML = ks.map(k=>`<div class="fx-row" style="margin:4px 0;"><b>${rpEsc((v[k]&&v[k].number)||fxSplit(k).no)}번 ${rpEsc((v[k]&&v[k].name)||fxSplit(k).nm)}</b>
       <button type="button" class="fx-btn" data-pq-ok="${rpEsc(k)}">✔ 승인(0000으로)</button> <button type="button" class="rp-tg" data-pq-no="${rpEsc(k)}">거절</button></div>`).join('');
   });
 }
 document.getElementById('pqList').addEventListener('click', async e=>{
-  const cls = (document.getElementById('viewClass').textContent||'').trim(), ok = e.target.closest('[data-pq-ok]'), no = e.target.closest('[data-pq-no]');
+  const cls = smCls, ok = e.target.closest('[data-pq-ok]'), no = e.target.closest('[data-pq-no]');
   if(ok){ ok.disabled = true; await pinReset(cls, ok.dataset.pqOk).catch(()=>{}); }
   if(no){ no.disabled = true; await firebase.database().ref('rooms/'+fxKeyPart(cls)+'__pinreq/'+no.dataset.pqNo).set(null).catch(()=>{}); }
 });
