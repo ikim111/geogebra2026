@@ -147,6 +147,11 @@
         <button type="button" id="rpToggle" class="rp-tg">펼치기</button></div>
       <div id="rpList" class="rp-list" style="display:none;"></div>
     </div>
+    <div class="fx-box pq-box" id="pqBox">
+      <div class="rp-head"><b>🔑 학생 비밀번호 초기화 요청</b><span id="pqCount" class="rp-count">요청 없음</span></div>
+      <div id="pqList" class="fx-res"></div>
+      <div class="rp-count" style="margin-top:4px;">처음 비밀번호는 0000이에요. 승인하면 그 학생은 0000으로 들어와 새 비밀번호를 만들어요. 학생 목록(아래)의 🔑로 바로 초기화할 수도 있어요.</div>
+    </div>
     <div class="fx-box" id="fxBox">
       <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">이 반 학생 목록에서 잘못 입력한 번호·이름을 모든 활동에 한꺼번에 고쳐요</span>
         <button type="button" id="fxToggle" class="rp-tg" style="margin-left:auto;">펼치기</button></div>
@@ -430,7 +435,7 @@ function goToUnitPage(room){
       tocFoldRemote = {};
       foldRef = accessRef.child('fold2');
       foldRef.on('value', snap=>{ tocFoldRemote = snap.val() || {}; applyFoldToDom(); });
-      watchReports();
+      watchReports(); watchPinReq(room);
       accessRef.child('units').once('value').then(snap=>{
         accessData = snap.val() || {};
         renderUnitList();
@@ -531,11 +536,12 @@ async function fxAutoScan(){
   const warn = sorted.filter(k=>warnOf(k)), rest = sorted.filter(k=>!warnOf(k));
   const row = k => { const {no, nm} = fxSplit(k), w = warnOf(k);
     return `<tr data-k="${rpEsc(k)}"><td><b>${rpEsc(no)}번 ${rpEsc(nm)}</b>${w?` <span class="cf">⚠️ ${w}</span>`:''}</td><td>${seen[k].length}개 활동</td>
-      <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button></td></tr>`; };
+      <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button> <button type="button" class="rp-tg" data-pin="1" title="비밀번호를 0000으로">🔑 비밀번호 초기화</button></td></tr>`; };
   box.innerHTML = `${cls}반 학생 기록 ${keys.length}개 ${rset?'(명단과 다른 이름은 ⚠️)':''} — 잘못 입력한 이름 옆 <b>✏️ 고치기</b>를 누르고 맞는 번호·이름을 넣으세요. 모든 활동의 기록이 한꺼번에 옮겨져요.`
     + `<table class="fx-tab"><tr><th>번호·이름</th><th>기록</th><th></th></tr>${warn.map(row).join('')}${warn.length && rest.length ? '<tr><td colspan="3" style="background:#fafbfc;color:#888;">— 나머지 —</td></tr>' : ''}${rest.map(row).join('')}</table><div class="fx-res" id="fxAutoRes"></div>`;
   box.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k, {no, nm} = fxSplit(k), cell = tr.querySelector('.fx-ed');
+    cell.querySelector('[data-pin]').addEventListener('click', async ev=>{ ev.target.disabled = true; await pinReset(cls, k).catch(()=>{}); ev.target.textContent = '✅ 0000으로 초기화됨'; });
     cell.querySelector('[data-edit]').addEventListener('click', ()=>{
       cell.innerHTML = `<span class="fx-row" style="margin:0;"><input class="eno" value="${rpEsc(no)}" inputmode="numeric" style="width:50px;">번 <input class="enm nm" value="${rpEsc(nm)}"> <button type="button" class="fx-btn go" data-go="1">바꾸기</button> <button type="button" class="rp-tg" data-x="1">취소</button></span>`;
       cell.querySelector('[data-x]').addEventListener('click', fxAutoScan);
@@ -583,9 +589,30 @@ async function fxApply(outEl){
       up[to] = v; up[from] = null; });
     try{ await firebase.database().ref(r.base).update(up); done++; }catch(e){ fails.push(fxUnitName(r.sfx)+'('+e.message+')'); }
   }
-  res.innerHTML = `<span class="ok">✅ ${done}개 활동에서 ${rpEsc(p.oldK)} → ${rpEsc(p.newK)}(으)로 바꿨어요.</span>` + (fails.length ? `<br><span class="cf">바꾸지 못한 곳: ${rpEsc(fails.join(', '))}</span>` : '') + '<br>학생에게 새 번호·이름으로 다시 들어오라고 알려 주세요.';
+  await firebase.database().ref('rooms/'+fxKeyPart(p.cls)+'__pins/'+p.oldK).set(null).catch(()=>{});   // 비밀번호는 번호·이름과 묶여 있어서 새 이름은 0000부터
+  res.innerHTML = `<span class="ok">✅ ${done}개 활동에서 ${rpEsc(p.oldK)} → ${rpEsc(p.newK)}(으)로 바꿨어요.</span>` + (fails.length ? `<br><span class="cf">바꾸지 못한 곳: ${rpEsc(fails.join(', '))}</span>` : '') + '<br>학생에게 새 번호·이름과 비밀번호 0000으로 다시 들어오라고 알려 주세요(이미 비밀번호를 만든 이름이면 그 비밀번호).';
   fxPlan = null;
 }
+
+/* ---------- 🔑 학생 비밀번호(2026-10-17): 초기화 요청 승인 / 바로 초기화 ----------
+   rooms/{반}__pins/{번호_이름} = {h, t}(학생 비밀번호 해시), rooms/{반}__pinreq/{번호_이름} = {number, name, t}(학생의 초기화 요청) */
+let pqRef = null;
+function pinReset(cls, key){ const db = firebase.database(); return Promise.all([db.ref('rooms/'+fxKeyPart(cls)+'__pins/'+key).set(null), db.ref('rooms/'+fxKeyPart(cls)+'__pinreq/'+key).set(null)]); }
+function watchPinReq(room){
+  if(pqRef) pqRef.off();
+  pqRef = firebase.database().ref('rooms/'+fxKeyPart(room)+'__pinreq');
+  pqRef.on('value', snap=>{
+    const v = snap.val() || {}, ks = Object.keys(v).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+    const c = document.getElementById('pqCount'); c.textContent = ks.length ? `요청 ${ks.length}건` : '요청 없음'; c.classList.toggle('has', !!ks.length);
+    document.getElementById('pqList').innerHTML = ks.map(k=>`<div class="fx-row" style="margin:4px 0;"><b>${rpEsc((v[k]&&v[k].number)||fxSplit(k).no)}번 ${rpEsc((v[k]&&v[k].name)||fxSplit(k).nm)}</b>
+      <button type="button" class="fx-btn" data-pq-ok="${rpEsc(k)}">✔ 승인(0000으로)</button> <button type="button" class="rp-tg" data-pq-no="${rpEsc(k)}">거절</button></div>`).join('');
+  });
+}
+document.getElementById('pqList').addEventListener('click', async e=>{
+  const cls = (document.getElementById('viewClass').textContent||'').trim(), ok = e.target.closest('[data-pq-ok]'), no = e.target.closest('[data-pq-no]');
+  if(ok){ ok.disabled = true; await pinReset(cls, ok.dataset.pqOk).catch(()=>{}); }
+  if(no){ no.disabled = true; await firebase.database().ref('rooms/'+fxKeyPart(cls)+'__pinreq/'+no.dataset.pqNo).set(null).catch(()=>{}); }
+});
 </script>
 </body>
 </html>

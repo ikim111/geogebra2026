@@ -25,6 +25,8 @@
   .class-btn.selected{background:var(--blue);border-color:var(--blue);color:#fff;}
   .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
   .gate-start:hover{background:#1b5e20;}
+  .pinForgot{margin-top:8px;background:#fff;border:1px solid #c5cad1;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;color:#455a64;font-family:inherit;}
+  #gateMsg .ok{color:#2e7d32;}
   #gateMsg{margin-top:12px;font-size:13px;color:#c62828;min-height:16px;}
 
   #page2{display:none;min-height:100vh;padding:24px 16px;}
@@ -86,8 +88,16 @@
     <input type="number" id="studentNumber" placeholder="번호를 입력하세요" min="1" max="99">
     <label for="studentName">이름</label>
     <input type="text" id="studentName" placeholder="이름을 입력하세요">
+    <label for="studentPin">비밀번호 (숫자 4자리)</label>
+    <input type="password" id="studentPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음에는 0000">
+    <div id="newPinBox" style="display:none;">
+      <label for="newPin1">새 비밀번호 만들기 (숫자 4자리)</label>
+      <input type="password" id="newPin1" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000이 아닌 숫자 4자리">
+      <input type="password" id="newPin2" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="한 번 더" style="margin-top:6px;">
+    </div>
     <button id="nextBtn" class="gate-start">다음 →</button>
     <div id="gateMsg"></div>
+    <button type="button" id="pinForgot" class="pinForgot" style="display:none;">🔑 비밀번호를 잊었어요 (선생님께 초기화 요청)</button>
   </div>
 </div>
 
@@ -464,19 +474,65 @@ function showPage2(profile){
   applyAccessAndCompletion(profile);
 }
 
-document.getElementById('nextBtn').addEventListener('click', ()=>{
+/* 🔑 학생 비밀번호(2026-10-17): 처음 비밀번호는 0000 → 들어오면 새 비밀번호(4자리)를 만든다.
+   저장: rooms/{반}__pins/{번호_이름} = {h: SHA-256 해시, t}. 잊으면 rooms/{반}__pinreq/{번호_이름}에 초기화 요청 → 선생님이 관리 목차에서 승인하면 0000으로 돌아간다.
+   확인한 사람은 이 브라우저 탭 동안(sessionStorage) 통과 표시를 가지고 다니고, 활동 화면(report.js)은 이 표시가 없으면 목차로 돌려보낸다. */
+const PIN_OK_KEY = 'ggb_pin_ok';
+const pinKeyOf = p => sanitize(p.number||'').slice(0,30) + '_' + sanitize(p.name).slice(0,30);
+const pinTag = p => sanitize(p.classNo) + '|' + pinKeyOf(p);
+const pinPassed = p => { try{ return !!p && sessionStorage.getItem(PIN_OK_KEY) === pinTag(p); }catch(e){ return false; } };
+const pinMark = p => { try{ sessionStorage.setItem(PIN_OK_KEY, pinTag(p)); }catch(e){} };
+async function pinHash(p, pin){ const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('ggb|'+sanitize(p.classNo)+'|'+pinKeyOf(p)+'|'+pin)); return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function pinDb(){ if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); await firebase.auth().signInAnonymously(); return firebase.database(); }
+let pinPending = null;   // 0000으로 처음 들어와 새 비밀번호를 만들어야 하는 학생
+document.getElementById('nextBtn').addEventListener('click', async ()=>{
   const classNo = document.getElementById('classNo').value.trim();
   const number = document.getElementById('studentNumber').value.trim();
   const name = document.getElementById('studentName').value.trim();
-  const msg = document.getElementById('gateMsg');
+  const pin = document.getElementById('studentPin').value.trim();
+  const msg = document.getElementById('gateMsg'), forgot = document.getElementById('pinForgot'), btn = document.getElementById('nextBtn');
   if(!classNo){ msg.textContent = '반을 선택해주세요.'; return; }
   if(!number){ msg.textContent = '번호를 입력해주세요.'; return; }
   if(!name){ msg.textContent = '이름을 입력해주세요.'; return; }
-  msg.textContent = '';
   const profile = {classNo, number, name};
-  saveProfile(profile);
-  showPage2(profile);
+  if(!FIREBASE_CONFIG.apiKey){ saveProfile(profile); pinMark(profile); showPage2(profile); return; }
+  if(pinPending && pinTag(pinPending)===pinTag(profile)){   // 새 비밀번호 만들기 단계
+    const n1 = document.getElementById('newPin1').value.trim(), n2 = document.getElementById('newPin2').value.trim();
+    if(!/^\d{4}$/.test(n1)){ msg.textContent = '새 비밀번호는 숫자 4자리로 만들어 주세요.'; return; }
+    if(n1==='0000'){ msg.textContent = '0000이 아닌 다른 숫자로 만들어 주세요.'; return; }
+    if(n1!==n2){ msg.textContent = '두 번 쓴 비밀번호가 달라요.'; return; }
+    btn.disabled = true;
+    try{ const db = await pinDb(); await db.ref('rooms/'+sanitize(classNo)+'__pins/'+pinKeyOf(profile)).set({h: await pinHash(profile, n1), t: firebase.database.ServerValue.TIMESTAMP});
+      db.ref('rooms/'+sanitize(classNo)+'__pinreq/'+pinKeyOf(profile)).set(null).catch(()=>{});
+    }catch(e){ btn.disabled = false; msg.textContent = '저장하지 못했어요. 다시 눌러 보세요.'; return; }
+    btn.disabled = false; pinPending = null; document.getElementById('newPinBox').style.display = 'none'; btn.textContent = '다음 →';
+    msg.textContent = ''; saveProfile(profile); pinMark(profile); showPage2(profile); return;
+  }
+  if(!/^\d{4}$/.test(pin)){ msg.textContent = '비밀번호(숫자 4자리)를 입력해주세요. 처음이면 0000이에요.'; return; }
+  btn.disabled = true; msg.textContent = '확인 중…'; forgot.style.display = 'none';
+  try{
+    const db = await pinDb(), rec = await db.ref('rooms/'+sanitize(classNo)+'__pins/'+pinKeyOf(profile)).once('value').then(x=>x.val());
+    btn.disabled = false;
+    if(!rec || !rec.h){
+      if(pin!=='0000'){ msg.textContent = '아직 비밀번호를 만들지 않았어요. 처음 비밀번호 0000을 넣어 주세요.'; return; }
+      pinPending = profile; document.getElementById('newPinBox').style.display = 'block'; btn.textContent = '새 비밀번호 저장하고 들어가기 →';
+      msg.innerHTML = '<span class="ok">처음 왔어요! 나만 아는 새 비밀번호 4자리를 만들어 주세요.</span>'; return;
+    }
+    if(rec.h !== await pinHash(profile, pin)){ msg.textContent = '비밀번호가 맞지 않아요. 번호·이름도 다시 확인해 보세요.'; forgot.style.display = 'inline-block'; forgot.dataset.tag = pinTag(profile); return; }
+    msg.textContent = ''; saveProfile(profile); pinMark(profile); showPage2(profile);
+  }catch(e){ btn.disabled = false; msg.textContent = '확인하지 못했어요. 잠시 뒤 다시 눌러 보세요.'; }
 });
+document.getElementById('pinForgot').addEventListener('click', async ()=>{
+  const classNo = document.getElementById('classNo').value.trim(), number = document.getElementById('studentNumber').value.trim(), name = document.getElementById('studentName').value.trim();
+  const msg = document.getElementById('gateMsg'), b = document.getElementById('pinForgot'); if(!classNo || !number || !name) return;
+  const profile = {classNo, number, name};
+  b.disabled = true;
+  try{ const db = await pinDb(); await db.ref('rooms/'+sanitize(classNo)+'__pinreq/'+pinKeyOf(profile)).set({number, name, t: firebase.database.ServerValue.TIMESTAMP});
+    msg.innerHTML = '<span class="ok">선생님께 초기화를 요청했어요. 선생님이 승인하면 비밀번호 0000으로 다시 들어와 새 비밀번호를 만들어요.</span>'; b.style.display = 'none';
+  }catch(e){ msg.textContent = '요청하지 못했어요. 선생님께 직접 말씀드려 주세요.'; }
+  b.disabled = false;
+});
+['classNo','studentNumber','studentName'].forEach(id=> document.getElementById(id).addEventListener('input', ()=>{ if(pinPending){ pinPending = null; document.getElementById('newPinBox').style.display = 'none'; document.getElementById('nextBtn').textContent = '다음 →'; } }));
 
 document.getElementById('editBtn').addEventListener('click', ()=>{
   const profile = loadProfile();
@@ -520,10 +576,13 @@ document.getElementById('fixGo').addEventListener('click', async ()=>{
       if(rc!=null && rcNew==null){ up['rosterCodes/'+newK] = rc; up['rosterCodes/'+oldK] = null; }
       if(Object.keys(up).length) plans.push({r, up});
     }));
+    const pinR = db.ref('rooms/'+cls+'__pins'), [pOld, pNew] = await Promise.all([pinR.child(oldK).once('value').then(x=>x.val()), pinR.child(newK).once('value').then(x=>x.val())]);
+    if(pNew!=null) clash = true;
     if(clash){ btn.disabled = false; msg.innerHTML = `<span class="bad">${p.classNo}반 ${nn}번 ${nnm}(으)로 된 기록이 이미 있어서 옮길 수 없어요. 선생님께 말씀드려 주세요.</span>`; return; }
     for(const x of plans) await x.r.update(x.up);
+    if(pOld!=null) await pinR.child(oldK).set(null);   // 비밀번호 해시는 번호·이름과 묶여 있어서, 새 이름으로는 0000부터 다시 만든다
     const np = {classNo:p.classNo, number:nn, name:nnm}; saveProfile(np);
-    msg.innerHTML = `<span class="ok">✅ ${plans.length ? plans.length+'개 활동의 기록을 옮겼어요.' : '옮길 기록은 없었어요.'} 이제 ${p.classNo}반 ${nn}번 ${nnm}(으)로 들어가요.</span>`;
+    msg.innerHTML = `<span class="ok">✅ ${plans.length ? plans.length+'개 활동의 기록을 옮겼어요.' : '옮길 기록은 없었어요.'} 이제 ${p.classNo}반 ${nn}번 ${nnm}(으)로 들어가요. 비밀번호 0000을 넣고 새 비밀번호를 다시 만들어 주세요.</span>`;
     setTimeout(()=>location.reload(), 1500);
   }catch(e){ btn.disabled = false; msg.innerHTML = '<span class="bad">옮기지 못했어요. 선생님께 말씀드려 주세요. ('+String(e.message||e).slice(0,60)+')</span>'; }
 });
@@ -531,7 +590,8 @@ document.getElementById('fixGo').addEventListener('click', async ()=>{
 // 이미 입력된 정보가 있으면 바로 과제 선택 화면으로
 (function(){
   const profile = loadProfile();
-  if(profile) showPage2(profile);
+  if(profile && pinPassed(profile)) showPage2(profile);
+  else if(profile){ selectClassButton(profile.classNo); document.getElementById('studentNumber').value = profile.number || ''; document.getElementById('studentName').value = profile.name; }   // 비밀번호만 넣으면 돼요
 })();
 </script>
 <script src="report.js"></script><!-- 🚩 오류 신고(모든 학생 화면 공통) -->

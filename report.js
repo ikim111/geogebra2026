@@ -9,6 +9,28 @@
   if (window.__reportLoaded) return; window.__reportLoaded = true;
   if (/[?&]preview=1/.test(location.search)) return;   // 교사용 미리보기에서는 숨김
 
+  /* 🔑 비밀번호 확인 표시(2026-10-17): 목차(student.html)에서 비밀번호를 넣은 사람만 활동 화면을 쓸 수 있다.
+     목차가 이 탭(sessionStorage)에 「반|번호_이름」 표시를 남기고, 여기서는 지금 프로필과 같은지만 본다. */
+  (function pinGate(){
+    if (!/\/student(\d+|pa\d+)\.html$/.test(location.pathname)) return;   // 학생 활동 화면(studentN, studentpaN)에만. 목차·교사·관리·배움노트 화면은 제외
+    let p = null; try { p = JSON.parse(localStorage.getItem('ggb_profile_v1') || 'null'); } catch (e) {}
+    if (!p || !p.classNo || !p.name) return;   // 프로필이 없으면 각 화면이 알아서 목차로 안내한다
+    const sz = v => (String(v || '')).trim().replace(/[.#$\[\]\/\s]+/g, '_') || 'x';
+    const tag = sz(p.classNo) + '|' + sz(p.number).slice(0,30) + '_' + sz(p.name).slice(0,30);
+    let ok = false; try { ok = sessionStorage.getItem('ggb_pin_ok') === tag; } catch (e) { ok = true; }
+    if (ok) return;
+    const show = () => {
+      const d = document.createElement('div');
+      d.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(20,24,40,.92);display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit;');
+      d.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:24px 20px;text-align:center;">'
+        + '<div style="font-size:40px;">🔒</div><h3 style="margin:6px 0 8px;color:#1a237e;">비밀번호를 확인해 주세요</h3>'
+        + '<p style="font-size:14.5px;color:#444;line-height:1.6;margin:0 0 14px;">목차에서 내 번호·이름과 <b>비밀번호</b>를 넣고 다시 들어와 주세요.</p>'
+        + '<a href="student.html" style="display:inline-block;background:#1565c0;color:#fff;border-radius:10px;padding:10px 20px;font-weight:bold;text-decoration:none;">목차로 가기</a></div>';
+      document.body.appendChild(d);
+    };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  })();
+
   const css = `
   #rpFab{position:fixed;left:12px;bottom:12px;z-index:9000;background:#fff;color:#c62828;border:1.5px solid #ef9a9a;border-radius:20px;
     padding:6px 12px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.9;}
