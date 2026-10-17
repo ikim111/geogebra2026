@@ -536,11 +536,22 @@ async function fxAutoScan(){
   const warn = sorted.filter(k=>warnOf(k)), rest = sorted.filter(k=>!warnOf(k));
   const row = k => { const {no, nm} = fxSplit(k), w = warnOf(k);
     return `<tr data-k="${rpEsc(k)}"><td><b>${rpEsc(no)}번 ${rpEsc(nm)}</b>${w?` <span class="cf">⚠️ ${w}</span>`:''}</td><td>${seen[k].length}개 활동</td>
-      <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button> <button type="button" class="rp-tg" data-pin="1" title="비밀번호를 0000으로">🔑 비밀번호 초기화</button></td></tr>`; };
+      <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button> <button type="button" class="rp-tg" data-pin="1" title="비밀번호를 0000으로">🔑 비밀번호 초기화</button> <button type="button" class="rp-tg" data-del="1" style="color:#c62828;border-color:#ef9a9a;">🗑 삭제</button></td></tr>`; };
   box.innerHTML = `${cls}반 학생 기록 ${keys.length}개 ${rset?'(명단과 다른 이름은 ⚠️)':''} — 잘못 입력한 이름 옆 <b>✏️ 고치기</b>를 누르고 맞는 번호·이름을 넣으세요. 모든 활동의 기록이 한꺼번에 옮겨져요.`
     + `<table class="fx-tab"><tr><th>번호·이름</th><th>기록</th><th></th></tr>${warn.map(row).join('')}${warn.length && rest.length ? '<tr><td colspan="3" style="background:#fafbfc;color:#888;">— 나머지 —</td></tr>' : ''}${rest.map(row).join('')}</table><div class="fx-res" id="fxAutoRes"></div>`;
   box.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k, {no, nm} = fxSplit(k), cell = tr.querySelector('.fx-ed');
+    cell.querySelector('[data-del]').addEventListener('click', ()=>{
+      cell.innerHTML = `<span class="cf">${rpEsc(no)}번 ${rpEsc(nm)}의 모든 활동 기록을 지울까요? 되돌릴 수 없어요.</span> <button type="button" class="fx-btn go" data-delgo="1">🗑 삭제</button> <button type="button" class="rp-tg" data-x="1">취소</button>`;
+      cell.querySelector('[data-x]').addEventListener('click', fxAutoScan);
+      cell.querySelector('[data-delgo]').addEventListener('click', async ev=>{
+        ev.target.disabled = true; const out = document.getElementById('fxAutoRes'); out.textContent = '⏳ 지우는 중…';
+        const n = await fxDelete(cls, k).catch(e=>{ out.innerHTML = '<span class="cf">지우지 못했어요: '+rpEsc(e.message)+'</span>'; return -1; });
+        if(n<0) return;
+        const msg = `<span class="ok">✅ ${rpEsc(no)}번 ${rpEsc(nm)}의 기록을 ${n}개 활동에서 지웠어요.</span>`;
+        fxAutoScan().then(()=>{ const o = document.getElementById('fxAutoRes'); if(o) o.innerHTML = msg; });
+      });
+    });
     cell.querySelector('[data-pin]').addEventListener('click', async ev=>{ ev.target.disabled = true; await pinReset(cls, k).catch(()=>{}); ev.target.textContent = '✅ 0000으로 초기화됨'; });
     cell.querySelector('[data-edit]').addEventListener('click', ()=>{
       cell.innerHTML = `<span class="fx-row" style="margin:0;"><input class="eno" value="${rpEsc(no)}" inputmode="numeric" style="width:50px;">번 <input class="enm nm" value="${rpEsc(nm)}"> <button type="button" class="fx-btn go" data-go="1">바꾸기</button> <button type="button" class="rp-tg" data-x="1">취소</button></span>`;
@@ -613,6 +624,19 @@ document.getElementById('pqList').addEventListener('click', async e=>{
   if(ok){ ok.disabled = true; await pinReset(cls, ok.dataset.pqOk).catch(()=>{}); }
   if(no){ no.disabled = true; await firebase.database().ref('rooms/'+fxKeyPart(cls)+'__pinreq/'+no.dataset.pqNo).set(null).catch(()=>{}); }
 });
+
+/* 🗑 학생 기록 지우기(2026-10-17): 장난·잘못 입력으로 생긴 학생 키를 모든 활동 방에서 지운다(students·share·a1summary·aiBonus) + 비밀번호·초기화 요청.
+   인증번호 명단(rosterCodes)은 선생님이 등록한 명단이라 지우지 않는다. */
+async function fxDelete(cls, key){
+  const rooms = await fxScan(cls, key, '__none__');
+  let n = 0;
+  for(const r of rooms){
+    const up = {}; r.moves.forEach(([from])=>{ if(!from.startsWith('rosterCodes/')) up[from] = null; });
+    if(Object.keys(up).length){ await firebase.database().ref(r.base).update(up); n++; }
+  }
+  await pinReset(cls, key).catch(()=>{});
+  return n;
+}
 </script>
 </body>
 </html>
