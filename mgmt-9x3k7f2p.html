@@ -69,7 +69,9 @@
   .fx-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:14px;}
   .fx-row input{width:70px;padding:5px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:14px;font-family:inherit;} .fx-row input.nm{width:110px;}
   .fx-btn{border:none;background:#1565c0;color:#fff;border-radius:8px;padding:6px 14px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;} .fx-btn.go{background:#c62828;} .fx-btn:disabled{background:#b0bec5;}
-  .fx-res{font-size:13.5px;line-height:1.7;} .fx-res .cf{color:#c62828;font-weight:bold;} .fx-res .ok{color:#2e7d32;font-weight:bold;}
+  .fx-res{font-size:13.5px;line-height:1.7;}
+  .fx-tab{border-collapse:collapse;margin-top:6px;font-size:13.5px;} .fx-tab td,.fx-tab th{border:1px solid #e0e4ea;padding:4px 8px;} .fx-tab th{background:#f3f6fa;}
+  .fx-tab select{font-size:13.5px;padding:3px 6px;border-radius:6px;border:1px solid #c5cad1;font-family:inherit;} .fx-res .cf{color:#c62828;font-weight:bold;} .fx-res .ok{color:#2e7d32;font-weight:bold;}
   .rp-box{background:#fff;border-radius:14px;padding:12px 16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1.5px solid #ef9a9a;}
   .rp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .rp-head b{color:#c62828;font-size:16px;}
@@ -146,12 +148,10 @@
       <div id="rpList" class="rp-list" style="display:none;"></div>
     </div>
     <div class="fx-box" id="fxBox">
-      <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">학생이 잘못 입력한 번호·이름을 모든 활동에서 한꺼번에 바꿔요</span>
+      <div class="rp-head"><b>🧑 학생 번호·이름 고치기</b><span class="rp-count">이 반 학생 목록에서 잘못 입력한 번호·이름을 모든 활동에 한꺼번에 고쳐요</span>
         <button type="button" id="fxToggle" class="rp-tg" style="margin-left:auto;">펼치기</button></div>
       <div id="fxBody" style="display:none;">
-        <div class="fx-row">예전(잘못 입력): 번호 <input id="fxON" inputmode="numeric"> 이름 <input id="fxONm" class="nm"> → 바꿀 것: 번호 <input id="fxNN" inputmode="numeric"> 이름 <input id="fxNNm" class="nm">
-          <button type="button" class="fx-btn" id="fxFind">🔍 찾기</button></div>
-        <div class="fx-res" id="fxRes">반은 지금 선택한 반이에요. 먼저 「찾기」로 어떤 활동에 기록이 있는지 확인한 뒤 바꿔요.</div>
+        <div class="fx-res" id="fxAuto">펼치면 이 반의 모든 활동에 나온 학생 목록을 보여 줘요.</div>
       </div>
     </div>
     <div class="unit-list" id="unitList"></div>
@@ -506,7 +506,54 @@ const FIX_SUFFIX_MAP = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__inc
 const FIX_SUFFIXES = [...new Set(Object.values(FIX_SUFFIX_MAP).concat(['__prob26','__sim32','__sim36']))];
 const fxKeyPart = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
 let fxPlan = null;
-document.getElementById('fxToggle').addEventListener('click', ()=>{ const b = document.getElementById('fxBody'), open = b.style.display==='none'; b.style.display = open ? '' : 'none'; document.getElementById('fxToggle').textContent = open ? '접기' : '펼치기'; });
+document.getElementById('fxToggle').addEventListener('click', ()=>{ const b = document.getElementById('fxBody'), open = b.style.display==='none'; b.style.display = open ? '' : 'none'; document.getElementById('fxToggle').textContent = open ? '접기' : '펼치기'; if(open) fxAutoScan(); });
+/* 자동 찾기: 모든 활동 방의 students 키를 모아서, 명단(외심내심 수행평가 rosterCodes)에 없는 키나
+   같은 번호에 이름이 여러 개 / 같은 이름에 번호가 여러 개인 키를 「고칠 것 같은 기록」으로 보여 주고, 옮길 곳을 미리 골라 둔다 */
+const fxSplit = k => { const i = k.indexOf('_'); return i<0 ? {no:'', nm:k} : {no:k.slice(0,i), nm:k.slice(i+1)}; };
+async function fxAutoScan(){
+  const box = document.getElementById('fxAuto'), cls = (document.getElementById('viewClass').textContent||'').trim(); if(!cls) return;
+  box.textContent = '⏳ 이 반의 모든 활동에서 학생 이름을 모으는 중…';
+  const db = firebase.database(), seen = {};   // key → [활동 이름]
+  let roster = null;
+  try{
+    await Promise.all(FIX_SUFFIXES.map(async sfx=>{
+      const v = await db.ref('rooms/'+fxKeyPart(cls)+sfx+'/students').once('value').then(x=>x.val()).catch(()=>null);
+      Object.keys(v||{}).forEach(k=>{ (seen[k] = seen[k] || []).push(fxUnitName(sfx)); });
+    }));
+    roster = await db.ref('rooms/'+fxKeyPart(cls)+'__assess_pa1/rosterCodes').once('value').then(x=>x.val()).catch(()=>null);
+  }catch(e){ box.innerHTML = '<span class="cf">불러오지 못했어요: '+rpEsc(e.message)+'</span>'; return; }
+  const keys = Object.keys(seen);
+  if(!keys.length){ box.textContent = '아직 이 반의 활동 기록이 없어요.'; return; }
+  const rset = roster && Object.keys(roster).length ? new Set(Object.keys(roster)) : null;
+  const byNo = {}; keys.forEach(k=>{ const {no} = fxSplit(k); (byNo[no] = byNo[no]||[]).push(k); });
+  const warnOf = k => rset ? (rset.has(k) ? '' : '명단에 없는 이름') : (byNo[fxSplit(k).no].length>1 ? '같은 번호에 이름이 여러 개' : '');
+  const sorted = keys.sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0) || a.localeCompare(b));
+  const warn = sorted.filter(k=>warnOf(k)), rest = sorted.filter(k=>!warnOf(k));
+  const row = k => { const {no, nm} = fxSplit(k), w = warnOf(k);
+    return `<tr data-k="${rpEsc(k)}"><td><b>${rpEsc(no)}번 ${rpEsc(nm)}</b>${w?` <span class="cf">⚠️ ${w}</span>`:''}</td><td>${seen[k].length}개 활동</td>
+      <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button></td></tr>`; };
+  box.innerHTML = `${cls}반 학생 기록 ${keys.length}개 ${rset?'(명단과 다른 이름은 ⚠️)':''} — 잘못 입력한 이름 옆 <b>✏️ 고치기</b>를 누르고 맞는 번호·이름을 넣으세요. 모든 활동의 기록이 한꺼번에 옮겨져요.`
+    + `<table class="fx-tab"><tr><th>번호·이름</th><th>기록</th><th></th></tr>${warn.map(row).join('')}${warn.length && rest.length ? '<tr><td colspan="3" style="background:#fafbfc;color:#888;">— 나머지 —</td></tr>' : ''}${rest.map(row).join('')}</table><div class="fx-res" id="fxAutoRes"></div>`;
+  box.querySelectorAll('tr[data-k]').forEach(tr=>{
+    const k = tr.dataset.k, {no, nm} = fxSplit(k), cell = tr.querySelector('.fx-ed');
+    cell.querySelector('[data-edit]').addEventListener('click', ()=>{
+      cell.innerHTML = `<span class="fx-row" style="margin:0;"><input class="eno" value="${rpEsc(no)}" inputmode="numeric" style="width:50px;">번 <input class="enm nm" value="${rpEsc(nm)}"> <button type="button" class="fx-btn go" data-go="1">바꾸기</button> <button type="button" class="rp-tg" data-x="1">취소</button></span>`;
+      cell.querySelector('[data-x]').addEventListener('click', fxAutoScan);
+      cell.querySelector('[data-go]').addEventListener('click', async ev=>{
+        const nn = cell.querySelector('.eno').value.trim(), nnm = cell.querySelector('.enm').value.trim(), out = document.getElementById('fxAutoRes');
+        if(!nn || !nnm){ out.innerHTML = '<span class="cf">번호와 이름을 모두 넣어 주세요.</span>'; return; }
+        const newK = fxKeyPart(nn)+'_'+fxKeyPart(nnm); if(newK===k){ fxAutoScan(); return; }
+        ev.target.disabled = true; out.textContent = '⏳ 옮기는 중…';
+        const rooms = await fxScan(cls, k, newK);
+        fxPlan = {cls, oldK:k, newK, nn, nnm, rooms};
+        await fxApply(out);
+        const skipped = rooms.filter(r=>r.conflict).map(r=>fxUnitName(r.sfx));
+        if(skipped.length) out.innerHTML += `<br><span class="cf">⚠️ ${rpEsc(skipped.join(', '))}은(는) ${rpEsc(nn)}번 ${rpEsc(nnm)} 기록이 이미 있어서 그대로 두었어요.</span>`;
+        setTimeout(()=>{ const keep = out.innerHTML; fxAutoScan().then(()=>{ const o = document.getElementById('fxAutoRes'); if(o) o.innerHTML = keep; }); }, 1200);
+      });
+    });
+  });
+}
 async function fxScan(cls, oldK, newK){
   const db = firebase.database(), rooms = [];
   await Promise.all(FIX_SUFFIXES.map(async sfx=>{
@@ -523,26 +570,11 @@ async function fxScan(cls, oldK, newK){
   }));
   return rooms.sort((a,b)=>a.sfx.localeCompare(b.sfx));
 }
-const fxUnitName = sfx => { const n = Object.keys(FIX_SUFFIX_MAP).find(k=>FIX_SUFFIX_MAP[k]===sfx); return n ? n+'번 활동' : sfx; };
-document.getElementById('fxFind').addEventListener('click', async ()=>{
-  const res = document.getElementById('fxRes'), cls = (document.getElementById('viewClass').textContent||'').trim();
-  const on = document.getElementById('fxON').value.trim(), onm = document.getElementById('fxONm').value.trim(), nn = document.getElementById('fxNN').value.trim(), nnm = document.getElementById('fxNNm').value.trim();
-  if(!cls || !on || !onm || !nn || !nnm){ res.innerHTML = '<span class="cf">반을 고르고 네 칸을 모두 채워 주세요.</span>'; return; }
-  const oldK = fxKeyPart(on)+'_'+fxKeyPart(onm), newK = fxKeyPart(nn)+'_'+fxKeyPart(nnm);
-  if(oldK===newK){ res.innerHTML = '<span class="cf">예전과 바꿀 것이 같아요.</span>'; return; }
-  res.textContent = '⏳ 모든 활동에서 찾는 중…'; fxPlan = null;
-  try{ const rooms = await fxScan(cls, oldK, newK);
-    if(!rooms.length){ res.innerHTML = `${cls}반 「${rpEsc(oldK)}」 기록을 어느 활동에서도 찾지 못했어요. 번호·이름을 학생이 입력한 그대로 넣었는지 확인해 주세요.`; return; }
-    fxPlan = {cls, oldK, newK, nn, nnm, rooms};
-    const okRooms = rooms.filter(r=>!r.conflict);
-    res.innerHTML = `${cls}반 <b>${rpEsc(oldK)}</b> → <b>${rpEsc(newK)}</b><br>` + rooms.map(r=>`${r.conflict?'<span class="cf">⚠️ ':'✅ '}${rpEsc(fxUnitName(r.sfx))}: ${r.moves.map(m=>rpEsc(m[0].split('/')[0])).join(', ')}${r.conflict?' — 새 번호·이름으로 된 기록이 이미 있어서 건너뛰어요</span>':''}`).join('<br>')
-      + (okRooms.length ? `<div style="margin-top:6px;"><button type="button" class="fx-btn go" id="fxGo">✏️ ${okRooms.length}개 활동에서 바꾸기</button></div>` : '');
-    const go = document.getElementById('fxGo'); if(go) go.addEventListener('click', fxApply);
-  }catch(e){ res.innerHTML = '<span class="cf">찾는 중 오류: '+rpEsc(e.message)+'</span>'; }
-});
-async function fxApply(){
-  const res = document.getElementById('fxRes'), p = fxPlan; if(!p) return;
-  const go = document.getElementById('fxGo'); if(go) go.disabled = true;
+const fxUnitName = sfx => { const n = Object.keys(FIX_SUFFIX_MAP).find(k=>FIX_SUFFIX_MAP[k]===sfx) || (sfx==='__prob26'?'26':sfx==='__sim32'?'32':sfx==='__sim36'?'36':'');
+  const all = []; (function walk(x){ if(Array.isArray(x)) x.forEach(walk); else if(x && typeof x==='object'){ if(x.n!=null && x.title) all.push(x); Object.values(x).forEach(walk); } })([STANDALONE_UNITS, SECTIONS]);
+  const u = all.find(x=>String(x.n)===String(n)); return u ? String(u.title).split(' - ')[0].slice(0,24) : (n ? n+'번 활동' : sfx); };
+async function fxApply(outEl){
+  const res = outEl, p = fxPlan; if(!p) return;
   let done = 0; const fails = [];
   for(const r of p.rooms.filter(x=>!x.conflict)){
     const up = {};

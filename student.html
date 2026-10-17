@@ -33,6 +33,11 @@
   .top-card h1{font-size:18px;margin:0 0 6px;color:#1a237e;}
   .top-card .who{font-size:14px;color:#444;}
   .top-card .who b{color:var(--blue);}
+  .fixbox{margin-top:10px;background:#f5faff;border:1px solid #90caf9;border-radius:10px;padding:10px 12px;font-size:14px;text-align:left;line-height:1.7;}
+  .fixrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+  .fixrow input{width:80px;padding:6px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;} .fixrow input#fixNm{width:110px;}
+  .fixrow button{border:none;background:#1565c0;color:#fff;border-radius:8px;padding:7px 14px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;} .fixrow button#fixCancel{background:#90a4ae;}
+  #fixMsg .bad{color:#c62828;font-weight:bold;} #fixMsg .ok{color:#2e7d32;font-weight:bold;}
   .top-card .editBtn{margin-top:12px;font-size:12.5px;background:#fff3e0;border:1px solid #ffcc80;color:#e65100;padding:7px 12px;border-radius:6px;cursor:pointer;}
 
   .task-list{display:flex;flex-direction:column;gap:10px;}
@@ -93,6 +98,12 @@
       <div class="who"><b id="viewClass"></b>반 <b id="viewNumber"></b>번 <b id="viewName"></b></div>
       <div class="myscore" id="myScore" style="display:none;"></div>
       <button class="editBtn" id="editBtn">✏️ 정보 다시 입력하기</button>
+      <button class="editBtn" id="fixBtn" style="margin-left:6px;">🔁 번호·이름을 잘못 입력했어요</button>
+      <div class="fixbox" id="fixBox" style="display:none;">
+        <div>지금까지 <b id="fixOld"></b>(으)로 한 활동 기록을 올바른 번호·이름으로 옮겨요.</div>
+        <div class="fixrow">올바른 번호 <input id="fixNo" inputmode="numeric"> 이름 <input id="fixNm"> <button type="button" id="fixGo">옮기기</button> <button type="button" id="fixCancel">취소</button></div>
+        <div id="fixMsg"></div>
+      </div>
     </div>
     <div class="task-list" id="taskList"></div>
   </div>
@@ -476,6 +487,45 @@ document.getElementById('editBtn').addEventListener('click', ()=>{
   }
   document.getElementById('page2').style.display='none';
   document.getElementById('page1').style.display='flex';
+});
+
+/* 🔁 학생이 번호·이름을 잘못 입력했을 때 스스로 고치기(2026-10-17): 지금 이름(예전 키)으로 남은 기록을 모든 활동 방에서 찾아 새 키로 옮긴다.
+   다른 친구 기록을 덮어쓰지 않도록, 새 번호·이름으로 된 기록이 한 곳이라도 있으면 옮기지 않고 선생님께 말하라고 안내한다(선생님은 관리 목차에서 고칠 수 있음). */
+const FIX_SUFFIXES = [...new Set(Object.values(ACTIVITY_SUFFIX).concat(['__prob26','__sim32','__sim36']))];
+document.getElementById('fixBtn').addEventListener('click', ()=>{ const p = loadProfile(); if(!p) return; const b = document.getElementById('fixBox'); b.style.display = b.style.display==='none' ? '' : 'none';
+  document.getElementById('fixOld').textContent = `${p.classNo}반 ${p.number}번 ${p.name}`; document.getElementById('fixNo').value = ''; document.getElementById('fixNm').value = ''; document.getElementById('fixMsg').innerHTML = ''; });
+document.getElementById('fixCancel').addEventListener('click', ()=>{ document.getElementById('fixBox').style.display = 'none'; });
+document.getElementById('fixGo').addEventListener('click', async ()=>{
+  const p = loadProfile(), msg = document.getElementById('fixMsg'), btn = document.getElementById('fixGo'); if(!p) return;
+  const nn = document.getElementById('fixNo').value.trim(), nnm = document.getElementById('fixNm').value.trim();
+  if(!nn || !nnm){ msg.innerHTML = '<span class="bad">올바른 번호와 이름을 모두 써 주세요.</span>'; return; }
+  const kp = s => sanitize(s).slice(0,30), oldK = kp(p.number)+'_'+kp(p.name), newK = kp(nn)+'_'+kp(nnm);
+  if(oldK===newK){ msg.innerHTML = '<span class="bad">지금과 같은 번호·이름이에요.</span>'; return; }
+  if(!FIREBASE_CONFIG.apiKey){ msg.innerHTML = '<span class="bad">지금은 고칠 수 없어요. 선생님께 말씀드려 주세요.</span>'; return; }
+  btn.disabled = true; msg.textContent = '⏳ 내 기록을 찾는 중…';
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    await firebase.auth().signInAnonymously();
+    const db = firebase.database(), cls = sanitize(p.classNo), plans = [];
+    let clash = false;
+    await Promise.all(FIX_SUFFIXES.map(async sfx=>{
+      const r = db.ref('rooms/'+cls+sfx), get = path => r.child(path).once('value').then(x=>x.val()).catch(()=>null);
+      const [st, stNew, sh, a1, ai, rc, rcNew] = await Promise.all([get('students/'+oldK), get('students/'+newK), get('share'), get('a1summary/'+oldK), get('control/aiBonus/'+oldK), get('rosterCodes/'+oldK), get('rosterCodes/'+newK)]);
+      if(stNew!=null || (rc!=null && rcNew!=null)) clash = true;
+      const up = {};
+      if(st!=null){ const v = (st && typeof st==='object') ? Object.assign({}, st, ('number' in st)?{number:nn}:{}, ('name' in st)?{name:nnm}:{}) : st; up['students/'+newK] = v; up['students/'+oldK] = null; }
+      if(sh && typeof sh==='object') Object.keys(sh).forEach(kind=>{ const v = sh[kind] && sh[kind][oldK]; if(v!=null){ up['share/'+kind+'/'+newK] = v; up['share/'+kind+'/'+oldK] = null; } });
+      if(a1!=null){ up['a1summary/'+newK] = a1; up['a1summary/'+oldK] = null; }
+      if(ai!=null){ up['control/aiBonus/'+newK] = ai; up['control/aiBonus/'+oldK] = null; }
+      if(rc!=null && rcNew==null){ up['rosterCodes/'+newK] = rc; up['rosterCodes/'+oldK] = null; }
+      if(Object.keys(up).length) plans.push({r, up});
+    }));
+    if(clash){ btn.disabled = false; msg.innerHTML = `<span class="bad">${p.classNo}반 ${nn}번 ${nnm}(으)로 된 기록이 이미 있어서 옮길 수 없어요. 선생님께 말씀드려 주세요.</span>`; return; }
+    for(const x of plans) await x.r.update(x.up);
+    const np = {classNo:p.classNo, number:nn, name:nnm}; saveProfile(np);
+    msg.innerHTML = `<span class="ok">✅ ${plans.length ? plans.length+'개 활동의 기록을 옮겼어요.' : '옮길 기록은 없었어요.'} 이제 ${p.classNo}반 ${nn}번 ${nnm}(으)로 들어가요.</span>`;
+    setTimeout(()=>location.reload(), 1500);
+  }catch(e){ btn.disabled = false; msg.innerHTML = '<span class="bad">옮기지 못했어요. 선생님께 말씀드려 주세요. ('+String(e.message||e).slice(0,60)+')</span>'; }
 });
 
 // 이미 입력된 정보가 있으면 바로 과제 선택 화면으로
