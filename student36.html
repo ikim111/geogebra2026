@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</title>
+<title>7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -151,6 +151,29 @@
   .sum-body{background:#fffbe6;border:2px solid #ffca28;border-radius:12px;padding:12px 16px;margin-top:12px;line-height:1.7;}
   .sum-body h4{margin:0 0 6px;font-size:16px;color:#8d6e00;}
   @media (max-width:640px){ .g-board{width:100%;} }
+  .g-board.sm{width:320px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .sbtn{border:1.5px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;color:#1f2328;}
+  .sbtn.on{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:bold;}
+  .sbtn:disabled{opacity:.6;cursor:default;}
+  .dot{cursor:pointer;}
+  .found{margin-top:10px;border:1px solid #d6dbe1;border-radius:10px;padding:8px 12px;background:#fafbfc;}
+  .found .cap{font-weight:bold;font-size:14.5px;margin-bottom:4px;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{background:#fff8e1;border:1px solid #ffe082;border-radius:14px;padding:2px 10px;font-size:14px;font-weight:bold;}
+  .chip.tilt{background:#fff3e0;border-color:#ffb74d;color:#e65100;}
+  .chip small{font-weight:normal;color:#777;}
+  .inrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px;font-weight:bold;margin:6px 0;}
+  .num{width:70px;padding:6px 8px;border:1.5px solid #c5cad1;border-radius:8px;font-size:16px;font-family:inherit;text-align:center;}
+  .num.wrong{border-color:#ef9a9a;background:#fff6f6;}
+  .fx{width:220px;padding:7px 10px;border:1.5px solid #c5cad1;border-radius:8px;font-size:17px;font-family:'Times New Roman',serif;}
+  .okb{border:none;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .okb:disabled{background:#a5d6a7;cursor:default;}
+  .rtab tr.cur td{background:#e3f2fd;} .rtab tr[data-i]{cursor:pointer;}
+  .pred{border:1.5px solid #ffcc80;background:#fff8e1;border-radius:10px;padding:8px 12px;margin-bottom:10px;}
+  .pred .jq{margin-top:0;}
+  .g-layout.locked{opacity:.35;pointer-events:none;}
+  .activity input.num{width:72px !important;display:inline-block;flex:0 0 auto;} .activity input.fx{width:240px !important;max-width:100%;display:inline-block;flex:0 0 auto;}
 </style></style>
 </head>
 <body>
@@ -163,8 +186,8 @@
 <div id="gateScreen">
   <div class="gate-card">
     <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
-    <h1>7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</h1>
-    <p class="gate-sub">직각삼각형의 세 변 위에 정사각형을 그리면 넓이 사이에 어떤 관계가 있을까요? — 김형준 선생님 — 김형준 선생님</p>
+    <h1>7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이</h1>
+    <p class="gate-sub">점판에 정사각형을 몇 개나 그릴 수 있을까요? 기울어진 정사각형의 넓이에서 규칙을 찾아봅시다 — 김형준 선생님 — 김형준 선생님</p>
     <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
       ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
       <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
@@ -190,13 +213,13 @@
   <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
   <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
   <div id="stickyBar">
-    <div id="unitTitleBar">7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</div>
+    <div id="unitTitleBar">7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이</div>
     <div class="sticky-controls">
       <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 3</div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -208,76 +231,109 @@
 
     <div id="taskContainer">
 
-<!-- ===================== 화면 1: 세 정사각형의 넓이 기록하기 ===================== -->
+<!-- ===================== 화면 1: 점판에 정사각형 그리기 ===================== -->
 <section class="task activity" id="task-a1" data-task-id="1">
   <div class="card">
-    <div class="act-head"><span class="act-tag">1 넓이 기록하기</span><span class="badge pending" id="badge-a1">미완료</span></div>
-    <h2>직각삼각형의 세 변 위에 정사각형을 그리면?</h2>
+    <div class="act-head"><span class="act-tag">1 정사각형 찾기</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>5 × 5 점판에 넓이가 서로 다른 정사각형을 몇 개나 그릴 수 있을까?</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g1" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-board sm"><svg id="g1" viewBox="0 0 300 300" class="board"></svg>
+        <div class="row"><button type="button" class="sbtn" id="clr1">↺ 다시 고르기</button><button type="button" class="sbtn" id="help1">💡 넓이 구하는 도움 그림</button></div></div>
       <div class="g-side">
-        <p class="hint">∠C = 90°인 직각삼각형 ABC의 세 변 위에 정사각형 <b class="cP">P</b>, <b class="cQ">Q</b>, <b class="cR">R</b>를 그렸어요.<br><b>점 A, B를 끌어서</b> 직각삼각형의 모양을 바꾸고, 「기록하기」를 눌러 세 정사각형의 넓이를 표에 적어 보세요.<br><span class="note">(서로 다른 직각삼각형 3개 이상)</span></p>
+        <p class="hint"><b>점 4개를 눌러</b> 정사각형을 그려 보세요. 똑바로 선 정사각형만 있을까요? 정사각형이 되면 <b>넓이를 직접 구해서</b> 입력해요. <span class="note">(작은 정사각형 한 칸의 넓이 = 1)</span></p>
         <div class="now" id="now1"></div>
-        <button type="button" class="recb" id="rec1">📝 기록하기</button>
-        <table class="rtab" id="tab1"></table>
+        <div class="found"><div class="cap">내가 찾은 정사각형 <span id="cnt1"></span></div><div class="chips" id="list1"></div></div>
+        <div class="found"><div class="cap">👥 우리 반이 찾은 넓이</div><div class="chips" id="cls1"></div></div>
       </div>
     </div>
   </div>
-  <div class="why" id="why1">서로 다른 직각삼각형 3개 이상을 기록하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why1">넓이가 서로 다른 정사각형을 6가지 이상 찾으면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 2: 규칙 찾기 ===================== -->
+<!-- ===================== 화면 2: 기울어진 정사각형의 넓이 규칙 ===================== -->
 <section class="task activity" id="task-a2" data-task-id="2">
   <div class="card">
-    <div class="act-head"><span class="act-tag">2 규칙 찾기</span><span class="badge pending" id="badge-a2">미완료</span></div>
-    <h2>세 정사각형의 넓이 사이에는 어떤 관계가 있을까?</h2>
+    <div class="act-head"><span class="act-tag">2 규칙 만들기</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>기울어진 정사각형의 넓이, 빨리 구하는 방법은 없을까?</h2>
     <div class="g-layout">
-      <div class="g-side wide">
-        <p class="hint">앞에서 기록한 표를 보고 규칙을 찾아보세요.</p>
+      <div class="g-board"><svg id="g2" viewBox="0 0 360 360" class="board"></svg>
+        <div class="row"><button type="button" class="sbtn" id="help2">💡 도움 그림</button></div></div>
+      <div class="g-side">
+        <p class="hint">한 꼭짓점에서 <b>가로로 a칸, 세로로 b칸</b> 가서 다음 꼭짓점을 잡아 만든 기울어진 정사각형이에요. 표의 줄을 눌러 정사각형을 보고 <b>넓이를 직접 구해</b> 써 보세요.</p>
         <table class="rtab" id="tab2"></table>
-        <div class="jq">① P, Q, R 사이의 관계는?</div>
-        <div class="pickc" id="rel2"></div>
-        <div class="g-msg" id="msg2a"></div>
-        <div class="jq">② 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면?</div>
-        <div class="pickc" id="abc2"></div>
-        <div class="g-msg" id="msg2b"></div>
+        <div class="qbox locked" id="q2">
+          <div class="jq">넓이를 a, b로 나타내는 식을 직접 써 보세요.</div>
+          <div class="note">예) a+b, 2*a*b, a^2 … (거듭제곱은 ^2 또는 ² 로 써요)</div>
+          <div class="inrow">넓이 = <input type="text" class="fx" id="f2" autocomplete="off" spellcheck="false"> <button type="button" class="okb" id="ok2">확인</button></div>
+          <div class="g-msg" id="msg2"></div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="why" id="why2">두 질문에 바르게 답하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">네 정사각형의 넓이를 구하고, 규칙을 식으로 바르게 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 3: ∠C가 90°가 아니면? ===================== -->
+<!-- ===================== 화면 3: 직각삼각형과 세 정사각형 ===================== -->
 <section class="task activity" id="task-a3" data-task-id="3">
   <div class="card">
-    <div class="act-head"><span class="act-tag">3 직각이 아니면?</span><span class="badge pending" id="badge-a3">미완료</span></div>
-    <h2>∠C가 90°가 아니어도 P + Q = R 일까?</h2>
+    <div class="act-head"><span class="act-tag">3 직각삼각형</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>기울어진 정사각형의 한 변은 무엇의 변일까?</h2>
     <div class="g-layout">
-      <div class="g-board"><svg id="g3" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-board"><svg id="g3" viewBox="0 0 360 360" class="board"></svg>
+        <div class="row" id="ab3"></div></div>
       <div class="g-side">
-        <p class="hint">이번에는 <b>점 C를 끌어서</b> ∠C의 크기를 바꿔 보세요. ∠C가 90°보다 <b>작을 때</b>와 <b>클 때</b>를 각각 하나 이상 기록하세요.</p>
-        <div class="now" id="now3"></div>
-        <button type="button" class="recb" id="rec3">📝 기록하기</button>
-        <table class="rtab" id="tab3"></table>
-        <div class="qbox locked" id="q3">
+        <p class="hint">기울어진 정사각형의 한 변(빨간 선)은 가로 a칸, 세로 b칸인 <b>직각삼각형의 빗변</b>이에요. 이 직각삼각형의 세 변 위에 정사각형 <b class="cP">P</b>, <b class="cQ">Q</b>, <b class="cR">R</b>을 그렸어요. 넓이를 구해 보세요.</p>
+        <div class="inrow"><span class="cP">P</span> = <input type="text" class="num" id="p3" inputmode="numeric"> <span class="cQ">Q</span> = <input type="text" class="num" id="q3" inputmode="numeric"> <span class="cR">R</span> = <input type="text" class="num" id="r3" inputmode="numeric"> <button type="button" class="okb" id="okA3">확인</button></div>
+        <div class="g-msg" id="msgA3"></div>
+        <div class="qbox locked" id="qq3">
+          <div class="jq">① P, Q, R 사이의 관계를 식으로 써 보세요.</div>
+          <div class="inrow"><input type="text" class="fx" id="f3a" autocomplete="off" spellcheck="false" placeholder="P, Q, R과 = 을 써서"> <button type="button" class="okb" id="ok3a">확인</button></div>
+          <div class="g-msg" id="msg3a"></div>
+          <div class="jq">② 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면?</div>
+          <div class="inrow"><input type="text" class="fx" id="f3b" autocomplete="off" spellcheck="false" placeholder="a, b, c와 = 을 써서"> <button type="button" class="okb" id="ok3b">확인</button></div>
+          <div class="g-msg" id="msg3b"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why3">세 넓이를 구하고, 두 관계식을 바르게 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 4: 직각이 아니면? ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">4 직각이 아니면?</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>∠C가 90°가 아니어도 P + Q = R 일까?</h2>
+    <div class="pred" id="pred4">
+      <div class="jq">먼저 예측해 보세요. ∠C가 90°보다 커지면 P + Q와 R은 어떻게 될까요?</div>
+      <div class="pickc" data-k="pred"></div>
+    </div>
+    <div class="g-layout locked" id="lay4">
+      <div class="g-board"><svg id="g4" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint"><b>점 C를 끌어서</b> ∠C의 크기를 바꿔 보세요. ∠C가 90°보다 <b>작을 때</b>와 <b>클 때</b>를 각각 하나 이상 기록하세요.</p>
+        <div class="now" id="now4"></div>
+        <button type="button" class="recb" id="rec4">📝 기록하기</button>
+        <table class="rtab" id="tab4"></table>
+        <div class="qbox locked" id="q4">
           <div class="jq">∠C &lt; 90° 이면 P + Q ( ) R</div>
           <div class="pickc" data-k="lt"></div>
           <div class="jq">∠C &gt; 90° 이면 P + Q ( ) R</div>
           <div class="pickc" data-k="gt"></div>
           <div class="jq">거꾸로, P + Q = R 이면 ∠C는?</div>
           <div class="pickc" data-k="eq"></div>
-          <div class="g-msg" id="msg3"></div>
+          <div class="g-msg" id="msg4"></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="sum-body" id="sum3" style="display:none;">
+  <div class="sum-body" id="sum4" style="display:none;">
     <h4>📦 정리</h4>
     <p>① 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면 <b>a² + b² = c²</b> 이에요. 이것을 <b>피타고라스 정리</b>라고 해요.</p>
     <p>② 거꾸로, 세 변의 길이가 a, b, c인 삼각형에서 <b>a² + b² = c²</b> 이면 이 삼각형은 빗변의 길이가 c인 <b>직각삼각형</b>이에요.</p>
-    <p class="note">왜 항상 그럴까요? 학습지에서 여러 가지 방법으로 설명해 봐요.</p>
+    <p class="note">기울어진 정사각형의 넓이를 '둘러싸서 빼기'로 구한 방법이 바로 피타고라스 정리의 한 가지 설명이에요. 학습지에서 더 살펴봐요.</p>
   </div>
-  <div class="why" id="why3">∠C가 90°보다 작을 때와 클 때를 기록하고, 세 질문에 답하면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why4">예측하고, ∠C가 90°보다 작을 때와 클 때를 기록한 뒤 세 질문에 답하면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -299,13 +355,14 @@
 
 <script>
 /* ============================================================
-   36. 7.5 피타고라스 정리 생각열기 — 세 정사각형의 넓이 (2026-10-17 만듦, 10~15분)
-   학습지 7.5 생각열기(교학사 알지오매스: 직각삼각형 세 변 위 정사각형 넓이 비교 + 활동4 ∠C가 90°가 아닐 때)를 웹으로 옮김
-   ① ∠C=90°인 △ABC에서 A·B를 모눈 점 위로 끌어 모양을 바꾸고 P(BC²)·Q(CA²)·R(AB²) 넓이를 기록(서로 다른 3개 이상)
-   ② 규칙 고르기: P + Q = R, 그리고 a² + b² = c²
-   ③ A·B 고정, C를 끌어 ∠C가 90°보다 작을 때·클 때 기록 → P+Q와 R 비교(>, <), P+Q=R이면 ∠C=90° → 정리 상자
-   모든 꼭짓점이 모눈 점이라 넓이는 거리의 제곱(자연수)으로 정확히 계산한다.
-   student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim36
+   36. 7.5 피타고라스 정리 생각열기 — 기울어진 정사각형에서 피타고라스로 (2026-10-17 다시 만듦: '답정너'를 피해 학생이 직접 구하고 식을 쓴다)
+   참고: Shell Centre MAP 'Discovering the Pythagorean Theorem'(기울어진 정사각형 넓이), CMP3 'Looking for Pythagoras'(5×5 점판 정사각형 찾기),
+         Illustrative Mathematics 8학년(직각이 아닌 삼각형과 비교), 학습지 7.5 생각열기(교학사 알지오매스 + 직각이 아닐 때)
+   ① 5×5 점판에서 점 4개로 정사각형 그리기 → 넓이를 직접 입력(도움 그림: 둘러싼 정사각형 − 직각삼각형 4개) → 넓이 8가지 중 6가지 이상(기울어진 것 2가지 이상), 반 전체 모음
+   ② 가로 a칸·세로 b칸 기울어진 정사각형 4개 넓이 직접 구하기 → 넓이를 a, b로 나타내는 식을 직접 입력(보기 없음, 여러 값으로 검사)
+   ③ 그 정사각형의 한 변 = 직각삼각형의 빗변 → P·Q·R 넓이 입력 → P·Q·R 관계식, a·b·c 관계식 직접 입력(여러 값으로 검사, 항등식은 거름)
+   ④ 예측(∠C가 90°보다 크면?) → 점 C를 끌어 예각·둔각 기록 → P+Q와 R 비교, P+Q=R이면 90° → 정리 상자
+   student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim36. 공유: share/areas/{학생키} = {a:[찾은 넓이]}
    ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
    ============================================================ */
 const PREVIEW_PARAMS = new URLSearchParams(location.search);
@@ -322,50 +379,84 @@ const FIREBASE_CONFIG = {
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
 const ACTIVITY_SUFFIX = '__sim36'; // teacher36.html과 반드시 동일해야 함
-const UNIT_LABEL = '7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이';
+const UNIT_LABEL = '7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이';
 const UNIT_NO = 36;
 const MIN_TEXT = 5;
 const TASKS = [
-  {id:1, key:'a1', title:'1. 세 정사각형의 넓이 기록하기'},
-  {id:2, key:'a2', title:'2. 규칙 찾기 — P, Q, R의 관계'},
-  {id:3, key:'a3', title:'3. ∠C가 90°가 아니면?'}
+  {id:1, key:'a1', title:'1. 점판에 정사각형 찾기'},
+  {id:2, key:'a2', title:'2. 기울어진 정사각형의 넓이 규칙'},
+  {id:3, key:'a3', title:'3. 직각삼각형과 세 정사각형'},
+  {id:4, key:'a4', title:'4. 직각이 아니면?'}
 ];
-/* 화면 1: C(9,8) 고정, A(9, 8+b), B(9+a, 8) — a, b는 자연수(모눈 점). P = BC², Q = CA², R = AB²
-   화면 3: A(10,14), B(16,9) 고정, C를 모눈 점 위로 끈다(AB의 아래 왼쪽, 세 정사각형이 판 안에 들어오는 곳만). 모든 꼭짓점이 모눈 점이라 넓이는 항상 자연수 */
-const C1 = [9,8], A3 = [10,14], B3 = [16,9];
-const REL = ['P + Q = R', 'P × Q = R', 'P + R = Q', 'P = Q = R'], REL_ANS = 'P + Q = R';
-const ABC = ['a + b = c', 'a² + b² = c²', 'a × b = c', 'a² + c² = b²'], ABC_ANS = 'a² + b² = c²';
-const CMP = ['>', '=', '<'], EQ = ['90°보다 작다', '90°', '90°보다 크다'];
-const ANS3 = {lt:'>', gt:'<', eq:'90°'};
+/* ---------- 식 읽기: 학생이 쓴 식(a^2+b^2, a²+b², 2ab, P+Q=R …)을 계산할 수 있는 함수로 ---------- */
+function parseExpr(src, vars){
+  let s = String(src||'').replace(/²/g,'^2').replace(/³/g,'^3').replace(/[×·]/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');
+  const toks = []; let i = 0;
+  while(i < s.length){ const c = s[i];
+    if(/[0-9.]/.test(c)){ let j = i; while(j<s.length && /[0-9.]/.test(s[j])) j++; toks.push({t:'n', v:parseFloat(s.slice(i,j))}); i = j; continue; }
+    if(/[a-zA-Z]/.test(c)){ const v = vars.find(x=>x.toLowerCase()===c.toLowerCase()); if(!v) return null; toks.push({t:'v', v}); i++; continue; }
+    if('+-*/^()'.includes(c)){ toks.push({t:c}); i++; continue; }
+    return null; }
+  // 곱셈 기호 생략(2a, ab, a(b+1), (a)(b)) 채우기
+  const tk = []; toks.forEach((x,k)=>{ const p = tk[tk.length-1]; if(p && (p.t==='n'||p.t==='v'||p.t===')') && (x.t==='n'||x.t==='v'||x.t==='(')) tk.push({t:'*'}); tk.push(x); });
+  let pos = 0; const peek = () => tk[pos], eat = t => (tk[pos] && tk[pos].t===t) ? tk[pos++] : null;
+  function expr(){ let l = term(); if(!l) return null; for(;;){ if(eat('+')){ const r = term(); if(!r) return null; const a=l; l = e=>a(e)+r(e); } else if(eat('-')){ const r = term(); if(!r) return null; const a=l; l = e=>a(e)-r(e); } else return l; } }
+  function term(){ let l = unary(); if(!l) return null; for(;;){ if(eat('*')){ const r = unary(); if(!r) return null; const a=l; l = e=>a(e)*r(e); } else if(eat('/')){ const r = unary(); if(!r) return null; const a=l; l = e=>a(e)/r(e); } else return l; } }
+  function unary(){ if(eat('-')){ const u = unary(); return u ? (e=>-u(e)) : null; } if(eat('+')) return unary(); return power(); }
+  function power(){ const b = prim(); if(!b) return null; if(eat('^')){ const ex = unary(); if(!ex) return null; return e=>Math.pow(b(e), ex(e)); } return b; }
+  function prim(){ const x = peek(); if(!x) return null;
+    if(x.t==='n'){ pos++; return ()=>x.v; } if(x.t==='v'){ pos++; return e=>e[x.v]; }
+    if(eat('(')){ const v = expr(); if(!v || !eat(')')) return null; return v; } return null; }
+  const f = expr(); return (f && pos===tk.length) ? f : null;
+}
+function parseEq(src, vars){ const parts = String(src||'').split('='); if(parts.length!==2) return null; const L = parseExpr(parts[0], vars), R = parseExpr(parts[1], vars); return (L && R) ? (e=>L(e)-R(e)) : null; }
+const near0 = v => Number.isFinite(v) && Math.abs(v) < 1e-6;
+
+/* ---------- 상수 ---------- */
+const AREAS = [1,4,9,16,2,5,8,10];   // 5×5 점판에서 그릴 수 있는 정사각형 넓이 8가지 (2,5,8,10은 기울어진 것)
+const TILT_ROWS = [[1,2],[2,3],[3,1],[2,4]];   // 화면 2: 가로 a칸, 세로 b칸
+const TRI3 = [[3,2],[1,3],[2,2]];   // 화면 3에서 고를 수 있는 직각삼각형(가로 a, 세로 b)
+const A4 = [10,14], B4 = [16,9];
+const CMP = ['>', '=', '<'], EQ = ['90°보다 작다', '90°', '90°보다 크다'], PRED = ['P + Q > R', 'P + Q = R', 'P + Q < R'];
+const ANS4 = {lt:'>', gt:'<', eq:'90°'};
+
 const state = {
-  s1:{a:4, b:3, rec:[]},
-  s2:{rel:'', abc:'', miss:0},
-  s3:{C:[10,9], rec:[], lt:'', gt:'', eq:'', miss:0}
+  s1:{found:{}, wrong:0},          // found[넓이] = {tilt:true/false}
+  s2:{ans:{}, wrong:{}, f:'', fok:false, fmiss:0},   // ans['1,2'] = 넓이(맞힌 것만)
+  s3:{t:0, ok:false, rel:'', relOk:false, abc:'', abcOk:false, miss:0},
+  s4:{pred:'', C:[10,9], rec:[], lt:'', gt:'', eq:'', miss:0}
 };
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const d2 = (p,q) => (p[0]-q[0])**2 + (p[1]-q[1])**2;   // 거리의 제곱 = 그 변 위 정사각형의 넓이
-const dotC = C => (A3[0]-C[0])*(B3[0]-C[0]) + (A3[1]-C[1])*(B3[1]-C[1]);   // >0 예각, 0 직각, <0 둔각
-const angC = C => Math.acos(Math.max(-1, Math.min(1, dotC(C)/Math.sqrt(d2(A3,C)*d2(B3,C)))))*180/Math.PI;
-const rec3Kinds = () => { const k = {lt:false, gt:false, eq:false}; state.s3.rec.forEach(r=>{ const d = dotC([r.x,r.y]); if(d>0) k.lt = true; else if(d<0) k.gt = true; else k.eq = true; }); return k; };
+const foundAreas = () => Object.keys(state.s1.found).map(Number).sort((a,b)=>a-b);
+const d2 = (p,q) => (p[0]-q[0])**2 + (p[1]-q[1])**2;
+const dotC = C => (A4[0]-C[0])*(B4[0]-C[0]) + (A4[1]-C[1])*(B4[1]-C[1]);
+const angC = C => Math.acos(Math.max(-1, Math.min(1, dotC(C)/Math.sqrt(d2(A4,C)*d2(B4,C)))))*180/Math.PI;
+const rec4Kinds = () => { const k = {lt:false, gt:false}; state.s4.rec.forEach(r=>{ const d = dotC([r.x,r.y]); if(d>0) k.lt = true; else if(d<0) k.gt = true; }); return k; };
 
 function isDone(id){
-  if(id===1) return state.s1.rec.length>=3;
-  if(id===2) return state.s2.rel===REL_ANS && state.s2.abc===ABC_ANS;
-  if(id===3){ const k = rec3Kinds(), s = state.s3; return k.lt && k.gt && s.lt===ANS3.lt && s.gt===ANS3.gt && s.eq===ANS3.eq; }
+  if(id===1){ const f = foundAreas(); return f.length>=6 && f.filter(a=>[2,5,8,10].includes(a)).length>=2; }
+  if(id===2) return TILT_ROWS.every(r=>state.s2.ans[r.join(',')]) && state.s2.fok;
+  if(id===3) return state.s3.ok && state.s3.relOk && state.s3.abcOk;
+  if(id===4){ const k = rec4Kinds(), s = state.s4; return !!s.pred && k.lt && k.gt && s.lt===ANS4.lt && s.gt===ANS4.gt && s.eq===ANS4.eq; }
   return false;
 }
 function valueOf(id){
-  if(id===1) return state.s1.rec.length ? state.s1.rec.map(r=>`(${r.a},${r.b}) P${r.a*r.a} Q${r.b*r.b} R${r.a*r.a+r.b*r.b}`).join(' · ') : '';
-  if(id===2) return (state.s2.rel||state.s2.abc) ? `관계: ${state.s2.rel||'-'} · ${state.s2.abc||'-'}${state.s2.miss?` (틀림 ${state.s2.miss}번)`:''}` : '';
-  if(id===3){ const s = state.s3; if(!s.rec.length && !s.lt) return '';
-    return `기록 ${s.rec.length}개 (` + s.rec.map(r=>Math.round(angC([r.x,r.y]))+'°').join(', ') + `) · 예각: P+Q ${s.lt||'?'} R · 둔각: P+Q ${s.gt||'?'} R · P+Q=R이면 ∠C ${s.eq||'?'}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
+  if(id===1){ const f = foundAreas(); return f.length ? `찾은 넓이 ${f.length}가지: ${f.join(', ')}` + (state.s1.wrong?` · 넓이 틀린 횟수 ${state.s1.wrong}`:'') : ''; }
+  if(id===2){ const s = state.s2, n = Object.keys(s.ans).length; if(!n && !s.f) return ''; return `넓이 ${n}/4 · 식: ${s.f||'-'} ${s.fok?'✅':''}` + (s.fmiss?` (틀림 ${s.fmiss}번)`:''); }
+  if(id===3){ const s = state.s3; if(!s.ok && !s.rel) return ''; return `P·Q·R ${s.ok?'✅':'-'} · ${s.rel||'-'} ${s.relOk?'✅':''} · ${s.abc||'-'} ${s.abcOk?'✅':''}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
+  if(id===4){ const s = state.s4; if(!s.pred && !s.rec.length) return ''; return `예측: ${s.pred||'-'} · 기록 ${s.rec.length}개 · 예각 P+Q ${s.lt||'?'} R · 둔각 P+Q ${s.gt||'?'} R · ${s.eq||'?'}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
   return '';
 }
 function collectData(){ return JSON.parse(JSON.stringify(state)); }
-function pushShare(rt){}
+function pushShare(rt){
+  if(!rt.shareRef) return;
+  const v = {a: foundAreas()}, j = JSON.stringify(v);
+  if(SHARE.sent.areas === j) return; SHARE.sent.areas = j; rt.shareRef.child('areas/'+rt.studentKey).set(v);
+}
+const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -504,111 +595,206 @@ function refreshAll(opts){
 const isLocked = () => { try { return !!finalLocked; } catch(e){ return false; } };
 function setWhy(id, doneMsg, todoMsg){ const el = $('why'+id); const d = isDone(id); el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : ''); }
 const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
-
-/* ---------- 그리기 (SVG 460×340, 1단위 = 14px, 원점 (6,334)) ---------- */
-const U = 14, OX = 6, OY = 334;
-const px = x => OX + x*U, py = y => OY - y*U, P = p => `${px(p[0])},${py(p[1])}`;
-function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
-function gridSVG(){ let s=''; for(let x=0;x<=32;x++) s+=`<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(23)}" stroke="#e3e8ef"/>`; for(let y=0;y<=23;y++) s+=`<line x1="${px(0)}" y1="${py(y)}" x2="${px(32)}" y2="${py(y)}" stroke="#e3e8ef"/>`; return s; }
-const COL = {P:['rgba(21,101,192,.18)','#1565c0'], Q:['rgba(46,125,50,.18)','#2e7d32'], R:['rgba(230,81,0,.18)','#e65100']};
-function sqOut(p1, p2, far){ let n = [-(p2[1]-p1[1]), p2[0]-p1[0]]; if(n[0]*(far[0]-p1[0]) + n[1]*(far[1]-p1[1]) > 0) n = [-n[0], -n[1]]; return [[p2[0]+n[0], p2[1]+n[1]], [p1[0]+n[0], p1[1]+n[1]]]; }
-function square(p1, p2, far, name, area){   // 변 p1p2 위에, 삼각형 바깥쪽(far의 반대쪽)으로 정사각형
-  const [q2, q1] = sqOut(p1, p2, far), c = [(p1[0]+q2[0])/2, (p1[1]+q2[1])/2];
-  return `<path d="M${P(p1)}L${P(p2)}L${P(q2)}L${P(q1)}Z" fill="${COL[name][0]}" stroke="${COL[name][1]}" stroke-width="2"/>`
-    + `<text x="${px(c[0])}" y="${py(c[1])+5}" text-anchor="middle" font-size="${Math.max(10, Math.min(16, Math.sqrt(area)*U*0.3))}" font-weight="bold" fill="${COL[name][1]}">${Math.sqrt(area) < 3 ? area : name+' = '+area}</text>`;   // 작은 정사각형은 넓이만
+const COL = {P:['rgba(21,101,192,.18)','#1565c0'], Q:['rgba(46,125,50,.18)','#2e7d32'], R:['rgba(230,81,0,.18)','#e65100'], S:['rgba(255,193,7,.35)','#8d6e00']};
+function svgPt(svg, ev, M){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-M.ox)/M.u, (M.oy-q.y)/M.u]; }
+const mk = (ox, oy, u) => ({ox, oy, u, X:x=>ox+x*u, Y:y=>oy-y*u, P(p){ return `${this.X(p[0])},${this.Y(p[1])}`; }});
+function gridLines(M, n, col){ let s=''; for(let i=0;i<=n;i++){ s+=`<line x1="${M.X(i)}" y1="${M.Y(0)}" x2="${M.X(i)}" y2="${M.Y(n)}" stroke="${col||'#e3e8ef'}"/><line x1="${M.X(0)}" y1="${M.Y(i)}" x2="${M.X(n)}" y2="${M.Y(i)}" stroke="${col||'#e3e8ef'}"/>`; } return s; }
+const poly = (M, pts, fill, stroke, w, dash) => `<polygon points="${pts.map(p=>M.P(p)).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${w||2}"${dash?` stroke-dasharray="${dash}"`:''}/>`;
+function helpFig(M, pts){   // 정사각형을 둘러싼 똑바른 정사각형 + 네 귀퉁이 직각삼각형
+  const xs = pts.map(p=>p[0]), ys = pts.map(p=>p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if(x1-x0===0 || y1-y0===0 || !pts.every(p=>p[0]===x0||p[0]===x1||p[1]===y0||p[1]===y1)) return '';
+  let s = poly(M, [[x0,y0],[x1,y0],[x1,y1],[x0,y1]], 'none', '#7b1fa2', 2, '6 4');
+  const corners = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+  corners.forEach(c=>{ const near = pts.filter(p=>p[0]===c[0]||p[1]===c[1]); if(near.length>=2 && !pts.some(p=>p[0]===c[0]&&p[1]===c[1])){ const a = near.find(p=>p[0]===c[0]), b = near.find(p=>p[1]===c[1]); if(a && b) s += poly(M, [c, a, b], 'rgba(123,31,162,.15)', '#7b1fa2', 1.2); } });
+  return s;
 }
-const handle = (p, id) => `<circle class="hdl" data-h="${id}" cx="${px(p[0])}" cy="${py(p[1])}" r="13" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`;
-function vlab(p, c, t){ const dx=p[0]-c[0], dy=p[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*0.9)}" y="${py(p[1]+dy/d*0.9)+5}" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">${t}</text>`; }
-function tri(A,B,C){ const g = [(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3]; return `<path d="M${P(A)}L${P(B)}L${P(C)}Z" fill="rgba(255,193,7,.45)" stroke="#8d6e00" stroke-width="2.5"/>` + vlab(A,g,'A') + vlab(B,g,'B') + vlab(C,g,'C'); }
-function rightMark(C, A, B){ const u = [(A[0]-C[0])/Math.hypot(A[0]-C[0],A[1]-C[1])*0.6, (A[1]-C[1])/Math.hypot(A[0]-C[0],A[1]-C[1])*0.6], v = [(B[0]-C[0])/Math.hypot(B[0]-C[0],B[1]-C[1])*0.6, (B[1]-C[1])/Math.hypot(B[0]-C[0],B[1]-C[1])*0.6];
-  return `<path d="M${P([C[0]+u[0],C[1]+u[1]])}L${P([C[0]+u[0]+v[0],C[1]+u[1]+v[1]])}L${P([C[0]+v[0],C[1]+v[1]])}" fill="none" stroke="#c62828" stroke-width="2"/>`; }
-function dragOn(svg, move, end){
-  let cur = null;
-  svg.addEventListener('pointerdown', ev=>{ if(isLocked()) return; const h = ev.target.closest && ev.target.closest('.hdl'); if(!h) return; cur = h.dataset.h; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
-  svg.addEventListener('pointermove', ev=>{ if(!cur) return; ev.preventDefault(); move(cur, svgPt(svg, ev)); });
-  const fin = ()=>{ if(!cur) return; cur = null; end && end(); };
-  svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin);
-}
-const clampI = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(v)));
-function tableHTML(rows, head){ return `<tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr>` + (rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="empty">아직 기록이 없어요.</td></tr>`); }
-const rows1 = () => state.s1.rec.map((r,i)=>`<tr><td>${i+1}</td><td>${r.a}</td><td>${r.b}</td><td class="cP">${r.a*r.a}</td><td class="cQ">${r.b*r.b}</td><td class="cR">${r.a*r.a+r.b*r.b}</td></tr>`);
-const HEAD1 = ['', 'BC', 'CA', '<span class="cP">P</span>', '<span class="cQ">Q</span>', '<span class="cR">R</span>'];
+const isSquare = pts => { if(pts.length!==4) return 0; const ds = []; for(let i=0;i<4;i++) for(let j=i+1;j<4;j++) ds.push(d2(pts[i],pts[j])); ds.sort((a,b)=>a-b); return (ds[0]>0 && ds[0]===ds[1] && ds[1]===ds[2] && ds[2]===ds[3] && ds[4]===ds[5] && ds[4]===2*ds[0]) ? ds[0] : 0; };
+const orderPts = pts => { const c = [pts.reduce((s,p)=>s+p[0],0)/pts.length, pts.reduce((s,p)=>s+p[1],0)/pts.length]; return pts.slice().sort((a,b)=>Math.atan2(a[1]-c[1],a[0]-c[0])-Math.atan2(b[1]-c[1],b[0]-c[0])); };
 
-/* ================= 화면 1 ================= */
+/* ================= 화면 1: 5×5 점판 ================= */
+const M1 = mk(30, 270, 60);
+let sel1 = [], help1 = false, msg1 = '';
 function render1(){
-  const {a, b} = state.s1, C = C1, A = [C[0], C[1]+b], B = [C[0]+a, C[1]];
-  let h = gridSVG() + square(B, C, A, 'P', a*a) + square(C, A, B, 'Q', b*b) + square(A, B, C, 'R', a*a+b*b) + tri(A,B,C) + rightMark(C,A,B)
-    + `<text x="${px(C[0]+a/2)}" y="${py(C[1])-6}" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4500">${a}</text><text x="${px(C[0])+8}" y="${py(C[1]+b/2)+4}" font-size="13" font-weight="bold" fill="#5d4500">${b}</text>`;
-  if(!isLocked()) h += handle(A,'A') + handle(B,'B');
+  let h = gridLines(M1, 4, '#eef1f5');
+  const sq = isSquare(sel1), pts = sel1.length===4 ? orderPts(sel1) : sel1;
+  if(sel1.length>=2) h += sel1.length===4 ? poly(M1, pts, sq ? COL.S[0] : 'rgba(198,40,40,.12)', sq ? COL.S[1] : '#c62828', 2.5) : `<polyline points="${sel1.map(p=>M1.P(p)).join(' ')}" fill="none" stroke="#90a4ae" stroke-dasharray="5 4" stroke-width="2"/>`;
+  if(help1 && sq) h += helpFig(M1, pts);
+  for(let x=0;x<=4;x++) for(let y=0;y<=4;y++){ const on = sel1.some(p=>p[0]===x&&p[1]===y);
+    h += `<circle class="dot" data-x="${x}" data-y="${y}" cx="${M1.X(x)}" cy="${M1.Y(y)}" r="${on?11:7}" fill="${on?'#1565c0':'#455a64'}"/><circle class="dot hit" data-x="${x}" data-y="${y}" cx="${M1.X(x)}" cy="${M1.Y(y)}" r="22" fill="transparent"/>`; }
   $('g1').innerHTML = h;
-  const has = state.s1.rec.some(r=>r.a===a && r.b===b);
-  $('now1').innerHTML = `BC = <b>${a}</b>, CA = <b>${b}</b> → <span class="cP">P = <b>${a*a}</b></span>, <span class="cQ">Q = <b>${b*b}</b></span>, <span class="cR">R = <b>${a*a+b*b}</b></span>`;
-  $('rec1').disabled = has || isLocked(); $('rec1').textContent = has ? '✅ 이미 기록한 삼각형이에요' : '📝 기록하기';
-  $('tab1').innerHTML = tableHTML(rows1(), HEAD1);
+  $('help1').classList.toggle('on', help1);
+  const f = foundAreas();
+  $('now1').innerHTML = sel1.length<4 ? `점을 ${4-sel1.length}개 더 눌러요.` + (msg1 ? `<br>${msg1}` : '')
+    : !sq ? '<span class="bad">정사각형이 아니에요.</span> 네 변의 길이가 같고 네 각이 직각인지 살펴보세요. 「↺ 다시 고르기」'
+    : `<b>정사각형이에요!</b> 넓이는? <input type="text" class="num" id="in1" inputmode="numeric" autocomplete="off"> <button type="button" class="okb" id="ok1">확인</button><div class="g-msg">${msg1}</div>`;
+  const inp = $('in1'); if(inp){ $('ok1').addEventListener('click', check1Area); inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); check1Area(); } }); }
+  $('cnt1').textContent = `${f.length}가지` + (f.length>=6 ? ' — 모두 8가지가 있어요. 더 찾아볼까요?' : '');
+  $('list1').innerHTML = f.length ? f.map(a=>`<span class="chip${state.s1.found[a].tilt?' tilt':''}">${a}${state.s1.found[a].tilt?' (기울어짐)':''}</span>`).join('') : '<span class="note">아직 없어요.</span>';
+  renderClass1();
 }
-dragOn($('g1'), (h, p)=>{ const s = state.s1;
-  if(h==='A') s.b = clampI(p[1]-C1[1], 1, 6);
-  if(h==='B') s.a = clampI(p[0]-C1[0], 1, 7);
-  render1(); });
-$('rec1').addEventListener('click', ()=>{ const s = state.s1; if(isLocked() || s.rec.some(r=>r.a===s.a && r.b===s.b) || s.rec.length>=10) return; s.rec.push({a:s.a, b:s.b}); render1(); render2(); check1({now:true}); });
-function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, `서로 다른 직각삼각형을 3개 이상 기록해 보세요. (지금 ${state.s1.rec.length}개)`); refreshAll(opts); }
+function renderClass1(){
+  const all = Object.values(shareOf('areas')).map(v=>(v && Array.isArray(v.a)) ? v.a : (v && v.a ? Object.values(v.a) : [])), cnt = {};
+  all.forEach(a=>a.forEach(x=>{ cnt[x] = (cnt[x]||0)+1; }));
+  const ks = Object.keys(cnt).map(Number).sort((a,b)=>a-b);
+  $('cls1').innerHTML = ks.length ? ks.map(a=>`<span class="chip${[2,5,8,10].includes(a)?' tilt':''}">${a} <small>${cnt[a]}명</small></span>`).join('') : '<span class="note">아직 없어요.</span>';
+}
+$('g1').addEventListener('click', ev=>{ if(isLocked()) return; const d = ev.target.closest && ev.target.closest('.dot'); if(!d) return; const p = [+d.dataset.x, +d.dataset.y];
+  const i = sel1.findIndex(q=>q[0]===p[0]&&q[1]===p[1]); if(i>=0) sel1.splice(i,1); else if(sel1.length<4) sel1.push(p); else return; msg1 = ''; render1(); const inp = $('in1'); if(inp) inp.focus(); });
+$('clr1').addEventListener('click', ()=>{ sel1 = []; msg1 = ''; render1(); });
+$('help1').addEventListener('click', ()=>{ help1 = !help1; render1(); });
+function check1Area(){
+  if(isLocked()) return; const sq = isSquare(sel1); if(!sq) return;
+  const v = Number(String($('in1').value).trim());
+  if(!Number.isFinite(v) || !String($('in1').value).trim()){ return; }
+  if(Math.abs(v-sq) > 1e-9){ state.s1.wrong++; msg1 = `<span class="bad">다시 구해 보세요.</span> ${help1 ? '보라색 큰 정사각형의 넓이에서 네 귀퉁이 직각삼각형의 넓이를 빼 보세요.' : '「💡 넓이 구하는 도움 그림」을 눌러 보세요.'}`; render1(); check1({now:true}); return; }
+  const o = orderPts(sel1), tilt = o[0][0]!==o[1][0] && o[0][1]!==o[1][1];
+  if(state.s1.found[sq]) msg1 = `<span class="ok">맞아요! 넓이 ${sq}.</span> 그런데 이 넓이는 이미 찾았어요. 다른 크기를 찾아보세요.`;
+  else { state.s1.found[sq] = {tilt}; msg1 = `<span class="ok">맞아요! 넓이 ${sq}인 정사각형을 찾았어요.</span>${tilt?' 기울어진 정사각형이네요! 🎉':''}`; }
+  sel1 = []; render1(); check1({now:true});
+}
+function check1(opts){ const f = foundAreas(), t = f.filter(a=>[2,5,8,10].includes(a)).length;
+  setWhy(1, '✅ 완료! '+NEXT, `넓이가 서로 다른 정사각형을 6가지 이상(기울어진 것 2가지 이상) 찾아보세요. (지금 ${f.length}가지, 기울어진 것 ${t}가지)`); refreshAll(opts); }
 
-/* ================= 화면 2 ================= */
-function pickHTML(opts, cur, ans){ return opts.map(v=>`<button type="button" data-v="${esc(v)}" class="${cur===v?(v===ans?'on ok':'on no'):''}">${esc(v)}</button>`).join(''); }
+/* ================= 화면 2: 가로 a칸, 세로 b칸 기울어진 정사각형 ================= */
+const M2 = mk(20, 340, 32);
+let cur2 = 0, help2 = false;
+const tiltSq = (a, b, o) => [[o[0]+a, o[1]], [o[0]+a+b, o[1]+a], [o[0]+b, o[1]+a+b], [o[0], o[1]+b]];
 function render2(){
+  const [a, b] = TILT_ROWS[cur2], o = [Math.floor((10-a-b)/2), Math.floor((10-a-b)/2)], pts = tiltSq(a, b, o);
+  let h = gridLines(M2, 10) + poly(M2, pts, COL.S[0], COL.S[1], 2.5);
+  if(help2) h += helpFig(M2, pts);
+  const q0 = pts[3], q1 = pts[0];   // (o0, o1+b) → (o0+a, o1): 가로 a, 세로 -b
+  h += `<line x1="${M2.X(q0[0])}" y1="${M2.Y(q1[1])}" x2="${M2.X(q1[0])}" y2="${M2.Y(q1[1])}" stroke="#c62828" stroke-width="2.5" stroke-dasharray="5 3"/><line x1="${M2.X(q0[0])}" y1="${M2.Y(q0[1])}" x2="${M2.X(q0[0])}" y2="${M2.Y(q1[1])}" stroke="#c62828" stroke-width="2.5" stroke-dasharray="5 3"/>`
+    + `<text x="${(M2.X(q0[0])+M2.X(q1[0]))/2}" y="${M2.Y(q1[1])+18}" text-anchor="middle" font-size="15" font-weight="bold" fill="#c62828">a = ${a}</text><text x="${M2.X(q0[0])-8}" y="${(M2.Y(q0[1])+M2.Y(q1[1]))/2+5}" text-anchor="end" font-size="15" font-weight="bold" fill="#c62828">b = ${b}</text>`;
+  $('g2').innerHTML = h;
+  $('help2').classList.toggle('on', help2);
   const s = state.s2;
-  $('tab2').innerHTML = tableHTML(rows1(), HEAD1);
-  $('rel2').innerHTML = pickHTML(REL, s.rel, REL_ANS);
-  $('abc2').innerHTML = pickHTML(ABC, s.abc, ABC_ANS);
-  $('msg2a').innerHTML = !s.rel ? '' : s.rel===REL_ANS ? '<span class="ok">✅ 맞아요! 두 작은 정사각형의 넓이를 더하면 가장 큰 정사각형의 넓이가 돼요.</span>' : '<span class="bad">표의 수를 넣어 계산해 보세요.</span>';
-  $('msg2b').innerHTML = !s.abc ? '' : s.abc===ABC_ANS ? '<span class="ok">✅ 맞아요! P = a², Q = b², R = c² 이니까 a² + b² = c² 이에요.</span>' : '<span class="bad">P, Q, R은 각각 어떤 변을 한 변으로 하는 정사각형인지 떠올려 보세요.</span>';
+  $('tab2').innerHTML = `<tr><th>a</th><th>b</th><th>넓이</th><th></th></tr>` + TILT_ROWS.map(([x,y],i)=>{ const k = x+','+y, ok = s.ans[k];
+    return `<tr class="${i===cur2?'cur':''}" data-i="${i}"><td>${x}</td><td>${y}</td><td>${ok ? `<b>${ok}</b> ✅` : `<input type="text" class="num" data-k="${k}" inputmode="numeric" autocomplete="off">`}</td><td>${ok?'':`<button type="button" class="sbtn" data-ck="${k}">확인</button>`}${s.wrong[k]?` <span class="note">틀림 ${s.wrong[k]}</span>`:''}</td></tr>`; }).join('');
+  const open = TILT_ROWS.every(r=>s.ans[r.join(',')]);
+  $('q2').classList.toggle('locked', !open || isLocked());
+  if(s.fok){ $('f2').value = s.f; $('f2').readOnly = true; }
 }
-function bindPick(boxId, key, ans){ $(boxId).addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const s = state.s2; if(s[key]===ans) return; s[key] = b.dataset.v; if(s[key]!==ans) s.miss++; render2(); check2({now:true}); }); }
-bindPick('rel2', 'rel', REL_ANS); bindPick('abc2', 'abc', ABC_ANS);
-function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, '두 질문에 바르게 답하면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
+$('tab2').addEventListener('click', e=>{ const tr = e.target.closest('tr[data-i]'); if(!tr) return; if(e.target.closest('[data-ck]')){ chk2(e.target.closest('[data-ck]').dataset.ck); return; } if(+tr.dataset.i!==cur2 && e.target.tagName!=='INPUT'){ cur2 = +tr.dataset.i; render2(); } });
+$('tab2').addEventListener('focusin', e=>{ const tr = e.target.closest('tr[data-i]'); if(tr && +tr.dataset.i!==cur2){ cur2 = +tr.dataset.i; const k = e.target.dataset.k, v = e.target.value; render2(); const ni = document.querySelector(`#tab2 input[data-k="${k}"]`); if(ni){ ni.value = v; ni.focus(); } } });
+$('tab2').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset.k){ e.preventDefault(); chk2(e.target.dataset.k); } });
+function chk2(k){ if(isLocked()) return; const inp = document.querySelector(`#tab2 input[data-k="${k}"]`); if(!inp || !inp.value.trim()) return; const [a,b] = k.split(',').map(Number), v = Number(inp.value.trim()), s = state.s2;
+  if(v===a*a+b*b){ s.ans[k] = v; } else { s.wrong[k] = (s.wrong[k]||0)+1; }
+  render2(); if(!s.ans[k]){ const ni = document.querySelector(`#tab2 input[data-k="${k}"]`); if(ni){ ni.value = inp.value; ni.classList.add('wrong'); } $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}의 넓이를 다시 구해 보세요.</span> 「💡 도움 그림」을 눌러 보세요.`; } else $('msg2').innerHTML = '';
+  check2({now:true}); }
+$('help2').addEventListener('click', ()=>{ help2 = !help2; render2(); });
+$('ok2').addEventListener('click', chk2f); $('f2').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); chk2f(); } });
+function chk2f(){
+  if(isLocked() || state.s2.fok) return; const s = state.s2, src = $('f2').value.trim(); if(!src) return;
+  const f = parseExpr(src, ['a','b']);
+  s.f = src;
+  if(!f){ $('msg2').innerHTML = '<span class="bad">식을 읽을 수 없어요.</span> a, b, 숫자, + − × ^ ( ) 만 써 주세요. 예) 3*a+b'; check2(); return; }
+  const bad = TILT_ROWS.concat([[3,4],[5,1]]).find(([a,b])=>!(Math.abs(f({a,b})-(a*a+b*b))<1e-6));
+  if(bad){ s.fmiss++; const [a,b] = bad, v = f({a,b}); $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}이면 내 식의 값은 ${Number.isFinite(v)?Math.round(v*100)/100:'계산할 수 없음'}, 실제 넓이는 ${a*a+b*b}.</span> 표의 수들을 다시 살펴보세요.`; check2({now:true}); return; }
+  s.fok = true; $('msg2').innerHTML = '<span class="ok">✅ 맞아요! 기울어진 정사각형의 넓이 = a² + b² 예요. 둘러싼 정사각형 (a+b)²에서 직각삼각형 4개 2ab를 빼도 같아요.</span>'; render2(); check2({now:true});
+}
+function check2(opts){ const n = Object.keys(state.s2.ans).length; setWhy(2, '✅ 완료! '+NEXT, n<4 ? `표의 넓이를 모두 구해 보세요. (지금 ${n}/4)` : '넓이를 a, b로 나타내는 식을 써 보세요.'); refreshAll(opts); }
 
-/* ================= 화면 3 ================= */
-const sideAB = C => (B3[0]-A3[0])*(C[1]-A3[1]) - (B3[1]-A3[1])*(C[0]-A3[0]);   // C가 AB의 어느 쪽인지(처음 C(8,7)과 같은 쪽 < 0)
-function okC(C){ if(!(C[0]>=0 && C[0]<=31 && C[1]>=0 && C[1]<=22 && sideAB(C) < -6)) return false;   // 세 정사각형이 모두 판 안에 들어오는 곳만
-  return [...sqOut(B3,C,A3), ...sqOut(C,A3,B3), ...sqOut(A3,B3,C)].every(q=>q[0]>=0.3 && q[0]<=31.8 && q[1]>=0.3 && q[1]<=23.4); }
+/* ================= 화면 3: 직각삼각형의 세 변 위 정사각형 ================= */
+const M3 = mk(12, 348, 28);
+function sqOn(p1, p2, far){ let n = [-(p2[1]-p1[1]), p2[0]-p1[0]]; if(n[0]*(far[0]-p1[0]) + n[1]*(far[1]-p1[1]) > 0) n = [-n[0], -n[1]]; return [p1, p2, [p2[0]+n[0], p2[1]+n[1]], [p1[0]+n[0], p1[1]+n[1]]]; }
 function render3(){
-  const s = state.s3, C = s.C, A = A3, B = B3, p = d2(B,C), q = d2(C,A), r = d2(A,B), dt = dotC(C), ang = angC(C);
-  let h = gridSVG() + square(B, C, A, 'P', p) + square(C, A, B, 'Q', q) + square(A, B, C, 'R', r) + tri(A,B,C) + (dt===0 ? rightMark(C,A,B) : '');
-  if(!isLocked()) h += handle(C,'C');
+  const [a, b] = TRI3[state.s3.t], C = [5,5], B = [5+a, 5], A = [5, 5+b];
+  const sP = sqOn(B, C, A), sQ = sqOn(C, A, B), sR = sqOn(A, B, C);
+  let h = gridLines(M3, 12) + poly(M3, sP, COL.P[0], COL.P[1]) + poly(M3, sQ, COL.Q[0], COL.Q[1]) + poly(M3, sR, COL.R[0], COL.R[1])
+    + poly(M3, [A,B,C], COL.S[0], COL.S[1], 2.5) + `<line x1="${M3.X(A[0])}" y1="${M3.Y(A[1])}" x2="${M3.X(B[0])}" y2="${M3.Y(B[1])}" stroke="#c62828" stroke-width="4"/>`;
+  const cen = q => [(q[0][0]+q[2][0])/2, (q[0][1]+q[2][1])/2];
+  [['P',sP],['Q',sQ],['R',sR]].forEach(([n,q])=>{ const c = cen(q); h += `<text x="${M3.X(c[0])}" y="${M3.Y(c[1])+6}" text-anchor="middle" font-size="18" font-weight="bold" fill="${COL[n][1]}">${n}</text>`; });
+  h += `<path d="M${M3.P([C[0]+0.45,C[1]])}L${M3.P([C[0]+0.45,C[1]+0.45])}L${M3.P([C[0],C[1]+0.45])}" fill="none" stroke="#c62828" stroke-width="2"/>`
+    + `<text x="${M3.X(C[0]+a/2)}" y="${M3.Y(C[1])-6}" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4500">a=${a}</text><text x="${M3.X(C[0])+6}" y="${M3.Y(C[1]+b/2)+4}" font-size="13" font-weight="bold" fill="#5d4500">b=${b}</text>`;
   $('g3').innerHTML = h;
-  const cmp = p+q > r ? '>' : p+q < r ? '<' : '=';
-  $('now3').innerHTML = `∠C = <b>${dt===0 ? '90' : Math.round(ang)}°</b> ${dt>0?'(90°보다 작다)':dt<0?'(90°보다 크다)':'(직각)'}<br><span class="cP">P = ${p}</span> + <span class="cQ">Q = ${q}</span> = <b>${p+q}</b> &nbsp;<b class="big">${cmp}</b>&nbsp; <span class="cR">R = <b>${r}</b></span>`;
-  const has = s.rec.some(x=>x.x===C[0] && x.y===C[1]);
-  $('rec3').disabled = has || isLocked(); $('rec3').textContent = has ? '✅ 이미 기록했어요' : '📝 기록하기';
-  $('tab3').innerHTML = tableHTML(s.rec.map((x,i)=>{ const c = [x.x,x.y], pp = d2(B,c), qq = d2(c,A), d = dotC(c); return `<tr><td>${i+1}</td><td>${d===0?'90':Math.round(angC(c))}°</td><td>${pp+qq}</td><td>${pp+qq>r?'&gt;':pp+qq<r?'&lt;':'='}</td><td class="cR">${r}</td></tr>`; }), ['', '∠C', 'P + Q', '', '<span class="cR">R</span>']);
-  const k = rec3Kinds(), open = k.lt && k.gt;
-  $('q3').classList.toggle('locked', !open || isLocked());
-  document.querySelectorAll('#q3 .pickc').forEach(box=>{ const key = box.dataset.k; box.innerHTML = pickHTML(key==='eq' ? EQ : CMP, s[key], ANS3[key]); });
-  const wrong = ['lt','gt','eq'].filter(x=>s[x] && s[x]!==ANS3[x]);
-  $('msg3').innerHTML = isDone(3) ? '<span class="ok">✅ 맞아요! P + Q = R 이 되는 것은 ∠C가 직각일 때뿐이에요.</span>' : wrong.length ? '<span class="bad">기록한 표에서 ∠C의 크기에 따라 비교해 보세요.</span>' : '';
-  $('sum3').style.display = isDone(3) ? '' : 'none';
+  $('ab3').innerHTML = TRI3.map(([x,y],i)=>`<button type="button" class="sbtn${i===state.s3.t?' on':''}" data-t="${i}" ${state.s3.ok?'disabled':''}>a=${x}, b=${y}</button>`).join('');
+  ['p3','q3','r3','okA3'].forEach(id=> $(id).disabled = state.s3.ok || isLocked());
+  if(state.s3.ok){ $('p3').value = a*a; $('q3').value = b*b; $('r3').value = a*a+b*b; }
+  $('qq3').classList.toggle('locked', !state.s3.ok || isLocked());
+  if(state.s3.relOk){ $('f3a').value = state.s3.rel; $('f3a').readOnly = true; } if(state.s3.abcOk){ $('f3b').value = state.s3.abc; $('f3b').readOnly = true; }
 }
-dragOn($('g3'), (h, p)=>{ const c = [clampI(p[0],0,31), clampI(p[1],0,22)]; if(okC(c)) state.s3.C = c; render3(); });
-$('rec3').addEventListener('click', ()=>{ const s = state.s3; if(isLocked() || s.rec.some(x=>x.x===s.C[0] && x.y===s.C[1]) || s.rec.length>=10) return; s.rec.push({x:s.C[0], y:s.C[1]}); render3(); check3({now:true}); });
-$('q3').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const key = b.closest('.pickc').dataset.k, s = state.s3; if(s[key]===ANS3[key]) return; s[key] = b.dataset.v; if(s[key]!==ANS3[key]) s.miss++; render3(); check3({now:true}); });
-function check3(opts){ const k = rec3Kinds();
-  setWhy(3, '✅ 완료! 마지막 화면에서 제출하세요.', !(k.lt && k.gt) ? `∠C가 90°보다 작을 때(${k.lt?'✅':'⬜'})와 클 때(${k.gt?'✅':'⬜'})를 각각 기록해 보세요.` : '세 질문에 답해 보세요.'); refreshAll(opts); }
+$('ab3').addEventListener('click', e=>{ const b = e.target.closest('[data-t]'); if(!b || state.s3.ok || isLocked()) return; state.s3.t = +b.dataset.t; ['p3','q3','r3'].forEach(id=> $(id).value = ''); $('msgA3').innerHTML = ''; render3(); });
+$('okA3').addEventListener('click', ()=>{
+  if(isLocked() || state.s3.ok) return; const [a, b] = TRI3[state.s3.t], v = ['p3','q3','r3'].map(id=>Number($(id).value.trim())), want = [a*a, b*b, a*a+b*b];
+  const bad = ['P','Q','R'].filter((n,i)=>!(String($(['p3','q3','r3'][i]).value).trim() && v[i]===want[i]));
+  if(bad.length){ state.s3.miss++; $('msgA3').innerHTML = `<span class="bad">${bad.join(', ')}를 다시 구해 보세요.</span>` + (bad.includes('R') ? ' R은 화면 2의 기울어진 정사각형과 같은 모양이에요.' : ''); check3(); return; }
+  state.s3.ok = true; $('msgA3').innerHTML = '<span class="ok">✅ 맞아요!</span>'; render3(); check3({now:true}); });
+function chkEq(inputId, msgId, key, okKey, vars, tests, fails, okMsg){
+  if(isLocked() || state.s3[okKey]) return; const src = $(inputId).value.trim(); if(!src) return; state.s3[key] = src;
+  const f = parseEq(src, vars);
+  if(!f){ $(msgId).innerHTML = `<span class="bad">식을 읽을 수 없어요.</span> ${vars.join(', ')}, 숫자, + − × ^ ( ) 와 = 하나를 써 주세요.`; check3(); return; }
+  const wrongT = tests.find(e=>!near0(f(e))), trivial = fails.every(e=>near0(f(e)));
+  if(wrongT || trivial){ state.s3.miss++; $(msgId).innerHTML = wrongT ? `<span class="bad">${Object.entries(wrongT).map(([k,v])=>k+' = '+v).join(', ')}일 때 맞지 않아요.</span>` : '<span class="bad">언제나 맞는 식이라 관계를 알려 주지 않아요.</span>'; check3({now:true}); return; }
+  state.s3[okKey] = true; $(msgId).innerHTML = `<span class="ok">✅ ${okMsg}</span>`; render3(); check3({now:true});
+}
+$('ok3a').addEventListener('click', ()=> chkEq('f3a','msg3a','rel','relOk',['P','Q','R'], [{P:9,Q:4,R:13},{P:1,Q:9,R:10},{P:4,Q:4,R:8},{P:9,Q:16,R:25}], [{P:1,Q:1,R:5},{P:2,Q:3,R:4}], '맞아요! 두 작은 정사각형의 넓이의 합이 가장 큰 정사각형의 넓이와 같아요.'));
+$('ok3b').addEventListener('click', ()=> chkEq('f3b','msg3b','abc','abcOk',['a','b','c'], [{a:3,b:4,c:5},{a:5,b:12,c:13},{a:6,b:8,c:10}], [{a:1,b:1,c:1},{a:2,b:3,c:4}], '맞아요! a² + b² = c² — 이것이 피타고라스 정리예요.'));
+['f3a','f3b'].forEach((id,i)=> $(id).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $(i?'ok3b':'ok3a').click(); } }));
+function check3(opts){ const s = state.s3; setWhy(3, '✅ 완료! '+NEXT, !s.ok ? 'P, Q, R의 넓이를 구해 보세요.' : '두 관계식을 써 보세요.'); refreshAll(opts); }
 
-function onShareChanged(){}
+/* ================= 화면 4: ∠C가 90°가 아니면? ================= */
+const M4 = mk(6, 334, 14);
+function sqOut(p1, p2, far){ const q = sqOn(p1, p2, far); return [q[2], q[3]]; }
+const sideAB = C => (B4[0]-A4[0])*(C[1]-A4[1]) - (B4[1]-A4[1])*(C[0]-A4[0]);
+function okC(C){ if(!(C[0]>=0 && C[0]<=31 && C[1]>=0 && C[1]<=22 && sideAB(C) < -6)) return false;
+  return [...sqOut(B4,C,A4), ...sqOut(C,A4,B4), ...sqOut(A4,B4,C)].every(q=>q[0]>=0.3 && q[0]<=31.8 && q[1]>=0.3 && q[1]<=23.4); }
+function pickHTML(opts, cur, ans){ return opts.map(v=>`<button type="button" data-v="${esc(v)}" class="${cur===v?(ans==null?'on ok':v===ans?'on ok':'on no'):''}">${esc(v)}</button>`).join(''); }
+function square4(p1, p2, far, name, area){ const q = sqOn(p1, p2, far), c = [(q[0][0]+q[2][0])/2, (q[0][1]+q[2][1])/2];
+  return poly(M4, q, COL[name][0], COL[name][1]) + `<text x="${M4.X(c[0])}" y="${M4.Y(c[1])+5}" text-anchor="middle" font-size="${Math.max(10, Math.min(16, Math.sqrt(area)*14*0.3))}" font-weight="bold" fill="${COL[name][1]}">${Math.sqrt(area) < 3 ? area : name+' = '+area}</text>`; }
+function render4(){
+  const s = state.s4;
+  document.querySelector('#pred4 .pickc').innerHTML = pickHTML(PRED, s.pred, null);
+  $('lay4').classList.toggle('locked', !s.pred);
+  const C = s.C, A = A4, B = B4, p = d2(B,C), q = d2(C,A), r = d2(A,B), dt = dotC(C), ang = angC(C);
+  let h = gridLines(M4, 32) + square4(B, C, A, 'P', p) + square4(C, A, B, 'Q', q) + square4(A, B, C, 'R', r) + poly(M4, [A,B,C], COL.S[0], COL.S[1], 2.5);
+  const lab = (pt, t, dx, dy) => `<text x="${M4.X(pt[0])+dx}" y="${M4.Y(pt[1])+dy}" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">${t}</text>`;
+  h += lab(A,'A',-12,-6) + lab(B,'B',14,4) + lab(C,'C',-14,14);
+  if(!isLocked()) h += `<circle class="hdl" data-h="C" cx="${M4.X(C[0])}" cy="${M4.Y(C[1])}" r="13" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`;
+  $('g4').innerHTML = h;
+  const cmp = p+q > r ? '>' : p+q < r ? '<' : '=';
+  $('now4').innerHTML = `∠C = <b>${dt===0 ? '90' : Math.round(ang)}°</b> ${dt>0?'(90°보다 작다)':dt<0?'(90°보다 크다)':'(직각)'}<br><span class="cP">P = ${p}</span> + <span class="cQ">Q = ${q}</span> = <b>${p+q}</b> &nbsp;<b class="big">${cmp}</b>&nbsp; <span class="cR">R = <b>${r}</b></span>`;
+  const has = s.rec.some(x=>x.x===C[0] && x.y===C[1]);
+  $('rec4').disabled = has || isLocked(); $('rec4').textContent = has ? '✅ 이미 기록했어요' : '📝 기록하기';
+  $('tab4').innerHTML = `<tr><th></th><th>∠C</th><th>P + Q</th><th></th><th class="cR">R</th></tr>` + (s.rec.length ? s.rec.map((x,i)=>{ const c = [x.x,x.y], pp = d2(B,c), qq = d2(c,A), d = dotC(c); return `<tr><td>${i+1}</td><td>${d===0?'90':Math.round(angC(c))}°</td><td>${pp+qq}</td><td>${pp+qq>r?'&gt;':pp+qq<r?'&lt;':'='}</td><td class="cR">${r}</td></tr>`; }).join('') : '<tr><td colspan="5" class="empty">아직 기록이 없어요.</td></tr>');
+  const k = rec4Kinds();
+  $('q4').classList.toggle('locked', !(k.lt && k.gt) || isLocked());
+  document.querySelectorAll('#q4 .pickc').forEach(box=>{ const key = box.dataset.k; box.innerHTML = pickHTML(key==='eq' ? EQ : CMP, s[key], ANS4[key]); });
+  const wrong = ['lt','gt','eq'].filter(x=>s[x] && s[x]!==ANS4[x]);
+  $('msg4').innerHTML = isDone(4) ? `<span class="ok">✅ 맞아요! P + Q = R 이 되는 것은 ∠C가 직각일 때뿐이에요.${s.pred==='P + Q < R' ? ' 처음 예측도 맞았어요!' : ''}</span>` : wrong.length ? '<span class="bad">기록한 표에서 ∠C의 크기에 따라 비교해 보세요.</span>' : '';
+  $('sum4').style.display = isDone(4) ? '' : 'none';
+}
+(function(){ const svg = $('g4'); let on = false;
+  svg.addEventListener('pointerdown', ev=>{ if(isLocked() || !state.s4.pred) return; if(!(ev.target.closest && ev.target.closest('.hdl'))) return; on = true; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(!on) return; ev.preventDefault(); const p = svgPt(svg, ev, M4), c = [Math.round(p[0]), Math.round(p[1])]; if(okC(c) && (c[0]!==state.s4.C[0] || c[1]!==state.s4.C[1])){ state.s4.C = c; render4(); } });
+  const fin = ()=>{ on = false; }; svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin); })();
+$('pred4').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; state.s4.pred = b.dataset.v; render4(); check4({now:true}); });
+$('rec4').addEventListener('click', ()=>{ const s = state.s4; if(isLocked() || s.rec.some(x=>x.x===s.C[0] && x.y===s.C[1]) || s.rec.length>=10) return; s.rec.push({x:s.C[0], y:s.C[1]}); render4(); check4({now:true}); });
+$('q4').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const key = b.closest('.pickc').dataset.k, s = state.s4; if(s[key]===ANS4[key]) return; s[key] = b.dataset.v; if(s[key]!==ANS4[key]) s.miss++; render4(); check4({now:true}); });
+function check4(opts){ const k = rec4Kinds(), s = state.s4;
+  setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', !s.pred ? '먼저 예측을 골라 보세요.' : !(k.lt && k.gt) ? `∠C가 90°보다 작을 때(${k.lt?'✅':'⬜'})와 클 때(${k.gt?'✅':'⬜'})를 각각 기록해 보세요.` : '세 질문에 답해 보세요.'); refreshAll(opts); }
+
+function onShareChanged(){ renderClass1(); }
 function onRevealChanged(){}
-function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); }
-function initActivity(){ render1(); render2(); render3(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
+function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); if(taskId===4) render4(); }
+function initActivity(){ render1(); render2(); render3(); render4(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const obj = v => (v && typeof v==='object') ? v : {};
 const int = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n>=lo && n<=hi ? n : d; };
+const str = (v, n) => String(v==null?'':v).slice(0, n||80);
 function restoreData(d){
   if(!d) return;
-  const s1 = obj(d.s1), s2 = obj(d.s2), s3 = obj(d.s3);
-  state.s1 = {a:int(s1.a,1,7,4), b:int(s1.b,1,6,3), rec: arr(s1.rec).map(r=>({a:int(obj(r).a,1,7,0), b:int(obj(r).b,1,6,0)})).filter(r=>r.a&&r.b).slice(0,10)};
-  state.s2 = {rel: REL.includes(s2.rel) ? s2.rel : '', abc: ABC.includes(s2.abc) ? s2.abc : '', miss: int(s2.miss,0,999,0)};
-  const C = arr(s3.C).map(Number);
-  state.s3 = {C: (C.length===2 && okC(C)) ? C : [10,9], rec: arr(s3.rec).map(r=>({x:int(obj(r).x,0,31,-1), y:int(obj(r).y,0,22,-1)})).filter(r=>r.x>=0&&r.y>=0&&okC([r.x,r.y])).slice(0,10),
-    lt: CMP.includes(s3.lt) ? s3.lt : '', gt: CMP.includes(s3.gt) ? s3.gt : '', eq: EQ.includes(s3.eq) ? s3.eq : '', miss: int(s3.miss,0,999,0)};
+  const s1 = obj(d.s1), s2 = obj(d.s2), s3 = obj(d.s3), s4 = obj(d.s4);
+  const found = {}; Object.keys(obj(s1.found)).forEach(k=>{ const a = Number(k); if(AREAS.includes(a)) found[a] = {tilt: [2,5,8,10].includes(a)}; });
+  state.s1 = {found, wrong:int(s1.wrong,0,9999,0)};
+  const ans = {}; TILT_ROWS.forEach(([a,b])=>{ const k = a+','+b; if(Number(obj(s2.ans)[k])===a*a+b*b) ans[k] = a*a+b*b; });
+  const wr = {}; Object.keys(obj(s2.wrong)).forEach(k=>{ wr[k] = int(obj(s2.wrong)[k],0,999,0); });
+  state.s2 = {ans, wrong:wr, f:str(s2.f), fok:!!s2.fok, fmiss:int(s2.fmiss,0,999,0)};
+  state.s3 = {t:int(s3.t,0,TRI3.length-1,0), ok:!!s3.ok, rel:str(s3.rel), relOk:!!s3.relOk, abc:str(s3.abc), abcOk:!!s3.abcOk, miss:int(s3.miss,0,999,0)};
+  const C = arr(s4.C).map(Number);
+  state.s4 = {pred: PRED.includes(s4.pred) ? s4.pred : '', C: (C.length===2 && okC(C)) ? C : [10,9],
+    rec: arr(s4.rec).map(r=>({x:int(obj(r).x,0,31,-1), y:int(obj(r).y,0,22,-1)})).filter(r=>r.x>=0&&r.y>=0&&okC([r.x,r.y])).slice(0,10),
+    lt: CMP.includes(s4.lt) ? s4.lt : '', gt: CMP.includes(s4.gt) ? s4.gt : '', eq: EQ.includes(s4.eq) ? s4.eq : '', miss:int(s4.miss,0,999,0)};
   initActivity();
 }
 
