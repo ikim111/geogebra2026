@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
+    --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
+    --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6; --scustom:#1f2328;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #gateMsg{display:none;text-align:center;font-size:12.5px;color:#0052a3;background:#e8f0fe;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .activity, body.app-paused #pagerNav button, body.app-paused .submit-panel button{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .activity .card{ pointer-events:none !important; opacity:.65; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+
+  /* ---- 공통 카드·입력 ---- */
+  .card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .act-tag{display:inline-block;font-size:12px;font-weight:bold;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .activity h2{margin:0 0 4px;font-size:20px;}
+  .activity h3{margin:0 0 10px;font-size:17px;}
+  .question{font-size:17.5px;font-weight:bold;background:var(--blue-soft);border-left:5px solid var(--blue);padding:10px 14px;border-radius:6px;margin:10px 0 14px;}
+  .hint{font-size:14px;color:var(--ink2);margin:4px 0 10px;}
+  .note{font-size:13px;color:var(--muted);}
+  .why{font-size:13.5px;color:var(--muted);text-align:right;margin:2px 4px 14px;}
+  .why.ok{color:var(--green);font-weight:bold;}
+
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.concept-btn{background:var(--green);}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-size:17px;font-weight:bold;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .choice.selected{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .choice:disabled{cursor:default;}
+
+  .result-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .result-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .stat .k{font-size:13px;color:var(--ink2);}
+  .stat .v{font-size:22px;font-weight:bold;}
+  .frac{font-variant-numeric:tabular-nums;}
+  .friends{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .friends span{background:#f1f3f6;border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:14px;font-weight:bold;font-variant-numeric:tabular-nums;}
+
+  .activity textarea, .activity input[type=text]{font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;width:100%;}
+  .activity textarea{resize:vertical;min-height:84px;}
+  .activity textarea:focus, .activity input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .field label{min-width:250px;font-weight:bold;}
+  .activity .field input{width:150px;text-align:right;}
+  .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
+  .error.show{display:block;}
+  .live-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px;}
+  .live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  .live-stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;}
+  .live-stats .stat .v{font-size:24px;}
+  .friends span.me{background:#e8f1fc;border-color:#90b8ea;color:#1565c0;}
+  .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .compare .stat{text-align:center;}
+  .compare .stat .v{font-size:26px;}
+
+  .concept{display:none;border:2px solid var(--green);background:var(--green-soft);border-radius:12px;padding:16px 18px;margin-top:14px;}
+  .concept.show{display:block;}
+  .concept .def{font-size:18px;font-weight:bold;line-height:1.7;}
+  .concept .def b{color:var(--green);}
+  @media (max-width:640px){ .field label{min-width:0;} }
+  /* ---- 36번 활동 ---- */
+  .ok{color:var(--green);font-weight:bold;} .bad{color:var(--warn);font-weight:bold;}
+  .g-layout{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;}
+  .g-board{flex:0 0 auto;width:460px;max-width:100%;}
+  .board{width:100%;display:block;border-radius:10px;background:#fbfcfe;border:1px solid #d6dbe1;touch-action:none;user-select:none;}
+  .g-side{flex:1;min-width:260px;} .g-side.wide{min-width:100%;}
+  .g-msg{margin-top:6px;min-height:20px;font-size:15px;}
+  .hdl{cursor:grab;touch-action:none;}
+  .cP{color:#1565c0;} .cQ{color:#2e7d32;} .cR{color:#e65100;}
+  .now{border:1px solid #d6dbe1;background:#fafbfc;border-radius:10px;padding:8px 12px;font-size:15.5px;line-height:1.8;margin:8px 0;}
+  .now .big{font-size:20px;color:#c62828;}
+  .recb{border:none;background:#1565c0;color:#fff;border-radius:10px;padding:9px 18px;font-size:15.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .recb:disabled{background:#b0bec5;cursor:default;}
+  .rtab{border-collapse:collapse;margin-top:10px;font-size:15px;min-width:260px;}
+  .rtab th,.rtab td{border:1px solid #d6dbe1;padding:5px 10px;text-align:center;}
+  .rtab th{background:#f1f4f8;} .rtab td.empty{color:#90a4ae;}
+  .jq{font-weight:bold;margin:14px 0 4px;font-size:15.5px;}
+  .pickc{display:flex;gap:8px;flex-wrap:wrap;}
+  .pickc button{border:1.5px solid #c5cad1;background:#fff;border-radius:10px;padding:8px 14px;font-size:16px;cursor:pointer;font-family:inherit;color:#1f2328;}
+  .pickc button.on.ok{background:#2e7d32;border-color:#2e7d32;color:#fff;font-weight:bold;}
+  .pickc button.on.no{background:#fff6f6;border-color:#ef9a9a;color:#c62828;}
+  .qbox{margin-top:10px;border-top:1px dashed #d6dbe1;padding-top:4px;}
+  .qbox.locked{opacity:.4;pointer-events:none;}
+  .sum-body{background:#fffbe6;border:2px solid #ffca28;border-radius:12px;padding:12px 16px;margin-top:12px;line-height:1.7;}
+  .sum-body h4{margin:0 0 6px;font-size:16px;color:#8d6e00;}
+  @media (max-width:640px){ .g-board{width:100%;} }
+</style></style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</h1>
+    <p class="gate-sub">직각삼각형의 세 변 위에 정사각형을 그리면 넓이 사이에 어떤 관계가 있을까요? — 김형준 선생님 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 3</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+  <div id="gateMsg"></div>
+
+  <div class="wrap" id="pageWrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+
+<!-- ===================== 화면 1: 세 정사각형의 넓이 기록하기 ===================== -->
+<section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">1 넓이 기록하기</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>직각삼각형의 세 변 위에 정사각형을 그리면?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g1" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint">∠C = 90°인 직각삼각형 ABC의 세 변 위에 정사각형 <b class="cP">P</b>, <b class="cQ">Q</b>, <b class="cR">R</b>를 그렸어요.<br><b>점 A, B를 끌어서</b> 직각삼각형의 모양을 바꾸고, 「기록하기」를 눌러 세 정사각형의 넓이를 표에 적어 보세요.<br><span class="note">(서로 다른 직각삼각형 3개 이상)</span></p>
+        <div class="now" id="now1"></div>
+        <button type="button" class="recb" id="rec1">📝 기록하기</button>
+        <table class="rtab" id="tab1"></table>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why1">서로 다른 직각삼각형 3개 이상을 기록하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 2: 규칙 찾기 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">2 규칙 찾기</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>세 정사각형의 넓이 사이에는 어떤 관계가 있을까?</h2>
+    <div class="g-layout">
+      <div class="g-side wide">
+        <p class="hint">앞에서 기록한 표를 보고 규칙을 찾아보세요.</p>
+        <table class="rtab" id="tab2"></table>
+        <div class="jq">① P, Q, R 사이의 관계는?</div>
+        <div class="pickc" id="rel2"></div>
+        <div class="g-msg" id="msg2a"></div>
+        <div class="jq">② 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면?</div>
+        <div class="pickc" id="abc2"></div>
+        <div class="g-msg" id="msg2b"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why2">두 질문에 바르게 답하면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 3: ∠C가 90°가 아니면? ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">3 직각이 아니면?</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>∠C가 90°가 아니어도 P + Q = R 일까?</h2>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint">이번에는 <b>점 C를 끌어서</b> ∠C의 크기를 바꿔 보세요. ∠C가 90°보다 <b>작을 때</b>와 <b>클 때</b>를 각각 하나 이상 기록하세요.</p>
+        <div class="now" id="now3"></div>
+        <button type="button" class="recb" id="rec3">📝 기록하기</button>
+        <table class="rtab" id="tab3"></table>
+        <div class="qbox locked" id="q3">
+          <div class="jq">∠C &lt; 90° 이면 P + Q ( ) R</div>
+          <div class="pickc" data-k="lt"></div>
+          <div class="jq">∠C &gt; 90° 이면 P + Q ( ) R</div>
+          <div class="pickc" data-k="gt"></div>
+          <div class="jq">거꾸로, P + Q = R 이면 ∠C는?</div>
+          <div class="pickc" data-k="eq"></div>
+          <div class="g-msg" id="msg3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sum-body" id="sum3" style="display:none;">
+    <h4>📦 정리</h4>
+    <p>① 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면 <b>a² + b² = c²</b> 이에요. 이것을 <b>피타고라스 정리</b>라고 해요.</p>
+    <p>② 거꾸로, 세 변의 길이가 a, b, c인 삼각형에서 <b>a² + b² = c²</b> 이면 이 삼각형은 빗변의 길이가 c인 <b>직각삼각형</b>이에요.</p>
+    <p class="note">왜 항상 그럴까요? 학습지에서 여러 가지 방법으로 설명해 봐요.</p>
+  </div>
+  <div class="why" id="why3">∠C가 90°보다 작을 때와 클 때를 기록하고, 세 질문에 답하면 완료돼요. 마지막 화면에서 제출하세요.</div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   36. 7.5 피타고라스 정리 생각열기 — 세 정사각형의 넓이 (2026-10-17 만듦, 10~15분)
+   학습지 7.5 생각열기(교학사 알지오매스: 직각삼각형 세 변 위 정사각형 넓이 비교 + 활동4 ∠C가 90°가 아닐 때)를 웹으로 옮김
+   ① ∠C=90°인 △ABC에서 A·B를 모눈 점 위로 끌어 모양을 바꾸고 P(BC²)·Q(CA²)·R(AB²) 넓이를 기록(서로 다른 3개 이상)
+   ② 규칙 고르기: P + Q = R, 그리고 a² + b² = c²
+   ③ A·B 고정, C를 끌어 ∠C가 90°보다 작을 때·클 때 기록 → P+Q와 R 비교(>, <), P+Q=R이면 ∠C=90° → 정리 상자
+   모든 꼭짓점이 모눈 점이라 넓이는 거리의 제곱(자연수)으로 정확히 계산한다.
+   student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim36
+   ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__sim36'; // teacher36.html과 반드시 동일해야 함
+const UNIT_LABEL = '7.5. 피타고라스 정리 생각열기 - 세 정사각형의 넓이';
+const UNIT_NO = 36;
+const MIN_TEXT = 5;
+const TASKS = [
+  {id:1, key:'a1', title:'1. 세 정사각형의 넓이 기록하기'},
+  {id:2, key:'a2', title:'2. 규칙 찾기 — P, Q, R의 관계'},
+  {id:3, key:'a3', title:'3. ∠C가 90°가 아니면?'}
+];
+/* 화면 1: C(9,8) 고정, A(9, 8+b), B(9+a, 8) — a, b는 자연수(모눈 점). P = BC², Q = CA², R = AB²
+   화면 3: A(10,14), B(16,9) 고정, C를 모눈 점 위로 끈다(AB의 아래 왼쪽, 세 정사각형이 판 안에 들어오는 곳만). 모든 꼭짓점이 모눈 점이라 넓이는 항상 자연수 */
+const C1 = [9,8], A3 = [10,14], B3 = [16,9];
+const REL = ['P + Q = R', 'P × Q = R', 'P + R = Q', 'P = Q = R'], REL_ANS = 'P + Q = R';
+const ABC = ['a + b = c', 'a² + b² = c²', 'a × b = c', 'a² + c² = b²'], ABC_ANS = 'a² + b² = c²';
+const CMP = ['>', '=', '<'], EQ = ['90°보다 작다', '90°', '90°보다 크다'];
+const ANS3 = {lt:'>', gt:'<', eq:'90°'};
+const state = {
+  s1:{a:4, b:3, rec:[]},
+  s2:{rel:'', abc:'', miss:0},
+  s3:{C:[10,9], rec:[], lt:'', gt:'', eq:'', miss:0}
+};
+let REVEAL = {};
+const SHARE = { all:{}, sent:{} };
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const d2 = (p,q) => (p[0]-q[0])**2 + (p[1]-q[1])**2;   // 거리의 제곱 = 그 변 위 정사각형의 넓이
+const dotC = C => (A3[0]-C[0])*(B3[0]-C[0]) + (A3[1]-C[1])*(B3[1]-C[1]);   // >0 예각, 0 직각, <0 둔각
+const angC = C => Math.acos(Math.max(-1, Math.min(1, dotC(C)/Math.sqrt(d2(A3,C)*d2(B3,C)))))*180/Math.PI;
+const rec3Kinds = () => { const k = {lt:false, gt:false, eq:false}; state.s3.rec.forEach(r=>{ const d = dotC([r.x,r.y]); if(d>0) k.lt = true; else if(d<0) k.gt = true; else k.eq = true; }); return k; };
+
+function isDone(id){
+  if(id===1) return state.s1.rec.length>=3;
+  if(id===2) return state.s2.rel===REL_ANS && state.s2.abc===ABC_ANS;
+  if(id===3){ const k = rec3Kinds(), s = state.s3; return k.lt && k.gt && s.lt===ANS3.lt && s.gt===ANS3.gt && s.eq===ANS3.eq; }
+  return false;
+}
+function valueOf(id){
+  if(id===1) return state.s1.rec.length ? state.s1.rec.map(r=>`(${r.a},${r.b}) P${r.a*r.a} Q${r.b*r.b} R${r.a*r.a+r.b*r.b}`).join(' · ') : '';
+  if(id===2) return (state.s2.rel||state.s2.abc) ? `관계: ${state.s2.rel||'-'} · ${state.s2.abc||'-'}${state.s2.miss?` (틀림 ${state.s2.miss}번)`:''}` : '';
+  if(id===3){ const s = state.s3; if(!s.rec.length && !s.lt) return '';
+    return `기록 ${s.rec.length}개 (` + s.rec.map(r=>Math.round(angC([r.x,r.y]))+'°').join(', ') + `) · 예각: P+Q ${s.lt||'?'} R · 둔각: P+Q ${s.gt||'?'} R · P+Q=R이면 ∠C ${s.eq||'?'}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
+  return '';
+}
+function collectData(){ return JSON.parse(JSON.stringify(state)); }
+function pushShare(rt){}
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.shareRef = this.roomRef.child('share');
+    this.connected = true;
+    this.shareRef.on('value', snap=>{ SHARE.all = snap.val() || {}; onShareChanged(); });
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
+      }
+      // 이전에 저장된 활동 기록을 먼저 되살린 "뒤에"만 저장을 시작한다(빈 상태로 덮어쓰지 않도록).
+      if(existing && existing.data) restoreData(existing.data);
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+      this.pushProgress();
+      refreshAll();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement;
+        $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        $('announceBanner').style.display = 'none';
+      }
+      REVEAL = c.reveal || {}; onRevealChanged();
+      this.stageOn = (c.stage!=null);
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing();
+      updateNavButtons();
+      // 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만 전체 제출/취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded){ applyFinalLock(true); this.markSubmitted(true); }
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyFinalLock(classEnded); this.markSubmitted(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>isDone(t.id)).length;
+    pushShare(this);
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  flushPending(){
+    if(this._t){ clearTimeout(this._t); this._t=null; }
+    this.pushProgress();
+  }
+};
+
+/* 상태가 바뀔 때마다 부른다: 배지·진행률·다음 버튼·요약표를 새로 고치고 저장한다. */
+function refreshAll(opts){
+  TASKS.forEach(t=>{
+    const b=$('badge-'+t.key); const d=isDone(t.id);
+    b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  });
+  const done = TASKS.filter(t=>isDone(t.id)).length;
+  $('progressText').textContent = `완료 ${done} / ${TASKS.length}`;
+  $('progressFill').style.width = (done/TASKS.length*100)+'%';
+  updateNavButtons();
+  if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+}
+
+
+const isLocked = () => { try { return !!finalLocked; } catch(e){ return false; } };
+function setWhy(id, doneMsg, todoMsg){ const el = $('why'+id); const d = isDone(id); el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : ''); }
+const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
+
+/* ---------- 그리기 (SVG 460×340, 1단위 = 14px, 원점 (6,334)) ---------- */
+const U = 14, OX = 6, OY = 334;
+const px = x => OX + x*U, py = y => OY - y*U, P = p => `${px(p[0])},${py(p[1])}`;
+function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-OX)/U, (OY-q.y)/U]; }
+function gridSVG(){ let s=''; for(let x=0;x<=32;x++) s+=`<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(23)}" stroke="#e3e8ef"/>`; for(let y=0;y<=23;y++) s+=`<line x1="${px(0)}" y1="${py(y)}" x2="${px(32)}" y2="${py(y)}" stroke="#e3e8ef"/>`; return s; }
+const COL = {P:['rgba(21,101,192,.18)','#1565c0'], Q:['rgba(46,125,50,.18)','#2e7d32'], R:['rgba(230,81,0,.18)','#e65100']};
+function sqOut(p1, p2, far){ let n = [-(p2[1]-p1[1]), p2[0]-p1[0]]; if(n[0]*(far[0]-p1[0]) + n[1]*(far[1]-p1[1]) > 0) n = [-n[0], -n[1]]; return [[p2[0]+n[0], p2[1]+n[1]], [p1[0]+n[0], p1[1]+n[1]]]; }
+function square(p1, p2, far, name, area){   // 변 p1p2 위에, 삼각형 바깥쪽(far의 반대쪽)으로 정사각형
+  const [q2, q1] = sqOut(p1, p2, far), c = [(p1[0]+q2[0])/2, (p1[1]+q2[1])/2];
+  return `<path d="M${P(p1)}L${P(p2)}L${P(q2)}L${P(q1)}Z" fill="${COL[name][0]}" stroke="${COL[name][1]}" stroke-width="2"/>`
+    + `<text x="${px(c[0])}" y="${py(c[1])+5}" text-anchor="middle" font-size="${Math.max(10, Math.min(16, Math.sqrt(area)*U*0.3))}" font-weight="bold" fill="${COL[name][1]}">${Math.sqrt(area) < 3 ? area : name+' = '+area}</text>`;   // 작은 정사각형은 넓이만
+}
+const handle = (p, id) => `<circle class="hdl" data-h="${id}" cx="${px(p[0])}" cy="${py(p[1])}" r="13" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`;
+function vlab(p, c, t){ const dx=p[0]-c[0], dy=p[1]-c[1], d=Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*0.9)}" y="${py(p[1]+dy/d*0.9)+5}" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">${t}</text>`; }
+function tri(A,B,C){ const g = [(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3]; return `<path d="M${P(A)}L${P(B)}L${P(C)}Z" fill="rgba(255,193,7,.45)" stroke="#8d6e00" stroke-width="2.5"/>` + vlab(A,g,'A') + vlab(B,g,'B') + vlab(C,g,'C'); }
+function rightMark(C, A, B){ const u = [(A[0]-C[0])/Math.hypot(A[0]-C[0],A[1]-C[1])*0.6, (A[1]-C[1])/Math.hypot(A[0]-C[0],A[1]-C[1])*0.6], v = [(B[0]-C[0])/Math.hypot(B[0]-C[0],B[1]-C[1])*0.6, (B[1]-C[1])/Math.hypot(B[0]-C[0],B[1]-C[1])*0.6];
+  return `<path d="M${P([C[0]+u[0],C[1]+u[1]])}L${P([C[0]+u[0]+v[0],C[1]+u[1]+v[1]])}L${P([C[0]+v[0],C[1]+v[1]])}" fill="none" stroke="#c62828" stroke-width="2"/>`; }
+function dragOn(svg, move, end){
+  let cur = null;
+  svg.addEventListener('pointerdown', ev=>{ if(isLocked()) return; const h = ev.target.closest && ev.target.closest('.hdl'); if(!h) return; cur = h.dataset.h; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(!cur) return; ev.preventDefault(); move(cur, svgPt(svg, ev)); });
+  const fin = ()=>{ if(!cur) return; cur = null; end && end(); };
+  svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin);
+}
+const clampI = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(v)));
+function tableHTML(rows, head){ return `<tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr>` + (rows.length ? rows.join('') : `<tr><td colspan="${head.length}" class="empty">아직 기록이 없어요.</td></tr>`); }
+const rows1 = () => state.s1.rec.map((r,i)=>`<tr><td>${i+1}</td><td>${r.a}</td><td>${r.b}</td><td class="cP">${r.a*r.a}</td><td class="cQ">${r.b*r.b}</td><td class="cR">${r.a*r.a+r.b*r.b}</td></tr>`);
+const HEAD1 = ['', 'BC', 'CA', '<span class="cP">P</span>', '<span class="cQ">Q</span>', '<span class="cR">R</span>'];
+
+/* ================= 화면 1 ================= */
+function render1(){
+  const {a, b} = state.s1, C = C1, A = [C[0], C[1]+b], B = [C[0]+a, C[1]];
+  let h = gridSVG() + square(B, C, A, 'P', a*a) + square(C, A, B, 'Q', b*b) + square(A, B, C, 'R', a*a+b*b) + tri(A,B,C) + rightMark(C,A,B)
+    + `<text x="${px(C[0]+a/2)}" y="${py(C[1])-6}" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4500">${a}</text><text x="${px(C[0])+8}" y="${py(C[1]+b/2)+4}" font-size="13" font-weight="bold" fill="#5d4500">${b}</text>`;
+  if(!isLocked()) h += handle(A,'A') + handle(B,'B');
+  $('g1').innerHTML = h;
+  const has = state.s1.rec.some(r=>r.a===a && r.b===b);
+  $('now1').innerHTML = `BC = <b>${a}</b>, CA = <b>${b}</b> → <span class="cP">P = <b>${a*a}</b></span>, <span class="cQ">Q = <b>${b*b}</b></span>, <span class="cR">R = <b>${a*a+b*b}</b></span>`;
+  $('rec1').disabled = has || isLocked(); $('rec1').textContent = has ? '✅ 이미 기록한 삼각형이에요' : '📝 기록하기';
+  $('tab1').innerHTML = tableHTML(rows1(), HEAD1);
+}
+dragOn($('g1'), (h, p)=>{ const s = state.s1;
+  if(h==='A') s.b = clampI(p[1]-C1[1], 1, 6);
+  if(h==='B') s.a = clampI(p[0]-C1[0], 1, 7);
+  render1(); });
+$('rec1').addEventListener('click', ()=>{ const s = state.s1; if(isLocked() || s.rec.some(r=>r.a===s.a && r.b===s.b) || s.rec.length>=10) return; s.rec.push({a:s.a, b:s.b}); render1(); render2(); check1({now:true}); });
+function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, `서로 다른 직각삼각형을 3개 이상 기록해 보세요. (지금 ${state.s1.rec.length}개)`); refreshAll(opts); }
+
+/* ================= 화면 2 ================= */
+function pickHTML(opts, cur, ans){ return opts.map(v=>`<button type="button" data-v="${esc(v)}" class="${cur===v?(v===ans?'on ok':'on no'):''}">${esc(v)}</button>`).join(''); }
+function render2(){
+  const s = state.s2;
+  $('tab2').innerHTML = tableHTML(rows1(), HEAD1);
+  $('rel2').innerHTML = pickHTML(REL, s.rel, REL_ANS);
+  $('abc2').innerHTML = pickHTML(ABC, s.abc, ABC_ANS);
+  $('msg2a').innerHTML = !s.rel ? '' : s.rel===REL_ANS ? '<span class="ok">✅ 맞아요! 두 작은 정사각형의 넓이를 더하면 가장 큰 정사각형의 넓이가 돼요.</span>' : '<span class="bad">표의 수를 넣어 계산해 보세요.</span>';
+  $('msg2b').innerHTML = !s.abc ? '' : s.abc===ABC_ANS ? '<span class="ok">✅ 맞아요! P = a², Q = b², R = c² 이니까 a² + b² = c² 이에요.</span>' : '<span class="bad">P, Q, R은 각각 어떤 변을 한 변으로 하는 정사각형인지 떠올려 보세요.</span>';
+}
+function bindPick(boxId, key, ans){ $(boxId).addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const s = state.s2; if(s[key]===ans) return; s[key] = b.dataset.v; if(s[key]!==ans) s.miss++; render2(); check2({now:true}); }); }
+bindPick('rel2', 'rel', REL_ANS); bindPick('abc2', 'abc', ABC_ANS);
+function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, '두 질문에 바르게 답하면 다음으로 넘어갈 수 있어요.'); refreshAll(opts); }
+
+/* ================= 화면 3 ================= */
+const sideAB = C => (B3[0]-A3[0])*(C[1]-A3[1]) - (B3[1]-A3[1])*(C[0]-A3[0]);   // C가 AB의 어느 쪽인지(처음 C(8,7)과 같은 쪽 < 0)
+function okC(C){ if(!(C[0]>=0 && C[0]<=31 && C[1]>=0 && C[1]<=22 && sideAB(C) < -6)) return false;   // 세 정사각형이 모두 판 안에 들어오는 곳만
+  return [...sqOut(B3,C,A3), ...sqOut(C,A3,B3), ...sqOut(A3,B3,C)].every(q=>q[0]>=0.3 && q[0]<=31.8 && q[1]>=0.3 && q[1]<=23.4); }
+function render3(){
+  const s = state.s3, C = s.C, A = A3, B = B3, p = d2(B,C), q = d2(C,A), r = d2(A,B), dt = dotC(C), ang = angC(C);
+  let h = gridSVG() + square(B, C, A, 'P', p) + square(C, A, B, 'Q', q) + square(A, B, C, 'R', r) + tri(A,B,C) + (dt===0 ? rightMark(C,A,B) : '');
+  if(!isLocked()) h += handle(C,'C');
+  $('g3').innerHTML = h;
+  const cmp = p+q > r ? '>' : p+q < r ? '<' : '=';
+  $('now3').innerHTML = `∠C = <b>${dt===0 ? '90' : Math.round(ang)}°</b> ${dt>0?'(90°보다 작다)':dt<0?'(90°보다 크다)':'(직각)'}<br><span class="cP">P = ${p}</span> + <span class="cQ">Q = ${q}</span> = <b>${p+q}</b> &nbsp;<b class="big">${cmp}</b>&nbsp; <span class="cR">R = <b>${r}</b></span>`;
+  const has = s.rec.some(x=>x.x===C[0] && x.y===C[1]);
+  $('rec3').disabled = has || isLocked(); $('rec3').textContent = has ? '✅ 이미 기록했어요' : '📝 기록하기';
+  $('tab3').innerHTML = tableHTML(s.rec.map((x,i)=>{ const c = [x.x,x.y], pp = d2(B,c), qq = d2(c,A), d = dotC(c); return `<tr><td>${i+1}</td><td>${d===0?'90':Math.round(angC(c))}°</td><td>${pp+qq}</td><td>${pp+qq>r?'&gt;':pp+qq<r?'&lt;':'='}</td><td class="cR">${r}</td></tr>`; }), ['', '∠C', 'P + Q', '', '<span class="cR">R</span>']);
+  const k = rec3Kinds(), open = k.lt && k.gt;
+  $('q3').classList.toggle('locked', !open || isLocked());
+  document.querySelectorAll('#q3 .pickc').forEach(box=>{ const key = box.dataset.k; box.innerHTML = pickHTML(key==='eq' ? EQ : CMP, s[key], ANS3[key]); });
+  const wrong = ['lt','gt','eq'].filter(x=>s[x] && s[x]!==ANS3[x]);
+  $('msg3').innerHTML = isDone(3) ? '<span class="ok">✅ 맞아요! P + Q = R 이 되는 것은 ∠C가 직각일 때뿐이에요.</span>' : wrong.length ? '<span class="bad">기록한 표에서 ∠C의 크기에 따라 비교해 보세요.</span>' : '';
+  $('sum3').style.display = isDone(3) ? '' : 'none';
+}
+dragOn($('g3'), (h, p)=>{ const c = [clampI(p[0],0,31), clampI(p[1],0,22)]; if(okC(c)) state.s3.C = c; render3(); });
+$('rec3').addEventListener('click', ()=>{ const s = state.s3; if(isLocked() || s.rec.some(x=>x.x===s.C[0] && x.y===s.C[1]) || s.rec.length>=10) return; s.rec.push({x:s.C[0], y:s.C[1]}); render3(); check3({now:true}); });
+$('q3').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const key = b.closest('.pickc').dataset.k, s = state.s3; if(s[key]===ANS3[key]) return; s[key] = b.dataset.v; if(s[key]!==ANS3[key]) s.miss++; render3(); check3({now:true}); });
+function check3(opts){ const k = rec3Kinds();
+  setWhy(3, '✅ 완료! 마지막 화면에서 제출하세요.', !(k.lt && k.gt) ? `∠C가 90°보다 작을 때(${k.lt?'✅':'⬜'})와 클 때(${k.gt?'✅':'⬜'})를 각각 기록해 보세요.` : '세 질문에 답해 보세요.'); refreshAll(opts); }
+
+function onShareChanged(){}
+function onRevealChanged(){}
+function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); }
+function initActivity(){ render1(); render2(); render3(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
+const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+const obj = v => (v && typeof v==='object') ? v : {};
+const int = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n>=lo && n<=hi ? n : d; };
+function restoreData(d){
+  if(!d) return;
+  const s1 = obj(d.s1), s2 = obj(d.s2), s3 = obj(d.s3);
+  state.s1 = {a:int(s1.a,1,7,4), b:int(s1.b,1,6,3), rec: arr(s1.rec).map(r=>({a:int(obj(r).a,1,7,0), b:int(obj(r).b,1,6,0)})).filter(r=>r.a&&r.b).slice(0,10)};
+  state.s2 = {rel: REL.includes(s2.rel) ? s2.rel : '', abc: ABC.includes(s2.abc) ? s2.abc : '', miss: int(s2.miss,0,999,0)};
+  const C = arr(s3.C).map(Number);
+  state.s3 = {C: (C.length===2 && okC(C)) ? C : [10,9], rec: arr(s3.rec).map(r=>({x:int(obj(r).x,0,31,-1), y:int(obj(r).y,0,22,-1)})).filter(r=>r.x>=0&&r.y>=0&&okC([r.x,r.y])).slice(0,10),
+    lt: CMP.includes(s3.lt) ? s3.lt : '', gt: CMP.includes(s3.gt) ? s3.gt : '', eq: EQ.includes(s3.eq) ? s3.eq : '', miss: int(s3.miss,0,999,0)};
+  initActivity();
+}
+
+/* ---------- 화면 잠금 / 공지 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (활동 4개 + 마지막 제출 페이지) ----------
+   다른 단원과 같은 속도조절(교사 min/max) 제한에 더해, 이 단원은 "지금 활동을 끝내야" 다음
+   활동으로 넘어갈 수 있다(탐구 순서를 지키기 위함). 이전 활동으로 돌아가는 것은 자유롭다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+  onShowPage(pageTaskNum(currentPage));
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){ const i = taskIdToPageIdx(RT.maxTaskId); if(i>=0){ showPage(i); return; } }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){ const i = taskIdToPageIdx(RT.minTaskId); if(i>=0) showPage(i); }
+}
+function updateNavButtons(){
+  const prevBtn=$('prevBtn'), nextBtn=$('nextBtn'), pacingMsg=$('pacingMsg'), gateMsg=$('gateMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  const curNum = pageTaskNum(currentPage), nextNum = pageTaskNum(currentPage+1), prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  const notFinished = !PREVIEW_MODE && curNum!=null && curNum<=TASKS.length && !isDone(curNum);
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused || !!state.running;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused || !!state.running;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
+    else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
+    else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+  if(gateMsg){
+    gateMsg.textContent = notFinished ? `✋ 활동 ${curNum}을 마치면 「다음 ▶」 버튼이 켜져요.` : '';
+    gateMsg.style.display = (notFinished && !blockedNext) ? 'block' : 'none';
+  }
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.classNo && obj.name) ? obj : null; }catch(e){ return null; }
+}
+const IDENTITY_KEY = 'ggb_identity_sim36_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.name) ? obj : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none';
+  $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+/* 선생님이 이 단원을 이 반에 열어줬는지 확인한 뒤 시작 화면을 보여준다(오류 시에는 그냥 열어준다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none';
+    $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name;
+      $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    $('profileMissingBox').style.display='none';
+    $('profileBox').style.display='none';
+    $('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length,
+    answers: TASKS.map(t=>({task:t.id, title:t.title, done:isDone(t.id), value:valueOf(t.id)})),
+    data: collectData(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `세정사각형넓이_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* 처음 화면 */
+initActivity();
+refreshAll({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N이면 게이트 없이 그 활동 화면을 바로 보여준다(Firebase 연결 없음).
+   교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none';
+  $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+<script src="report.js"></script><!-- 🚩 오류 신고(모든 학생 화면 공통) -->
+</body>
+</html>
