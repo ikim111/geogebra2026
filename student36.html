@@ -174,6 +174,12 @@
   .pred .jq{margin-top:0;}
   .g-layout.locked{opacity:.35;pointer-events:none;}
   .activity input.num{width:72px !important;display:inline-block;flex:0 0 auto;} .activity input.fx{width:240px !important;max-width:100%;display:inline-block;flex:0 0 auto;}
+  .kp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px;max-width:360px;}
+  .kp button{min-width:44px;height:42px;border:1.5px solid #c5cad1;background:#fff;border-radius:8px;font-size:18px;cursor:pointer;font-family:'Times New Roman',serif;font-style:italic;color:#1f2328;}
+  .kp button.kx{font-style:normal;font-family:inherit;font-size:14px;background:#f1f4f8;}
+  .kp button:active{background:#e3f2fd;}
+  .hintb{margin-top:6px;font-size:14.5px;color:#5d4500;background:#fff8e1;border-radius:8px;padding:0 10px;line-height:1.7;}
+  .hintb:not(:empty){padding:6px 10px;}
 </style></style>
 </head>
 <body>
@@ -219,7 +225,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 4</div>
+        <div class="progress-text" id="progressText">완료 0 / 5</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -262,10 +268,12 @@
         <p class="hint">한 꼭짓점에서 <b>가로로 a칸, 세로로 b칸</b> 가서 다음 꼭짓점을 잡아 만든 기울어진 정사각형이에요. 표의 줄을 눌러 정사각형을 보고 <b>넓이를 직접 구해</b> 써 보세요.</p>
         <table class="rtab" id="tab2"></table>
         <div class="qbox locked" id="q2">
-          <div class="jq">넓이를 a, b로 나타내는 식을 직접 써 보세요.</div>
-          <div class="note">예) a+b, 2*a*b, a^2 … (거듭제곱은 ^2 또는 ² 로 써요)</div>
-          <div class="inrow">넓이 = <input type="text" class="fx" id="f2" autocomplete="off" spellcheck="false"> <button type="button" class="okb" id="ok2">확인</button></div>
+          <div class="jq">넓이를 a, b로 나타내는 식을 만들어 보세요.</div>
+          <div class="note">아래 버튼을 눌러 식을 써요. a를 두 번 곱한 것은 a×a 또는 a² 로 써요.</div>
+          <div class="inrow">넓이 = <input type="text" class="fx" id="f2" inputmode="none" autocomplete="off" spellcheck="false"> <button type="button" class="okb" id="ok2">확인</button></div>
+          <div class="kp" data-for="f2" data-keys="a b ² × + − ( ) 1 2 3 4 ⌫ C"></div>
           <div class="g-msg" id="msg2"></div>
+          <div class="hintb" id="hint2"></div>
         </div>
       </div>
     </div>
@@ -287,10 +295,13 @@
         <div class="g-msg" id="msgA3"></div>
         <div class="qbox locked" id="qq3">
           <div class="jq">① P, Q, R 사이의 관계를 식으로 써 보세요.</div>
-          <div class="inrow"><input type="text" class="fx" id="f3a" autocomplete="off" spellcheck="false" placeholder="P, Q, R과 = 을 써서"> <button type="button" class="okb" id="ok3a">확인</button></div>
+          <div class="inrow"><input type="text" class="fx" id="f3a" inputmode="none" autocomplete="off" spellcheck="false"> <button type="button" class="okb" id="ok3a">확인</button></div>
+          <div class="kp" data-for="f3a" data-keys="P Q R + − = ⌫ C"></div>
           <div class="g-msg" id="msg3a"></div>
-          <div class="jq">② 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면?</div>
-          <div class="inrow"><input type="text" class="fx" id="f3b" autocomplete="off" spellcheck="false" placeholder="a, b, c와 = 을 써서"> <button type="button" class="okb" id="ok3b">확인</button></div>
+          <div class="jq">② 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면?</div>
+          <div class="note">P는 한 변의 길이가 a인 정사각형이에요. Q, R은?</div>
+          <div class="inrow"><input type="text" class="fx" id="f3b" inputmode="none" autocomplete="off" spellcheck="false"> <button type="button" class="okb" id="ok3b">확인</button></div>
+          <div class="kp" data-for="f3b" data-keys="a b c ² × + − = ( ) ⌫ C"></div>
           <div class="g-msg" id="msg3b"></div>
         </div>
       </div>
@@ -299,41 +310,66 @@
   <div class="why" id="why3">세 넓이를 구하고, 두 관계식을 바르게 쓰면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 4: 직각이 아니면? ===================== -->
+<!-- ===================== 화면 4: ∠C가 90°보다 작을 때 ===================== -->
 <section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
-    <div class="act-head"><span class="act-tag">4 직각이 아니면?</span><span class="badge pending" id="badge-a4">미완료</span></div>
-    <h2>∠C가 90°가 아니어도 P + Q = R 일까?</h2>
+    <div class="act-head"><span class="act-tag">4 ∠C &lt; 90°</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>∠C가 90°보다 작으면, P + Q와 R은 어떻게 될까?</h2>
     <div class="pred" id="pred4">
-      <div class="jq">먼저 예측해 보세요. ∠C가 90°보다 커지면 P + Q와 R은 어떻게 될까요?</div>
+      <div class="jq">먼저 예측해 보세요. ∠C가 90°보다 작아지면 P + Q와 R은?</div>
       <div class="pickc" data-k="pred"></div>
     </div>
     <div class="g-layout locked" id="lay4">
       <div class="g-board"><svg id="g4" viewBox="0 0 460 340" class="board"></svg></div>
       <div class="g-side">
-        <p class="hint"><b>점 C를 끌어서</b> ∠C의 크기를 바꿔 보세요. ∠C가 90°보다 <b>작을 때</b>와 <b>클 때</b>를 각각 하나 이상 기록하세요.</p>
+        <p class="hint"><b>점 C를 끌어서</b> 삼각형 모양을 바꿔 보세요. (이 화면에서는 ∠C가 늘 90°보다 작을 때만 움직여요.) 마음에 드는 곳에서 <b>P + Q를 직접 계산하고 R과 비교</b>해서 기록하세요.</p>
         <div class="now" id="now4"></div>
-        <button type="button" class="recb" id="rec4">📝 기록하기</button>
         <table class="rtab" id="tab4"></table>
+        
         <div class="qbox locked" id="q4">
           <div class="jq">∠C &lt; 90° 이면 P + Q ( ) R</div>
           <div class="pickc" data-k="lt"></div>
-          <div class="jq">∠C &gt; 90° 이면 P + Q ( ) R</div>
-          <div class="pickc" data-k="gt"></div>
-          <div class="jq">거꾸로, P + Q = R 이면 ∠C는?</div>
-          <div class="pickc" data-k="eq"></div>
+          
           <div class="g-msg" id="msg4"></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="sum-body" id="sum4" style="display:none;">
+  <div class="why" id="why4"></div>
+</section>
+
+<!-- ===================== 화면 5: ∠C가 90°보다 클 때 ===================== -->
+<section class="task activity" id="task-a5" data-task-id="5">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">5 ∠C &gt; 90°</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <h2>∠C가 90°보다 크면, P + Q와 R은 어떻게 될까?</h2>
+    <div class="pred" id="pred5">
+      <div class="jq">먼저 예측해 보세요. ∠C가 90°보다 커지면 P + Q와 R은?</div>
+      <div class="pickc" data-k="pred"></div>
+    </div>
+    <div class="g-layout locked" id="lay5">
+      <div class="g-board"><svg id="g5" viewBox="0 0 460 340" class="board"></svg></div>
+      <div class="g-side">
+        <p class="hint"><b>점 C를 끌어서</b> 삼각형 모양을 바꿔 보세요. (이 화면에서는 ∠C가 늘 90°보다 클 때만 움직여요.) 마음에 드는 곳에서 <b>P + Q를 직접 계산하고 R과 비교</b>해서 기록하세요.</p>
+        <div class="now" id="now5"></div>
+        <table class="rtab" id="tab5"></table>
+        <div class="found" id="prev5"></div>
+        <div class="qbox locked" id="q5">
+          <div class="jq">∠C &gt; 90° 이면 P + Q ( ) R</div>
+          <div class="pickc" data-k="gt"></div>
+          <div class="jq">거꾸로, P + Q = R 이면 ∠C는?</div><div class="pickc" data-k="eq"></div>
+          <div class="g-msg" id="msg5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sum-body" id="sum5" style="display:none;">
     <h4>📦 정리</h4>
     <p>① 직각삼각형에서 직각을 낀 두 변의 길이를 a, b, 빗변의 길이를 c라고 하면 <b>a² + b² = c²</b> 이에요. 이것을 <b>피타고라스 정리</b>라고 해요.</p>
-    <p>② 거꾸로, 세 변의 길이가 a, b, c인 삼각형에서 <b>a² + b² = c²</b> 이면 이 삼각형은 빗변의 길이가 c인 <b>직각삼각형</b>이에요.</p>
+    <p>② ∠C가 90°보다 작으면 P + Q &gt; R, 크면 P + Q &lt; R 이에요. 그래서 <b>a² + b² = c²</b> 이면 이 삼각형은 빗변의 길이가 c인 <b>직각삼각형</b>이에요.</p>
     <p class="note">기울어진 정사각형의 넓이를 '둘러싸서 빼기'로 구한 방법이 바로 피타고라스 정리의 한 가지 설명이에요. 학습지에서 더 살펴봐요.</p>
   </div>
-  <div class="why" id="why4">예측하고, ∠C가 90°보다 작을 때와 클 때를 기록한 뒤 세 질문에 답하면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why5"></div>
 </section>
 
     </div>
@@ -361,7 +397,9 @@
    ① 5×5 점판에서 점 4개로 정사각형 그리기 → 넓이를 직접 입력(도움 그림: 둘러싼 정사각형 − 직각삼각형 4개) → 넓이 8가지 중 6가지 이상(기울어진 것 2가지 이상), 반 전체 모음
    ② 가로 a칸·세로 b칸 기울어진 정사각형 4개 넓이 직접 구하기 → 넓이를 a, b로 나타내는 식을 직접 입력(보기 없음, 여러 값으로 검사)
    ③ 그 정사각형의 한 변 = 직각삼각형의 빗변 → P·Q·R 넓이 입력 → P·Q·R 관계식, a·b·c 관계식 직접 입력(여러 값으로 검사, 항등식은 거름)
-   ④ 예측(∠C가 90°보다 크면?) → 점 C를 끌어 예각·둔각 기록 → P+Q와 R 비교, P+Q=R이면 90° → 정리 상자
+   (10-17 밤 수정) 식은 버튼판(a b ² × + − = …)으로 입력, 두 번 틀리면 단계별 힌트
+   ④ ∠C<90°만: 예측 → 점 C를 끌어 P+Q를 직접 계산·비교 기호 골라 2번 기록 → P+Q ( ) R
+   ⑤ ∠C>90°만: 같은 방식 + 화면 4 기록표 함께 보기 → P+Q ( ) R, P+Q=R이면 ∠C=90° → 정리 상자
    student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim36. 공유: share/areas/{학생키} = {a:[찾은 넓이]}
    ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
    ============================================================ */
@@ -386,11 +424,12 @@ const TASKS = [
   {id:1, key:'a1', title:'1. 점판에 정사각형 찾기'},
   {id:2, key:'a2', title:'2. 기울어진 정사각형의 넓이 규칙'},
   {id:3, key:'a3', title:'3. 직각삼각형과 세 정사각형'},
-  {id:4, key:'a4', title:'4. 직각이 아니면?'}
+  {id:4, key:'a4', title:'4. ∠C가 90°보다 작으면?'},
+  {id:5, key:'a5', title:'5. ∠C가 90°보다 크면?'}
 ];
 /* ---------- 식 읽기: 학생이 쓴 식(a^2+b^2, a²+b², 2ab, P+Q=R …)을 계산할 수 있는 함수로 ---------- */
 function parseExpr(src, vars){
-  let s = String(src||'').replace(/²/g,'^2').replace(/³/g,'^3').replace(/[×·]/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');
+  let s = String(src||'').replace(/²/g,'^2').replace(/³/g,'^3').replace(/[×·]/g,'*').replace(/[−–]/g,'-').replace(/÷/g,'/').replace(/\s+/g,'');
   const toks = []; let i = 0;
   while(i < s.length){ const c = s[i];
     if(/[0-9.]/.test(c)){ let j = i; while(j<s.length && /[0-9.]/.test(s[j])) j++; toks.push({t:'n', v:parseFloat(s.slice(i,j))}); i = j; continue; }
@@ -419,12 +458,15 @@ const TRI3 = [[3,2],[1,3],[2,2]];   // 화면 3에서 고를 수 있는 직각�
 const A4 = [10,14], B4 = [16,9];
 const CMP = ['>', '=', '<'], EQ = ['90°보다 작다', '90°', '90°보다 크다'], PRED = ['P + Q > R', 'P + Q = R', 'P + Q < R'];
 const ANS4 = {lt:'>', gt:'<', eq:'90°'};
+const PG = {4:{kind:'lt', start:[8,9], sign:1, word:'작아요'}, 5:{kind:'gt', start:[12,10], sign:-1, word:'커요'}};
+const NREC = 2;
 
 const state = {
   s1:{found:{}, wrong:0},          // found[넓이] = {tilt:true/false}
   s2:{ans:{}, wrong:{}, f:'', fok:false, fmiss:0},   // ans['1,2'] = 넓이(맞힌 것만)
   s3:{t:0, ok:false, rel:'', relOk:false, abc:'', abcOk:false, miss:0},
-  s4:{pred:'', C:[10,9], rec:[], lt:'', gt:'', eq:'', miss:0}
+  s4:{pred:'', C:[8,9], rec:[], lt:'', miss:0},
+  s5:{pred:'', C:[12,10], rec:[], gt:'', eq:'', miss:0}
 };
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
@@ -434,20 +476,21 @@ const foundAreas = () => Object.keys(state.s1.found).map(Number).sort((a,b)=>a-b
 const d2 = (p,q) => (p[0]-q[0])**2 + (p[1]-q[1])**2;
 const dotC = C => (A4[0]-C[0])*(B4[0]-C[0]) + (A4[1]-C[1])*(B4[1]-C[1]);
 const angC = C => Math.acos(Math.max(-1, Math.min(1, dotC(C)/Math.sqrt(d2(A4,C)*d2(B4,C)))))*180/Math.PI;
-const rec4Kinds = () => { const k = {lt:false, gt:false}; state.s4.rec.forEach(r=>{ const d = dotC([r.x,r.y]); if(d>0) k.lt = true; else if(d<0) k.gt = true; }); return k; };
 
 function isDone(id){
   if(id===1){ const f = foundAreas(); return f.length>=6 && f.filter(a=>[2,5,8,10].includes(a)).length>=2; }
   if(id===2) return TILT_ROWS.every(r=>state.s2.ans[r.join(',')]) && state.s2.fok;
   if(id===3) return state.s3.ok && state.s3.relOk && state.s3.abcOk;
-  if(id===4){ const k = rec4Kinds(), s = state.s4; return !!s.pred && k.lt && k.gt && s.lt===ANS4.lt && s.gt===ANS4.gt && s.eq===ANS4.eq; }
+  if(id===4){ const s = state.s4; return !!s.pred && s.rec.length>=NREC && s.lt===ANS4.lt; }
+  if(id===5){ const s = state.s5; return !!s.pred && s.rec.length>=NREC && s.gt===ANS4.gt && s.eq===ANS4.eq; }
   return false;
 }
 function valueOf(id){
   if(id===1){ const f = foundAreas(); return f.length ? `찾은 넓이 ${f.length}가지: ${f.join(', ')}` + (state.s1.wrong?` · 넓이 틀린 횟수 ${state.s1.wrong}`:'') : ''; }
   if(id===2){ const s = state.s2, n = Object.keys(s.ans).length; if(!n && !s.f) return ''; return `넓이 ${n}/4 · 식: ${s.f||'-'} ${s.fok?'✅':''}` + (s.fmiss?` (틀림 ${s.fmiss}번)`:''); }
   if(id===3){ const s = state.s3; if(!s.ok && !s.rel) return ''; return `P·Q·R ${s.ok?'✅':'-'} · ${s.rel||'-'} ${s.relOk?'✅':''} · ${s.abc||'-'} ${s.abcOk?'✅':''}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
-  if(id===4){ const s = state.s4; if(!s.pred && !s.rec.length) return ''; return `예측: ${s.pred||'-'} · 기록 ${s.rec.length}개 · 예각 P+Q ${s.lt||'?'} R · 둔각 P+Q ${s.gt||'?'} R · ${s.eq||'?'}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
+  if(id===4){ const s = state.s4; if(!s.pred && !s.rec.length) return ''; return `예측: ${s.pred||'-'} · 기록 ${s.rec.length}개 · ∠C<90°이면 P+Q ${s.lt||'?'} R` + (s.miss?` (틀림 ${s.miss}번)`:''); }
+  if(id===5){ const s = state.s5; if(!s.pred && !s.rec.length) return ''; return `예측: ${s.pred||'-'} · 기록 ${s.rec.length}개 · ∠C>90°이면 P+Q ${s.gt||'?'} R · P+Q=R이면 ${s.eq||'?'}` + (s.miss?` (틀림 ${s.miss}번)`:''); }
   return '';
 }
 function collectData(){ return JSON.parse(JSON.stringify(state)); }
@@ -595,6 +638,13 @@ function refreshAll(opts){
 const isLocked = () => { try { return !!finalLocked; } catch(e){ return false; } };
 function setWhy(id, doneMsg, todoMsg){ const el = $('why'+id); const d = isDone(id); el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : ''); }
 const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
+/* ---------- 식 버튼판: 키보드 대신 눌러서 식 쓰기 (PC에서는 키보드로도 가능) ---------- */
+const tidy = v => String(v||'').replace(/\^2/g,'²').replace(/\*/g,'×').replace(/-/g,'−');
+document.querySelectorAll('.kp').forEach(kp=>{ const inp = $(kp.dataset.for);
+  kp.innerHTML = kp.dataset.keys.split(' ').map(k=>`<button type="button" data-k="${esc(k)}" class="${k==='⌫'||k==='C'?'kx':''}">${k==='C'?'지우기':esc(k)}</button>`).join('');
+  kp.addEventListener('click', e=>{ const b = e.target.closest('button[data-k]'); if(!b || inp.readOnly || isLocked()) return; const k = b.dataset.k;
+    if(k==='⌫') inp.value = inp.value.slice(0,-1); else if(k==='C') inp.value = ''; else inp.value += k; });
+  inp.addEventListener('input', ()=>{ const t = tidy(inp.value); if(t!==inp.value) inp.value = t; }); });
 const COL = {P:['rgba(21,101,192,.18)','#1565c0'], Q:['rgba(46,125,50,.18)','#2e7d32'], R:['rgba(230,81,0,.18)','#e65100'], S:['rgba(255,193,7,.35)','#8d6e00']};
 function svgPt(svg, ev, M){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-M.ox)/M.u, (M.oy-q.y)/M.u]; }
 const mk = (ox, oy, u) => ({ox, oy, u, X:x=>ox+x*u, Y:y=>oy-y*u, P(p){ return `${this.X(p[0])},${this.Y(p[1])}`; }});
@@ -690,9 +740,10 @@ function chk2f(){
   s.f = src;
   if(!f){ $('msg2').innerHTML = '<span class="bad">식을 읽을 수 없어요.</span> a, b, 숫자, + − × ^ ( ) 만 써 주세요. 예) 3*a+b'; check2(); return; }
   const bad = TILT_ROWS.concat([[3,4],[5,1]]).find(([a,b])=>!(Math.abs(f({a,b})-(a*a+b*b))<1e-6));
-  if(bad){ s.fmiss++; const [a,b] = bad, v = f({a,b}); $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}이면 내 식의 값은 ${Number.isFinite(v)?Math.round(v*100)/100:'계산할 수 없음'}, 실제 넓이는 ${a*a+b*b}.</span> 표의 수들을 다시 살펴보세요.`; check2({now:true}); return; }
-  s.fok = true; $('msg2').innerHTML = '<span class="ok">✅ 맞아요! 기울어진 정사각형의 넓이 = a² + b² 예요. 둘러싼 정사각형 (a+b)²에서 직각삼각형 4개 2ab를 빼도 같아요.</span>'; render2(); check2({now:true});
+  if(bad){ s.fmiss++; const [a,b] = bad, v = f({a,b}); $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}이면 내 식의 값은 ${Number.isFinite(v)?Math.round(v*100)/100:'계산할 수 없음'}, 실제 넓이는 ${a*a+b*b}.</span> 표의 수들을 다시 살펴보세요.`; hint2(); check2({now:true}); return; }
+  s.fok = true; $('hint2').innerHTML = ''; $('msg2').innerHTML = '<span class="ok">✅ 맞아요! 기울어진 정사각형의 넓이 = a² + b² 예요. 둘러싼 정사각형 (a+b)²에서 직각삼각형 4개 2ab를 빼도 같아요.</span>'; render2(); check2({now:true});
 }
+function hint2(){ const s = state.s2; $('hint2').innerHTML = s.fok || s.fmiss<2 ? '' : `💡 <b>힌트</b> 넓이를 두 수의 합으로 나눠 보세요. ${TILT_ROWS.map(([a,b])=>`${a*a+b*b} = ${a*a} + ${b*b}`).join(', ')}` + (s.fmiss>=4 ? ' — 1, 4, 9, 16은 어떤 수를 두 번 곱한 수일까요? a, b와 비교해 보세요.' : ' — 이 수들은 표의 a, b와 어떤 관계일까요?'); }
 function check2(opts){ const n = Object.keys(state.s2.ans).length; setWhy(2, '✅ 완료! '+NEXT, n<4 ? `표의 넓이를 모두 구해 보세요. (지금 ${n}/4)` : '넓이를 a, b로 나타내는 식을 써 보세요.'); refreshAll(opts); }
 
 /* ================= 화면 3: 직각삼각형의 세 변 위 정사각형 ================= */
@@ -718,14 +769,16 @@ $('ab3').addEventListener('click', e=>{ const b = e.target.closest('[data-t]'); 
 $('okA3').addEventListener('click', ()=>{
   if(isLocked() || state.s3.ok) return; const [a, b] = TRI3[state.s3.t], v = ['p3','q3','r3'].map(id=>Number($(id).value.trim())), want = [a*a, b*b, a*a+b*b];
   const bad = ['P','Q','R'].filter((n,i)=>!(String($(['p3','q3','r3'][i]).value).trim() && v[i]===want[i]));
-  if(bad.length){ state.s3.miss++; $('msgA3').innerHTML = `<span class="bad">${bad.join(', ')}를 다시 구해 보세요.</span>` + (bad.includes('R') ? ' R은 화면 2의 기울어진 정사각형과 같은 모양이에요.' : ''); check3(); return; }
+  if(bad.length){ state.s3.miss++; $('msgA3').innerHTML = `<span class="bad">${bad.join(', ')}의 넓이를 다시 구해 보세요.</span>` + (bad.includes('R') ? ' R은 화면 2의 기울어진 정사각형과 같은 모양이에요.' : ''); check3(); return; }
   state.s3.ok = true; $('msgA3').innerHTML = '<span class="ok">✅ 맞아요!</span>'; render3(); check3({now:true}); });
 function chkEq(inputId, msgId, key, okKey, vars, tests, fails, okMsg){
   if(isLocked() || state.s3[okKey]) return; const src = $(inputId).value.trim(); if(!src) return; state.s3[key] = src;
   const f = parseEq(src, vars);
   if(!f){ $(msgId).innerHTML = `<span class="bad">식을 읽을 수 없어요.</span> ${vars.join(', ')}, 숫자, + − × ^ ( ) 와 = 하나를 써 주세요.`; check3(); return; }
   const wrongT = tests.find(e=>!near0(f(e))), trivial = fails.every(e=>near0(f(e)));
-  if(wrongT || trivial){ state.s3.miss++; $(msgId).innerHTML = wrongT ? `<span class="bad">${Object.entries(wrongT).map(([k,v])=>k+' = '+v).join(', ')}일 때 맞지 않아요.</span>` : '<span class="bad">언제나 맞는 식이라 관계를 알려 주지 않아요.</span>'; check3({now:true}); return; }
+  if(wrongT || trivial){ state.s3.miss++; state.s3[key+'Miss'] = (state.s3[key+'Miss']||0)+1; const m = state.s3[key+'Miss'];
+    const hint = m<2 ? '' : key==='rel' ? ` 💡 위에서 구한 넓이로 P + Q를 계산해 R과 비교해 보세요.${m>=3?' (예: P = '+TRI3[state.s3.t][0]**2+', Q = '+TRI3[state.s3.t][1]**2+')':''}` : ` 💡 P는 한 변이 a인 정사각형이니까 P = a × a 예요. Q와 R도 b, c로 나타내서 ①의 식에 넣어 보세요.`;
+    $(msgId).innerHTML = (wrongT ? `<span class="bad">${Object.entries(wrongT).map(([k,v])=>k+' = '+v).join(', ')}일 때 맞지 않아요.</span>` : '<span class="bad">언제나 맞는 식이라 관계를 알려 주지 않아요.</span>') + hint; check3({now:true}); return; }
   state.s3[okKey] = true; $(msgId).innerHTML = `<span class="ok">✅ ${okMsg}</span>`; render3(); check3({now:true});
 }
 $('ok3a').addEventListener('click', ()=> chkEq('f3a','msg3a','rel','relOk',['P','Q','R'], [{P:9,Q:4,R:13},{P:1,Q:9,R:10},{P:4,Q:4,R:8},{P:9,Q:16,R:25}], [{P:1,Q:1,R:5},{P:2,Q:3,R:4}], '맞아요! 두 작은 정사각형의 넓이의 합이 가장 큰 정사각형의 넓이와 같아요.'));
@@ -733,51 +786,66 @@ $('ok3b').addEventListener('click', ()=> chkEq('f3b','msg3b','abc','abcOk',['a',
 ['f3a','f3b'].forEach((id,i)=> $(id).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $(i?'ok3b':'ok3a').click(); } }));
 function check3(opts){ const s = state.s3; setWhy(3, '✅ 완료! '+NEXT, !s.ok ? 'P, Q, R의 넓이를 구해 보세요.' : '두 관계식을 써 보세요.'); refreshAll(opts); }
 
-/* ================= 화면 4: ∠C가 90°가 아니면? ================= */
+/* ================= 화면 4·5: ∠C가 90°보다 작을 때 / 클 때 ================= */
 const M4 = mk(6, 334, 14);
 function sqOut(p1, p2, far){ const q = sqOn(p1, p2, far); return [q[2], q[3]]; }
 const sideAB = C => (B4[0]-A4[0])*(C[1]-A4[1]) - (B4[1]-A4[1])*(C[0]-A4[0]);
 function okC(C){ if(!(C[0]>=0 && C[0]<=31 && C[1]>=0 && C[1]<=22 && sideAB(C) < -6)) return false;
   return [...sqOut(B4,C,A4), ...sqOut(C,A4,B4), ...sqOut(A4,B4,C)].every(q=>q[0]>=0.3 && q[0]<=31.8 && q[1]>=0.3 && q[1]<=23.4); }
+const okCn = (n, C) => okC(C) && dotC(C)*PG[n].sign > 0;
 function pickHTML(opts, cur, ans){ return opts.map(v=>`<button type="button" data-v="${esc(v)}" class="${cur===v?(ans==null?'on ok':v===ans?'on ok':'on no'):''}">${esc(v)}</button>`).join(''); }
 function square4(p1, p2, far, name, area){ const q = sqOn(p1, p2, far), c = [(q[0][0]+q[2][0])/2, (q[0][1]+q[2][1])/2];
   return poly(M4, q, COL[name][0], COL[name][1]) + `<text x="${M4.X(c[0])}" y="${M4.Y(c[1])+5}" text-anchor="middle" font-size="${Math.max(10, Math.min(16, Math.sqrt(area)*14*0.3))}" font-weight="bold" fill="${COL[name][1]}">${Math.sqrt(area) < 3 ? area : name+' = '+area}</text>`; }
-function render4(){
-  const s = state.s4;
-  document.querySelector('#pred4 .pickc').innerHTML = pickHTML(PRED, s.pred, null);
-  $('lay4').classList.toggle('locked', !s.pred);
-  const C = s.C, A = A4, B = B4, p = d2(B,C), q = d2(C,A), r = d2(A,B), dt = dotC(C), ang = angC(C);
+const draft = {4:{sum:'', cmp:''}, 5:{sum:'', cmp:''}}, recMsg = {4:'', 5:''};
+const recRows = rec => rec.map((x,i)=>{ const c = [x.x,x.y], pp = d2(B4,c), qq = d2(c,A4), r = d2(A4,B4); return `<tr><td>${i+1}</td><td>약 ${Math.round(angC(c))}°</td><td>${pp} + ${qq} = ${pp+qq}</td><td>${pp+qq>r?'&gt;':pp+qq<r?'&lt;':'='}</td><td class="cR">${r}</td></tr>`; }).join('');
+const recHead = '<tr><th></th><th>∠C</th><th>P + Q</th><th></th><th class="cR">R</th></tr>';
+function renderPg(n){
+  const s = state['s'+n], g = PG[n];
+  document.querySelector(`#pred${n} .pickc`).innerHTML = pickHTML(PRED, s.pred, null);
+  $('lay'+n).classList.toggle('locked', !s.pred);
+  const C = s.C, A = A4, B = B4, p = d2(B,C), q = d2(C,A), r = d2(A,B);
   let h = gridLines(M4, 32) + square4(B, C, A, 'P', p) + square4(C, A, B, 'Q', q) + square4(A, B, C, 'R', r) + poly(M4, [A,B,C], COL.S[0], COL.S[1], 2.5);
   const lab = (pt, t, dx, dy) => `<text x="${M4.X(pt[0])+dx}" y="${M4.Y(pt[1])+dy}" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">${t}</text>`;
   h += lab(A,'A',-12,-6) + lab(B,'B',14,4) + lab(C,'C',-14,14);
   if(!isLocked()) h += `<circle class="hdl" data-h="C" cx="${M4.X(C[0])}" cy="${M4.Y(C[1])}" r="13" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`;
-  $('g4').innerHTML = h;
-  const cmp = p+q > r ? '>' : p+q < r ? '<' : '=';
-  $('now4').innerHTML = `∠C = <b>${dt===0 ? '90' : Math.round(ang)}°</b> ${dt>0?'(90°보다 작다)':dt<0?'(90°보다 크다)':'(직각)'}<br><span class="cP">P = ${p}</span> + <span class="cQ">Q = ${q}</span> = <b>${p+q}</b> &nbsp;<b class="big">${cmp}</b>&nbsp; <span class="cR">R = <b>${r}</b></span>`;
-  const has = s.rec.some(x=>x.x===C[0] && x.y===C[1]);
-  $('rec4').disabled = has || isLocked(); $('rec4').textContent = has ? '✅ 이미 기록했어요' : '📝 기록하기';
-  $('tab4').innerHTML = `<tr><th></th><th>∠C</th><th>P + Q</th><th></th><th class="cR">R</th></tr>` + (s.rec.length ? s.rec.map((x,i)=>{ const c = [x.x,x.y], pp = d2(B,c), qq = d2(c,A), d = dotC(c); return `<tr><td>${i+1}</td><td>${d===0?'90':Math.round(angC(c))}°</td><td>${pp+qq}</td><td>${pp+qq>r?'&gt;':pp+qq<r?'&lt;':'='}</td><td class="cR">${r}</td></tr>`; }).join('') : '<tr><td colspan="5" class="empty">아직 기록이 없어요.</td></tr>');
-  const k = rec4Kinds();
-  $('q4').classList.toggle('locked', !(k.lt && k.gt) || isLocked());
-  document.querySelectorAll('#q4 .pickc').forEach(box=>{ const key = box.dataset.k; box.innerHTML = pickHTML(key==='eq' ? EQ : CMP, s[key], ANS4[key]); });
-  const wrong = ['lt','gt','eq'].filter(x=>s[x] && s[x]!==ANS4[x]);
-  $('msg4').innerHTML = isDone(4) ? `<span class="ok">✅ 맞아요! P + Q = R 이 되는 것은 ∠C가 직각일 때뿐이에요.${s.pred==='P + Q < R' ? ' 처음 예측도 맞았어요!' : ''}</span>` : wrong.length ? '<span class="bad">기록한 표에서 ∠C의 크기에 따라 비교해 보세요.</span>' : '';
-  $('sum4').style.display = isDone(4) ? '' : 'none';
+  $('g'+n).innerHTML = h;
+  const has = s.rec.some(x=>x.x===C[0] && x.y===C[1]), full = s.rec.length>=6, dr = draft[n];
+  $('now'+n).innerHTML = `∠C = 약 <b>${Math.round(angC(C))}°</b> (90°보다 ${g.word})<br><span class="cP">P = ${p}</span>, <span class="cQ">Q = ${q}</span>, <span class="cR">R = ${r}</span>`
+    + (has ? '<div class="g-msg">✅ 이 모양은 기록했어요. 점 C를 다른 곳으로 옮겨 보세요.</div>' : full ? '' :
+      `<div class="inrow">P + Q = <input type="text" class="num" id="pq${n}" inputmode="numeric" autocomplete="off" value="${esc(dr.sum)}"> <span class="pickc" id="cmp${n}">${pickHTML(CMP, dr.cmp, null)}</span> R <button type="button" class="recb" id="rec${n}">📝 기록하기</button></div>`)
+    + `<div class="g-msg">${recMsg[n]}</div>`;
+  const si = $('pq'+n); if(si){ si.addEventListener('input', ()=>{ dr.sum = si.value; }); si.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doRec(n); } });
+    $('cmp'+n).addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; dr.cmp = b.dataset.v; renderPg(n); const ni = $('pq'+n); if(ni && !ni.value) ni.focus(); });
+    $('rec'+n).addEventListener('click', ()=>doRec(n)); }
+  $('tab'+n).innerHTML = recHead + (s.rec.length ? recRows(s.rec) : `<tr><td colspan="5" class="empty">아직 기록이 없어요. (${NREC}개 이상 기록)</td></tr>`);
+  if(n===5) $('prev5').innerHTML = `<div class="cap">📋 화면 4 기록 (∠C &lt; 90°)</div>` + (state.s4.rec.length ? `<table class="rtab">${recHead}${recRows(state.s4.rec)}</table>` : '<span class="note">화면 4에서 아직 기록하지 않았어요.</span>');
+  $('q'+n).classList.toggle('locked', s.rec.length<NREC || isLocked());
+  document.querySelectorAll(`#q${n} .pickc`).forEach(box=>{ const key = box.dataset.k; box.innerHTML = pickHTML(key==='eq' ? EQ : CMP, s[key], ANS4[key]); });
+  const keys = n===4 ? ['lt'] : ['gt','eq'], wrong = keys.filter(x=>s[x] && s[x]!==ANS4[x]);
+  $('msg'+n).innerHTML = isDone(n) ? `<span class="ok">✅ 맞아요! ${n===4 ? '∠C가 90°보다 작으면 P + Q가 R보다 커요.' : 'P + Q = R 이 되는 것은 ∠C가 직각일 때뿐이에요.'}${s.pred===(n===4?'P + Q > R':'P + Q < R') ? ' 처음 예측도 맞았어요!' : ''}</span>` : wrong.length ? '<span class="bad">기록한 표를 다시 살펴보세요.</span>' : '';
+  if(n===5) $('sum5').style.display = isDone(5) ? '' : 'none';
 }
-(function(){ const svg = $('g4'); let on = false;
-  svg.addEventListener('pointerdown', ev=>{ if(isLocked() || !state.s4.pred) return; if(!(ev.target.closest && ev.target.closest('.hdl'))) return; on = true; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
-  svg.addEventListener('pointermove', ev=>{ if(!on) return; ev.preventDefault(); const p = svgPt(svg, ev, M4), c = [Math.round(p[0]), Math.round(p[1])]; if(okC(c) && (c[0]!==state.s4.C[0] || c[1]!==state.s4.C[1])){ state.s4.C = c; render4(); } });
-  const fin = ()=>{ on = false; }; svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin); })();
-$('pred4').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; state.s4.pred = b.dataset.v; render4(); check4({now:true}); });
-$('rec4').addEventListener('click', ()=>{ const s = state.s4; if(isLocked() || s.rec.some(x=>x.x===s.C[0] && x.y===s.C[1]) || s.rec.length>=10) return; s.rec.push({x:s.C[0], y:s.C[1]}); render4(); check4({now:true}); });
-$('q4').addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const key = b.closest('.pickc').dataset.k, s = state.s4; if(s[key]===ANS4[key]) return; s[key] = b.dataset.v; if(s[key]!==ANS4[key]) s.miss++; render4(); check4({now:true}); });
-function check4(opts){ const k = rec4Kinds(), s = state.s4;
-  setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', !s.pred ? '먼저 예측을 골라 보세요.' : !(k.lt && k.gt) ? `∠C가 90°보다 작을 때(${k.lt?'✅':'⬜'})와 클 때(${k.gt?'✅':'⬜'})를 각각 기록해 보세요.` : '세 질문에 답해 보세요.'); refreshAll(opts); }
+function doRec(n){ const s = state['s'+n], dr = draft[n], C = s.C; if(isLocked() || s.rec.some(x=>x.x===C[0] && x.y===C[1]) || s.rec.length>=6) return;
+  const p = d2(B4,C), q = d2(C,A4), r = d2(A4,B4), v = Number(String(dr.sum).trim()), want = p+q>r ? '>' : p+q<r ? '<' : '=';
+  if(!String(dr.sum).trim() || !dr.cmp){ recMsg[n] = '<span class="bad">P + Q의 값을 쓰고, R과 비교하는 기호(&gt;, =, &lt;)를 골라 주세요.</span>'; renderPg(n); return; }
+  if(v!==p+q){ s.miss++; recMsg[n] = '<span class="bad">P + Q를 다시 계산해 보세요.</span>'; }
+  else if(dr.cmp!==want){ s.miss++; recMsg[n] = `<span class="bad">P + Q = ${p+q}, R = ${r}. 어느 쪽이 더 큰지 다시 보세요.</span>`; }
+  else { s.rec.push({x:C[0], y:C[1]}); draft[n] = {sum:'', cmp:''}; recMsg[n] = `<span class="ok">기록했어요!</span>${s.rec.length<NREC ? ' 점 C를 옮겨서 하나 더 기록해 보세요.' : ''}`; }
+  renderPg(n); checkPg(n, {now:true}); }
+[4,5].forEach(n=>{ const svg = $('g'+n); let on = false;
+  svg.addEventListener('pointerdown', ev=>{ if(isLocked() || !state['s'+n].pred) return; if(!(ev.target.closest && ev.target.closest('.hdl'))) return; on = true; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(!on) return; ev.preventDefault(); const s = state['s'+n], p = svgPt(svg, ev, M4), c = [Math.round(p[0]), Math.round(p[1])]; if(okCn(n, c) && (c[0]!==s.C[0] || c[1]!==s.C[1])){ s.C = c; draft[n] = {sum:'', cmp:''}; recMsg[n] = ''; renderPg(n); } });
+  const fin = ()=>{ on = false; }; svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin);
+  $('pred'+n).addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; state['s'+n].pred = b.dataset.v; renderPg(n); checkPg(n, {now:true}); });
+  $('q'+n).addEventListener('click', e=>{ const b = e.target.closest('button[data-v]'); if(!b || isLocked()) return; const key = b.closest('.pickc').dataset.k, s = state['s'+n]; if(s[key]===ANS4[key]) return; s[key] = b.dataset.v; if(s[key]!==ANS4[key]) s.miss++; renderPg(n); checkPg(n, {now:true}); });
+});
+function checkPg(n, opts){ const s = state['s'+n];
+  setWhy(n, n===4 ? '✅ 완료! '+NEXT : '✅ 완료! 마지막 화면에서 제출하세요.', !s.pred ? '먼저 예측을 골라 보세요.' : s.rec.length<NREC ? `P + Q를 직접 계산해서 ${NREC}번 기록해 보세요. (지금 ${s.rec.length}개)` : n===4 ? '질문에 답해 보세요.' : '두 질문에 답해 보세요.'); refreshAll(opts); }
 
 function onShareChanged(){ renderClass1(); }
 function onRevealChanged(){}
-function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); if(taskId===4) render4(); }
-function initActivity(){ render1(); render2(); render3(); render4(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); }
+function onShowPage(taskId){ if(taskId===1) render1(); if(taskId===2) render2(); if(taskId===3) render3(); if(taskId===4) renderPg(4); if(taskId===5) renderPg(5); }
+function initActivity(){ render1(); render2(); render3(); renderPg(4); renderPg(5); hint2(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); checkPg(4, {noSave:true}); checkPg(5, {noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const obj = v => (v && typeof v==='object') ? v : {};
 const int = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n>=lo && n<=hi ? n : d; };
@@ -791,10 +859,13 @@ function restoreData(d){
   const wr = {}; Object.keys(obj(s2.wrong)).forEach(k=>{ wr[k] = int(obj(s2.wrong)[k],0,999,0); });
   state.s2 = {ans, wrong:wr, f:str(s2.f), fok:!!s2.fok, fmiss:int(s2.fmiss,0,999,0)};
   state.s3 = {t:int(s3.t,0,TRI3.length-1,0), ok:!!s3.ok, rel:str(s3.rel), relOk:!!s3.relOk, abc:str(s3.abc), abcOk:!!s3.abcOk, miss:int(s3.miss,0,999,0)};
-  const C = arr(s4.C).map(Number);
-  state.s4 = {pred: PRED.includes(s4.pred) ? s4.pred : '', C: (C.length===2 && okC(C)) ? C : [10,9],
-    rec: arr(s4.rec).map(r=>({x:int(obj(r).x,0,31,-1), y:int(obj(r).y,0,22,-1)})).filter(r=>r.x>=0&&r.y>=0&&okC([r.x,r.y])).slice(0,10),
-    lt: CMP.includes(s4.lt) ? s4.lt : '', gt: CMP.includes(s4.gt) ? s4.gt : '', eq: EQ.includes(s4.eq) ? s4.eq : '', miss:int(s4.miss,0,999,0)};
+  const s5 = obj(d.s5), legacy = !d.s5 && (s4.gt || s4.eq);   // 예전 판(화면 4 하나)에서 쓴 답은 화면 4·5로 나눠 옮김(기록은 새로 해야 함)
+  const pos = (n, v) => { const C = arr(v).map(Number); return (C.length===2 && okCn(n, C)) ? C : PG[n].start.slice(); };
+  const recs = (n, v) => arr(v).map(r=>({x:int(obj(r).x,0,31,-1), y:int(obj(r).y,0,22,-1)})).filter(r=>r.x>=0&&r.y>=0&&okCn(n,[r.x,r.y])).slice(0,6);
+  state.s3.relMiss = int(s3.relMiss,0,999,0); state.s3.abcMiss = int(s3.abcMiss,0,999,0);
+  state.s4 = {pred: PRED.includes(s4.pred) && !legacy ? s4.pred : '', C: pos(4, s4.C), rec: recs(4, s4.rec), lt: CMP.includes(s4.lt) ? s4.lt : '', miss:int(s4.miss,0,999,0)};
+  const o5 = legacy ? s4 : s5;
+  state.s5 = {pred: PRED.includes(o5.pred) ? o5.pred : '', C: pos(5, legacy ? null : s5.C), rec: legacy ? [] : recs(5, s5.rec), gt: CMP.includes(o5.gt) ? o5.gt : '', eq: EQ.includes(o5.eq) ? o5.eq : '', miss: legacy ? 0 : int(s5.miss,0,999,0)};
   initActivity();
 }
 

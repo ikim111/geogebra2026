@@ -309,7 +309,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 4</span>
+            <span id="previewLabel">1 / 5</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -355,10 +355,10 @@ const CONFIG = {
 const STAGES = [
   {t:'정사각형 찾기·넓이 규칙', d:'5×5 점판에서 넓이가 다른 정사각형 찾기 → 기울어진 정사각형 넓이 규칙을 식으로 (화면 1~2)', tasks:[1,2], max:2, reveal:{},
    tip:'💬 "기울어진 정사각형의 넓이는 어떻게 구했나요?" — 둘러싸서 빼기, 잘라 붙이기 등 여러 방법을 발표시켜 주세요. 그다음 a, b로 일반화.'},
-  {t:'직각삼각형·직각이 아니면?', d:'기울어진 정사각형의 한 변 = 직각삼각형의 빗변 → P+Q=R, a²+b²=c² → 직각이 아닐 때 비교 (화면 3~4)', tasks:[3,4], max:null, reveal:{},
+  {t:'직각삼각형·직각이 아니면?', d:'기울어진 정사각형의 한 변 = 직각삼각형의 빗변 → P+Q=R, a²+b²=c² → 직각이 아닐 때 비교 (화면 3~5)', tasks:[3,4,5], max:null, reveal:{},
    tip:'💬 "왜 직각일 때만 성립할까?" — 둘러싸서 빼기가 곧 피타고라스 정리의 설명임을 연결해 주세요. 증명은 학습지에서.'}
 ];
-const TASK_LABELS = [ {id:1, key:'a1', label:'정사각형 찾기'}, {id:2, key:'a2', label:'넓이 규칙 식'}, {id:3, key:'a3', label:'직각삼각형·관계식'}, {id:4, key:'a4', label:'직각이 아니면?'} ];
+const TASK_LABELS = [ {id:1, key:'a1', label:'정사각형 찾기'}, {id:2, key:'a2', label:'넓이 규칙 식'}, {id:3, key:'a3', label:'직각삼각형·관계식'}, {id:4, key:'a4', label:'∠C<90°'}, {id:5, key:'a5', label:'∠C>90°'} ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
@@ -368,17 +368,14 @@ const ob = v => (v && typeof v==='object') ? v : {};
 const ar = v => Array.isArray(v) ? v : Object.values(ob(v));
 const AREAS = [1,2,4,5,8,9,10,16];
 const ANS = {lt:'>', gt:'<', eq:'90°'};
-const A4 = [10,14], B4 = [16,9];
-const dotC = c => (A4[0]-c[0])*(B4[0]-c[0]) + (A4[1]-c[1])*(B4[1]-c[1]);
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   if(id===1){ const x = ob(d.s1), f = Object.keys(ob(x.found)).map(Number).sort((a,b)=>a-b); if(!f.length && !x.wrong) return ''; return kv('찾은 넓이', `${f.length}가지 (${f.join(', ')||'-'})`) + (x.wrong ? kv('넓이 틀린 횟수', x.wrong) : ''); }
   if(id===2){ const x = ob(d.s2), n = Object.keys(ob(x.ans)).length; if(!n && !x.f) return ''; return kv('넓이 구하기', `${n}/4`) + kv('규칙 식', `${esc(x.f||'-')} ${x.fok?'✅':x.f?'❌':''}`) + (x.fmiss ? kv('식 틀린 횟수', x.fmiss) : ''); }
   if(id===3){ const x = ob(d.s3); if(!x.ok && !x.rel) return ''; return kv('P·Q·R 넓이', x.ok?'✅':'아직') + kv('P·Q·R 관계식', `${esc(x.rel||'-')} ${x.relOk?'✅':x.rel?'❌':''}`) + kv('a·b·c 관계식', `${esc(x.abc||'-')} ${x.abcOk?'✅':x.abc?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
-  if(id===4){ const x = ob(d.s4), r = ar(x.rec); if(!x.pred && !r.length) return ''; const k = r.map(c=>dotC([c.x,c.y]));
-    return kv('예측(∠C>90°)', esc(x.pred||'-')) + kv('기록', `예각 ${k.filter(v=>v>0).length} · 직각 ${k.filter(v=>v===0).length} · 둔각 ${k.filter(v=>v<0).length}`)
-      + kv('∠C<90°', `P+Q ${esc(x.lt||'?')} R ${x.lt===ANS.lt?'✅':x.lt?'❌':''}`) + kv('∠C>90°', `P+Q ${esc(x.gt||'?')} R ${x.gt===ANS.gt?'✅':x.gt?'❌':''}`) + kv('P+Q=R이면', `${esc(x.eq||'?')} ${x.eq===ANS.eq?'✅':x.eq?'❌':''}`); }
+  if(id===4){ const x = ob(d.s4), r = ar(x.rec); if(!x.pred && !r.length) return ''; return kv('예측(∠C<90°)', esc(x.pred||'-')) + kv('기록', r.length+'개') + kv('∠C<90°', `P+Q ${esc(x.lt||'?')} R ${x.lt===ANS.lt?'✅':x.lt?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
+  if(id===5){ const x = ob(d.s5), r = ar(x.rec); if(!x.pred && !r.length) return ''; return kv('예측(∠C>90°)', esc(x.pred||'-')) + kv('기록', r.length+'개') + kv('∠C>90°', `P+Q ${esc(x.gt||'?')} R ${x.gt===ANS.gt?'✅':x.gt?'❌':''}`) + kv('P+Q=R이면', `${esc(x.eq||'?')} ${x.eq===ANS.eq?'✅':x.eq?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -391,9 +388,9 @@ function taskAggregateHTML(id){
   if(id===2){ const xs = ss.map(d=>ob(d.s2)).filter(x=>x.f); const wrong = xs.filter(x=>!x.fok).map(x=>x.f);
     return box(`규칙 식 (${xs.length}명)`, `<div class="kv">맞힌 학생 <b>${xs.filter(x=>x.fok).length}</b>명 · 한 번 이상 틀린 학생 <b>${xs.filter(x=>x.fmiss).length}</b>명</div>` + (wrong.length ? `<div class="kv">지금 틀린 식: ${wrong.slice(0,12).map(esc).join(' · ')}</div>` : '')); }
   if(id===3){ const xs = ss.map(d=>ob(d.s3)).filter(x=>x.ok||x.rel); return box(`관계식 (${xs.length}명)`, `<div class="kv">P·Q·R 넓이 <b>${xs.filter(x=>x.ok).length}</b>명 · P+Q=R <b>${xs.filter(x=>x.relOk).length}</b>명 · a²+b²=c² <b>${xs.filter(x=>x.abcOk).length}</b>명</div>`); }
-  if(id===4){ const xs = ss.map(d=>ob(d.s4)), pr = xs.map(x=>x.pred).filter(Boolean);
-    return box(`직각이 아니면? (예측 ${pr.length}명)`, barsHTML(['P + Q > R','P + Q = R','P + Q < R'].map(v=>({label:v, n:pr.filter(p=>p===v).length, answer:v==='P + Q < R'})), pr.length)
-      + `<div class="kv">∠C&lt;90° → &gt;: <b>${xs.filter(x=>x.lt===ANS.lt).length}</b>명 · ∠C&gt;90° → &lt;: <b>${xs.filter(x=>x.gt===ANS.gt).length}</b>명 · P+Q=R이면 90°: <b>${xs.filter(x=>x.eq===ANS.eq).length}</b>명</div>`); }
+  if(id===4 || id===5){ const k = 's'+id, xs = ss.map(d=>ob(d[k])), pr = xs.map(x=>x.pred).filter(Boolean), ans = id===4 ? 'P + Q > R' : 'P + Q < R';
+    return box(`∠C ${id===4?'&lt;':'&gt;'} 90° (예측 ${pr.length}명)`, barsHTML(['P + Q > R','P + Q = R','P + Q < R'].map(v=>({label:v, n:pr.filter(p=>p===v).length, answer:v===ans})), pr.length)
+      + `<div class="kv">2개 이상 기록 <b>${xs.filter(x=>ar(x.rec).length>=2).length}</b>명 · 결론 맞힘 <b>${xs.filter(x=>id===4 ? x.lt===ANS.lt : (x.gt===ANS.gt && x.eq===ANS.eq)).length}</b>명</div>`); }
   return '';
 }
 function updateRevealBtns(){ renderStages(); renderTeacherView(); }
