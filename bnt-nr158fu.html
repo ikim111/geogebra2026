@@ -33,7 +33,7 @@
   .stu{border:1.5px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer;background:#fff;font-family:inherit;}
   .stu:hover{border-color:var(--blue);}
   .stu.on{border-color:var(--blue);background:#e8f1fc;}
-  .stu b{display:block;font-size:17px;} .stu span{font-size:13px;color:var(--ink2);}
+  .stu b{display:block;font-size:17px;color:#1f2328;} .stu span{font-size:13px;color:var(--ink2);}
   .stu.low span{color:var(--red);font-weight:bold;}
   .head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
   .head .who{font-size:18px;font-weight:bold;} .head .sc{color:var(--ink2);} .head .sc b{font-size:28px;color:var(--red);}
@@ -58,6 +58,10 @@
   .bnit .pt{font-weight:bold;font-size:15px;min-width:34px;text-align:right;} .bnit .pt small{font-size:11px;color:#999;font-weight:normal;}
   .bnit .minus{background:#e53935;color:#fff;border-radius:10px;padding:1px 8px;font-size:12.5px;font-weight:bold;min-width:30px;text-align:center;}
   .bnit .ok{color:#43a047;font-weight:bold;min-width:30px;text-align:center;}
+  .ovt{border-collapse:collapse;font-size:13px;min-width:620px;width:100%;background:#fff;}
+  .ovt th,.ovt td{border:1px solid #e3e7ec;padding:4px 6px;text-align:center;}
+  .ovt th{background:#f6f8fb;font-size:12px;} .ovt td.lo{background:#fff1ef;color:#c62828;font-weight:bold;}
+  .ovt tr.stu-row{cursor:pointer;} .ovt tr.stu-row:hover td{background:#eef4ff;} .ovt tr.avg td{background:#fffbe6;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -108,10 +112,21 @@ async function load(){
     else if (MAP) msg.innerHTML += `<div class="note" style="margin-top:4px;">✅ 올린 학생 모두 비밀번호가 있어요.</div>`;
     if (!MAP) { $('list').innerHTML = '<p class="note" style="margin:10px 0 0;">아직 올린 채점본이 없어요. 위의 「📤 채점본 올리기」에서 올릴 수 있어요.</p>'; return; }
     const avg = NUMS.length ? (NUMS.reduce((s, n) => s + (+MAP.students[n].score || 0), 0) / NUMS.length).toFixed(1) : '-';
-    $('list').innerHTML = `<p class="note" style="margin:10px 0 0;">${NUMS.length}명 · 평균 ${avg}점 · 마지막 올림 ${new Date(MAP.ts).toLocaleString('ko-KR')} — 학생을 누르면 채점본이 아래에 나와요.</p>
-      <div class="grid">${NUMS.map((n, i) => { const s = MAP.students[n]; return `<button type="button" class="stu${+s.score < 10 ? ' low' : ''}" data-i="${i}"><b>${esc(n)}번</b><span>${esc(s.score)}점</span></button>`; }).join('')}</div>`;
+    $('list').innerHTML = `<p class="note" style="margin:10px 0 0;">${NUMS.length}명 · 평균 ${avg}점 · 마지막 올림 ${MAP.ts ? new Date(MAP.ts).toLocaleString('ko-KR') : '— (표지 점수 기본값)'} — 학생을 누르면 채점본이 아래에 나와요.</p>
+      <div class="grid">${NUMS.map((n, i) => { const s = MAP.students[n]; return `<button type="button" class="stu${+s.score < 10 ? ' low' : ''}" data-i="${i}"><b>${esc(n)}번</b><span>${esc(s.score)}점</span></button>`; }).join('')}</div>` + overviewHTML();
   } catch (e) { msg.innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
   $('loadBtn').disabled = false;
+}
+/* 반 전체 항목별 점수표: 항목 점수가 있는 학생(1~4반 등)은 9칸, 없는 학생은 총점만. 줄을 누르면 그 학생 채점본 */
+function overviewHTML(){
+  const withIt = NUMS.filter(n => Array.isArray(MAP.students[n].items));
+  if (!withIt.length) return '';
+  const avg = k => (withIt.reduce((s, n) => s + (+MAP.students[n].items[k] || 0), 0) / withIt.length).toFixed(1);
+  const head = ['학습목표','6.1','6.2','6.3','6.4','6.5·6.6','6.7 성질','6.7 관계도','형식'];
+  return `<div style="overflow-x:auto;margin-top:12px;"><table class="ovt"><tr><th>번호</th>${head.map((h, k) => `<th>${h}<br><span class="note">/${BN_ITEMS[k][2]}</span></th>`).join('')}<th>총점</th></tr>`
+    + NUMS.map((n, i) => { const s = MAP.students[n], it = s.items;
+        return `<tr class="stu-row" data-i="${i}"><td><b>${esc(n)}</b></td>${Array.isArray(it) ? it.map((x, k) => `<td class="${+x < BN_ITEMS[k][2] ? 'lo' : ''}">${esc(x)}</td>`).join('') : `<td colspan="9" class="note">항목 점수 없음</td>`}<td><b>${esc(s.score)}</b></td></tr>`; }).join('')
+    + `<tr class="avg"><td>평균</td>${head.map((h, k) => `<td>${avg(k)}</td>`).join('')}<td>${(withIt.reduce((s, n) => s + (+MAP.students[n].score || 0), 0) / withIt.length).toFixed(1)}</td></tr></table></div>`;
 }
 function show(i){
   if (i < 0 || i >= NUMS.length) return;
@@ -126,7 +141,7 @@ function show(i){
 }
 $('loadBtn').addEventListener('click', load);
 $('key').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
-$('list').addEventListener('click', e => { const b = e.target.closest('.stu'); if (b) show(+b.dataset.i); });
+$('list').addEventListener('click', e => { const b = e.target.closest('.stu, .stu-row'); if (b) show(+b.dataset.i); });
 document.addEventListener('keydown', e => { if (CUR < 0 || e.target.tagName === 'INPUT') return; if (e.key === 'ArrowLeft') show(CUR - 1); if (e.key === 'ArrowRight') show(CUR + 1); });
 if ($('key').value) load();
 </script>
