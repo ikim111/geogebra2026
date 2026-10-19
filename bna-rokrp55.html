@@ -80,8 +80,9 @@
 
 <div class="wrap" style="margin-top:0;"><div class="card">
     <h2>3. 점수만 올리기 <span class="note">(스캔본 없이 총점만)</span></h2>
-    <p class="note" style="margin:0 0 6px;">한 줄에 「번호, 총점」. 위 1번에서 고른 반에 저장돼요. 이미 사진을 올린 학생은 사진은 그대로 두고 점수만 바뀌어요. 학생에게는 점수와 "사진은 곧 올라와요"가 보여요.</p>
-    <textarea id="scoreOnly" placeholder="1,20&#10;2,18&#10;..."></textarea>
+    <p class="note" style="margin:0 0 6px;">위 1번에서 고른 반의 점수표예요. 칸에 총점(0~20)을 쓰거나 고치고 「💾 점수 저장」을 누르세요. 빈칸인 번호는 저장하지 않아요(이미 있는 점수는 그대로). 이미 사진을 올린 학생은 사진은 그대로 두고 점수만 바뀌어요.</p>
+    <div class="row" style="gap:8px;"><button class="sec" id="scoreLoad" style="flex:0 0 auto;">📥 지금 저장된 점수 불러오기</button><button class="sec" id="scorePreset" style="flex:0 0 auto;display:none;">📋 스캔본 표지에서 읽은 점수 채우기</button></div>
+    <div id="scoreTbl"></div>
     <div style="margin-top:12px;"><button id="scoreBtn">💾 점수 저장</button></div>
     <div id="scoreMsg" class="msg"></div>
   </div></div>
@@ -167,14 +168,49 @@ async function pageToJpeg(pdf, no){
   await page.render({ canvasContext: ctx, viewport: v }).promise;
   return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.68));
 }
-/* 3. 점수만 올리기: 사진 없이 총점만 반 목록(bnmap)에 합친다. 이미 사진이 있는 학생은 사진을 그대로 둔다 */
+/* 3. 점수만 올리기: 표에서 총점을 쓰거나 고쳐서 반 목록(bnmap)에 합친다. 이미 사진이 있는 학생은 사진을 그대로 둔다 */
+// 1~4반: 2026-10-19 스캔본 표지의 항목 점수를 더한 총점(Claude가 읽음). 빠진 번호는 스캔본에 없던 학생
+const SCORE_PRESET = {
+  1: {1:20,2:20,3:19,4:17,5:20,7:20,8:20,9:20,10:20,11:19,12:19,13:17,14:12,15:20,16:20,17:19,18:20,19:20,20:20,21:10,22:19,23:20,24:20,25:15,26:20,27:10,28:11,29:11},
+  2: {1:20,4:20,5:20,6:13,7:18,8:20,9:20,10:20,11:17,12:20,13:20,14:20,15:15,16:20,17:19,18:19,19:18,20:19,21:20,22:20,23:13,24:15,26:20,27:13,28:20,29:20,30:16},
+  3: {1:20,2:20,3:20,4:9,5:20,6:17,7:20,8:10,9:18,20:20,21:20,22:20,23:20,24:19,25:20,26:20,27:6,28:11,30:14},
+  4: {1:20,2:20,3:20,4:20,5:19,6:20,7:11,8:20,9:20,10:20,11:17,12:0,13:18,14:19,15:20,16:20,17:20,18:17,19:20,21:20,23:20,25:20,26:18,27:18,28:15,29:0,30:17}
+};
+let SCORE_PHOTO = {};
+function renderScoreTbl(vals){
+  const n = Math.max(32, ...Object.keys(vals || {}).map(Number).filter(Number.isFinite));
+  const cols = 4, per = Math.ceil(n / cols);
+  let h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">';
+  for (let c = 0; c < cols; c++) {
+    h += '<table style="flex:1;min-width:140px;width:auto;"><tr><th>번호</th><th>총점</th></tr>';
+    for (let i = c * per + 1; i <= Math.min(n, (c + 1) * per); i++) {
+      const v = vals && vals[i] != null ? vals[i] : '';
+      h += `<tr><td>${i}${SCORE_PHOTO[i] ? ' <span title="사진 있음">📷</span>' : ''}</td><td><input type="text" inputmode="numeric" class="sc" data-n="${i}" value="${esc(v)}" style="width:60px;text-align:center;padding:4px;"></td></tr>`;
+    }
+    h += '</table>';
+  }
+  $('scoreTbl').innerHTML = h + '</div>';
+}
+function scorePresetBtn(){ $('scorePreset').style.display = SCORE_PRESET[$('cls').value] ? '' : 'none'; }
+$('cls').addEventListener('change', () => { SCORE_PHOTO = {}; renderScoreTbl({}); scorePresetBtn(); $('scoreMsg').textContent = ''; });
+renderScoreTbl({}); scorePresetBtn();
+$('scorePreset').addEventListener('click', () => { const cur = {}; document.querySelectorAll('#scoreTbl input.sc').forEach(i => { if (i.value.trim()) cur[i.dataset.n] = i.value.trim(); }); renderScoreTbl(Object.assign({}, SCORE_PRESET[$('cls').value] || {}, cur)); $('scoreMsg').innerHTML = '<span class="note">표지에서 읽은 점수를 빈칸에 채웠어요(이미 쓴 칸은 그대로). 확인하고 저장하세요.</span>'; });
+$('scoreLoad').addEventListener('click', async () => {
+  const msg = $('scoreMsg'); if (!$('key').value.trim()) { msg.innerHTML = '<span class="bad">관리 비밀번호를 넣어 주세요.</span>'; return; }
+  msg.textContent = '⏳ 불러오는 중…';
+  try { const m = (await getMap()).map, st = (m && m.students) || {}, vals = {}; SCORE_PHOTO = {};
+    Object.keys(st).forEach(n => { vals[n] = st[n].score; if ((st[n].pages || []).length) SCORE_PHOTO[n] = true; });
+    renderScoreTbl(vals); msg.innerHTML = `<span class="ok">${$('cls').value}반 저장된 점수 ${Object.keys(st).length}명을 불러왔어요.</span>`;
+  } catch (e) { msg.innerHTML = `<span class="bad">${esc(e.message || e)}</span>`; }
+});
 $('scoreBtn').addEventListener('click', async () => {
   const msg = $('scoreMsg'), cls = $('cls').value, key = $('key').value.trim();
   try { localStorage.setItem(KEY_LS, key); } catch (e) {}
   if (!key) { msg.innerHTML = '<span class="bad">관리 비밀번호를 넣어 주세요.</span>'; return; }
   const rows = [], errs = [];
-  $('scoreOnly').value.split(/\n/).map(x => x.trim()).filter(Boolean).forEach((line, i) => { const p = line.split(/[,\s\t]+/).filter(Boolean).map(Number); if (p.length < 2 || !Number.isInteger(p[0]) || p[0] < 1 || p[0] > 40 || !Number.isFinite(p[1]) || p[1] < 0 || p[1] > 20) errs.push(`${i+1}번째 줄 「${line}」`); else rows.push({ num: String(p[0]), score: p[1] }); });
-  if (errs.length || !rows.length) { msg.innerHTML = `<span class="bad">목록을 확인해 주세요.\n${esc(errs.join('\n') || '목록이 비어 있어요.')}</span>`; return; }
+  document.querySelectorAll('#scoreTbl input.sc').forEach(i => { const v = i.value.trim(); if (!v) return; const x = Number(v); if (!Number.isFinite(x) || x < 0 || x > 20) errs.push(i.dataset.n + '번'); else rows.push({ num: i.dataset.n, score: x }); });
+  if (errs.length) { msg.innerHTML = `<span class="bad">0~20 사이 숫자로 써 주세요: ${esc(errs.join(', '))}</span>`; return; }
+  if (!rows.length) { msg.innerHTML = '<span class="bad">점수가 하나도 없어요.</span>'; return; }
   $('scoreBtn').disabled = true; msg.textContent = '⏳ 저장 중…';
   try {
     const cur = (await getMap()).map, students = Object.assign({}, (cur && cur.students) || {});
