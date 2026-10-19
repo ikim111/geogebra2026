@@ -44,6 +44,15 @@
   .pg .cap a{color:var(--blue);text-decoration:none;}
   .pg img{display:block;width:100%;height:auto;}
   .note{font-size:13px;color:var(--ink2);}
+  .bnit{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 14px;background:#fff;}
+  .bnit th,.bnit td{border:1px solid #d6dbe1;padding:5px 6px;text-align:center;}
+  .bnit th{background:#f1f4f8;}
+  .bnit td{white-space:nowrap;} .bnit td.u{font-weight:bold;} .bnit td.d{text-align:left;white-space:normal;}
+  .bnit td.on{background:#e53935;color:#fff;font-weight:bold;border-radius:0;}
+  .bnit tr.lost td.u,.bnit tr.lost td.d{background:#fff6f6;}
+  .bnit td.na{background:#fafafa;}
+  .bnit tr.sum td{background:#fffbe6;font-size:15px;}
+  @media (max-width:560px){ .bnit td.d{font-size:12px;} .bnit th,.bnit td{padding:4px 3px;} }
 </style>
 </head>
 <body>
@@ -63,6 +72,15 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const BN_ITEMS = [['학습목표','각 소단원의 학습 목표가 각 단원의 내용에 포함되어 있는가?',4],['6.1단원','이등변삼각형의 성질, 이등변삼각형의 조건, 수직이등분선의 성질',2],['6.2단원','직각삼각형의 합동조건, 각의 이등분선의 성질',2],['6.3단원','삼각형의 외심(용어 정리, 찾는 방법, 위치, 성질)',2],['6.4단원','삼각형의 내심(용어 정리, 찾는 방법, 성질)',2],['6.5·6.6단원','평행사변형의 성질, 평행사변형이 되는 조건',2],['6.7단원','직사각형·마름모·정사각형의 성질, 등변사다리꼴의 뜻과 성질',2],['6.7단원','여러 가지 사각형의 관계도',2],['형식','정리의 구조와 통일성, 내용의 순서와 연계성, 표현의 적절성',2]];
+function itemsHTML(items){
+  if (!Array.isArray(items) || items.length !== 9) return '';
+  const pts = m => Array.from({ length: m + 1 }, (_, i) => m - i);
+  return `<table class="bnit"><tr><th>분류</th><th>필수 조건</th><th colspan="5">체크리스트</th></tr>` + BN_ITEMS.map(([u, d, m], k) => {
+    const g = +items[k]; return `<tr class="${g < m ? 'lost' : ''}"><td class="u">${esc(u)}</td><td class="d">${esc(d)}</td>${pts(4).map(p => p > m ? '<td class="na"></td>' : `<td class="${p === g ? 'on' : ''}">${p}점</td>`).join('')}</tr>`; }).join('')
+    + `<tr class="sum"><td colspan="2">합계</td><td colspan="5"><b>${items.reduce((s, x) => s + (+x || 0), 0)}</b> / 20</td></tr></table>`;
+}
+
 const KEY_LS = 'bn_admin_key';
 try { $('key').value = localStorage.getItem(KEY_LS) || ''; } catch (e) {}
 const qs = new URLSearchParams(location.search), qc = String(qs.get('classNo') || '').trim();
@@ -95,6 +113,7 @@ function show(i){
   document.querySelectorAll('.stu').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
   $('viewer').innerHTML = `<div class="card"><div class="head"><span class="who">${esc($('cls').value)}반 ${esc(n)}번</span><span class="sc">총점 <b>${esc(s.score)}</b>/ ${esc(MAP.max || 20)}</span>
       <span class="nav"><button type="button" id="prevS" ${i===0?'disabled':''}>◀ 이전 학생</button><button type="button" id="nextS" ${i===NUMS.length-1?'disabled':''}>다음 학생 ▶</button></span></div>
+    ${itemsHTML(s.items)}
     ${((s.pages || []).length ? '' : '<p class="note">📷 아직 점수만 올렸어요(사진 없음).</p>') + (s.pages || []).map((u, k) => `<div class="pg"><div class="cap"><span>${k + 1}쪽 / ${(s.pages||[]).length}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 새 창에서 크게</a></div><img src="${esc(u)}" alt="${k + 1}쪽" loading="lazy"></div>`).join('')}</div>`;
   $('prevS').addEventListener('click', () => show(i - 1)); $('nextS').addEventListener('click', () => show(i + 1));
   $('viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -36,6 +36,15 @@
   .pg img{display:block;width:100%;height:auto;}
   .box{background:#fff;border-radius:14px;padding:22px;text-align:center;color:var(--ink2);box-shadow:0 1px 4px rgba(0,0,0,.07);}
   .again{background:none;border:1px solid #c5cad1;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .bnit{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 14px;background:#fff;}
+  .bnit th,.bnit td{border:1px solid #d6dbe1;padding:5px 6px;text-align:center;}
+  .bnit th{background:#f1f4f8;}
+  .bnit td{white-space:nowrap;} .bnit td.u{font-weight:bold;} .bnit td.d{text-align:left;white-space:normal;}
+  .bnit td.on{background:#e53935;color:#fff;font-weight:bold;border-radius:0;}
+  .bnit tr.lost td.u,.bnit tr.lost td.d{background:#fff6f6;}
+  .bnit td.na{background:#fafafa;}
+  .bnit tr.sum td{background:#fffbe6;font-size:15px;}
+  @media (max-width:560px){ .bnit td.d{font-size:12px;} .bnit th,.bnit td{padding:4px 3px;} }
 </style>
 </head>
 <body>
@@ -58,6 +67,15 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const BN_ITEMS = [['학습목표','각 소단원의 학습 목표가 각 단원의 내용에 포함되어 있는가?',4],['6.1단원','이등변삼각형의 성질, 이등변삼각형의 조건, 수직이등분선의 성질',2],['6.2단원','직각삼각형의 합동조건, 각의 이등분선의 성질',2],['6.3단원','삼각형의 외심(용어 정리, 찾는 방법, 위치, 성질)',2],['6.4단원','삼각형의 내심(용어 정리, 찾는 방법, 성질)',2],['6.5·6.6단원','평행사변형의 성질, 평행사변형이 되는 조건',2],['6.7단원','직사각형·마름모·정사각형의 성질, 등변사다리꼴의 뜻과 성질',2],['6.7단원','여러 가지 사각형의 관계도',2],['형식','정리의 구조와 통일성, 내용의 순서와 연계성, 표현의 적절성',2]];
+function itemsHTML(items){
+  if (!Array.isArray(items) || items.length !== 9) return '';
+  const pts = m => Array.from({ length: m + 1 }, (_, i) => m - i);
+  return `<table class="bnit"><tr><th>분류</th><th>필수 조건</th><th colspan="5">체크리스트</th></tr>` + BN_ITEMS.map(([u, d, m], k) => {
+    const g = +items[k]; return `<tr class="${g < m ? 'lost' : ''}"><td class="u">${esc(u)}</td><td class="d">${esc(d)}</td>${pts(4).map(p => p > m ? '<td class="na"></td>' : `<td class="${p === g ? 'on' : ''}">${p}점</td>`).join('')}</tr>`; }).join('')
+    + `<tr class="sum"><td colspan="2">합계</td><td colspan="5"><b>${items.reduce((s, x) => s + (+x || 0), 0)}</b> / 20</td></tr></table>`;
+}
+
 try {
   const p = JSON.parse(localStorage.getItem('ggb_profile_v1') || '{}');
   if (/^[1-8]$/.test(String(p.classNo || ''))) $('cls').value = String(p.classNo);
@@ -89,6 +107,7 @@ function show(j, cls, num, name){
   else if (j.none) { R.innerHTML = `<div class="box">${esc(cls)}반 ${esc(num)}번의 채점된 배움노트가 아직 없어요. 선생님께 여쭤봐 주세요.<br><br>${again}</div>`; }
   else {
     R.innerHTML = `<div class="head"><div class="who">${esc(cls)}반 ${esc(num)}번 <b>${esc(name)}</b></div><div class="score">총점 <b>${esc(j.score)}</b>/ ${esc(j.max || 20)}</div>${again}</div>
+      ${itemsHTML(j.items)}
       <p class="tip">${(j.pages || []).length ? '👆 사진을 누르면 크게 볼 수 있어요. ' : '📷 채점된 노트 사진은 곧 올라와요. '}채점에 궁금한 점이 있으면 선생님께 말씀드려요.</p>`
       + (j.pages || []).map((u, i) => `<div class="pg"><div class="cap"><span>${i + 1}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 크게 보기</a></div><a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${i + 1}쪽" loading="lazy"></a></div>`).join('');
   }

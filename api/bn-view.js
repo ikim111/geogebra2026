@@ -12,6 +12,8 @@
 // 반 목록(bnmap/{반}.json)은 무작위 꼬리가 붙은 주소라 서버가 list()로만 찾는다(모두 읽어 합친다, loadMap 참고).
 const { list } = require('@vercel/blob');
 const crypto = require('crypto');
+// 1~4반: 스캔본 표지에서 읽은 항목별 점수(선생님 화면 「표지 점수 채우기」용, 학생에게는 저장된 것만 보임). 공개 폴더가 아닌 함수 안에만 들어간다.
+let BN_PRESET = {}; try { BN_PRESET = require('./_bnpreset.json'); } catch (e) {}
 // 관리 비밀번호 확인: Vercel 환경변수 BN_ADMIN_KEY가 있으면 그것과 비교하고, 없으면 아래 값(PBKDF2-SHA256, 30만 번 반복)과 비교한다.
 // (비밀번호 자체는 코드에 없다. 틀리면 1초 늦게 답해서 마구 넣어 보기를 느리게 한다)
 const BN_ADMIN_SALT = '9089f93260bf5b2ce0b06ea8f4164d27', BN_ADMIN_HASH = 'af4151bdef4c178346335af0930eaa1e30500a2637b3741aeefd589684345ae8';
@@ -78,7 +80,7 @@ module.exports = async (req, res) => {
         const has = new Set(Object.keys(pins).filter(k => pins[k] && pins[k].h).map(k => String(parseInt(k.split('_')[0], 10))));
         noPin = Object.keys(m.students).filter(n => !has.has(String(parseInt(n, 10)))).sort((a, b) => a - b);
       }
-      res.status(200).json({ ok: true, noPin, unitOpen: (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true, map: m ? { ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
+      res.status(200).json({ ok: true, noPin, preset: BN_PRESET[cls] || null, unitOpen: (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true, map: m ? { ts: m.ts, count: Object.keys(m.students || {}).length, students: m.students } : null });
       return;
     }
     // ---- 학생
@@ -96,7 +98,7 @@ module.exports = async (req, res) => {
     if (!m) { res.status(200).json({ ok: true, none: true }); return; }
     const s = (m.students || {})[num];
     if (!s) { res.status(200).json({ ok: true, none: true }); return; }
-    res.status(200).json({ ok: true, score: s.score, max: m.max || 20, pages: s.pages || [] });
+    res.status(200).json({ ok: true, score: s.score, max: m.max || 20, pages: s.pages || [], items: Array.isArray(s.items) ? s.items : null });
   } catch (e) {
     res.status(500).json({ error: '잠시 후 다시 시도해 주세요.', detail: String(e && e.message || e).slice(0, 200) });
   }
