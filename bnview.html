@@ -113,7 +113,6 @@ function show(j, cls, num, name){
   else if (j.none) { R.innerHTML = `<div class="box">${esc(cls)}반 ${esc(num)}번의 채점된 배움노트가 아직 없어요. 선생님께 여쭤봐 주세요.<br><br>${again}</div>`; }
   else {
     R.innerHTML = `<div class="head"><div class="who">${esc(cls)}반 ${esc(num)}번 <b>${esc(name)}</b></div><div class="score">총점 <b>${esc(j.score)}</b>/ ${esc(j.max || 20)}</div>${again}</div>
-      ${itemsHTML(j.items)}
       <p class="tip">${(j.pages || []).length ? '👆 사진을 누르면 크게 볼 수 있어요. ' : (Array.isArray(j.items) ? '' : '📷 채점된 노트 사진은 곧 올라와요. ')}채점에 궁금한 점이 있으면 선생님께 말씀드려요.</p>`
       + (j.pages || []).map((u, i) => `<div class="pg"><div class="cap"><span>${i + 1}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 크게 보기</a></div><a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${i + 1}쪽" loading="lazy"></a></div>`).join('');
   }
