@@ -55,10 +55,14 @@ async function loadMap(cls) {
   const { blobs } = await list({ prefix: `bnmap/${cls}` });
   const mine = blobs.filter(b => new RegExp(`^bnmap/${cls}(-[A-Za-z0-9_-]+)?\\.json$`).test(b.pathname));
   if (!mine.length) return null;
-  const maps = (await Promise.all(mine.map(async b => { try { const r = await fetch(b.url, { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (e) { return null; } })))
+  let maps = (await Promise.all(mine.map(async b => { try { const r = await fetch(b.url, { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (e) { return null; } })))
     .filter(m => m && m.students).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   if (!maps.length) return null;
   const out = { cls, max: 20, ts: 0, students: {} };
+  // 반 목록 비우기: 이 시각 이전에 저장한 목록은 읽지 않는다(2026-10-19 1~4반은 양면 스캔본으로 다시 올리기로 해서 비움)
+  const RESET_BEFORE = { '1': 1792393007745, '2': 1792393007745, '3': 1792393007745, '4': 1792393007745 };
+  maps = maps.filter(m => !(RESET_BEFORE[cls] && (m.ts || 0) < RESET_BEFORE[cls]));
+  if (!maps.length) return null;
   maps.forEach(m => { if (m.max) out.max = m.max; out.ts = Math.max(out.ts, m.ts || 0); Object.assign(out.students, m.students); });
   return out;
 }
