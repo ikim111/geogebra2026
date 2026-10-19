@@ -63,6 +63,15 @@ async function loadMap(cls) {
   return out;
 }
 
+// 1~4반: 선생님이 아직 저장하지 않은 학생은 표지에서 읽은 항목별 점수(_bnpreset.json)를 기본값으로 쓴다.
+// 선생님이 「배움노트 채점본 올리기」에서 저장한 학생(반 목록에 있는 학생)은 저장한 값이 우선한다.
+function withPreset(cls, m) {
+  const pre = BN_PRESET[cls]; if (!pre) return m;
+  const out = m ? Object.assign({}, m, { students: Object.assign({}, m.students || {}) }) : { cls, max: 20, ts: 0, students: {} };
+  Object.keys(pre).forEach(n => { if (!out.students[n]) out.students[n] = { score: pre[n].reduce((a, x) => a + x, 0), items: pre[n], pages: [], preset: true }; });
+  return out;
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   let b = req.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } } b = b || {};
@@ -72,7 +81,7 @@ module.exports = async (req, res) => {
     // ---- 선생님: 현재 상태 확인
     if (b.admin !== undefined) {
       if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
-      const m = await loadMap(cls);
+      const m = withPreset(cls, await loadMap(cls));
       // 비밀번호를 아직 만들지 않은 학생: rooms/{반}__pins 에 그 번호의 기록이 없는 학생
       let noPin = [];
       if (m && m.students) {
@@ -94,7 +103,7 @@ module.exports = async (req, res) => {
     // 공개 여부 = 선생님 목차(mgmt)에서 그 반의 33번(배움노트 결과 보기) 잠금을 열었는지
     const unitOpen = (await fbGet(`rooms/${sanitize(cls)}__access/units/33`)) === true;
     if (!unitOpen) { res.status(200).json({ ok: true, closed: true }); return; }
-    const m = await loadMap(cls);
+    const m = withPreset(cls, await loadMap(cls));
     if (!m) { res.status(200).json({ ok: true, none: true }); return; }
     const s = (m.students || {})[num];
     if (!s) { res.status(200).json({ ok: true, none: true }); return; }
