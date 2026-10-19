@@ -68,7 +68,11 @@ async function loadMap(cls) {
 function withPreset(cls, m) {
   const pre = BN_PRESET[cls]; if (!pre) return m;
   const out = m ? Object.assign({}, m, { students: Object.assign({}, m.students || {}) }) : { cls, max: 20, ts: 0, students: {} };
-  Object.keys(pre).forEach(n => { if (!out.students[n]) out.students[n] = { score: pre[n].reduce((a, x) => a + x, 0), items: pre[n], pages: [], preset: true }; });
+  Object.keys(pre).forEach(n => { const sum = pre[n].reduce((a, x) => a + x, 0), cur = out.students[n];
+    if (!cur) out.students[n] = { score: sum, items: pre[n], pages: [], preset: true };
+    // 총점만 저장된 학생: 표지 항목 점수의 합이 저장된 총점과 같으면 항목 점수를 붙여 준다
+    else if (!Array.isArray(cur.items) && Number(cur.score) === sum) out.students[n] = Object.assign({}, cur, { items: pre[n] });
+  });
   return out;
 }
 
