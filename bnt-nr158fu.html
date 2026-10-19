@@ -44,15 +44,20 @@
   .pg .cap a{color:var(--blue);text-decoration:none;}
   .pg img{display:block;width:100%;height:auto;}
   .note{font-size:13px;color:var(--ink2);}
-  .bnit{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 14px;background:#fff;}
-  .bnit th,.bnit td{border:1px solid #d6dbe1;padding:5px 6px;text-align:center;}
-  .bnit th{background:#f1f4f8;}
-  .bnit td{white-space:nowrap;} .bnit td.u{font-weight:bold;} .bnit td.d{text-align:left;white-space:normal;}
-  .bnit td.on{background:#e53935;color:#fff;font-weight:bold;border-radius:0;}
-  .bnit tr.lost td.u,.bnit tr.lost td.d{background:#fff6f6;}
-  .bnit td.na{background:#fafafa;}
-  .bnit tr.sum td{background:#fffbe6;font-size:15px;}
-  @media (max-width:560px){ .bnit td.d{font-size:12px;} .bnit th,.bnit td{padding:4px 3px;} }
+  .bnit{background:#fff;border:1px solid #e3e7ec;border-radius:14px;margin:12px 0 16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .bnit-h{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f6f8fb;border-bottom:1px solid #e3e7ec;font-weight:bold;font-size:15px;}
+  .bnit-t{font-size:22px;color:#1565c0;} .bnit-t small{font-size:13px;color:#888;font-weight:normal;}
+  .bnit-r{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f2f5;}
+  .bnit-r:last-child{border-bottom:none;}
+  .bnit-r.lost{background:#fff7f6;}
+  .bnit-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .bnit-l b{font-size:14px;color:#1f2328;} .bnit-l span{font-size:12.5px;color:#6b7280;line-height:1.4;}
+  .bnit-s{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+  .bnit .dots{display:flex;gap:3px;} .bnit .dots i{width:10px;height:10px;border-radius:50%;background:#e5e7eb;display:block;}
+  .bnit .dots i.f{background:#43a047;} .bnit-r.lost .dots i.f{background:#fb8c00;}
+  .bnit .pt{font-weight:bold;font-size:15px;min-width:34px;text-align:right;} .bnit .pt small{font-size:11px;color:#999;font-weight:normal;}
+  .bnit .minus{background:#e53935;color:#fff;border-radius:10px;padding:1px 8px;font-size:12.5px;font-weight:bold;min-width:30px;text-align:center;}
+  .bnit .ok{color:#43a047;font-weight:bold;min-width:30px;text-align:center;}
 </style>
 </head>
 <body>
@@ -75,10 +80,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;
 const BN_ITEMS = [['학습목표','각 소단원의 학습 목표가 각 단원의 내용에 포함되어 있는가?',4],['6.1단원','이등변삼각형의 성질, 이등변삼각형의 조건, 수직이등분선의 성질',2],['6.2단원','직각삼각형의 합동조건, 각의 이등분선의 성질',2],['6.3단원','삼각형의 외심(용어 정리, 찾는 방법, 위치, 성질)',2],['6.4단원','삼각형의 내심(용어 정리, 찾는 방법, 성질)',2],['6.5·6.6단원','평행사변형의 성질, 평행사변형이 되는 조건',2],['6.7단원','직사각형·마름모·정사각형의 성질, 등변사다리꼴의 뜻과 성질',2],['6.7단원','여러 가지 사각형의 관계도',2],['형식','정리의 구조와 통일성, 내용의 순서와 연계성, 표현의 적절성',2]];
 function itemsHTML(items){
   if (!Array.isArray(items) || items.length !== 9) return '';
-  const pts = m => Array.from({ length: m + 1 }, (_, i) => m - i);
-  return `<table class="bnit"><tr><th>분류</th><th>필수 조건</th><th colspan="5">체크리스트</th></tr>` + BN_ITEMS.map(([u, d, m], k) => {
-    const g = +items[k]; return `<tr class="${g < m ? 'lost' : ''}"><td class="u">${esc(u)}</td><td class="d">${esc(d)}</td>${pts(4).map(p => p > m ? '<td class="na"></td>' : `<td class="${p === g ? 'on' : ''}">${p}점</td>`).join('')}</tr>`; }).join('')
-    + `<tr class="sum"><td colspan="2">합계</td><td colspan="5"><b>${items.reduce((s, x) => s + (+x || 0), 0)}</b> / 20</td></tr></table>`;
+  const tot = items.reduce((s, x) => s + (+x || 0), 0);
+  return `<div class="bnit"><div class="bnit-h"><span>📋 항목별 점수</span><span class="bnit-t">${tot}<small> / 20</small></span></div>` + BN_ITEMS.map(([u, d, m], k) => {
+    const g = +items[k], lost = m - g;
+    const dots = Array.from({ length: m }, (_, i) => `<i class="${i < g ? 'f' : ''}"></i>`).join('');
+    return `<div class="bnit-r${lost ? ' lost' : ''}"><div class="bnit-l"><b>${esc(u)}</b><span>${esc(d)}</span></div><div class="bnit-s"><span class="dots">${dots}</span><span class="pt">${g}<small>/${m}</small></span>${lost ? `<span class="minus">−${lost}</span>` : '<span class="ok">✓</span>'}</div></div>`; }).join('') + `</div>`;
 }
 
 const KEY_LS = 'bn_admin_key';
