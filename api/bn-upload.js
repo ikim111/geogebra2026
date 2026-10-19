@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         let p = {}; try { p = JSON.parse(clientPayload || '{}'); } catch (e) {}
         if (!bnAdminOk(p.key)) { await new Promise(r => setTimeout(r, 1000)); throw new Error('관리 비밀번호가 맞지 않아요.'); }
-        if (!/^bn\/[5-8]\/\d{1,2}\/p\d{1,2}\.jpg$/.test(pathname) && !/^bnmap\/[5-8]\.json$/.test(pathname)) throw new Error('올릴 수 없는 경로예요.');
+        if (!/^bn\/[1-8]\/\d{1,2}\/p\d{1,2}\.jpg$/.test(pathname) && !/^bnmap\/[1-8]\.json$/.test(pathname)) throw new Error('올릴 수 없는 경로예요.');
         return { allowedContentTypes: ['image/jpeg', 'application/json'], maximumSizeInBytes: 4 * 1024 * 1024, addRandomSuffix: true };
       }
     });

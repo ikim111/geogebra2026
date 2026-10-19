@@ -10,7 +10,7 @@
   1) 반을 고르고, 반 전체 스캔 PDF와 "학생별 쪽 나누기" 목록(번호,시작쪽,끝쪽,총점)을 넣는다.
   2) 「올리기」를 누르면 이 브라우저에서 PDF 쪽을 사진(JPEG)으로 바꿔 Vercel Blob에 올리고(api/bn-upload.js),
      마지막에 반 목록(bnmap/{반}.json: 번호별 총점·사진 주소·공개 여부)을 올린다.
-  3) 학생은 bnview.html에서 반·번호·이름·인증번호로 자기 것만 본다(서버 api/bn-view.js가 확인).
+  3) 학생은 bnview.html에서 반·번호·이름·비밀번호(목차 비밀번호)로 자기 것만 본다(서버 api/bn-view.js가 확인).
   - 관리 비밀번호: 서버(api/bn-upload.js)가 확인한다 (이 브라우저에만 기억)
   - 학생 이름·점수는 이 파일(공개 저장소)에 넣지 않는다. 쪽 나누기 목록은 선생님이 붙여 넣는다.
 -->
@@ -51,13 +51,13 @@
 <div class="wrap">
   <div style="display:flex;gap:8px;margin-bottom:10px;"><a href="mgmt-9x3k7f2p.html" style="text-decoration:none;color:#fff;background:#1A1D20;border-radius:6px;padding:6px 10px;font-size:14px;">🏠 관리 페이지</a><a href="bnt-nr158fu.html" style="text-decoration:none;color:#1565c0;background:#fff;border:1.5px solid #1565c0;border-radius:6px;padding:6px 10px;font-size:14px;">📊 채점본 보기(교사용)</a></div>
   <h1>📤 배움노트 채점본 올리기 <span class="note">(교사용)</span></h1>
-  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 인증번호로 자기 것만 볼 수 있어요.<br>결석생처럼 나중에 몇 명만 올려도 <b>전에 올린 학생은 그대로 남고 합쳐져요</b>(같은 번호는 새로 올린 것으로 바뀌어요).<br><b>학생에게 공개/비공개는 선생님 목차(관리 페이지)에서 그 반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금으로 해요.</b></p>
+  <p class="sub">반 전체 스캔 PDF를 학생별로 나눠 올리면, 학생은 「배움노트 정리 결과 보기」에서 목차 비밀번호로 자기 것만 볼 수 있어요.<br>결석생처럼 나중에 몇 명만 올려도 <b>전에 올린 학생은 그대로 남고 합쳐져요</b>(같은 번호는 새로 올린 것으로 바뀌어요).<br><b>학생에게 공개/비공개는 선생님 목차(관리 페이지)에서 그 반의 「📊 배움노트 정리 수행평가 결과 보기」 잠금으로 해요.</b></p>
 
   <div class="card">
     <h2>1. 관리 비밀번호와 반</h2>
     <div class="row">
       <div><label for="key">관리 비밀번호</label><input type="password" id="key" autocomplete="off"></div>
-      <div><label for="cls">반</label><select id="cls"><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
+      <div><label for="cls">반</label><select id="cls"><option value="1">1반</option><option value="2">2반</option><option value="3">3반</option><option value="4">4반</option><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
     </div>
     <div class="row" style="margin-top:12px;"><div style="flex:0 0 auto;"><button class="sec" id="statusBtn">현재 상태 보기</button></div><div id="status" class="msg"></div></div>
     <div id="cur"></div>
@@ -77,6 +77,14 @@
     <div id="msg" class="msg"></div>
   </div>
 </div>
+
+<div class="wrap" style="margin-top:0;"><div class="card">
+    <h2>3. 점수만 올리기 <span class="note">(스캔본 없이 총점만)</span></h2>
+    <p class="note" style="margin:0 0 6px;">한 줄에 「번호, 총점」. 위 1번에서 고른 반에 저장돼요. 이미 사진을 올린 학생은 사진은 그대로 두고 점수만 바뀌어요. 학생에게는 점수와 "사진은 곧 올라와요"가 보여요.</p>
+    <textarea id="scoreOnly" placeholder="1,20&#10;2,18&#10;..."></textarea>
+    <div style="margin-top:12px;"><button id="scoreBtn">💾 점수 저장</button></div>
+    <div id="scoreMsg" class="msg"></div>
+  </div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -133,7 +141,7 @@ async function onPdf(f){
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
     const meta = await pdf.getMetadata(); const kw = String((meta && meta.info && meta.info.Keywords) || '');
-    const m = kw.match(/^BN\|([5-8])\|(.+)$/);
+    const m = kw.match(/^BN\|([1-8])\|(.+)$/);
     if (!m) { $('autoMsg').innerHTML = '<span class="note">이 PDF에는 자동 목록이 없어요. 쪽 나누기 목록을 직접 붙여 넣어 주세요.</span>'; return; }
     $('cls').value = m[1]; $('seg').value = m[2].split(';').join('\n');
     $('autoMsg').innerHTML = `<span class="ok">✅ ${m[1]}반 목록(${m[2].split(';').length}명)을 자동으로 채웠어요. 「올리기」만 누르면 돼요.</span>`;
@@ -159,6 +167,23 @@ async function pageToJpeg(pdf, no){
   await page.render({ canvasContext: ctx, viewport: v }).promise;
   return new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.68));
 }
+/* 3. 점수만 올리기: 사진 없이 총점만 반 목록(bnmap)에 합친다. 이미 사진이 있는 학생은 사진을 그대로 둔다 */
+$('scoreBtn').addEventListener('click', async () => {
+  const msg = $('scoreMsg'), cls = $('cls').value, key = $('key').value.trim();
+  try { localStorage.setItem(KEY_LS, key); } catch (e) {}
+  if (!key) { msg.innerHTML = '<span class="bad">관리 비밀번호를 넣어 주세요.</span>'; return; }
+  const rows = [], errs = [];
+  $('scoreOnly').value.split(/\n/).map(x => x.trim()).filter(Boolean).forEach((line, i) => { const p = line.split(/[,\s\t]+/).filter(Boolean).map(Number); if (p.length < 2 || !Number.isInteger(p[0]) || p[0] < 1 || p[0] > 40 || !Number.isFinite(p[1]) || p[1] < 0 || p[1] > 20) errs.push(`${i+1}번째 줄 「${line}」`); else rows.push({ num: String(p[0]), score: p[1] }); });
+  if (errs.length || !rows.length) { msg.innerHTML = `<span class="bad">목록을 확인해 주세요.\n${esc(errs.join('\n') || '목록이 비어 있어요.')}</span>`; return; }
+  $('scoreBtn').disabled = true; msg.textContent = '⏳ 저장 중…';
+  try {
+    const cur = (await getMap()).map, students = Object.assign({}, (cur && cur.students) || {});
+    rows.forEach(r => { students[r.num] = { score: r.score, pages: (students[r.num] && students[r.num].pages) || [] }; });
+    await saveMap({ cls, max: 20, students });
+    msg.innerHTML = `<span class="ok">✅ ${cls}반 ${rows.length}명의 점수를 저장했어요. (반 목록 전체 ${Object.keys(students).length}명)</span>`;
+  } catch (e) { msg.innerHTML = `<span class="bad">${esc(e.message || e)}</span>`; }
+  $('scoreBtn').disabled = false;
+});
 $('goBtn').addEventListener('click', async () => {
   const msg = $('msg'), bar = $('bar'), cls = $('cls').value, key = $('key').value.trim(), f = PDF_FILE;
   try { localStorage.setItem(KEY_LS, key); } catch (e) {}

@@ -8,7 +8,7 @@
 <!--
   배움노트 정리 수행평가 — 교사용 보기
   관리 비밀번호를 넣고 반을 고르면 그 반 학생 목록(번호·총점)이 나오고, 학생을 누르면 채점된 배움노트 사진을 볼 수 있다.
-  학생용(bnview.html)과 달리 인증번호가 필요 없고, 목차 잠금이 닫혀 있어도 볼 수 있다.
+  학생용(bnview.html)과 달리 학생 비밀번호가 필요 없고, 목차 잠금이 닫혀 있어도 볼 수 있다.
   목록은 api/bn-view.js(admin)에서 받는다. 관리 페이지(mgmt) 목차의 「배움노트 정리 수행평가 결과 보기」가 이 화면으로 온다(?classNo=반).
 -->
 <style>
@@ -52,7 +52,7 @@
   <div class="card">
     <div class="row">
       <div><label for="key">관리 비밀번호</label><input type="password" id="key" autocomplete="off" style="width:150px;"></div>
-      <div><label for="cls">반</label><select id="cls"><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
+      <div><label for="cls">반</label><select id="cls"><option value="1">1반</option><option value="2">2반</option><option value="3">3반</option><option value="4">4반</option><option value="5">5반</option><option value="6">6반</option><option value="7">7반</option><option value="8">8반</option></select></div>
       <div><button id="loadBtn">불러오기</button></div>
       <div class="msg" id="msg" style="flex:1 1 200px;margin:0 0 9px;"></div>
     </div>
@@ -66,7 +66,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;
 const KEY_LS = 'bn_admin_key';
 try { $('key').value = localStorage.getItem(KEY_LS) || ''; } catch (e) {}
 const qs = new URLSearchParams(location.search), qc = String(qs.get('classNo') || '').trim();
-if (/^[5-8]$/.test(qc)) $('cls').value = qc;
+if (/^[1-8]$/.test(qc)) $('cls').value = qc;
 let MAP = null, NUMS = [], CUR = -1;
 
 async function load(){
@@ -80,8 +80,8 @@ async function load(){
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     MAP = j.map; NUMS = MAP ? Object.keys(MAP.students || {}).sort((a, b) => a - b) : [];
     msg.innerHTML = `${cls}반 · 학생에게 <span class="pill ${j.unitOpen?'on':'off'}">${j.unitOpen?'공개 중':'비공개'}</span> <span class="note">(공개/비공개는 관리 페이지 목차의 잠금으로 바꿔요)</span>`;
-    if (j.noCode && j.noCode.length) msg.innerHTML += `<div class="bad" style="margin-top:4px;">⚠️ 인증번호가 없는 학생: ${j.noCode.map(n => n + '번').join(', ')} — 외심내심 수행평가 때 등록된 인증번호(휴대전화 뒷 4자리)가 없어서 결과를 볼 수 없어요. 학생 결과 보기 화면(bnview)의 「인증번호 변경하기」에서 비밀번호(관리 비밀번호와 같음)를 넣고 등록하면 외심내심 결과 보기에서도 함께 쓸 수 있어요.</div>`;
-    else if (MAP) msg.innerHTML += `<div class="note" style="margin-top:4px;">✅ 올린 학생 모두 인증번호가 있어요.</div>`;
+    if (j.noPin && j.noPin.length) msg.innerHTML += `<div class="bad" style="margin-top:4px;">⚠️ 비밀번호를 아직 안 만든 학생: ${j.noPin.map(n => n + '번').join(', ')} — 학생 목차(student.html)에 처음 비밀번호 0000으로 들어가 새 비밀번호를 만들어야 결과를 볼 수 있어요.</div>`;
+    else if (MAP) msg.innerHTML += `<div class="note" style="margin-top:4px;">✅ 올린 학생 모두 비밀번호가 있어요.</div>`;
     if (!MAP) { $('list').innerHTML = '<p class="note" style="margin:10px 0 0;">아직 올린 채점본이 없어요. 위의 「📤 채점본 올리기」에서 올릴 수 있어요.</p>'; return; }
     const avg = NUMS.length ? (NUMS.reduce((s, n) => s + (+MAP.students[n].score || 0), 0) / NUMS.length).toFixed(1) : '-';
     $('list').innerHTML = `<p class="note" style="margin:10px 0 0;">${NUMS.length}명 · 평균 ${avg}점 · 마지막 올림 ${new Date(MAP.ts).toLocaleString('ko-KR')} — 학생을 누르면 채점본이 아래에 나와요.</p>
@@ -95,7 +95,7 @@ function show(i){
   document.querySelectorAll('.stu').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
   $('viewer').innerHTML = `<div class="card"><div class="head"><span class="who">${esc($('cls').value)}반 ${esc(n)}번</span><span class="sc">총점 <b>${esc(s.score)}</b>/ ${esc(MAP.max || 20)}</span>
       <span class="nav"><button type="button" id="prevS" ${i===0?'disabled':''}>◀ 이전 학생</button><button type="button" id="nextS" ${i===NUMS.length-1?'disabled':''}>다음 학생 ▶</button></span></div>
-    ${(s.pages || []).map((u, k) => `<div class="pg"><div class="cap"><span>${k + 1}쪽 / ${(s.pages||[]).length}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 새 창에서 크게</a></div><img src="${esc(u)}" alt="${k + 1}쪽" loading="lazy"></div>`).join('')}</div>`;
+    ${((s.pages || []).length ? '' : '<p class="note">📷 아직 점수만 올렸어요(사진 없음).</p>') + (s.pages || []).map((u, k) => `<div class="pg"><div class="cap"><span>${k + 1}쪽 / ${(s.pages||[]).length}쪽</span><a href="${esc(u)}" target="_blank" rel="noopener">🔍 새 창에서 크게</a></div><img src="${esc(u)}" alt="${k + 1}쪽" loading="lazy"></div>`).join('')}</div>`;
   $('prevS').addEventListener('click', () => show(i - 1)); $('nextS').addEventListener('click', () => show(i + 1));
   $('viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
