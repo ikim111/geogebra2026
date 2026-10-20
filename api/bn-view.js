@@ -50,7 +50,17 @@ async function fbPut(path, value) {
 }
 // 반 목록: 올릴 때마다 새 파일(무작위 꼬리)이 생기고 지우지 않으므로, 있는 파일을 모두 읽어 합친다(같은 번호는 더 나중 것).
 // Blob의 list()는 올린 직후 잠깐 최신 파일이 안 보일 수 있어서, 가장 최근 것 하나만 쓰면 그 전에 올린 학생이 빠질 수 있었다.
-async function loadMap(cls) {
+// 저장소 목록 읽기(list)는 Blob '작업 횟수'로 세어져 무료 한도를 빨리 쓴다 → 같은 서버가 살아 있는 동안 반별로 2분 기억해 둔다.
+// 선생님 화면(admin)은 방금 올린 결과를 바로 봐야 하므로 기억을 쓰지 않는다(fresh=true).
+const MAP_CACHE = {}, MAP_TTL = 2 * 60 * 1000;
+async function loadMap(cls, fresh) {
+  const c = MAP_CACHE[cls];
+  if (!fresh && c && Date.now() - c.t < MAP_TTL) return c.m;
+  const m = await loadMapRaw(cls);
+  MAP_CACHE[cls] = { t: Date.now(), m };
+  return m;
+}
+async function loadMapRaw(cls) {
   // 실제 파일 이름은 bnmap/8-xxxx.json처럼 무작위 꼬리가 .json 앞에 붙으므로 prefix는 bnmap/8 까지만
   const { blobs } = await list({ prefix: `bnmap/${cls}` });
   const mine = blobs.filter(b => new RegExp(`^bnmap/${cls}(-[A-Za-z0-9_-]+)?\\.json$`).test(b.pathname));
@@ -89,7 +99,7 @@ module.exports = async (req, res) => {
     // ---- 선생님: 현재 상태 확인
     if (b.admin !== undefined) {
       if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
-      const m = withPreset(cls, await loadMap(cls));
+      const m = withPreset(cls, await loadMap(cls, true));
       // 비밀번호를 아직 만들지 않은 학생: rooms/{반}__pins 에 그 번호의 기록이 없는 학생
       let noPin = [];
       if (m && m.students) {
