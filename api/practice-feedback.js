@@ -28,7 +28,8 @@ const UNITS = {
     name: '8.3 확률의 계산 — 공정한 상금 분배 (다시 생각해 보기)',
     question: '처음 내 생각과 비교해서 무엇이 달라졌나요? 왜 이렇게 나누는 것이 공정한가요?',
     check: `(1) 처음 생각과 비교해 무엇이 달라졌는지(또는 그대로인지)를 썼는가?
-(2) 공정하다고 보는 근거로 남은 경기에서 각자 우승할 가능성(경우의 수나 확률, 시뮬레이션 결과)을 들었는가?`,
+(2) 공정하다고 보는 근거로 남은 경기에서 각자 우승할 가능성(경우의 수나 확률, 시뮬레이션 결과)을 들었는가?
+※ 이 칸은 생각을 돌아보는 글이다. 학생이 솔직하게 쓴 마음("처음엔 A만 주고 싶었다", "B가 서운할 것 같다")을 먼저 따뜻하게 공감해 준 뒤, (2)가 없을 때만 부드럽게 질문한다. 차갑게 평가하는 말투를 쓰지 않는다.`,
     secret: '공정한 분배 금액(48만 원 : 16만 원)이나 확률값(3/4, 1/4)을 학생이 쓰지 않았다면 직접 알려 주지 않는다.'
   },
   34: {
@@ -66,7 +67,7 @@ const UNITS = {
 ※ 통과 조건을 만족하면 반드시 잘했다고 칭찬하고 fix는 빈 목록 []으로 둔다.
 ※ 타수(횟수) 이야기가 전혀 없을 때만(예: "운이 좋아서", "B가 더 잘해서", 계산 값만 씀) fix에 짧은 질문 하나로 알려 준다. 예) "두 선수가 전반기와 후반기에 각각 몇 타수씩 쳤는지 비교해 볼까요?"
 ※ 계산 실수, 맞춤법, 표현의 정확성은 지적하지 않는다.`,
-    secret: '"심슨의 역설"이라는 이름은 말하지 않는다(정리에서 소개한다). 모범 답안 문장을 그대로 알려 주지 않는다.'
+    secret: '학생이 쓰지 않았다면 "심슨의 역설"이라는 이름은 먼저 말하지 않는다(정리에서 소개한다). 학생이 이 이름을 먼저 썼으면 "맞아요, 그런 이름이 있어요"처럼 인정해 주고, 타수 이야기가 없을 때만 왜 그런 일이 생기는지 타수로 설명해 보라고 질문한다. 모범 답안 문장을 그대로 알려 주지 않는다.'
   },
   23: {
     name: '8.2 확률의 뜻 — 말 속에서 확률 찾기 (내가 찾은 확률 표현)',
@@ -95,7 +96,7 @@ async function callGemini(prompt) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 1500, responseMimeType: 'application/json',
+        generationConfig: { temperature: 0, maxOutputTokens: 1500, responseMimeType: 'application/json',
           responseSchema: { type: 'object', properties: { good: { type: 'array', items: { type: 'string' } }, fix: { type: 'array', items: { type: 'string' } } }, required: ['good', 'fix'] } } })
     });
     if (!r.ok) return null;
