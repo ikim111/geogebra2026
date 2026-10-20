@@ -299,7 +299,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 9</span>
+            <span id="previewLabel">1 / 10</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -346,14 +346,14 @@ const CONFIG = {
 const STAGES = [
   {t:'예측·실에 매달기·핀', d:'예측 → 꼭짓점 들기(실 긋기) → 세 실의 관계 → 핀으로 균형점 확인 (화면 1~4)', tasks:[1,2,3,4], max:4, reveal:{},
    tip:'💬 예측 분포를 보여 주며 "왜 거기라고 생각했나요?" — 세 실이 한 점에서 만나면 "이 점이 정말 균형점일까?"로 핀 확인으로 넘어가요.'},
-  {t:'내 방법·정체 파헤치기', d:'작도로 균형점 찾는 방법 → 중선(변의 중점) 찾기 → 2:1 찾기 (화면 5~7)', tasks:[5,6,7], max:7, reveal:{},
+  {t:'내 방법·정체 파헤치기', d:'작도로 균형점 찾는 방법 → 중선(변의 중점) 찾기 → 2:1 찾기 → 자 위에서 왜 중점인지(넓이) (화면 5~8)', tasks:[5,6,7,8], max:8, reveal:{},
    tip:'💬 학생들 방법(중점 잇기, 각 이등분선, 수직이등분선…)을 모아 비교해요. 틀린 방법도 "왜 안 될까?"로 살려요.'},
-  {t:'항상 그럴까·정리', d:'모양을 바꿔도 2:1인지 → 이름 붙이기(무게중심) → 정리 (화면 8~9, AI 피드백 통과 시 정리 상자 공개)', tasks:[8,9], max:null, reveal:{},
+  {t:'항상 그럴까·정리', d:'모양을 바꿔도 2:1인지 → 이름 붙이기(무게중심) → 정리 (화면 9~10, AI 피드백 통과 시 정리 상자 공개)', tasks:[9,10], max:null, reveal:{},
    tip:'💬 "왜 항상 2:1일까?" — 7.3 중점연결(DE∥AB, DE=½AB)로 학습하기➊ 증명으로 넘어가요.'}
 ];
 const TASK_LABELS = [
   {id:1, key:'a1', label:'예측하기'}, {id:2, key:'a2', label:'실에 매달기'}, {id:3, key:'a3', label:'세 실의 관계'}, {id:4, key:'a4', label:'핀으로 균형점'},
-  {id:5, key:'a5', label:'내 방법'}, {id:6, key:'a6', label:'중선 찾기'}, {id:7, key:'a7', label:'2:1 찾기'}, {id:8, key:'a8', label:'항상 그럴까'}, {id:9, key:'a9', label:'정리하기'}
+  {id:5, key:'a5', label:'내 방법'}, {id:6, key:'a6', label:'중선 찾기'}, {id:7, key:'a7', label:'자 위 (왜 중점?)'}, {id:8, key:'a8', label:'2:1 찾기'}, {id:9, key:'a9', label:'항상 그럴까'}, {id:10, key:'a10', label:'정리하기'}
 ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
@@ -379,9 +379,10 @@ function activityDetailHTML(s, id){
     return (used ? kv('작도한 것', used) : '') + tb(d.t5); }
   if(id===6){ const c = d.c6 || {}; if(!arrOf(d.lines6).some(Boolean) && !c.a) return '';
     return kv('그은 선', [0,1,2].filter(i=>arrOf(d.lines6)[i]).map(i=>'ABC'[i]).join(', ')||'-') + kv('변의 어디?', `${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[c.a]||'-'} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`); }
-  if(id===7){ const c = d.c7 || {}; return c.b ? kv('비', `${c.b} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`) : ''; }
-  if(id===8){ if(!d.moves8 && !d.t8 && !d.r8) return ''; return kv('모양 바꾼 횟수', d.moves8||0) + (d.r8?kv('찾은 비', esc(d.r8)):'') + tb(d.t8); }
-  if(id===9) return tb(d.t9) + aiFbHTML(d);
+  if(id===7){ const w = d.w7 || {}; if(!w.moves && !d.tw) return ''; return kv('D 옮기기', `${w.moves||0}번 · ${w.found?'⚖️ 수평 찾음':'아직'}`) + tb(d.tw); }
+  if(id===8){ const c = d.c7 || {}; return c.b ? kv('비', `${c.b} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`) : ''; }
+  if(id===9){ if(!d.moves8 && !d.t8 && !d.r8) return ''; return kv('모양 바꾼 횟수', d.moves8||0) + (d.r8?kv('찾은 비', esc(d.r8)):'') + tb(d.t8); }
+  if(id===10) return tb(d.t9) + aiFbHTML(d);
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -402,7 +403,8 @@ function taskAggregateHTML(id){
   if(id===6){ const cs = ss.map(d=>d.c6).filter(c=>c && c.checked);
     const rows = [{label:'중점 (정답)', n: cs.filter(c=>c.a==='mid').length, answer:true}, {label:'삼등분점', n: cs.filter(c=>c.a==='tri').length}, {label:'끝점/아무 점', n: cs.filter(c=>c.a==='end'||c.a==='any').length}];
     return box(`확인한 학생 ${cs.length}명`, cs.length ? barsHTML(rows, cs.length) : '아직 없어요.'); }
-  if(id===7){ const cs = ss.map(d=>d.c7).filter(c=>c && c.checked); const ok = cs.filter(c=>c.ok).length;
+  if(id===7){ const ws = ss.filter(d=>d.w7 && d.w7.moves); const f = ws.filter(d=>d.w7.found).length; return box(`D를 옮겨 본 학생 ${ws.length}명`, ws.length ? barsHTML([{label:'수평(중점) 찾음', n:f, answer:true}, {label:'아직', n: ws.length-f}], ws.length) : '아직 없어요.'); }
+  if(id===8){ const cs = ss.map(d=>d.c7).filter(c=>c && c.checked); const ok = cs.filter(c=>c.ok).length;
     return box(`확인한 학생 ${cs.length}명`, cs.length ? barsHTML([{label:'2:1 (정답)', n: ok, answer:true}, {label:'그 밖', n: cs.length-ok}], cs.length) : '아직 없어요.'); }
   return '';
 }
