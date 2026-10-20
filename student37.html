@@ -239,6 +239,10 @@
   .ratio select.right{border-color:#66bb6a;background:#f1f8e9;}
   .qbox{margin-top:12px;} .qbox.locked{display:none;}
   @media (max-width:640px){ .g-board,.g-board.sm{width:100%;} }
+  .ratio .rin{width:110px;padding:5px 8px;border:1.5px solid #c5cad1;border-radius:8px;font-size:17px;font-family:inherit;}
+  #task-a4 .ratio{width:auto;}
+  #task-a4 .ratio div{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  #task-a4 .sum-body p{margin:6px 0;}
 </style></style>
 </head>
 <body>
@@ -284,7 +288,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 3</div>
+        <div class="progress-text" id="progressText">완료 0 / 4</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -366,7 +370,36 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why3">빈칸을 맞히고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why3">빈칸을 맞히고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요.</div>
+</section>
+
+<!-- ===================== 화면 4: 평행선 사이의 선분의 길이의 비 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">4 평행선 사이의 선분</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>평행선 사이의 선분의 길이의 비는 어떻게 될까?</h2>
+    <p class="hint">모눈종이 위에 <b>평행한 세 직선 l, m, n</b>이 있어요. 두 직선 <b>p</b>(빨강), <b>q</b>(초록)의 파란 손잡이를 끌어 마음대로 움직여 보세요. p와 l, m, n의 교점이 A, B, C, q와의 교점이 D, E, F예요.</p>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g4" viewBox="0 0 360 400" class="board"></svg>
+        <div class="row"><button type="button" class="sbtn" id="af4">📐 보조선 AF 긋기</button><button type="button" class="sbtn" id="rst4">↺ 처음 위치로</button></div></div>
+      <div class="g-side">
+        <div class="now" id="now4"></div>
+        <div class="ratio" style="flex-direction:column;align-items:flex-start;gap:8px;">
+          <div><span class="seg">AB</span> : <span class="seg">BC</span> = <input type="text" id="r4a" class="rin" placeholder="○ : ○" autocomplete="off"></div>
+          <div><span class="seg">DE</span> : <span class="seg">EF</span> = <input type="text" id="r4b" class="rin" placeholder="○ : ○" autocomplete="off"></div>
+          <div>두 비는 <select id="c4"><option value="">선택</option><option value="same">같다</option><option value="diff">다르다</option><option value="dep">p, q 위치에 따라 다르다</option></select></div>
+        </div>
+        <div class="row"><button type="button" class="okb" id="chk4">✔ 확인</button></div>
+        <div class="g-msg" id="msg4"></div>
+      </div>
+    </div>
+    <div class="sum-body" id="sum4" style="display:none;margin-top:12px;">
+      <h4>📦 정리: 평행선 사이의 선분의 길이의 비</h4>
+      <p class="sum-key">l ∥ m ∥ n 이면 <b>AB : BC = DE : EF</b></p>
+      <p class="note">왜 그럴까? 「📐 보조선 AF 긋기」를 눌러 보세요. △ACF와 △FDA에서 <b>화면 3의 결과(AD : DB = AE : EC)</b>를 두 번 쓰면 돼요. 학습지 <b>학습하기➌</b>에서 설명해 봐요.</p>
+    </div>
+  </div>
+  <div class="why" id="why4">두 비를 구하고 비교해서 「✔ 확인」을 누르면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -416,7 +449,8 @@ const MIN_TEXT = 5;
 const TASKS = [
   {id:1, key:'a1', title:'1. 직선 한 개로 닮은 삼각형 만들기'},
   {id:2, key:'a2', title:'2. 닮음비 쓰기'},
-  {id:3, key:'a3', title:'3. AD : DB = AE : ☐'}
+  {id:3, key:'a3', title:'3. AD : DB = AE : ☐'},
+  {id:4, key:'a4', title:'4. 평행선 사이의 선분의 길이의 비'}
 ];
 /* 판: 가로 0~13, 세로 0~14.5 (단위). △ABC는 고정, BC는 살짝 기울게(가로로만 맞추면 되는 일이 없게) */
 const A = [6, 9.2], B = [3.6, 5], C = [8.8, 4.6];
@@ -431,6 +465,7 @@ const state = {
   s1:{H: H0.map(p=>p.slice()), found:{}, tries:0, miss:0},
   s2:{a:['','',''], ok:false, miss:0},
   s3:{b:'', ok:false, miss:0},
+  s4:{P:null, Q:null, moves:0, ra:'', rb:'', c:'', ok:false, miss:0},
   t3:'', shared:{3:false}, seen:{3:false}
 };
 let REVEAL = {};
@@ -447,16 +482,18 @@ function isDone(id){
   if(id===1) return CATS.every(c=> state.s1.found[c.k]!=null);
   if(id===2) return state.s2.ok;
   if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbList().length>=1;
+  if(id===4) return state.s4.ok && state.s4.moves>=2;
   return false;
 }
 function valueOf(id){
   if(id===1){ const f = CATS.filter(c=> state.s1.found[c.k]!=null).map(c=>c.n); return (f.length || state.s1.tries) ? `찾은 위치 ${f.length}/3${f.length?' ('+f.join(', ')+')':''} · 확인 ${state.s1.tries}번${state.s1.miss?` (아님 ${state.s1.miss}번)`:''}` : ''; }
   if(id===2){ const s = state.s2; return s.a.some(Boolean) ? `AB : ${s.a[0]||'?'} = BC : ${s.a[1]||'?'} = AC : ${s.a[2]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
   if(id===3){ const s = state.s3; return (s.b || state.t3) ? `빈칸: ${s.b||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t3.trim()}` : ''; }
+  if(id===4){ const q = state.s4; return (q.moves || q.ra || q.rb) ? `[직선 옮기기 ${q.moves}번] AB:BC = ${q.ra||'?'}, DE:EF = ${q.rb||'?'}, ${({same:'같다',diff:'다르다',dep:'위치에 따라 다르다'})[q.c]||'?'}${q.ok?' ✓':''}${q.miss?` (틀림 ${q.miss}번)`:''}` : ''; }
   return '';
 }
 function collectData(){
-  return { s1: JSON.parse(JSON.stringify(state.s1)), s2: JSON.parse(JSON.stringify(state.s2)), s3: Object.assign({}, state.s3), t3: state.t3,
+  return { s1: JSON.parse(JSON.stringify(state.s1)), s2: JSON.parse(JSON.stringify(state.s2)), s3: Object.assign({}, state.s3), s4: JSON.parse(JSON.stringify(state.s4)), t3: state.t3,
     shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() };
 }
 function shareEntries(){ return { sum: state.shared[3] ? {t: state.t3.trim().slice(0,300)} : null }; }
@@ -847,8 +884,68 @@ $('chk3').addEventListener('click', ()=>{
   render3(); $('b3').classList.add('wrong'); check3({now:true});
 });
 function paintSum(){ const on = aifbPassed() || !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; $('sumBox').style.display = state.s3.ok ? '' : 'none'; }
-function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! 마지막 화면에서 제출하세요.', !state.s3.ok ? '빈칸에 들어갈 선분을 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
+function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! '+NEXT, !state.s3.ok ? '빈칸에 들어갈 선분을 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
 $('t3').addEventListener('input', ()=>check3());
+
+
+/* ================= 화면 4: 평행선 사이의 선분의 길이의 비 =================
+   l, m, n은 가로선 y = 12.5, 8.5, 2.5 (간격 4 : 6 = 2 : 3). p, q는 손잡이 두 개씩으로 움직인다. */
+const LY = [12.5, 8.5, 2.5], LN = ['l','m','n'];
+const P0 = [[3, 14], [3, 0.8]], Q0 = [[7, 14], [11.5, 0.8]];
+let af4 = false, msg4 = '';
+function cutY(H, y){ const d = sub(H[1], H[0]); if(Math.abs(d[1]) < 1e-9) return null; const t = (y - H[0][1]) / d[1]; return lerp(H[0], H[1], t); }
+function pts4(){ const s = state.s4; const a = LY.map(y=>cutY(s.P, y)), b = LY.map(y=>cutY(s.Q, y)); return {a, b, ok: a.concat(b).every(p=> p && inBoard(p))}; }
+function parseR(v){ const m = String(v||'').replace(/\s/g,'').match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/); if(!m) return null; const x = +m[1], y = +m[2]; return (x>0 && y>0) ? {x, y, v: x/y} : null; }
+const gcd = (a,b) => b ? gcd(b, a%b) : a;
+const simplest = r => r && Number.isInteger(r.x) && Number.isInteger(r.y) && gcd(r.x, r.y) === 1;
+function render4(){
+  const s = state.s4, {a, b, ok} = pts4();
+  let h = '';
+  for(let x=0; x<=13; x++) h += seg([x,0],[x,14.5], '#dfe7d8', 1);
+  for(let y=0; y<=14; y++) h += seg([0,y],[13,y], '#dfe7d8', 1);
+  LY.forEach((y,i)=>{ h += seg([0,y],[13,y], '#1f2328', 2.2) + lab([0.45,y], LN[i], 0, -6, '#1f2328', 16); });
+  [[s.P,'#c62828','p'],[s.Q,'#2e7d32','q']].forEach(([H,col,nm])=>{ const d = sub(H[1],H[0]), c = clipT(H[0], d); if(c){ const e = lerp(H[0],H[1],c[1]); h += seg(lerp(H[0],H[1],c[0]), e, col, 2.6) + lab(H[0], nm, 14, -6, col, 16); } });
+  if(ok){
+    if(af4){ const P = cutY([a[0], b[2]], LY[1]); h += seg(a[0], b[2], '#6a1b9a', 2, '6 4'); if(P) h += dotAt(P, '#6a1b9a', 4) + lab(P, 'P', 0, -9, '#6a1b9a', 15); }
+    const L = (p,q,dx,col) => { const mm = lerp(p,q,0.5); return `<text x="${(M.X(mm[0])+dx).toFixed(1)}" y="${(M.Y(mm[1])+4).toFixed(1)}" font-size="13" font-weight="bold" fill="${col}" text-anchor="middle">${nrm(sub(q,p)).toFixed(1)}</text>`; };
+    h += L(a[0],a[1],-20,'#c62828') + L(a[1],a[2],-20,'#c62828') + L(b[0],b[1],22,'#2e7d32') + L(b[1],b[2],22,'#2e7d32');
+    a.forEach((p,i)=>{ h += dotAt(p,'#c62828') + lab(p, 'ABC'[i], -13, -6, '#c62828', 15); });
+    b.forEach((p,i)=>{ h += dotAt(p,'#2e7d32') + lab(p, 'DEF'[i], 13, -6, '#2e7d32', 15); });
+  }
+  if(!isLocked()) [['P',0],['P',1],['Q',0],['Q',1]].forEach(([k,i])=>{ const p = s[k][i]; h += `<circle class="hdl" data-k="${k}" data-i="${i}" cx="${M.X(p[0]).toFixed(1)}" cy="${M.Y(p[1]).toFixed(1)}" r="12" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`; });
+  $('g4').innerHTML = h;
+  const f = x => nrm(x).toFixed(1);
+  $('now4').innerHTML = ok ? `📏 AB = <b>${f(sub(a[1],a[0]))}</b>, BC = <b>${f(sub(a[2],a[1]))}</b><br>📏 DE = <b>${f(sub(b[1],b[0]))}</b>, EF = <b>${f(sub(b[2],b[1]))}</b><br><span class="note">직선을 옮긴 횟수: ${s.moves}</span>` : '<span class="bad">p와 q가 세 직선 l, m, n과 모두 만나도록 움직여 주세요.</span>';
+  $('r4a').value = s.ra; $('r4b').value = s.rb; $('c4').value = s.c;
+  [$('r4a'),$('r4b'),$('c4')].forEach(el=>{ el.disabled = s.ok || isLocked(); });
+  $('chk4').disabled = s.ok || isLocked(); $('af4').classList.toggle('on', af4);
+  $('msg4').innerHTML = s.ok ? `<span class="ok">✅ 맞아요! AB : BC = DE : EF = 2 : 3</span>${s.moves<2 ? ' p, q를 다른 곳으로 옮겨 봐도 그럴까요? <b>두 번 이상</b> 옮겨 보세요.' : ' p, q를 어디로 옮겨도 비는 같아요.'}` : msg4;
+  $('sum4').style.display = s.ok ? '' : 'none';
+}
+(function(){ const svg = $('g4'); let drag = null;
+  svg.addEventListener('pointerdown', ev=>{ if(isLocked()) return; const t = ev.target.closest && ev.target.closest('.hdl'); if(!t) return; drag = {k:t.dataset.k, i:+t.dataset.i, moved:false}; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(!drag) return; ev.preventDefault(); const p = svgPt(svg, ev);
+    p[0] = Math.max(BOX[0], Math.min(BOX[2], Math.round(p[0]*2)/2)); p[1] = Math.max(BOX[1], Math.min(BOX[3], Math.round(p[1]*2)/2));
+    const H = state.s4[drag.k], o = H[1-drag.i]; if(Math.abs(p[1]-o[1]) < 3) return;   // 거의 눕히면 l, m, n과 안 만나므로 막는다
+    if(p[0]===H[drag.i][0] && p[1]===H[drag.i][1]) return;
+    H[drag.i] = p; drag.moved = true; render4(); });
+  const fin = ()=>{ if(drag){ if(drag.moved){ state.s4.moves++; render4(); check4({now:true}); } drag = null; } }; svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin); })();
+$('rst4').addEventListener('click', ()=>{ if(isLocked()) return; state.s4.P = P0.map(p=>p.slice()); state.s4.Q = Q0.map(p=>p.slice()); render4(); refreshAll({}); });
+$('af4').addEventListener('click', ()=>{ af4 = !af4; render4(); });
+$('r4a').addEventListener('input', ()=>{ if(isLocked()) return; state.s4.ra = $('r4a').value; msg4=''; refreshAll({}); });
+$('r4b').addEventListener('input', ()=>{ if(isLocked()) return; state.s4.rb = $('r4b').value; msg4=''; refreshAll({}); });
+$('c4').addEventListener('change', ()=>{ if(isLocked()) return; state.s4.c = $('c4').value; msg4=''; render4(); refreshAll({}); });
+$('chk4').addEventListener('click', ()=>{
+  if(isLocked() || state.s4.ok) return; const s = state.s4, x = parseR(s.ra), y = parseR(s.rb);
+  if(!x || !y){ msg4 = '<span class="bad">두 비를 「2 : 5」처럼 ○ : ○ 꼴로 써 주세요.</span>'; render4(); return; }
+  if(!s.c){ msg4 = '<span class="bad">두 비를 비교해서 골라 주세요.</span>'; render4(); return; }
+  const okA = Math.abs(x.v - 2/3) < 1e-6, okB = Math.abs(y.v - 2/3) < 1e-6;
+  if(okA && okB && s.c==='same' && simplest(x) && simplest(y)){ s.ok = true; render4(); check4({now:true}); return; }
+  s.miss++;
+  msg4 = `<span class="bad">다시 확인해 보세요.</span> ` + (!okA || !okB ? `길이를 보고 비를 다시 구해 보세요. ${s.miss>=2 ? '💡 세 직선 사이의 <b>세로 칸 수</b>를 세어 보세요. (l과 m 사이, m과 n 사이)' : ''}` : (!simplest(x) || !simplest(y)) ? '값은 맞아요! <b>가장 간단한 자연수의 비</b>로 써 보세요.' : '두 비를 다시 비교해 보세요.');
+  render4(); check4({now:true});
+});
+function check4(opts){ setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', !state.s4.ok ? '두 비를 가장 간단한 자연수의 비로 구하고, 비교해서 「✔ 확인」을 눌러 보세요.' : `p, q를 두 번 이상 옮겨 보세요. (지금 ${state.s4.moves}번)`); refreshAll(opts); }
 
 /* ---------- 친구들의 생각 / 답변 공유 ---------- */
 function renderFriends(n){
@@ -879,8 +976,8 @@ $('sh3').addEventListener('click', ()=>{
 function onShareChanged(){ renderFriends(3); }
 function onRevealChanged(){ paintSum(); }
 function aifbOnChange(){ paintSum(); check3({noSave:true}); }
-function onShowPage(id){ if(id===1) render1(); if(id===2) render2(); if(id===3) render3(); }
-function initActivity(){ render1(); render2(); render3(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
+function onShowPage(id){ if(id===1) render1(); if(id===2) render2(); if(id===3) render3(); if(id===4) render4(); }
+function initActivity(){ if(!state.s4.P){ state.s4.P = P0.map(p=>p.slice()); state.s4.Q = Q0.map(p=>p.slice()); } render1(); render2(); render3(); render4(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 function restoreData(d){
   if(!d) return;
@@ -891,6 +988,8 @@ function restoreData(d){
   const s2 = d.s2 || {}; state.s2 = { a: [0,1,2].map(i=> SEGS.includes(arr(s2.a)[i]) ? arr(s2.a)[i] : ''), ok: !!s2.ok, miss: +s2.miss || 0 };
   const s3 = d.s3 || {}; state.s3 = { b: SEGS.includes(s3.b) ? s3.b : '', ok: !!s3.ok, miss: +s3.miss || 0 };
   state.t3 = String(d.t3 || ''); $('t3').value = state.t3;
+  const s4 = d.s4 || {}, okH = v => { const H = arr(v).map(p=>arr(p).map(Number)); return (H.length===2 && H.every(p=>p.length===2 && p.every(Number.isFinite))) ? H : null; };
+  state.s4 = { P: okH(s4.P) || P0.map(p=>p.slice()), Q: okH(s4.Q) || Q0.map(p=>p.slice()), moves: +s4.moves || 0, ra: String(s4.ra||''), rb: String(s4.rb||''), c: ['same','diff','dep'].includes(s4.c) ? s4.c : '', ok: !!s4.ok, miss: +s4.miss || 0 };
   state.shared[3] = !!(d.shared && d.shared[3]); state.seen[3] = !!(d.seen && d.seen[3]) || state.shared[3];
   aifbRestore(d);
   initActivity();
