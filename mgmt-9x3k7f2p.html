@@ -216,7 +216,8 @@ const SECTIONS = [
       { title:'', items:[
         {n:31, label:1, title:'7.1. 도형의 닮음 생각열기 - 복사기가 고장나면?', file:'t31-bwznaq2.html'},
         {n:32, label:2, title:'7.2. 삼각형의 닮음 조건 생각열기 - 닮음 조건 찾기', file:'t32-u6pfzrq.html'},
-        {n:34, label:3, title:'7.3. 삼각형과 평행선 생각열기 - 확대 골프 게임', file:'t34-yacpxfx.html'},
+        // 34 확대 골프 게임(t34-yacpxfx.html)은 2026-10-20 목차에서 숨김(파일·기록은 그대로) → 37로 바꿈
+        {n:37, label:3, title:'7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기', file:'t37-pe1lv35.html'},
         {n:35, label:4, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'t35-u4d6c5i.html'},
         {n:36, label:5, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'t36-6xovj7e.html'}
       ]}
@@ -517,7 +518,7 @@ document.getElementById('seatFabBtn').addEventListener('click', e=>{
 /* ---------- 🧑 학생 번호·이름 고치기 (2026-10-17): 학생이 잘못 입력한 번호·이름으로 남은 기록을 모든 활동 방에서 찾아 새 키로 옮긴다 ----------
    옮기는 곳(방마다): students/{키}(안의 number·name도 고침), share/{종류}/{키}, a1summary/{키}, control/aiBonus/{키}, rosterCodes/{키}
    새 키에 이미 기록이 있는 방은 덮어쓰지 않고 건너뛴다(목록에 빨갛게 표시). */
-const FIX_SUFFIX_MAP = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
+const FIX_SUFFIX_MAP = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
 const FIX_SUFFIXES = [...new Set(Object.values(FIX_SUFFIX_MAP).concat(['__prob26','__sim32','__sim36']))];
 const fxKeyPart = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
 let fxPlan = null;

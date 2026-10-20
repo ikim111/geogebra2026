@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161;
+    --ink:#1f2328; --ink2:#52514e; --muted:#8a8a86; --line:#e3e5e8; --blue-soft:#e8f1fc; --green-soft:#e8f5ec;
+    --warn:#b3261e; --warn-soft:#fdecea; --gold:#e3b23c; --gold-dark:#a77b12; --silver:#c9ced6; --silver-dark:#7d8591;
+    --s10:#4a3aa7; --s100:#1baf7a; --s1000:#eb6834; --s10000:#2a78d6; --scustom:#1f2328;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+
+  /* ---- studentN 공통 틀 ---- */
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;margin-top:0;}
+  .progress-bar{flex:1;height:10px;background:#3a3f44;border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .3s;}
+  .progress-text{font-size:13px;color:#e8eaed;white-space:nowrap;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;flex-direction:column;gap:6px;}
+  #unitTitleBar{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;letter-spacing:.2px;}
+  .sticky-controls{display:flex;align-items:center;gap:12px;}
+  #stickyBar #nextBtn{flex:0 0 auto;padding:8px 16px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #nextBtn:disabled{background:#555;color:#999;cursor:not-allowed;}
+  #stickyBar #prevBtn{flex:0 0 auto;padding:8px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#e8eaed;font-size:13px;font-weight:bold;cursor:pointer;white-space:nowrap;}
+  #stickyBar #prevBtn:disabled{border-color:#3a3f44;color:#666;cursor:not-allowed;}
+  #pagerNav{position:sticky;bottom:0;z-index:400;background:#fff;border-top:1px solid #e5e5e5;}
+  #pagerNav .pager-buttons{display:flex;align-items:center;justify-content:center;padding:12px 16px;gap:10px;}
+  #pageLabel{font-size:13px;color:#555;font-weight:bold;white-space:nowrap;}
+  #pacingMsg{display:none;text-align:center;font-size:12.5px;color:var(--orange);background:#fff3e0;padding:7px;}
+  #gateMsg{display:none;text-align:center;font-size:12.5px;color:#0052a3;background:#e8f0fe;padding:7px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  #switchUserWrap{display:none;text-align:center;font-size:11.5px;color:#999;background:#fafafa;border-bottom:1px solid #eee;padding:5px;}
+  #switchUserWrap a{color:var(--blue);font-weight:bold;text-decoration:none;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 8px;}
+
+  .submit-panel{background:#fff;border-radius:10px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .submit-panel button.main{padding:12px 26px;font-size:15px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-weight:bold;}
+  .submit-panel button.main.cancel{ background:#9e9e9e; }
+  .submit-panel button.backup{margin-top:10px;display:inline-block;padding:8px 16px;font-size:12.5px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#555;}
+  #submitStatus{margin-top:12px;font-size:13.5px;color:#333;}
+
+  #lockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;flex-direction:column;color:#fff;text-align:center;padding:20px;}
+  #lockOverlay h2{font-size:22px;margin-bottom:8px;}
+  #lockOverlay p{font-size:14px;opacity:.85;}
+  body.app-paused .activity, body.app-paused #pagerNav button, body.app-paused .submit-panel button{ pointer-events:none !important; opacity:.5; }
+  body.final-locked .activity .card{ pointer-events:none !important; opacity:.65; }
+
+  #announceBanner{display:none;background:#fff8e1;border:1px solid #ffca28;color:#8d6e00;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14.5px;font-weight:bold;align-items:center;justify-content:space-between;gap:10px;}
+  #announceBanner button{border:none;background:transparent;color:#8d6e00;font-weight:bold;cursor:pointer;font-size:16px;}
+
+  #syncStatus{font-size:12px;color:#999;margin-top:12px;}
+  #syncStatus.on{color:var(--green);font-weight:bold;}
+
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;}
+  .gate-card h1{font-size:18px;margin:0 0 4px;color:#1a237e;}
+  .gate-card .gate-sub{font-size:12px;color:#888;margin:0 0 22px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;color:#555;margin:14px 0 6px;font-weight:bold;}
+  .gate-card .gate-readonly{background:#f4f6f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;font-size:15px;font-weight:bold;color:#222;text-align:left;}
+  .gate-start{width:100%;margin-top:22px;padding:14px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+  .gate-start:hover{background:#1b5e20;}
+  #profileMissingBox a{color:#e65100;}
+  #appScreen{display:none;}
+
+  /* ---- 공통 카드·입력 ---- */
+  .card{background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .act-tag{display:inline-block;font-size:12px;font-weight:bold;color:#fff;background:var(--blue);border-radius:6px;padding:2px 8px;margin-bottom:6px;}
+  .badge{flex:0 0 auto;font-size:12px;font-weight:bold;padding:4px 10px;border-radius:12px;white-space:nowrap;}
+  .badge.pending{background:#eeeeee;color:#777;}
+  .badge.done{background:#e8f5e9;color:var(--green);}
+  .activity h2{margin:0 0 4px;font-size:20px;}
+  .activity h3{margin:0 0 10px;font-size:17px;}
+  .question{font-size:17.5px;font-weight:bold;background:var(--blue-soft);border-left:5px solid var(--blue);padding:10px 14px;border-radius:6px;margin:10px 0 14px;}
+  .hint{font-size:14px;color:var(--ink2);margin:4px 0 10px;}
+  .note{font-size:13px;color:var(--muted);}
+  .why{font-size:13.5px;color:var(--muted);text-align:right;margin:2px 4px 14px;}
+  .why.ok{color:var(--green);font-weight:bold;}
+
+  .btn{border:none;border-radius:8px;padding:11px 20px;font-size:16px;font-weight:bold;cursor:pointer;background:var(--blue);color:#fff;font-family:inherit;}
+  .btn:disabled{background:#c5c9cf;cursor:not-allowed;}
+  .btn.concept-btn{background:var(--green);}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .choice{flex:1;min-width:150px;border:2px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-size:17px;font-weight:bold;cursor:pointer;color:var(--ink2);font-family:inherit;}
+  .choice.selected{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .choice:disabled{cursor:default;}
+
+  .result-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .result-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .stat .k{font-size:13px;color:var(--ink2);}
+  .stat .v{font-size:22px;font-weight:bold;}
+  .frac{font-variant-numeric:tabular-nums;}
+  .friends{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .friends span{background:#f1f3f6;border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:14px;font-weight:bold;font-variant-numeric:tabular-nums;}
+
+  .activity textarea, .activity input[type=text]{font-family:inherit;font-size:16px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;width:100%;}
+  .activity textarea{resize:vertical;min-height:84px;}
+  .activity textarea:focus, .activity input:focus{outline:2px solid var(--blue);outline-offset:0;border-color:var(--blue);}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:16px;}
+  .field label{min-width:250px;font-weight:bold;}
+  .activity .field input{width:150px;text-align:right;}
+  .error{display:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:14.5px;font-weight:bold;margin-top:8px;}
+  .error.show{display:block;}
+  .live-box{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px;}
+  .live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;}
+  .live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  .live-stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;}
+  .live-stats .stat .v{font-size:24px;}
+  .friends span.me{background:#e8f1fc;border-color:#90b8ea;color:#1565c0;}
+  .compare{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .compare .stat{text-align:center;}
+  .compare .stat .v{font-size:26px;}
+
+  .concept{display:none;border:2px solid var(--green);background:var(--green-soft);border-radius:12px;padding:16px 18px;margin-top:14px;}
+  .concept.show{display:block;}
+  .concept .def{font-size:18px;font-weight:bold;line-height:1.7;}
+  .concept .def b{color:var(--green);}
+  @media (max-width:640px){ .field label{min-width:0;} }
+  /* ---- 37번 활동 ---- */
+  .ok{color:var(--green);font-weight:bold;} .bad{color:var(--warn);font-weight:bold;}
+  .sbtn{border:1px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink2);}
+  .sbtn:hover{border-color:var(--blue);color:var(--blue);}
+  .big-question{font-size:18px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
+  .lbl{font-weight:bold;margin:10px 0 4px;font-size:15px;}
+  /* 골프판 */
+  .g-layout{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;}
+  .g-board{flex:0 0 auto;width:460px;max-width:100%;}
+  .golf{width:100%;display:block;border-radius:10px;background:#dff3d2;border:1px solid #b9d9a8;touch-action:manipulation;user-select:none;}
+  .golf.pick{cursor:crosshair;}
+  .g-side{flex:1;min-width:260px;}
+  .o-mark{color:#c62828;font-weight:bold;} .ghost-mark{color:#555;font-weight:bold;}
+  .kctrl{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fafbfc;}
+  .kctrl .krow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .kctrl .klab{font-weight:bold;font-size:16px;min-width:88px;}
+  .kctrl .klab b{color:var(--blue);font-size:19px;}
+  .kctrl input[type=range]{flex:1;min-width:140px;}
+  .kctrl .kin{width:86px;padding:7px 8px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  .kctrl .shoot{background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .kctrl .shoot:disabled{background:#a5c7a7;cursor:default;}
+  .kctrl .orow{font-size:14px;color:var(--ink2);margin-top:6px;}
+  .kctrl .orow b{color:#c62828;}
+  .kctrl .strokes{font-size:13px;color:var(--ink2);margin-left:auto;}
+  .g-msg{margin-top:8px;min-height:22px;font-size:15px;}
+  .g-msg .hit{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:8px 12px;color:#1b5e20;font-weight:bold;}
+  .g-msg .miss{color:#b26a00;}
+  .sol-box{margin-top:8px;font-size:14px;}
+  .sol-box:empty{display:none;}
+  .sol-box .sol{display:inline-block;background:#fff;border:1px solid #a5d6a7;border-radius:14px;padding:3px 10px;margin:2px 4px 2px 0;}
+  /* 홀 4 물음 */
+  .q5{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+  .q5row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:15.5px;}
+  .q5l{font-weight:bold;min-width:200px;}
+  .q5row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+  .q5row input[type=radio]{width:17px;height:17px;}
+  .ratio{width:110px;padding:7px 9px;border:1px solid #c5cad1;border-radius:8px;font-size:15px;font-family:inherit;}
+  .q5.locked input{pointer-events:none;background:#f3f4f6;}
+  /* 친구들 생각 */
+  .friends-box{margin-top:12px;}
+  .friends-box:empty{display:none;}
+  .friends-box h4{margin:0 0 6px;font-size:14.5px;color:#311b92;}
+  .flist{display:flex;flex-direction:column;gap:5px;max-height:260px;overflow:auto;}
+  .flist div{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;white-space:pre-wrap;word-break:break-word;}
+  .flist div.me{border-color:#f3b183;background:#fff6ef;}
+  .share-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .share-btn{background:#7b1fa2;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .share-btn:disabled{background:#cdb6d8;cursor:default;}
+  .share-btn.edit{background:#fff;color:#7b1fa2;border:2px solid #7b1fa2;}
+  .activity textarea.shared{background:#f6f0fa;}
+  /* 정리 */
+  .recap{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .recap:empty{display:none;}
+  .recap .rc{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#f7f9fb;font-size:14px;}
+  .recap .rc b{display:block;margin-bottom:4px;}
+  .sum-box{margin-top:14px;}
+  .sum-wait{background:#f3f4f6;border:1px dashed #c5cad1;border-radius:10px;padding:10px 14px;color:var(--ink2);font-size:14.5px;}
+  .sum-body{background:#fffbe6;border:2px solid #ffca28;border-radius:12px;padding:12px 16px;}
+  .sum-body h4{margin:0 0 8px;font-size:16px;color:#8d6e00;}
+  .sum-fig{width:300px;max-width:100%;display:block;margin:0 auto 8px;}
+  .sum-key{font-size:17px;background:#fff;border-radius:8px;padding:8px 12px;text-align:center;}
+  @media (max-width:640px){ .g-board{width:100%;} }
+  .golf .ball circle:first-child{fill:#fff;stroke:#333;stroke-width:1.8;}
+  .activity .q5row input.ratio{width:120px;}
+  .golf .drag{cursor:grab;} .golf .drag:active{cursor:grabbing;}
+  .golf{touch-action:none;}
+  .golf .ball{pointer-events:none;}
+  .aifb{margin-top:10px;border:1px dashed #b39ddb;border-radius:10px;padding:8px 12px;background:#faf8ff;}
+  .aifb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .aifb-btn{background:#5e35b1;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-btn:disabled{background:#c5b8e3;cursor:default;}
+  .aifb-left{font-size:13px;color:#6b6f76;}
+  .fb-out{margin-top:6px;font-size:14px;line-height:1.65;}
+  .fb-out:empty{display:none;}
+  .fb-out .row{display:flex;gap:8px;align-items:flex-start;margin:5px 0;}
+  .fb-out .tag{flex:0 0 auto;font-size:11.5px;font-weight:bold;border-radius:6px;padding:1px 7px;margin-top:3px;white-space:nowrap;}
+  .fb-out .good .tag{background:#e8f5e9;color:#2e7d32;}
+  .fb-out .fix .tag{background:#fff3e0;color:#e65100;}
+  .fb-out .none .tag{background:#e3f2fd;color:#1565c0;}
+  .fb-out .note{font-size:11.5px;color:#999;margin-top:4px;}
+  .aifb-req{background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:5px 12px;font-size:13.5px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .aifb-req:disabled{color:#888;border-color:#ccc;cursor:default;font-weight:normal;}
+  .kctrl .knud{border:1px solid #c5cad1;background:#fff;border-radius:8px;width:38px;height:34px;font-size:15px;cursor:pointer;color:#1565c0;font-family:inherit;flex:0 0 auto;}
+  .kctrl .knud:active{background:#e8f1fc;}
+  .np-rec{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#fafbfc;font-size:14.5px;line-height:1.7;}
+  .np-rec:empty{display:none;}
+  .kctrl .chain-tag{background:#c62828;color:#fff;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:bold;}
+  .golf .hdrag{cursor:grab;}
+
+  .g-layout{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;}
+  .g-board{flex:0 0 auto;width:400px;max-width:100%;}
+  .g-board.sm{width:330px;}
+  .board{width:100%;display:block;border-radius:10px;background:#fbfcfe;border:1px solid #d6dbe1;touch-action:none;user-select:none;}
+  .g-side{flex:1;min-width:260px;}
+  .g-msg{margin-top:8px;min-height:20px;font-size:15px;line-height:1.6;}
+  .ok{color:#2e7d32;font-weight:bold;} .bad{color:#c62828;font-weight:bold;}
+  .now{border:1px solid #d6dbe1;background:#fafbfc;border-radius:10px;padding:8px 12px;font-size:15px;line-height:1.8;margin-bottom:8px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center;}
+  .sbtn{border:1.5px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;color:#1f2328;}
+  .sbtn.on{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:bold;}
+  .okb{border:none;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .okb:disabled{background:#a5d6a7;cursor:default;}
+  .hdl{cursor:grab;}
+  .found3{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .found3 .fc{flex:1;min-width:110px;border:2px dashed #c5cad1;border-radius:10px;padding:4px;text-align:center;font-size:13px;color:#6b7280;background:#fff;}
+  .found3 .fc.on{border:2px solid #2e7d32;color:#1b5e20;background:#f1f8e9;font-weight:bold;}
+  .found3 .fc svg{width:100%;display:block;}
+  .ratio{font-size:20px;font-weight:bold;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0;font-family:'Times New Roman',serif;}
+  .ratio .seg{text-decoration:overline;}
+  .ratio select{font-size:18px;padding:4px 6px;border:1.5px solid #c5cad1;border-radius:8px;font-family:'Times New Roman',serif;background:#fff;}
+  .ratio select.wrong{border-color:#ef9a9a;background:#fff6f6;}
+  .ratio select.right{border-color:#66bb6a;background:#f1f8e9;}
+  .qbox{margin-top:12px;} .qbox.locked{display:none;}
+  @media (max-width:640px){ .g-board,.g-board.sm{width:100%;} }
+</style></style>
+</head>
+<body>
+
+<div id="lockOverlay">
+  <h2>⏸ 선생님이 화면을 잠갔어요</h2>
+  <p>선생님이 다시 시작하면 자동으로 풀려요. 잠시만 기다려주세요.</p>
+</div>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <a href="student.html" style="display:inline-block;margin-bottom:10px;font-size:12px;color:#888;text-decoration:none;">← 과제 목록으로</a>
+    <h1>7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기</h1>
+    <p class="gate-sub">자로 직선을 하나만 그어서 △ABC와 닮은 삼각형을 만들 수 있을까요? 직선을 움직이며 찾아봅시다 — 김형준 선생님 — 김형준 선생님</p>
+    <div id="profileMissingBox" style="display:none;text-align:left;background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;font-size:13px;color:#8d6e00;margin-top:16px;line-height:1.6;">
+      ⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>
+      <a href="student.html" style="font-weight:bold;">student.html</a>에서 반·번호·이름을 먼저 입력해주세요.
+    </div>
+    <div id="unitLockedBox" style="display:none;text-align:center;background:#f4f6f8;border:1px solid #ddd;border-radius:8px;padding:16px 14px;font-size:13px;color:#666;margin-top:16px;line-height:1.7;">
+      🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어주시면 이용할 수 있어요.<br>
+      <a href="student.html" style="font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+    </div>
+    <div id="profileBox" style="display:none;">
+      <label>반</label>
+      <div class="gate-readonly" id="profileClassView"></div>
+      <label>번호</label>
+      <div class="gate-readonly" id="profileNumberView"></div>
+      <label>이름</label>
+      <div class="gate-readonly" id="profileNameView"></div>
+      <button id="startBtn" class="gate-start">시작하기 →</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (실제 학생 데이터에는 영향을 주지 않아요)</div>
+  <div id="switchUserWrap"><span id="switchUserName"></span>(으)로 자동으로 이어했어요. 본인이 아니면 <a href="#" id="switchUserBtn">새로 시작하기</a></div>
+  <div id="stickyBar">
+    <div id="unitTitleBar">7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기</div>
+    <div class="sticky-controls">
+      <a href="student.html" title="과제 목록으로" style="flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;">🏠</a>
+      <button id="prevBtn">◀ 이전</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">완료 0 / 3</div>
+      </div>
+      <button id="nextBtn">다음 ▶</button>
+    </div>
+  </div>
+  <div id="gateMsg"></div>
+
+  <div class="wrap" id="pageWrap">
+    <div id="announceBanner"><span id="announceText"></span><button id="announceClose">✕</button></div>
+
+    <div id="taskContainer">
+
+<!-- ===================== 화면 1: 직선 한 개로 닮은 삼각형 만들기 ===================== -->
+<section class="task activity" id="task-a1" data-task-id="1">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">1 직선 긋기</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>자로 직선을 하나만 그어서 △ABC와 닮은 삼각형을 만들 수 있을까?</h2>
+    <p class="hint">그림은 △ABC와 <b>AB, AC의 연장선</b>이에요. 파란 손잡이 두 개를 끌어 직선을 움직여 보세요. 직선이 두 선과 만나는 점이 <b>D</b>(AB 쪽), <b>E</b>(AC 쪽)이고, 노란 삼각형이 <b>△ADE</b>예요. △ADE가 △ABC와 닮았다고 생각되면 「✔ 닮음 확인」을 눌러요. <b>서로 다른 위치 3가지</b>를 찾아보세요.</p>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g1" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-side">
+        <div class="now" id="now1"></div>
+        <div class="row"><button type="button" class="okb" id="chk1">✔ 닮음 확인</button><button type="button" class="sbtn" id="rst1">↺ 직선 처음 위치로</button></div>
+        <div class="g-msg" id="msg1"></div>
+        <div class="found3" id="found1"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why1">닮은 삼각형이 되는 직선의 위치 3가지를 모두 찾으면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 2: 닮음비 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">2 닮음비</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>△ABC와 △ADE의 닮음비를 써 보자</h2>
+    <p class="hint">화면 1에서 <b>삼각형 안쪽</b>에 그은 직선이에요. 직선이 AB, AC와 만나는 점이 D, E예요. 두 삼각형에서 <b>대응하는 변</b>끼리 짝지어 빈칸을 채워 보세요.</p>
+    <div class="g-layout">
+      <div class="g-board sm"><svg id="g2" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-side">
+        <div class="ratio" id="ratio2">
+          <span class="seg">AB</span> : <select data-k="0"></select> = <span class="seg">BC</span> : <select data-k="1"></select> = <span class="seg">AC</span> : <select data-k="2"></select>
+        </div>
+        <div class="row"><button type="button" class="okb" id="chk2">✔ 확인</button></div>
+        <div class="g-msg" id="msg2"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why2">닮음비를 바르게 쓰면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 3: AD:DB = AE:? ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">3 선분의 비</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>AD : DB = AE : ☐ — 빈칸에 들어갈 선분은?</h2>
+    <div class="g-layout">
+      <div class="g-board sm"><svg id="g3" viewBox="0 0 360 400" class="board"></svg>
+        <div class="row"><button type="button" class="sbtn" id="len3">📏 길이 보기</button></div></div>
+      <div class="g-side">
+        <div class="ratio"><span class="seg">AD</span> : <span class="seg">DB</span> = <span class="seg">AE</span> : <select id="b3"></select> <button type="button" class="okb" id="chk3">✔ 확인</button></div>
+        <div class="g-msg" id="msg3"></div>
+        <div class="qbox locked" id="q3">
+          <div class="big-question">그 이유를 <b>화면 2의 닮음비</b>를 이용하여 설명해 보세요.</div>
+          <textarea id="t3" placeholder="화면 2에서 AB : AD = AC : AE 이므로 …"></textarea>
+          <div class="aifb" id="aifb37"></div>
+          <div class="share-row"><button class="share-btn" id="sh3" disabled>📤 답변 공유</button><span class="note" id="shn3"></span></div>
+          <div class="friends-box" id="fr3"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sum-box" id="sumBox">
+      <div class="sum-wait" id="sumWait">🔒 정리 상자는 AI 피드백에서 <b>보완할 점이 없으면</b> 열려요. 피드백을 보고 내 글을 고쳐 다시 받아 보세요.</div>
+      <div class="sum-body" id="sumBody" style="display:none;">
+        <h4>📦 정리: 삼각형과 평행선</h4>
+        <p>△ABC에서 변 AB, AC(또는 그 연장선) 위에 점 D, E가 있을 때,</p>
+        <p class="sum-key"><b>BC ∥ DE</b> 이면 ① <b>AB : AD = AC : AE = BC : DE</b></p>
+        <p class="sum-key">② <b>AD : DB = AE : EC</b></p>
+        <p class="note">∠A는 공통이고 BC ∥ DE라서 동위각(또는 엇각)이 같으니 △ABC ∽ △ADE (AA 닮음)예요. 거꾸로도 성립하는지 학습지에서 살펴봐요.</p>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why3">빈칸을 맞히고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 마지막 화면에서 제출하세요.</div>
+</section>
+
+    </div>
+
+    <div class="submit-panel" data-task-id="submit">
+      <button class="main" id="submitBtn">결과 제출하기</button><br>
+      <button class="backup" id="backupBtn">백업 파일로 저장</button>
+      <div id="submitStatus"></div>
+    </div>
+  </div>
+
+  <div id="pagerNav">
+    <div id="pacingMsg">⏸ 선생님이 여기까지만 진행하도록 설정했어요. 잠시만 기다려주세요.</div>
+    <div class="pager-buttons">
+      <span id="pageLabel">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   37. 7.3 삼각형과 평행선 생각열기 — 닮음인 삼각형 만들기 (2026-10-20, 학습지 생각열기❶과 같은 흐름. 확대 골프(34)를 목차에서 대신함, 34 파일·기록은 그대로 둠)
+   ① △ABC와 AB, AC의 연장선. 손잡이 두 개로 직선을 움직여 △ADE가 △ABC와 닮음이 되는 위치 3가지(안쪽, A 위쪽, BC 아래쪽)를 찾는다.
+      「닮음 확인」: 직선과 BC가 이루는 각이 2.5° 이하면 평행으로 보고 정확히 맞춰 준다. 두 번 틀리면 ∠ADE·∠ABC 크기를 보여 준다. 뒤집혀 닮음은 안내만.
+   ② 안쪽 경우 그림에서 AB : ☐ = BC : ☐ = AC : ☐ 고르기 (AD, DE, AE)
+   ③ AD : DB = AE : ☐ (EC) → 이유 쓰기(화면 2의 닮음비 이용) + AI 피드백(unit 37) + 답변 공유 → 통과하면 정리 상자
+   student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim37. 공유: share/sum/{학생키} = {t}
+   ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
+   ============================================================ */
+const PREVIEW_PARAMS = new URLSearchParams(location.search);
+const PREVIEW_MODE = PREVIEW_PARAMS.get('preview') === '1';
+const PREVIEW_TASK = parseInt(PREVIEW_PARAMS.get('task'), 10) || 1;
+
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__sim37'; // teacher37.html과 반드시 동일해야 함
+const UNIT_LABEL = '7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기';
+const UNIT_NO = 37;
+const MIN_TEXT = 5;
+const TASKS = [
+  {id:1, key:'a1', title:'1. 직선 한 개로 닮은 삼각형 만들기'},
+  {id:2, key:'a2', title:'2. 닮음비 쓰기'},
+  {id:3, key:'a3', title:'3. AD : DB = AE : ☐'}
+];
+/* 판: 가로 0~13, 세로 0~14.5 (단위). △ABC는 고정, BC는 살짝 기울게(가로로만 맞추면 되는 일이 없게) */
+const A = [6, 9.2], B = [3.6, 5], C = [8.8, 4.6];
+const BOX = [0.2, 0.2, 12.8, 14.3];               // 손잡이·선이 움직일 수 있는 범위
+const H0 = [[1, 5.6], [12, 10.2]];                  // 직선 처음 위치(평행하지 않게)
+const CATS = [{k:'in', n:'삼각형 안쪽', d:'변 AB, AC 위'}, {k:'up', n:'꼭짓점 A 위쪽', d:'AB, AC의 연장선 위(A 쪽)'}, {k:'down', n:'변 BC 아래쪽', d:'AB, AC의 연장선 위(B·C 쪽)'}];
+const ANG_TOL = 2.5;                              // 닮음 판정: 직선과 BC가 이루는 각이 이 값(도) 이하이면 평행으로 본다
+const SEGS = ['AD', 'DB', 'AE', 'EC', 'DE', 'BC', 'AC'];
+const ANS2 = ['AD', 'DE', 'AE'], ANS3 = 'EC';
+
+const state = {
+  s1:{H: H0.map(p=>p.slice()), found:{}, tries:0, miss:0},
+  s2:{a:['','',''], ok:false, miss:0},
+  s3:{b:'', ok:false, miss:0},
+  t3:'', shared:{3:false}, seen:{3:false}
+};
+let REVEAL = {};
+const SHARE = { all:{}, sent:{} };
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const len = s => String(s||'').trim().length;
+const sub = (p,q) => [p[0]-q[0], p[1]-q[1]], add = (p,q) => [p[0]+q[0], p[1]+q[1]], mul = (p,k) => [p[0]*k, p[1]*k];
+const cross = (a,b) => a[0]*b[1]-a[1]*b[0], dot = (a,b) => a[0]*b[0]+a[1]*b[1], nrm = a => Math.hypot(a[0], a[1]);
+const lerp = (p, q, t) => add(p, mul(sub(q,p), t));
+const catOf = t => t < 0 ? 'up' : t > 1 ? 'down' : 'in';
+
+function isDone(id){
+  if(id===1) return CATS.every(c=> state.s1.found[c.k]!=null);
+  if(id===2) return state.s2.ok;
+  if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbList().length>=1;
+  return false;
+}
+function valueOf(id){
+  if(id===1){ const f = CATS.filter(c=> state.s1.found[c.k]!=null).map(c=>c.n); return (f.length || state.s1.tries) ? `찾은 위치 ${f.length}/3${f.length?' ('+f.join(', ')+')':''} · 확인 ${state.s1.tries}번${state.s1.miss?` (아님 ${state.s1.miss}번)`:''}` : ''; }
+  if(id===2){ const s = state.s2; return s.a.some(Boolean) ? `AB : ${s.a[0]||'?'} = BC : ${s.a[1]||'?'} = AC : ${s.a[2]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
+  if(id===3){ const s = state.s3; return (s.b || state.t3) ? `빈칸: ${s.b||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t3.trim()}` : ''; }
+  return '';
+}
+function collectData(){
+  return { s1: JSON.parse(JSON.stringify(state.s1)), s2: JSON.parse(JSON.stringify(state.s2)), s3: Object.assign({}, state.s3), t3: state.t3,
+    shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() };
+}
+function shareEntries(){ return { sum: state.shared[3] ? {t: state.t3.trim().slice(0,300)} : null }; }
+function pushShare(rt){
+  if(!rt.shareRef) return;
+  const e = shareEntries();
+  Object.keys(e).forEach(kind=>{ const j = JSON.stringify(e[kind]); if(SHARE.sent[kind] === j) return; SHARE.sent[kind] = j; rt.shareRef.child(kind+'/'+rt.studentKey).set(e[kind]); });
+}
+const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
+
+/* ---------- 🤖 AI 피드백 받기(연습): 보완할 점이 없으면 정리 상자가 열린다. 3번까지, 결과는 data.aiFb ---------- */
+/* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 3번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
+const AIFB_MAX = 3;
+const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
+let AIFB = [];
+let AIFB_REQ = 0;                       // 기회를 다 쓴 학생이 선생님께 요청한 시각(data.aiReq)
+let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(control/aiBonus/{학생키} = {n, ts})
+const aifbMax = () => AIFB_MAX + (+AIFB_BONUS.n || 0);
+/* 한 화면에 피드백 칸이 여러 개일 때: key='main'은 data.aiFb(AIFB), 그 밖은 data['aiFb_'+key](AIFB_SETS[key]) */
+const AIFB_SETS = {};
+const aifbList = key => (!key || key==='main') ? AIFB : (AIFB_SETS[key] || (AIFB_SETS[key] = []));
+const aifbUsed = key => aifbList(key).filter(e=>e && !e.skip).length;
+/* 마지막으로 받은 AI 피드백에 보완할 점이 없으면 통과 */
+function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+/* collectData에 넣을 추가 칸들 { aiFb_p7: [...] } */
+function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['aiFb_'+k] = AIFB_SETS[k]; }); return o; }
+/* 선생님이 기회를 더 주면 바로 반영(접속 뒤 control/aiBonus/{내 키}를 구독) */
+(function aifbWatch(){
+  const t = setInterval(()=>{
+    if(typeof RT==='undefined' || !RT.controlRef || !RT.studentKey) return;
+    clearInterval(t);
+    RT.controlRef.child('aiBonus/'+RT.studentKey).on('value', snap=>{
+      const v = snap.val() || {}; AIFB_BONUS = {n: +v.n || 0, ts: +v.ts || 0};
+      document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint());
+      if(typeof aifbOnChange==='function') aifbOnChange();
+    });
+  }, 500);
+})();
+const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function aifbHTML(e){
+  if(!e) return '';
+  if(e.skip) return `<div class="row none"><span class="tag">알림</span><span>AI에 연결되지 않아 이번에는 건너뛰었어요.</span></div>`;
+  const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
+  const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
+          : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
+  return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.${window.reportOpen ? ' <button type="button" class="aifb-wrong">🤔 AI가 틀린 것 같아요</button>' : ''}</div>`;
+}
+/* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
+function aifbMount(box, opt){
+  const key = opt.key || 'main', L = () => aifbList(key);
+  box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
+  const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
+  req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
+  let busy = false, fails = 0;
+  const paint = () => {
+    const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
+    const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
+    btn.disabled = busy || out_ || aifbLocked() || short;
+    req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
+    req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
+    left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
+      : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${mx-n}번)` : `남은 횟수 ${mx-n}번 · 다 쓴 뒤에 받아 보세요.`;
+    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); }
+  };
+  btn.addEventListener('click', async ()=>{
+    if(btn.disabled) return;
+    busy = true; paint(); out.innerHTML = '';
+    try{
+      const r = await fetch('/api/practice-feedback', { method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ unit: opt.unit, answer: opt.answer(), ctx: opt.ctx ? opt.ctx() : '' }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j || !Array.isArray(j.good)) throw new Error((j && j.error) || ('HTTP '+r.status));
+      L().push({ t: Date.now(), a: opt.answer().trim().slice(0, 400), good: j.good, fix: j.fix || [] });
+      busy = false; paint();
+      if(typeof aifbOnChange==='function') aifbOnChange();
+      if(typeof refreshAll==='function') refreshAll({now:true});
+    }catch(e){
+      busy = false; fails++;
+      if(fails >= 2 && !L().length){   // 서버 문제로 두 번 실패하면 학생이 막히지 않도록 건너뛴 것으로 기록
+        L().push({ t: Date.now(), skip: true }); paint();
+        if(typeof aifbOnChange==='function') aifbOnChange();
+        if(typeof refreshAll==='function') refreshAll({now:true});
+        return;
+      }
+      paint();
+      out.innerHTML = `<div class="row fix"><span class="tag">알림</span><span>AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요. (횟수는 줄지 않았어요)</span></div>`;
+    }
+  });
+  (opt.inputs||[]).forEach(el=> el.addEventListener('input', paint));
+  box._paint = paint; paint();
+}
+function aifbRestore(d){
+  const arr = v => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
+  AIFB_REQ = +(d && d.aiReq) || 0; AIFB = arr(d && d.aiFb);
+  Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
+  document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+
+aifbMount($('aifb37'), { unit:37, minLen:10, inputs:[$('t3')], answer: ()=>$('t3').value, ctx: ()=>'△ABC에서 BC와 평행한 직선이 AB, AC와 만나는 점을 D, E라 했다(D, E는 변 위). 화면 2에서 닮음비 AB : AD = BC : DE = AC : AE 를 찾았고, 화면 3에서 AD : DB = AE : EC 의 빈칸 EC를 맞혔다. 이제 그 이유를 쓰는 중이다.' });
+/* ---------- 실시간 확인 (Firebase) ---------- */
+const RT = {
+  app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
+  connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0, allStudents:{},
+  classEnded:false, _lastKnownClassEnded:null,
+  viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
+  connect(name, room, number){
+    const statusEl=$('syncStatus');
+    if(!FIREBASE_CONFIG.apiKey || !name || !room){ this.restored=true; return; }
+    try{
+      if(!this.app){
+        this.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.database();
+      }
+      statusEl.textContent = '🔄 연결 중...';
+      firebase.auth().signInAnonymously()
+        .then(cred => this._afterAuth(cred.user.uid, name, room, number, statusEl))
+        .catch(err => { statusEl.textContent = '⚠️ 로그인 실패: '+err.message; this.restored=true; });
+    }catch(err){ statusEl.textContent = '⚠️ 연결 실패: '+err.message; this.restored=true; }
+  },
+  _afterAuth(uid, name, room, number, statusEl){
+    const roomKey = this.sanitize(room) + ACTIVITY_SUFFIX;
+    this.studentKey = this.sanitize(number) + '_' + this.sanitize(name);
+    this.roomRef = this.db.ref('rooms/'+roomKey);
+    this.studentRef = this.roomRef.child('students/'+this.studentKey);
+    this.studentsRef = this.roomRef.child('students');
+    this.controlRef = this.roomRef.child('control');
+    this.shareRef = this.roomRef.child('share');
+    this.connected = true;
+    this.shareRef.on('value', snap=>{ SHARE.all = snap.val() || {}; onShareChanged(); });
+
+    this.studentRef.once('value').then(snap=>{
+      const existing = snap.val();
+      if(existing && existing.progress){
+        TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
+      }
+      // 이전에 저장된 활동 기록을 먼저 되살린 "뒤에"만 저장을 시작한다(빈 상태로 덮어쓰지 않도록).
+      if(existing && existing.data) restoreData(existing.data);
+      if(existing && existing.submitted) applyFinalLock(true);
+      this.restored = true;
+      this.studentRef.update({
+        name, number: number||null,
+        joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
+        lastActive: firebase.database.ServerValue.TIMESTAMP,
+        online:true
+      });
+      this.pushProgress();
+      refreshAll();
+    }).catch(()=>{ this.restored = true; });
+    this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
+
+
+    this.controlRef.on('value', snap=>{
+      const c = snap.val() || {};
+      this.paused = !!c.paused;
+      applyPauseLock(this.paused);
+      if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
+        this.lastSeenAnnounceTs = c.announcementTs;
+        $('announceText').textContent = c.announcement;
+        $('announceBanner').style.display = 'flex';
+      } else if(!c.announcement){
+        $('announceBanner').style.display = 'none';
+      }
+      REVEAL = c.reveal || {}; onRevealChanged();
+      this.stageOn = (c.stage!=null);
+      this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
+      this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
+      clampToPacing();
+      updateNavButtons();
+      // 선생님이 [수업 종료]/[수업 시작]을 누르는 "순간"에만 전체 제출/취소를 강제로 반영한다.
+      const classEnded = !!c.classEnded;
+      if(this._lastKnownClassEnded===null){
+        if(classEnded){ applyFinalLock(true); this.markSubmitted(true); }
+      } else if(classEnded !== this._lastKnownClassEnded){
+        applyFinalLock(classEnded); this.markSubmitted(classEnded);
+      }
+      this._lastKnownClassEnded = classEnded;
+      this.classEnded = classEnded;
+    });
+
+    statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`;
+    statusEl.className = 'on';
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = setInterval(()=>{
+      if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true });
+    }, 15000);
+  },
+  markSubmitted(on){
+    if(!this.connected) return;
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+  },
+  pushProgress(){
+    if(!this.connected || !this.restored) return;
+    const progress = {};
+    TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
+    const done = TASKS.filter(t=>isDone(t.id)).length;
+    pushShare(this);
+    this.studentRef.update({ progress, completed: done, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP });
+  },
+  pushProgressDebounced(){
+    if(!this.connected) return;
+    clearTimeout(this._t);
+    this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 400);
+  },
+  setViewingTask(taskId){
+    if(taskId!=null) this.visitedTasks.add(taskId);
+    if(this.viewingTaskId===taskId) return;
+    this.viewingTaskId = taskId;
+    if(this.connected){
+      this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP });
+      this.pushProgress();
+    }
+  },
+  flushPending(){
+    if(this._t){ clearTimeout(this._t); this._t=null; }
+    this.pushProgress();
+  }
+};
+
+/* 상태가 바뀔 때마다 부른다: 배지·진행률·다음 버튼·요약표를 새로 고치고 저장한다. */
+function refreshAll(opts){
+  TASKS.forEach(t=>{
+    const b=$('badge-'+t.key); const d=isDone(t.id);
+    b.textContent = d ? '완료' : '미완료'; b.className = 'badge ' + (d?'done':'pending');
+  });
+  const done = TASKS.filter(t=>isDone(t.id)).length;
+  $('progressText').textContent = `완료 ${done} / ${TASKS.length}`;
+  $('progressFill').style.width = (done/TASKS.length*100)+'%';
+  updateNavButtons();
+  if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+}
+
+
+const isLocked = () => { try { return !!finalLocked; } catch(e){ return false; } };
+function setWhy(id, doneMsg, todoMsg){ const el = $('why'+id); const d = isDone(id); el.textContent = d ? doneMsg : todoMsg; el.className = 'why' + (d ? ' ok' : ''); }
+const NEXT = '위쪽의 「다음 ▶」을 눌러 넘어가세요.';
+
+/* ---------- 좌표 → 화면 ---------- */
+const M = { ox:14, oy:386, u:26, X(x){ return this.ox + x*this.u; }, Y(y){ return this.oy - y*this.u; }, P(p){ return `${this.X(p[0]).toFixed(1)},${this.Y(p[1]).toFixed(1)}`; } };
+function svgPt(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [(q.x-M.ox)/M.u, (M.oy-q.y)/M.u]; }
+/* 무한 직선 p + t·d 를 판 안으로 잘라 [t0, t1] (판 밖이면 null) */
+function clipT(p, d){
+  let t0 = -1e9, t1 = 1e9; const lo = [0,0], hi = [13,14.5];
+  for(let i=0;i<2;i++){
+    if(Math.abs(d[i]) < 1e-12){ if(p[i] < lo[i] || p[i] > hi[i]) return null; continue; }
+    let a = (lo[i]-p[i])/d[i], b = (hi[i]-p[i])/d[i]; if(a > b) [a, b] = [b, a];
+    t0 = Math.max(t0, a); t1 = Math.min(t1, b);
+  }
+  return t0 <= t1 ? [t0, t1] : null;
+}
+const seg = (p, q, col, w, dash) => `<line x1="${M.X(p[0]).toFixed(1)}" y1="${M.Y(p[1]).toFixed(1)}" x2="${M.X(q[0]).toFixed(1)}" y2="${M.Y(q[1]).toFixed(1)}" stroke="${col}" stroke-width="${w||2}"${dash?` stroke-dasharray="${dash}"`:''} stroke-linecap="round"/>`;
+const lab = (p, t, dx, dy, col, fs) => `<text x="${(M.X(p[0])+dx).toFixed(1)}" y="${(M.Y(p[1])+dy).toFixed(1)}" font-size="${fs||17}" font-weight="bold" fill="${col||'#1f2328'}" text-anchor="middle" font-family="Times New Roman,serif" font-style="italic">${t}</text>`;
+const dotAt = (p, col, r) => `<circle cx="${M.X(p[0]).toFixed(1)}" cy="${M.Y(p[1]).toFixed(1)}" r="${r||4}" fill="${col||'#1f2328'}"/>`;
+/* △ABC + AB, AC 연장선(점선) */
+function baseFig(){
+  let h = '';
+  [[A,B],[A,C]].forEach(([p,q])=>{ const d = sub(q,p), c = clipT(p,d); if(c){ h += seg(lerp(p,q,c[0]), p, '#9aa0a6', 1.6, '6 5') + seg(q, lerp(p,q,c[1]), '#9aa0a6', 1.6, '6 5'); } });
+  h += `<polygon points="${M.P(A)} ${M.P(B)} ${M.P(C)}" fill="rgba(21,101,192,.06)" stroke="#1f2328" stroke-width="2.4"/>`;
+  return h + lab(A,'A',0,-10) + lab(B,'B',-14,6) + lab(C,'C',14,6);
+}
+/* 학생 직선과 AB(=A+t(B−A)), AC(=A+s(C−A))의 교점 */
+function meet(H){
+  const d = sub(H[1], H[0]); if(nrm(d) < 1e-6) return null;
+  const hit = (p, q) => { const e = sub(q,p), den = cross(e, d); if(Math.abs(den) < 1e-9) return null; return cross(sub(H[0], p), d) / den; };
+  const t = hit(A, B), s = hit(A, C);
+  if(t==null || s==null) return null;
+  return { t, s, D: lerp(A,B,t), E: lerp(A,C,s), d };
+}
+const inBoard = p => p[0] >= -0.05 && p[0] <= 13.05 && p[1] >= -0.05 && p[1] <= 14.55;
+function angBetween(u, v){ let a = Math.abs(Math.atan2(cross(u,v), dot(u,v))) * 180/Math.PI; if(a > 90) a = 180 - a; return a; }
+function angAt(P, Q, R){ const u = sub(Q,P), v = sub(R,P); return Math.acos(Math.max(-1, Math.min(1, dot(u,v)/(nrm(u)*nrm(v))))) * 180/Math.PI; }
+
+/* ================= 화면 1 ================= */
+let msg1 = '';
+function render1(){
+  const s = state.s1, H = s.H, m = meet(H);
+  let h = baseFig();
+  const d = sub(H[1], H[0]), c = clipT(H[0], d);
+  if(m && inBoard(m.D) && inBoard(m.E)) h += `<polygon points="${M.P(A)} ${M.P(m.D)} ${M.P(m.E)}" fill="rgba(255,193,7,.35)" stroke="#e0a800" stroke-width="2"/>`;
+  if(c) h += seg(lerp(H[0],H[1],c[0]), lerp(H[0],H[1],c[1]), '#1565c0', 2.6);
+  if(m && inBoard(m.D) && inBoard(m.E)){ h += dotAt(m.D,'#c62828') + dotAt(m.E,'#c62828'); const off = p => { const v = sub(p, A); const n = [-v[1], v[0]]; return n; };
+    h += lab(m.D, 'D', -16, -6, '#c62828') + lab(m.E, 'E', 16, -6, '#c62828'); }
+  if(!isLocked()) H.forEach((p,i)=>{ h += `<circle class="hdl" data-i="${i}" cx="${M.X(p[0]).toFixed(1)}" cy="${M.Y(p[1]).toFixed(1)}" r="13" fill="rgba(21,101,192,.22)" stroke="#1565c0" stroke-width="2"/>`; });
+  $('g1').innerHTML = h;
+  // 지금 상태
+  let now = '';
+  if(!m || !inBoard(m.D) || !inBoard(m.E)) now = '직선이 <b>AB 쪽 선</b>과 <b>AC 쪽 선</b>에 모두 만나도록 움직여 보세요.';
+  else { const where = t => t < 0 ? 'A 위쪽 연장선' : t > 1 ? 'B·C 쪽 연장선' : '변 위';
+    now = `D: ${where(m.t)} · E: ${where(m.s)}`;
+    if(s.miss >= 2) now += `<br>💡 ∠ADE = <b>${angAt(m.D, A, m.E).toFixed(0)}°</b> · ∠ABC = <b>${angAt(B, A, C).toFixed(0)}°</b> — 두 각이 같아지게 해 보세요.`; }
+  $('now1').innerHTML = now;
+  $('msg1').innerHTML = msg1;
+  $('chk1').disabled = isLocked();
+  $('found1').innerHTML = CATS.map(c=>{ const t = s.found[c.k]; return `<div class="fc${t!=null?' on':''}">${t!=null ? miniFig(t) : '<div style="padding:28px 0;">?</div>'}${t!=null ? '✅ '+c.n : '아직'}</div>`; }).join('');
+}
+function miniFig(t){
+  const D = lerp(A,B,t), E = lerp(A,C,t), u = sub(C,B), c = clipT(D, u);
+  let h = baseFig(); if(c) h += seg(add(D, mul(u,c[0])), add(D, mul(u,c[1])), '#1565c0', 2.6);
+  h += `<polygon points="${M.P(A)} ${M.P(D)} ${M.P(E)}" fill="rgba(255,193,7,.35)" stroke="#e0a800" stroke-width="2"/>`;
+  return `<svg viewBox="0 0 360 400">${h}</svg>`;
+}
+(function(){ const svg = $('g1'); let drag = -1;
+  svg.addEventListener('pointerdown', ev=>{ if(isLocked()) return; const t = ev.target.closest && ev.target.closest('.hdl'); if(!t) return; drag = +t.dataset.i; ev.preventDefault(); try{ svg.setPointerCapture(ev.pointerId); }catch(e){} });
+  svg.addEventListener('pointermove', ev=>{ if(drag<0) return; ev.preventDefault(); const p = svgPt(svg, ev);
+    p[0] = Math.max(BOX[0], Math.min(BOX[2], p[0])); p[1] = Math.max(BOX[1], Math.min(BOX[3], p[1]));
+    const o = state.s1.H[1-drag]; if(nrm(sub(p, o)) < 1) return;
+    state.s1.H[drag] = [Math.round(p[0]*100)/100, Math.round(p[1]*100)/100]; msg1 = ''; render1(); });
+  const fin = ()=>{ if(drag>=0){ drag = -1; refreshAll({}); } }; svg.addEventListener('pointerup', fin); svg.addEventListener('pointercancel', fin); })();
+$('rst1').addEventListener('click', ()=>{ if(isLocked()) return; state.s1.H = H0.map(p=>p.slice()); msg1 = ''; render1(); refreshAll({}); });
+$('chk1').addEventListener('click', ()=>{
+  if(isLocked()) return; const s = state.s1, m = meet(s.H);
+  if(!m || !inBoard(m.D) || !inBoard(m.E)){ msg1 = '<span class="bad">직선이 AB 쪽 선과 AC 쪽 선 둘 다와 만나야 삼각형 ADE가 생겨요.</span>'; render1(); return; }
+  s.tries++;
+  const ang = angBetween(m.d, sub(C,B)), tt = (m.t + m.s)/2;
+  if(ang <= ANG_TOL && Math.abs(m.t - m.s) < 0.12){
+    if(Math.abs(tt) < 0.15){ msg1 = '<span class="bad">삼각형이 너무 작아요. 직선을 A에서 조금 더 떨어뜨려 보세요.</span>'; render1(); check1({now:true}); return; }
+    if(Math.abs(tt - 1) < 0.1){ msg1 = '<span class="bad">그 직선은 BC와 거의 겹쳐요. △ABC 자신이 되니 다른 곳을 찾아보세요.</span>'; render1(); check1({now:true}); return; }
+    const k = catOf(tt), c = CATS.find(x=>x.k===k);
+    // 정확히 평행하게 맞춰 준다(D는 그대로, 방향은 BC와 같게)
+    const D = lerp(A,B,tt), u = sub(C,B), cl = clipT(D, u);
+    if(cl){ const a = cl[0] + (cl[1]-cl[0])*0.12, b = cl[0] + (cl[1]-cl[0])*0.88; s.H = [add(D, mul(u,a)), add(D, mul(u,b))].map(p=>[Math.round(p[0]*100)/100, Math.round(p[1]*100)/100]); }
+    const had = s.found[k]!=null; s.found[k] = Math.round(tt*1000)/1000;
+    const left = CATS.filter(x=> s.found[x.k]==null).length;
+    msg1 = `<span class="ok">✅ 닮음이에요! (${c.n})</span> 직선이 <b>BC와 평행</b>해요.${had ? ' 이 위치는 이미 찾았어요.' : ''}${left ? ` 다른 위치를 ${left}가지 더 찾아보세요.` : ' 3가지를 모두 찾았어요! 🎉'}`;
+  } else {
+    const anti = Math.abs(m.t) > 0.15 && Math.abs(m.s) > 0.15 && Math.abs(angAt(m.D, A, m.E) - angAt(C, A, B)) <= ANG_TOL && Math.abs(angAt(m.E, A, m.D) - angAt(B, A, C)) <= ANG_TOL;
+    s.miss++;
+    msg1 = anti ? '<span class="bad">오, 이 직선도 닮은 삼각형을 만들긴 해요(뒤집혀 닮음).</span> 이번에는 ∠ADE = ∠ABC가 되도록 그어 보세요.'
+      : `<span class="bad">아직 닮음이 아니에요.</span> △ADE와 △ABC의 각을 비교해 보세요.${s.miss>=2 ? ' (왼쪽 위에 각의 크기가 보여요)' : ''}`;
+  }
+  render1(); check1({now:true});
+});
+function check1(opts){ const n = CATS.filter(c=> state.s1.found[c.k]!=null).length; setWhy(1, '✅ 완료! '+NEXT, `닮은 삼각형이 되는 직선의 위치를 3가지 찾아보세요. (지금 ${n}/3)`); refreshAll(opts); }
+
+/* ================= 화면 2·3 공통 그림 ================= */
+const tIn = () => state.s1.found.in!=null ? state.s1.found.in : 0.45;
+let showLen = false;
+function figDE(id, lens){
+  const t = tIn(), D = lerp(A,B,t), E = lerp(A,C,t), u = sub(C,B), c = clipT(D,u);
+  let h = baseFig(); if(c) h += seg(add(D, mul(u,c[0])), add(D, mul(u,c[1])), '#1565c0', 2.4, '');
+  h += `<polygon points="${M.P(A)} ${M.P(D)} ${M.P(E)}" fill="rgba(255,193,7,.35)" stroke="#e0a800" stroke-width="2"/>` + dotAt(D,'#c62828') + dotAt(E,'#c62828') + lab(D,'D',-16,-4,'#c62828') + lab(E,'E',16,-4,'#c62828');
+  if(lens){ const L = (p,q,dx,dy,col) => { const mm = lerp(p,q,0.5); return `<text x="${(M.X(mm[0])+dx).toFixed(1)}" y="${(M.Y(mm[1])+dy).toFixed(1)}" font-size="13" font-weight="bold" fill="${col}" text-anchor="middle">${nrm(sub(q,p)).toFixed(1)}</text>`; };
+    h += L(A,D,-22,0,'#6a1b9a') + L(D,B,-22,0,'#6a1b9a') + L(A,E,24,0,'#00695c') + L(E,C,24,0,'#00695c'); }
+  $(id).innerHTML = h;
+}
+function fillSel(sel, cur){ sel.innerHTML = `<option value="">선택</option>` + SEGS.map(x=>`<option value="${x}"${x===cur?' selected':''}>${x}</option>`).join(''); }
+
+/* ================= 화면 2 ================= */
+let msg2 = '';
+function render2(){
+  figDE('g2', false);
+  document.querySelectorAll('#ratio2 select').forEach(sel=>{ const k = +sel.dataset.k; if(!sel.options.length) fillSel(sel, state.s2.a[k]); sel.value = state.s2.a[k] || '';
+    sel.disabled = state.s2.ok || isLocked(); sel.classList.toggle('right', state.s2.ok); });
+  $('chk2').disabled = state.s2.ok || isLocked();
+  $('msg2').innerHTML = state.s2.ok ? '<span class="ok">✅ 맞아요! AB : AD = BC : DE = AC : AE</span><br>∠A는 공통이고, BC ∥ DE라서 ∠ABC = ∠ADE(동위각)예요. 그래서 △ABC ∽ △ADE (AA 닮음)이고, 대응하는 변의 길이의 비가 같아요.' : msg2;
+}
+$('ratio2').addEventListener('change', e=>{ const sel = e.target.closest('select'); if(!sel || isLocked()) return; state.s2.a[+sel.dataset.k] = sel.value; sel.classList.remove('wrong'); msg2 = ''; render2(); refreshAll({}); });
+$('chk2').addEventListener('click', ()=>{
+  if(isLocked() || state.s2.ok) return; const s = state.s2;
+  if(s.a.some(x=>!x)){ msg2 = '<span class="bad">빈칸 세 개를 모두 골라 주세요.</span>'; render2(); return; }
+  const wrong = s.a.map((x,i)=> x !== ANS2[i]);
+  if(!wrong.some(Boolean)){ s.ok = true; render2(); check2({now:true}); return; }
+  s.miss++;
+  msg2 = `<span class="bad">다시 생각해 보세요.</span> ${s.miss >= 2 ? 'AB는 △ABC의 변이에요. △ADE에서 AB와 같은 자리에 있는 변(A에서 시작해서 D까지)은 무엇일까요?' : '△ABC의 변과 △ADE에서 <b>같은 자리에 있는 변</b>끼리 짝지어 보세요.'}`;
+  render2(); document.querySelectorAll('#ratio2 select').forEach(sel=> sel.classList.toggle('wrong', wrong[+sel.dataset.k])); check2({now:true});
+});
+function check2(opts){ setWhy(2, '✅ 완료! '+NEXT, '닮음비의 빈칸을 모두 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
+
+/* ================= 화면 3 ================= */
+let msg3 = '';
+function render3(){
+  figDE('g3', showLen); $('len3').classList.toggle('on', showLen);
+  const sel = $('b3'); if(!sel.options.length) fillSel(sel, state.s3.b); sel.value = state.s3.b || '';
+  sel.disabled = state.s3.ok || isLocked(); sel.classList.toggle('right', state.s3.ok);
+  $('chk3').disabled = state.s3.ok || isLocked();
+  $('msg3').innerHTML = state.s3.ok ? '<span class="ok">✅ 맞아요! AD : DB = AE : EC</span> 왜 그런지 아래에 설명해 보세요.' : msg3;
+  $('q3').classList.toggle('locked', !state.s3.ok);
+  paintSum();
+}
+$('len3').addEventListener('click', ()=>{ showLen = !showLen; render3(); });
+$('b3').addEventListener('change', ()=>{ if(isLocked()) return; state.s3.b = $('b3').value; $('b3').classList.remove('wrong'); msg3 = ''; render3(); refreshAll({}); });
+$('chk3').addEventListener('click', ()=>{
+  if(isLocked() || state.s3.ok) return; const s = state.s3;
+  if(!s.b){ msg3 = '<span class="bad">빈칸에 들어갈 선분을 골라 주세요.</span>'; render3(); return; }
+  if(s.b === ANS3){ s.ok = true; render3(); check3({now:true}); return; }
+  s.miss++; msg3 = `<span class="bad">다시 생각해 보세요.</span> AD와 DB는 AB를 D에서 나눈 두 부분이에요. AE와 짝이 되는 나머지 부분은? ${s.miss>=2 ? '「📏 길이 보기」를 눌러 비를 비교해 보세요.' : ''}`;
+  render3(); $('b3').classList.add('wrong'); check3({now:true});
+});
+function paintSum(){ const on = aifbPassed() || !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; $('sumBox').style.display = state.s3.ok ? '' : 'none'; }
+function check3(opts){ state.t3 = $('t3').value; setWhy(3, '✅ 완료! 마지막 화면에서 제출하세요.', !state.s3.ok ? '빈칸에 들어갈 선분을 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
+$('t3').addEventListener('input', ()=>check3());
+
+/* ---------- 친구들의 생각 / 답변 공유 ---------- */
+function renderFriends(n){
+  const box = $('fr'+n); if(!box) return;
+  if(!state.seen[n]){ box.innerHTML = ''; return; }
+  const all = shareOf('sum'), me = RT.studentKey;
+  const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
+  if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
+  box.innerHTML = `<h4>👥 친구들의 생각 (${keys.length}명)</h4><div class="flist">${keys.map(k=>`<div class="${k===me?'me':''}">${k===me?'<span class="note">(나) </span>':''}${esc(all[k].t)}</div>`).join('')}</div>`;
+}
+const SH_FIELDS = {3:['t3']};
+const SH_READY = {3:()=> state.s3.ok && len(state.t3)>=MIN_TEXT};
+function paintShare(n){
+  const b = $('sh'+n); if(!b) return; const sh = state.shared[n];
+  SH_FIELDS[n].forEach(id=>{ $(id).readOnly = sh; $(id).classList.toggle('shared', sh); });
+  b.classList.toggle('edit', sh);
+  b.textContent = sh ? '✏️ 수정하기' : (state.seen[n] ? '📤 다시 공유' : '📤 답변 공유');
+  b.disabled = !sh && (!SH_READY[n]() || isLocked());
+  $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
+}
+$('sh3').addEventListener('click', ()=>{
+  if(isLocked()) return;
+  if(state.shared[3]) state.shared[3] = false;
+  else { if(!SH_READY[3]()) return; state.shared[3] = true; state.seen[3] = true; }
+  paintShare(3); renderFriends(3); check3({now:true});
+});
+
+function onShareChanged(){ renderFriends(3); }
+function onRevealChanged(){ paintSum(); }
+function aifbOnChange(){ paintSum(); check3({noSave:true}); }
+function onShowPage(id){ if(id===1) render1(); if(id===2) render2(); if(id===3) render3(); }
+function initActivity(){ render1(); render2(); render3(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
+const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
+function restoreData(d){
+  if(!d) return;
+  const s1 = d.s1 || {}, H = arr(s1.H).map(p=>arr(p).map(Number));
+  state.s1.H = (H.length===2 && H.every(p=>p.length===2 && p.every(Number.isFinite))) ? H : H0.map(p=>p.slice());
+  state.s1.found = {}; Object.keys(s1.found||{}).forEach(k=>{ const t = Number(s1.found[k]); if(CATS.some(c=>c.k===k) && Number.isFinite(t)) state.s1.found[k] = t; });
+  state.s1.tries = +s1.tries || 0; state.s1.miss = +s1.miss || 0;
+  const s2 = d.s2 || {}; state.s2 = { a: [0,1,2].map(i=> SEGS.includes(arr(s2.a)[i]) ? arr(s2.a)[i] : ''), ok: !!s2.ok, miss: +s2.miss || 0 };
+  const s3 = d.s3 || {}; state.s3 = { b: SEGS.includes(s3.b) ? s3.b : '', ok: !!s3.ok, miss: +s3.miss || 0 };
+  state.t3 = String(d.t3 || ''); $('t3').value = state.t3;
+  state.shared[3] = !!(d.shared && d.shared[3]); state.seen[3] = !!(d.seen && d.seen[3]) || state.shared[3];
+  aifbRestore(d);
+  initActivity();
+}
+
+/* ---------- 화면 잠금 / 공지 ---------- */
+function applyPauseLock(paused){
+  document.body.classList.toggle('app-paused', paused);
+  $('lockOverlay').style.display = paused ? 'flex' : 'none';
+  updateNavButtons();
+}
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
+function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
+window.addEventListener('pagehide', flushBeforeLeaving);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushBeforeLeaving(); });
+$('announceClose').addEventListener('click', ()=>{ $('announceBanner').style.display='none'; });
+
+/* ---------- 페이지 넘기기 (활동 4개 + 마지막 제출 페이지) ----------
+   다른 단원과 같은 속도조절(교사 min/max) 제한에 더해, 이 단원은 "지금 활동을 끝내야" 다음
+   활동으로 넘어갈 수 있다(탐구 순서를 지키기 위함). 이전 활동으로 돌아가는 것은 자유롭다. */
+const pages = [...document.querySelectorAll('#taskContainer > .task'), document.querySelector('.submit-panel')];
+let currentPage = 0;
+function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
+function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+function showPage(idx){
+  currentPage = Math.max(0, Math.min(pages.length-1, idx));
+  pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
+  $('pageLabel').textContent = `${currentPage+1} / ${pages.length}`;
+  RT.setViewingTask(pageTaskNum(currentPage));
+  window.scrollTo(0,0);
+  updateNavButtons();
+  onShowPage(pageTaskNum(currentPage));
+}
+function clampToPacing(){
+  if(RT.minTaskId==null && RT.maxTaskId==null) return;
+  const curNum = pageTaskNum(currentPage);
+  if(curNum==null) return;
+  if(RT.maxTaskId!=null && curNum > RT.maxTaskId){ const i = taskIdToPageIdx(RT.maxTaskId); if(i>=0){ showPage(i); return; } }
+  if(RT.minTaskId!=null && curNum < RT.minTaskId){ const i = taskIdToPageIdx(RT.minTaskId); if(i>=0) showPage(i); }
+}
+function updateNavButtons(){
+  const prevBtn=$('prevBtn'), nextBtn=$('nextBtn'), pacingMsg=$('pacingMsg'), gateMsg=$('gateMsg');
+  if(!prevBtn||!nextBtn) return;
+  const isFirst = currentPage===0, isLast = currentPage===pages.length-1;
+  const curNum = pageTaskNum(currentPage), nextNum = pageTaskNum(currentPage+1), prevNum = pageTaskNum(currentPage-1);
+  const blockedNext = !isLast && RT.maxTaskId!=null && nextNum!=null && nextNum > RT.maxTaskId;
+  const blockedPrev = !isFirst && RT.minTaskId!=null && prevNum!=null && prevNum < RT.minTaskId;
+  const notFinished = !PREVIEW_MODE && curNum!=null && curNum<=TASKS.length && !isDone(curNum);
+  prevBtn.disabled = isFirst || blockedPrev || RT.paused || !!state.running;
+  nextBtn.disabled = isLast || blockedNext || notFinished || RT.paused || !!state.running;
+  if(pacingMsg){
+    if(RT.minTaskId!=null && RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}~${RT.maxTaskId}만 진행하도록 설정했어요.`;
+    else if(RT.maxTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.maxTaskId}까지만 진행하도록 설정했어요.`;
+    else if(RT.minTaskId!=null) pacingMsg.textContent = `⏸ 선생님이 활동 ${RT.minTaskId}부터 진행하도록 설정했어요.`;
+    if(RT.stageOn && blockedNext) pacingMsg.textContent = '⏸ 여기까지 잘했어요! 선생님이 다음 단계를 열 때까지 기다려 주세요. (앞 활동을 다시 살펴봐도 돼요)';
+    pacingMsg.style.display = (blockedNext || blockedPrev) ? 'block' : 'none';
+  }
+  if(gateMsg){
+    gateMsg.textContent = notFinished ? `✋ 활동 ${curNum}을 마치면 「다음 ▶」 버튼이 켜져요.` : '';
+    gateMsg.style.display = (notFinished && !blockedNext) ? 'block' : 'none';
+  }
+}
+$('prevBtn').addEventListener('click', ()=> showPage(currentPage-1));
+$('nextBtn').addEventListener('click', ()=> showPage(currentPage+1));
+showPage(0);
+
+/* ---------- 게이트(반/번호/이름) + 같은 기기 자동 이어하기 ---------- */
+const PROFILE_KEY = 'ggb_profile_v1';
+function loadProfile(){
+  try{ const raw = localStorage.getItem(PROFILE_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.classNo && obj.name) ? obj : null; }catch(e){ return null; }
+}
+const IDENTITY_KEY = 'ggb_identity_sim37_v1';
+function saveIdentity(name, room, number){ try{ localStorage.setItem(IDENTITY_KEY, JSON.stringify({name, room, number, ts:Date.now()})); }catch(e){} }
+function loadIdentity(){ try{ const raw = localStorage.getItem(IDENTITY_KEY); if(!raw) return null; const obj = JSON.parse(raw); return (obj && obj.name) ? obj : null; }catch(e){ return null; } }
+function clearIdentity(){ try{ localStorage.removeItem(IDENTITY_KEY); }catch(e){} }
+
+let CURRENT_PROFILE = null;
+function startApp(profile){
+  CURRENT_PROFILE = profile;
+  $('gateScreen').style.display='none';
+  $('appScreen').style.display='block';
+  saveIdentity(profile.name, profile.classNo, profile.number);
+  RT.connect(profile.name, profile.classNo, profile.number);
+  showPage(currentPage);
+}
+(function initGate(){
+  if(PREVIEW_MODE) return;
+  const profile = loadProfile();
+  if(!profile){ $('profileMissingBox').style.display='block'; return; }
+  checkUnitAccessAndShowGate(profile);
+})();
+/* 선생님이 이 단원을 이 반에 열어줬는지 확인한 뒤 시작 화면을 보여준다(오류 시에는 그냥 열어준다). */
+function checkUnitAccessAndShowGate(profile){
+  const showOpen = ()=>{
+    $('profileBox').style.display='block';
+    $('profileClassView').textContent = profile.classNo+'반';
+    $('profileNumberView').textContent = profile.number || '-';
+    $('profileNameView').textContent = profile.name;
+    $('profileMissingBox').style.display='none';
+    $('unitLockedBox').style.display='none';
+    $('startBtn').addEventListener('click', ()=>startApp(profile));
+    const id = loadIdentity();
+    if(id && id.room===profile.classNo && id.name===profile.name){
+      startApp(profile);
+      $('switchUserName').textContent = id.name;
+      $('switchUserWrap').style.display = 'block';
+    }
+  };
+  const showLocked = ()=>{
+    $('profileMissingBox').style.display='none';
+    $('profileBox').style.display='none';
+    $('unitLockedBox').style.display='block';
+  };
+  if(!FIREBASE_CONFIG.apiKey){ showOpen(); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.auth().signInAnonymously().then(()=>{
+      const roomKey = profile.classNo.trim().replace(/[.#$\[\]\/\s]+/g,'_') + '__access';
+      firebase.database().ref('rooms/'+roomKey+'/units/'+UNIT_NO).once('value').then(snap=>{
+        if(snap.val()===true) showOpen(); else showLocked();
+      }).catch(()=> showOpen());
+    }).catch(()=> showOpen());
+  }catch(e){ showOpen(); }
+}
+$('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIdentity(); location.reload(); });
+
+/* ---------- 제출 / 백업 ---------- */
+let finalLocked = false;
+function applyFinalLock(locked){
+  finalLocked = locked;
+  document.body.classList.toggle('final-locked', locked);
+  $('submitBtn').textContent = locked ? '제출 취소' : '결과 제출하기';
+  $('submitBtn').classList.toggle('cancel', locked);
+  $('submitStatus').textContent = locked ? '✅ 제출 완료! 더 이상 내용을 수정할 수 없어요. "제출 취소"를 누르면 다시 고칠 수 있어요.' : '';
+}
+$('submitBtn').addEventListener('click', ()=>{
+  if(finalLocked){
+    if(RT.classEnded){ alert('선생님이 수업을 종료했어요. 선생님이 "수업 시작"을 눌러야 다시 수정할 수 있어요.'); return; }
+    applyFinalLock(false); RT.markSubmitted(false);
+  } else {
+    applyFinalLock(true); RT.markSubmitted(true); RT.pushProgress();
+  }
+});
+$('backupBtn').addEventListener('click', ()=>{
+  const payload = {
+    classNo: CURRENT_PROFILE&&CURRENT_PROFILE.classNo, number: CURRENT_PROFILE&&CURRENT_PROFILE.number, name: CURRENT_PROFILE&&CURRENT_PROFILE.name,
+    unit: UNIT_LABEL, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length,
+    answers: TASKS.map(t=>({task:t.id, title:t.title, done:isDone(t.id), value:valueOf(t.id)})),
+    data: collectData(), exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `닮음삼각형만들기_${payload.classNo||''}반_${payload.number||''}_${payload.name||''}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* 처음 화면 */
+initActivity();
+refreshAll({noSave:true});
+
+/* ---------- 교사용 화면의 ③ 학생용 미리보기(iframe)에서 여는 경우 ----------
+   ?preview=1&task=N이면 게이트 없이 그 활동 화면을 바로 보여준다(Firebase 연결 없음).
+   교사쪽이 postMessage(ggbPreviewGoto)로 taskId를 보내면 그 활동으로 이동한다. */
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  $('gateScreen').style.display = 'none';
+  $('appScreen').style.display = 'block';
+  const idx = taskIdToPageIdx(PREVIEW_TASK);
+  showPage(idx >= 0 ? idx : 0);
+  function reportPreviewHeight(){
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({type:'ggbPreviewHeight', height: document.documentElement.scrollHeight}, window.location.origin);
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.type==='ggbPreviewGoto' && typeof e.data.taskId==='number'){
+      const i = taskIdToPageIdx(e.data.taskId);
+      if(i >= 0) showPage(i);
+      reportPreviewHeight();
+      requestAnimationFrame(reportPreviewHeight);
+    }
+  });
+  reportPreviewHeight();
+  if(typeof ResizeObserver !== 'undefined') new ResizeObserver(reportPreviewHeight).observe(document.body);
+  window.addEventListener('load', reportPreviewHeight);
+  setInterval(reportPreviewHeight, 500);
+}
+</script>
+<script src="report.js"></script><!-- 🚩 오류 신고(모든 학생 화면 공통) -->
+</body>
+</html>
