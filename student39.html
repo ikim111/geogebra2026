@@ -538,7 +538,7 @@ const TASKS = [
 const BOX = [0.3, 0.3, 12.7, 14.2];
 const Q0 = [[1, 2], [8, 1.5], [12, 10], [6.5, 8]];   // 화면 1 처음 □ABCD (A→B→C→D 시계 반대 방향)
 const O2 = [6.5, 7.25];                                  // 마름모·정사각형의 중심(고정)
-const TB0 = () => [ [[2,3],[9,3],[4,10]],  [[2.5,3],[10,4],[6,0]],  [[2,6.25],[2.5,0]],  [[2.5,5.25]] ];   // 탭별 저장값
+const TB0 = () => [ [[2,3],[9,3],[4,10]],  [[2.5,3],[10,4],[6,0]],  [[1,6.25],[3.5,0]],  [[1.5,4.25]] ];   // 탭별 저장값
 const TABN = ['➊ 평행사변형', '➋ 직사각형', '➌ 마름모', '➍ 정사각형'];
 const SHAPES = [['pg','평행사변형'],['re','직사각형'],['rh','마름모'],['sq','정사각형']];
 const SHN = {tr:'사다리꼴', pg:'평행사변형', re:'직사각형', rh:'마름모', sq:'정사각형', no:'일정하지 않다'};
@@ -840,10 +840,17 @@ function quadFig(Q, opt){
   if(opt.ac) h += seg(Q[0], Q[2], '#6a1b9a', 2.2, '7 4');
   if(opt.bd) h += seg(Q[1], Q[3], '#00838f', 2.2, '7 4');
   h += `<polygon points="${E.map(p=>M.P(p)).join(' ')}" fill="rgba(255,193,7,.38)" stroke="#e0a800" stroke-width="2.2" stroke-linejoin="round"/>`;
-  // □EFGH의 네 변의 길이(변 가운데, 안쪽)와 네 각(꼭짓점 안쪽)을 그림 위에 바로 보여 준다(2026-10-21)
-  const g = mul(E.reduce((a,p)=>add(a,p),[0,0]), 1/4), tx = (p, t, col) => `<text x="${M.X(p[0]).toFixed(1)}" y="${M.Y(p[1]).toFixed(1)}" font-size="12.5" font-weight="bold" fill="${col}" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fff" stroke-width="3">${t}</text>`;
-  E.forEach((p,i)=>{ const q = E[(i+1)%4], m = mid(p,q), v = sub(g, m), d = nrm(v)||1; h += tx(add(m, mul(v, 0.55/d)), f1(nrm(sub(q,p))), '#6d4c00');
-    const pr = E[(i+3)%4], w = sub(g, p), dw = nrm(w)||1; h += tx(add(p, mul(w, Math.min(1.25, dw*0.45)/dw)), angDeg(p, pr, q).toFixed(0)+'°', '#ad1457'); });
+  // □EFGH의 네 각(호 + 각도, 직각이면 ㄱ 표시)과 네 변의 길이(변 바깥쪽)를 그림 위에 보여 준다(2026-10-21)
+  const g = mul(E.reduce((a,p)=>add(a,p),[0,0]), 1/4), U = M.u;
+  const tx = (p, t, col, fs) => `<text x="${M.X(p[0]).toFixed(1)}" y="${M.Y(p[1]).toFixed(1)}" font-size="${fs||12}" font-weight="bold" fill="${col}" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fff" stroke-width="3">${t}</text>`;
+  E.forEach((p,i)=>{ const q = E[(i+1)%4], m = mid(p,q), v = sub(m, g), d = nrm(v)||1; h += tx(add(m, mul(v, 0.42/d)), f1(nrm(sub(q,p))), '#6d4c00'); });
+  E.forEach((p,i)=>{ const pr = E[(i+3)%4], nx = E[(i+1)%4], u1 = sub(pr,p), u2 = sub(nx,p), l1 = nrm(u1), l2 = nrm(u2), a1 = mul(u1,1/l1), a2 = mul(u2,1/l2);
+    const ang = angDeg(p, pr, nx), r = Math.min(0.75, l1*0.3, l2*0.3), bis = add(a1,a2), bl = nrm(bis)||1, bu = mul(bis, 1/bl);
+    if(Math.abs(ang-90) < 0.6){ const c1 = add(p, mul(a1, r*0.8)), c2 = add(p, mul(a2, r*0.8)), c3 = add(c1, mul(a2, r*0.8));
+      h += `<polyline points="${M.P(c1)} ${M.P(c3)} ${M.P(c2)}" fill="none" stroke="#ad1457" stroke-width="1.6"/>`; }
+    else { const s1 = add(p, mul(a1, r)), s2 = add(p, mul(a2, r)), sw = cross(a1, a2) < 0 ? 1 : 0;   // 화면은 y가 뒤집혀 있어 방향을 바꾼다
+      h += `<path d="M${M.P(s1)} A${(r*U).toFixed(1)},${(r*U).toFixed(1)} 0 0 ${sw} ${M.P(s2)}" fill="none" stroke="#ad1457" stroke-width="1.6"/>`; }
+    h += tx(add(p, mul(bu, r + 0.55)), ang.toFixed(0)+'°', '#ad1457', 11.5); });
   E.forEach((p,i)=>{ const o = out(p, 15); h += dotAt(p,'#c62828') + lab(p, 'EFGH'[i], o[0], o[1], '#c62828', 15); });
   Q.forEach((p,i)=>{ const o = out(p, 17); h += dotAt(p,'#1f2328',3.5) + lab(p, 'ABCD'[i], o[0], o[1]); });
   return h;
