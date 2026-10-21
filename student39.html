@@ -265,6 +265,13 @@
 
   .must{margin-top:6px;background:#fff3e0;border:2px solid #fb8c00;border-radius:10px;padding:8px 12px;font-size:15px;color:#bf360c;animation:mustP 1.6s ease-in-out infinite;}
   @keyframes mustP{50%{box-shadow:0 0 0 4px rgba(251,140,0,.25);}}
+
+  .oxq{margin:8px 0 2px;display:flex;flex-direction:column;gap:6px;}
+  .oxr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15.5px;}
+  .oxr span{flex:1;min-width:200px;}
+  .oxb{border:1.5px solid #c5cad1;background:#fff;border-radius:8px;padding:4px 12px;font-size:16px;cursor:pointer;}
+  .oxb.on{border-color:#1565c0;background:#e3f2fd;box-shadow:0 0 0 2px rgba(21,101,192,.25);}
+  .oxb.on.ok{border-color:#66bb6a;background:#f1f8e9;box-shadow:none;}
 </style></style>
 </head>
 <body>
@@ -310,7 +317,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 4</div>
+        <div class="progress-text" id="progressText">완료 0 / 7</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -363,29 +370,90 @@
   <div class="why" id="why2">이유를 써서 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 3: 특별한 사각형 ===================== -->
+<!-- ===================== 화면 3: 평행사변형의 중점 연결 ===================== -->
 <section class="task activity" id="task-a3" data-task-id="3">
   <div class="card">
-    <div class="act-head"><span class="act-tag">3 특별한 사각형</span><span class="badge pending" id="badge-a3">미완료</span></div>
-    <h2>□ABCD가 특별한 사각형이면, □EFGH는 어떤 사각형일까?</h2>
-    <p class="hint">탭을 눌러 □ABCD를 바꿔 보세요. 손잡이를 끌어도 □ABCD는 <b>그 사각형의 조건을 지키며</b> 움직여요. 점선은 대각선 AC, BD예요. <b>네 탭을 모두</b> 살펴보고 □EFGH의 모양을 골라 보세요.</p>
+    <div class="act-head"><span class="act-tag">3 평행사변형</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <h2>□ABCD가 <b>평행사변형</b>이면, □EFGH는 어떤 사각형일까?</h2>
+    <p class="hint">손잡이를 끌어도 □ABCD는 <b>평행사변형</b>을 유지하며 움직여요. 점선은 대각선 AC, BD예요. 모양을 바꿔 보며 <b>대각선</b>의 길이와 각, □EFGH의 변의 길이와 각을 살펴보세요.</p>
     <div class="g-layout">
-      <div class="g-board"><div class="ttabs4" id="tabs3"></div><svg id="g3" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-board"><svg id="g3q0" viewBox="0 0 360 400" class="board"></svg></div>
       <div class="g-side">
-        <div class="now" id="now3"></div>
-        <div class="ans4" id="ans3"></div>
-        <div class="row"><button type="button" class="okb" id="chk3">✔ 확인</button></div>
-        <div class="g-msg" id="msg3"></div>
+        <div class="now" id="now3q0"></div>
+        <div class="oxq" id="ox3q0"></div>
+        <div class="ans4 q0"><span>□ABCD가 <b>평행사변형</b>이면 □EFGH는</span><select id="sel3q0"></select></div>
+        <div class="row"><button type="button" class="okb" id="chk3q0">✔ 확인</button></div>
+        <div class="g-msg" id="msg3q0"></div>
       </div>
     </div>
   </div>
-  <div class="why" id="why3">네 탭의 □EFGH 모양을 모두 맞히면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why3">□EFGH의 모양을 맞히면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 4: 규칙 설명하기 ===================== -->
+<!-- ===================== 화면 4: 직사각형의 중점 연결 ===================== -->
 <section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
-    <div class="act-head"><span class="act-tag">4 규칙 설명하기</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <div class="act-head"><span class="act-tag">4 직사각형</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <h2>□ABCD가 <b>직사각형</b>이면, □EFGH는 어떤 사각형일까?</h2>
+    <p class="hint">손잡이를 끌어도 □ABCD는 <b>직사각형</b>을 유지하며 움직여요. 점선은 대각선 AC, BD예요. 모양을 바꿔 보며 <b>대각선</b>의 길이와 각, □EFGH의 변의 길이와 각을 살펴보세요.</p>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3q1" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-side">
+        <div class="now" id="now3q1"></div>
+        <div class="oxq" id="ox3q1"></div>
+        <div class="ans4 q1"><span>□ABCD가 <b>직사각형</b>이면 □EFGH는</span><select id="sel3q1"></select></div>
+        <div class="row"><button type="button" class="okb" id="chk3q1">✔ 확인</button></div>
+        <div class="g-msg" id="msg3q1"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why4">□EFGH의 모양을 맞히면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 5: 마름모의 중점 연결 ===================== -->
+<section class="task activity" id="task-a5" data-task-id="5">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">5 마름모</span><span class="badge pending" id="badge-a5">미완료</span></div>
+    <h2>□ABCD가 <b>마름모</b>이면, □EFGH는 어떤 사각형일까?</h2>
+    <p class="hint">손잡이를 끌어도 □ABCD는 <b>마름모</b>을 유지하며 움직여요. 점선은 대각선 AC, BD예요. 모양을 바꿔 보며 <b>대각선</b>의 길이와 각, □EFGH의 변의 길이와 각을 살펴보세요.</p>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3q2" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-side">
+        <div class="now" id="now3q2"></div>
+        <div class="oxq" id="ox3q2"></div>
+        <div class="ans4 q2"><span>□ABCD가 <b>마름모</b>이면 □EFGH는</span><select id="sel3q2"></select></div>
+        <div class="row"><button type="button" class="okb" id="chk3q2">✔ 확인</button></div>
+        <div class="g-msg" id="msg3q2"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why5">□EFGH의 모양을 맞히면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 6: 정사각형의 중점 연결 ===================== -->
+<section class="task activity" id="task-a6" data-task-id="6">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">6 정사각형</span><span class="badge pending" id="badge-a6">미완료</span></div>
+    <h2>□ABCD가 <b>정사각형</b>이면, □EFGH는 어떤 사각형일까?</h2>
+    <p class="hint">손잡이를 끌어도 □ABCD는 <b>정사각형</b>을 유지하며 움직여요. 점선은 대각선 AC, BD예요. 모양을 바꿔 보며 <b>대각선</b>의 길이와 각, □EFGH의 변의 길이와 각을 살펴보세요.</p>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g3q3" viewBox="0 0 360 400" class="board"></svg></div>
+      <div class="g-side">
+        <div class="now" id="now3q3"></div>
+        <div class="oxq" id="ox3q3"></div>
+        <div class="ans4 q3"><span>□ABCD가 <b>정사각형</b>이면 □EFGH는</span><select id="sel3q3"></select></div>
+        <div class="row"><button type="button" class="okb" id="chk3q3">✔ 확인</button></div>
+        <div class="g-msg" id="msg3q3"></div>
+      </div>
+    </div>
+  </div>
+  <div class="why" id="why6">□EFGH의 모양을 맞히면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 7: 규칙 설명하기 ===================== -->
+<section class="task activity" id="task-a7" data-task-id="7">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">7 규칙 설명하기</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>□EFGH의 모양은 □ABCD의 무엇이 결정할까?</h2>
     <table class="rtab" id="rtab4"></table>
     <div class="big-question">□ABCD의 두 대각선의 <b>길이가 같으면</b> □EFGH는 <b>마름모</b>, 두 대각선이 <b>수직이면</b> □EFGH는 <b>직사각형</b>이 돼요. 왜 그럴까요? 화면 2에서 찾은 <b>EF ∥ AC, EF = ½AC</b>를 이용해 설명해 보세요.</div>
@@ -408,7 +476,7 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why4">이유를 써서 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why7">이유를 써서 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -460,8 +528,11 @@ const MIN_TEXT = 5;
 const TASKS = [
   {id:1, key:'a1', title:'1. 중점 연결 사각형 — 어떤 사각형일까?'},
   {id:2, key:'a2', title:'2. 왜 항상 평행사변형일까? (이유)'},
-  {id:3, key:'a3', title:'3. 특별한 사각형의 중점 연결'},
-  {id:4, key:'a4', title:'4. 규칙 설명하기 (대각선과 □EFGH)'}
+  {id:3, key:'a3', title:'3. 평행사변형의 중점 연결'},
+  {id:4, key:'a4', title:'4. 직사각형의 중점 연결'},
+  {id:5, key:'a5', title:'5. 마름모의 중점 연결'},
+  {id:6, key:'a6', title:'6. 정사각형의 중점 연결'},
+  {id:7, key:'a7', title:'7. 규칙 설명하기 (대각선과 □EFGH)'}
 ];
 /* 판: 가로 0~13, 세로 0~14.5 (단위) */
 const BOX = [0.3, 0.3, 12.7, 14.2];
@@ -475,7 +546,7 @@ const ANS2 = ['pg','rh','re','sq'];
 
 const state = {
   s1:{Q: Q0.map(p=>p.slice()), moves:0, a:'', ok:false, miss:0, ac:false, bd:false},
-  s2:{tb: TB0(), cur:0, seen:[true,false,false,false], a:['','','',''], ok:false, miss:0},
+  s2:{tb: TB0(), eq:['','','',''], pp:['','','',''], a:['','','',''], oks:[false,false,false,false], ok:false, misses:[0,0,0,0], miss:0},
   t2:'', t4:'', shared:{2:false,4:false}, seen:{2:false,4:false}
 };
 let REVEAL = {};
@@ -491,15 +562,15 @@ const perp = v => [-v[1], v[0]];
 function isDone(id){
   if(id===1) return state.s1.moves>=1 && state.s1.ok;
   if(id===2) return len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList('main').length>=1;
-  if(id===3) return state.s2.ok;
-  if(id===4) return len(state.t4)>=MIN_TEXT && state.shared[4] && aifbList('rule').length>=1;
+  if(id>=3 && id<=6) return !!state.s2.oks[id-3];
+  if(id===7) return len(state.t4)>=MIN_TEXT && state.shared[4] && aifbList('rule').length>=1;
   return false;
 }
 function valueOf(id){
   if(id===1){ const s = state.s1; return (s.moves || s.a) ? `[모양 바꾸기 ${s.moves}번] □EFGH: ${SHN[s.a]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
   if(id===2) return state.t2.trim();
-  if(id===3){ const s = state.s2; return s.a.some(Boolean) ? SHAPES.map((x,i)=>`${x[1]}→${SHN[s.a[i]]||'?'}`).join(', ') + `${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
-  if(id===4) return state.t4.trim();
+  if(id>=3 && id<=6){ const s = state.s2, i = id-3; return (s.a[i]||s.eq[i]||s.pp[i]) ? `${SHAPES[i][1]}: 대각선 길이 같다 ${(s.eq[i]||'?').toUpperCase()}, 수직 ${(s.pp[i]||'?').toUpperCase()} → □EFGH ${SHN[s.a[i]]||'?'}${s.oks[i]?' ✓':''}${s.misses[i]?` (틀림 ${s.misses[i]}번)`:''}` : ''; }
+  if(id===7) return state.t4.trim();
   return '';
 }
 function collectData(){
@@ -850,52 +921,53 @@ function quad2(i, tb){
   const [A] = t, B = add(O2, perp(sub(A,O2))); return [A, B, sub(mul(O2,2), A), sub(mul(O2,2), B)];
 }
 const HKEYS = [['A','B','D'], ['A','B','D'], ['A','B'], ['A']];
-let msg3 = '';
-function render3(){
-  const s = state.s2, i = s.cur, Q = quad2(i);
-  $('tabs3').innerHTML = TABN.map((n,k)=>`<button type="button" data-i="${k}" class="${k===i?'on':''}${s.seen[k]?' seen':''}">${n}</button>`).join('');
+const msg3 = ['','','',''];
+function render3(i){
+  const s = state.s2, Q = quad2(i);
   let h = grid() + quadFig(Q, {diag:true});
   if(!isLocked()) HKEYS[i].forEach(k=>{ h += handle(Q['ABCD'.indexOf(k)], k); });
-  $('g3').innerHTML = h;
+  $('g3q'+i).innerHTML = h;
   const ac = sub(Q[2],Q[0]), bd = sub(Q[3],Q[1]), eqL = Math.abs(nrm(ac)-nrm(bd)) < 0.05, pp = Math.abs(dot(ac,bd))/(nrm(ac)*nrm(bd)) < 0.01;
-  const E = Q.map((p,k)=> mid(p, Q[(k+1)%4]));
-  $('now3').innerHTML = `<b>${TABN[i]}</b> □ABCD<br>📏 대각선 AC = <b>${f1(nrm(ac))}</b>, BD = <b>${f1(nrm(bd))}</b><br>`
-    + `<span class="ind${eqL?' y':''}">AC ${eqL?'=':'≠'} BD ${eqL?'✓':''}</span><span class="ind${pp?' y':''}">${pp?'AC ⊥ BD ✓':'AC, BD 수직 아님'}</span><br>`
-    + `<span style="font-size:14px;">□EFGH: EF = ${f1(nrm(sub(E[1],E[0])))}, FG = ${f1(nrm(sub(E[2],E[1])))}, ∠HEF = ${angDeg(E[0],E[3],E[1]).toFixed(0)}°</span>`;
-  $('ans3').innerHTML = SHAPES.map((x,k)=>`<span>${s.seen[k]?'':'🔒 '}□ABCD가 <b>${x[1]}</b>이면 □EFGH는</span><select data-k="${k}"${(!s.seen[k] || s.ok || isLocked())?' disabled':''} class="${s.ok?'right':''}"><option value="">선택</option>${SHAPES.map(y=>`<option value="${y[0]}"${s.a[k]===y[0]?' selected':''}>${y[1]}</option>`).join('')}</select>`).join('');
-  $('chk3').disabled = s.ok || isLocked();
-  $('msg3').innerHTML = s.ok ? '<span class="ok">✅ 모두 맞아요!</span> □EFGH의 모양은 □ABCD의 <b>무엇</b>과 관계가 있을까요? 다음 화면에서 설명해 봐요.' : msg3;
+  const dAng = Math.acos(Math.min(1, Math.abs(dot(ac,bd))/(nrm(ac)*nrm(bd))))*180/Math.PI;
+  $('now3q'+i).innerHTML = `📐 대각선 AC = <b>${f1(nrm(ac))}</b>, BD = <b>${f1(nrm(bd))}</b> · AC와 BD가 이루는 각 = <b>${dAng.toFixed(0)}°</b><br>` + measHTML(Q, false, false);
+  const ox = (f, q) => `<div class="oxr"><span>${q}</span>${['o','x'].map(v=>`<button type="button" data-f="${f}" data-v="${v}" class="oxb${s[f][i]===v?' on':''}${s.oks[i]?' ok':''}"${(s.oks[i]||isLocked())?' disabled':''}>${v==='o'?'⭕':'❌'}</button>`).join('')}</div>`;
+  $('ox3q'+i).innerHTML = ox('eq', '대각선 AC와 BD의 <b>길이가 같다</b>') + ox('pp', '대각선 AC와 BD는 <b>수직</b>이다');
+  const sel = $('sel3q'+i); if(!sel.options.length) sel.innerHTML = '<option value="">선택</option>' + SHAPES.map(y=>`<option value="${y[0]}">${y[1]}</option>`).join('');
+  sel.value = s.a[i] || ''; sel.disabled = s.oks[i] || isLocked(); sel.classList.toggle('right', !!s.oks[i]);
+  $('chk3q'+i).disabled = s.oks[i] || isLocked();
+  $('msg3q'+i).innerHTML = s.oks[i] ? `<span class="ok">✅ 맞아요! □ABCD가 ${SHAPES[i][1]}이면 대각선은 ${DIAG[i][0]?'길이가 같고':'길이가 다르고'} ${DIAG[i][1]?'수직이에요':'수직이 아니에요'}. 그래서 □EFGH는 ${SHN[ANS2[i]]}${ANS2[i]==='rh'?'예요':'이에요'}.</span>` + (i<3 ? ' 다음 화면에서 다른 사각형도 살펴봐요.' : ' □EFGH의 모양은 □ABCD의 <b>무엇</b>과 관계가 있을까요? 다음 화면에서 설명해 봐요.') : msg3[i];
 }
-$('tabs3').addEventListener('click', e=>{ const b = e.target.closest('button[data-i]'); if(!b) return; state.s2.cur = +b.dataset.i; state.s2.seen[state.s2.cur] = true; msg3 = ''; render3(); refreshAll({}); });
-$('ans3').addEventListener('change', e=>{ const sel = e.target.closest('select'); if(!sel || isLocked()) return; state.s2.a[+sel.dataset.k] = sel.value; msg3 = ''; render3(); refreshAll({}); });
-dragOn($('g3'), (k, p)=>{
-  const s = state.s2, i = s.cur, tb = JSON.parse(JSON.stringify(s.tb)), t = tb[i];
-  if(i===0){ t['ABD'.indexOf(k)] = clampP(p); }
-  else if(i===1){ if(k==='D'){ const u = sub(t[1],t[0]), n = mul(perp(u), 1/nrm(u)); const hh = snap(dot(sub(p, t[0]), n)); if(Math.abs(hh) < 1.5) return false; t[2] = [hh, 0]; } else t['AB'.indexOf(k)] = clampP(p); }
-  else if(i===2){ if(k==='B'){ const u = sub(t[0],O2), n = mul(perp(u), 1/nrm(u)); const ss = snap(dot(sub(p, O2), n)); if(Math.abs(ss) < 1) return false; t[1] = [ss, 0]; } else t[0] = clampP(p); }
-  else t[0] = clampP(p);
-  if(i>=2 && nrm(sub(t[0],O2)) < 1.2) return false;
-  if(i===1 && nrm(sub(t[1],t[0])) < 2) return false;
-  const Q = quad2(i, tb); if(!Q.every(inBoard) || area4(Q) < 6 || !convex(Q)) return false;
-  if(JSON.stringify(tb) === JSON.stringify(s.tb)) return false;
-  s.tb = tb; msg3 = ''; render3(); return true; }, moved=>{ if(moved) refreshAll({}); });
-$('chk3').addEventListener('click', ()=>{
-  if(isLocked() || state.s2.ok) return; const s = state.s2;
-  if(!s.seen.every(Boolean)){ msg3 = '<span class="bad">네 탭을 모두 눌러 살펴보세요.</span>'; render3(); return; }
-  if(s.a.some(x=>!x)){ msg3 = '<span class="bad">네 칸을 모두 골라 주세요.</span>'; render3(); return; }
-  const wrong = s.a.map((x,k)=> x !== ANS2[k]);
-  if(!wrong.some(Boolean)){ s.ok = true; render3(); check3({now:true}); return; }
-  s.miss++;
-  msg3 = `<span class="bad">빨간 칸을 다시 생각해 보세요.</span> ${s.miss>=2 ? '💡 □ABCD의 <b>두 대각선의 길이와 위치 관계</b>를 보세요. EF는 AC의 절반, FG는 BD의 절반이에요.' : '탭을 눌러 □EFGH의 변의 길이와 각을 살펴보세요.'}`;
-  render3(); document.querySelectorAll('#ans3 select').forEach(sel=> sel.classList.toggle('wrong', wrong[+sel.dataset.k])); check3({now:true});
+[0,1,2,3].forEach(i=>{
+  $('ox3q'+i).addEventListener('click', e=>{ const b = e.target.closest('button[data-f]'); if(!b || isLocked() || state.s2.oks[i]) return; state.s2[b.dataset.f][i] = b.dataset.v; msg3[i] = ''; render3(i); refreshAll({}); });
+  $('sel3q'+i).addEventListener('change', ()=>{ if(isLocked()) return; state.s2.a[i] = $('sel3q'+i).value; $('sel3q'+i).classList.remove('wrong'); msg3[i] = ''; render3(i); refreshAll({}); });
+  dragOn($('g3q'+i), (k, p)=>{
+    const s = state.s2, tb = JSON.parse(JSON.stringify(s.tb)), t = tb[i];
+    if(i===0){ t['ABD'.indexOf(k)] = clampP(p); }
+    else if(i===1){ if(k==='D'){ const u = sub(t[1],t[0]), n = mul(perp(u), 1/nrm(u)); const hh = snap(dot(sub(p, t[0]), n)); if(Math.abs(hh) < 1.5) return false; t[2] = [hh, 0]; } else t['AB'.indexOf(k)] = clampP(p); }
+    else if(i===2){ if(k==='B'){ const u = sub(t[0],O2), n = mul(perp(u), 1/nrm(u)); const ss = snap(dot(sub(p, O2), n)); if(Math.abs(ss) < 1) return false; t[1] = [ss, 0]; } else t[0] = clampP(p); }
+    else t[0] = clampP(p);
+    if(i>=2 && nrm(sub(t[0],O2)) < 1.2) return false;
+    if(i===1 && nrm(sub(t[1],t[0])) < 2) return false;
+    const Q = quad2(i, tb); if(!Q.every(inBoard) || area4(Q) < 6 || !convex(Q)) return false;
+    if(JSON.stringify(tb) === JSON.stringify(s.tb)) return false;
+    s.tb = tb; msg3[i] = ''; render3(i); return true; }, moved=>{ if(moved) refreshAll({}); });
+  $('chk3q'+i).addEventListener('click', ()=>{
+    const s = state.s2; if(isLocked() || s.oks[i]) return;
+    if(!s.eq[i] || !s.pp[i] || !s.a[i]){ msg3[i] = '<span class="bad">⭕/❌ 두 개와 □EFGH의 모양을 모두 골라 주세요.</span>'; render3(i); return; }
+    const okE = (s.eq[i]==='o') === DIAG[i][0], okP = (s.pp[i]==='o') === DIAG[i][1], okA = s.a[i] === ANS2[i];
+    if(okE && okP && okA){ s.oks[i] = true; s.ok = s.oks.every(Boolean); render3(i); check3(i, {now:true}); return; }
+    s.misses[i]++; s.miss++;
+    msg3[i] = `<span class="bad">다시 살펴보세요.</span> ${!okE || !okP ? '대각선의 길이와 두 대각선이 이루는 각을 다시 보세요. (모양을 바꿔도 항상 그런지도요)' : s.misses[i]>=2 ? '💡 □EFGH의 네 변의 길이와 네 각을 보세요. EF는 AC의 절반, FG는 BD의 절반이에요.' : '□EFGH의 변의 길이와 각을 살펴보세요.'}`;
+    render3(i); if(!okA) $('sel3q'+i).classList.add('wrong'); check3(i, {now:true});
+  });
 });
-function check3(opts){ setWhy(3, '✅ 완료! '+NEXT, '네 탭을 모두 살펴보고 □EFGH의 모양을 골라 「확인」을 눌러 보세요.'); renderTab4(); refreshAll(opts); }
+function check3(i, opts){ setWhy(3+i, '✅ 완료! '+NEXT, '대각선에 대해 ⭕/❌를 고르고, □EFGH가 어떤 사각형인지 골라 「확인」을 눌러 보세요.'); renderTab4(); refreshAll(opts); }
 
 /* ================= 화면 4: 규칙 설명하기 ================= */
 const DIAG = [[false,false],[true,false],[false,true],[true,true]];   // 평행사변형·직사각형·마름모·정사각형: [AC=BD, AC⊥BD]
 function renderTab4(){
-  const s = state.s2, YN = v => v ? '<td class="y">✓</td>' : '<td class="n">✗</td>';
-  $('rtab4').innerHTML = `<tr><th>□ABCD</th><th>AC = BD</th><th>AC ⊥ BD</th><th>□EFGH</th></tr>` + SHAPES.map((x,i)=>`<tr><td>${x[1]}</td>${YN(DIAG[i][0])}${YN(DIAG[i][1])}<td class="r">${s.ok ? SHN[ANS2[i]] : (s.a[i] ? SHN[s.a[i]]+'?' : '?')}</td></tr>`).join('');
+  const s = state.s2, YN = (v, ok) => !ok ? '<td>?</td>' : v ? '<td class="y">⭕</td>' : '<td class="n">❌</td>';
+  $('rtab4').innerHTML = `<tr><th>□ABCD</th><th>AC = BD</th><th>AC ⊥ BD</th><th>□EFGH</th></tr>` + SHAPES.map((x,i)=>`<tr><td>${x[1]}</td>${YN(DIAG[i][0], s.oks[i])}${YN(DIAG[i][1], s.oks[i])}<td class="r">${s.oks[i] ? SHN[ANS2[i]] : '?'}</td></tr>`).join('');
 }
 function renderSumFig(){
   const Q = [[1.2,1.2],[10.5,0.6],[9,6.8],[2.6,5.6]], E = Q.map((p,i)=> mid(p, Q[(i+1)%4]));
@@ -909,7 +981,7 @@ function renderSumFig(){
   $('sumFig').innerHTML = h;
 }
 function paintSum(){ const on = aifbPassed('rule') || !!REVEAL.sum; $('sumWait').style.display = on ? 'none' : ''; $('sumBody').style.display = on ? '' : 'none'; if(on) renderSumFig(); }
-function check4(opts){ state.t4 = $('t4').value; setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(4); renderFriends(4); paintSum(); refreshAll(opts); }
+function check4(opts){ state.t4 = $('t4').value; setWhy(7, '✅ 완료! 마지막 화면에서 제출하세요.', '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 완료돼요. 보완할 점이 없으면 정리 상자가 열려요.'); paintShare(4); renderFriends(4); paintSum(); refreshAll(opts); }
 $('t4').addEventListener('input', ()=>check4());
 
 /* ---------- 친구들의 생각 / 답변 공유 ---------- */
@@ -941,8 +1013,8 @@ const CHECKS = {2:o=>check2(o), 4:o=>check4(o)};
 function onShareChanged(){ [2,4].forEach(renderFriends); }
 function onRevealChanged(){ paintSum(); }
 function aifbOnChange(){ paintSum(); check2({noSave:true}); check4({noSave:true}); }
-function onShowPage(id){ if(id===1) render1(); if(id===2) render2(); if(id===3) render3(); if(id===4){ renderTab4(); paintSum(); } }
-function initActivity(){ render1(); render2(); render3(); renderTab4(); paintSum(); check1({noSave:true}); check2({noSave:true}); check3({noSave:true}); check4({noSave:true}); }
+function onShowPage(id){ if(id===1) render1(); if(id===2) render2(); if(id>=3 && id<=6) render3(id-3); if(id===7){ renderTab4(); paintSum(); } }
+function initActivity(){ render1(); render2(); [0,1,2,3].forEach(i=>render3(i)); renderTab4(); paintSum(); check1({noSave:true}); check2({noSave:true}); [0,1,2,3].forEach(i=>check3(i, {noSave:true})); check4({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const pts = (v, n) => { const P = arr(v).map(p=>arr(p).map(Number)); return (P.length===n && P.every(p=>p.length===2 && p.every(Number.isFinite))) ? P : null; };
 function restoreData(d){
@@ -950,8 +1022,10 @@ function restoreData(d){
   const s1 = d.s1 || {};
   state.s1 = { Q: pts(s1.Q, 4) || Q0.map(p=>p.slice()), moves: +s1.moves || 0, a: SHN[s1.a] ? s1.a : '', ok: !!s1.ok, miss: +s1.miss || 0, ac: !!s1.ac, bd: !!s1.bd };
   const s2 = d.s2 || {}, tb0 = TB0(), tbs = arr(s2.tb);
-  state.s2 = { tb: tb0.map((t,i)=> pts(tbs[i], t.length) || t), cur: [0,1,2,3].includes(+s2.cur) ? +s2.cur : 0,
-    seen: [0,1,2,3].map(i=> i===0 || !!arr(s2.seen)[i]), a: [0,1,2,3].map(i=> SHAPES.some(x=>x[0]===arr(s2.a)[i]) ? arr(s2.a)[i] : ''), ok: !!s2.ok, miss: +s2.miss || 0 };
+  const a2 = [0,1,2,3].map(i=> SHAPES.some(x=>x[0]===arr(s2.a)[i]) ? arr(s2.a)[i] : ''), oks0 = arr(s2.oks);
+  const oks = [0,1,2,3].map(i=> !!oks0[i] || (!!s2.ok && a2[i]===ANS2[i]));   // 예전(한 화면) 기록: 모두 맞혔으면 네 화면 모두 완료
+  const ox_ = f => [0,1,2,3].map(i=> ['o','x'].includes(arr(s2[f])[i]) ? arr(s2[f])[i] : (oks[i] ? (DIAG[i][f==='eq'?0:1]?'o':'x') : ''));
+  state.s2 = { tb: tb0.map((t,i)=> pts(tbs[i], t.length) || t), eq: ox_('eq'), pp: ox_('pp'), a: a2, oks, ok: oks.every(Boolean), misses: [0,1,2,3].map(i=> +arr(s2.misses)[i] || 0), miss: +s2.miss || 0 };
   [2,4].forEach(n=>{ state['t'+n] = String(d['t'+n] || ''); $('t'+n).value = state['t'+n]; state.shared[n] = !!(d.shared && d.shared[n]); state.seen[n] = !!(d.seen && d.seen[n]) || state.shared[n]; });
   aifbRestore(d);
   initActivity();
