@@ -148,7 +148,7 @@ const FIREBASE_CONFIG = {
 };
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
-const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',38:'__sim38',39:'__sim39',40:'__sim40',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
 // ⚠️ 새 단원(studentN.html)을 추가할 때마다 여기에도 그 단원의 ACTIVITY_SUFFIX를 꼭 넣어야 목록에 "✅ 완료"가 표시된다.
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
@@ -188,11 +188,14 @@ const SECTIONS = [
   { chapter:'VII. 도형의 닮음과 피타고라스 정리', groups:[
       { title:'', items:[
         {n:31, label:1, title:'7.1. 도형의 닮음 생각열기 - 복사기가 고장나면?', file:'student31.html'},
-        {n:32, label:2, title:'7.2. 삼각형의 닮음 조건 생각열기 - 닮음 조건 찾기', file:'student32.html'},
+        {n:38, label:2, title:'7.1. 닮은 도형 생각열기 - 넓이의 비와 부피의 비', file:'student38.html'},
+        {n:32, label:3, title:'7.2. 삼각형의 닮음 조건 생각열기 - 닮음 조건 찾기', file:'student32.html'},
         // 34 확대 골프 게임(student34.html)은 2026-10-20 목차에서 숨김(파일·기록은 그대로) → 37로 바꿈
-        {n:37, label:3, title:'7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기', file:'student37.html'},
-        {n:35, label:4, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'student35.html'},
-        {n:36, label:5, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'student36.html'}
+        {n:37, label:4, title:'7.3. 삼각형과 평행선 생각열기 - 닮음인 삼각형 만들기', file:'student37.html'},
+        {n:39, label:5, title:'7.3. 삼각형과 평행선 의사소통 - 사각형의 네 변의 중점을 연결하면?', file:'student39.html'},
+        {n:35, label:6, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'student35.html'},
+        {n:40, label:7, title:'7.4. 삼각형의 무게중심 의사소통 - 정삼각형의 외심·내심·무게중심', file:'student40.html'},
+        {n:36, label:8, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'student36.html'}
       ]}
   ]},
   { chapter:'VIII. 경우의 수와 확률', groups:[
