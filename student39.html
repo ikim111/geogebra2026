@@ -272,6 +272,9 @@
   .oxb{border:1.5px solid #c5cad1;background:#fff;border-radius:8px;padding:4px 12px;font-size:16px;cursor:pointer;}
   .oxb.on{border-color:#1565c0;background:#e3f2fd;box-shadow:0 0 0 2px rgba(21,101,192,.25);}
   .oxb.on.ok{border-color:#66bb6a;background:#f1f8e9;box-shadow:none;}
+
+  .side-q{font-weight:bold;font-size:15.5px;background:#fff8e1;border-left:4px solid #f0a500;padding:8px 12px;border-radius:6px;margin:10px 0 6px;}
+  .g-side textarea{min-height:110px;}
 </style></style>
 </head>
 <body>
@@ -359,12 +362,12 @@
         <div class="row"><button type="button" class="sbtn" id="ac2">📐 대각선 AC 긋기</button><button type="button" class="sbtn" id="bd2">📐 대각선 BD 긋기</button></div></div>
       <div class="g-side">
         <div class="now" id="now2"></div>
+        <div class="side-q">✏️ 왜 항상 평행사변형이 될까? 대각선과 <b>삼각형의 두 변의 중점을 연결한 선분의 성질</b>을 이용해 설명해 보세요.</div>
+        <textarea id="t2" placeholder="대각선 AC를 그으면 △ABC에서 E, F는 AB, BC의 중점이므로 …"></textarea>
+        <div class="aifb" id="aifb39"></div>
+        <div class="share-row"><button class="share-btn" id="sh2" disabled>📤 답변 공유</button><span class="note" id="shn2"></span></div>
       </div>
     </div>
-    <div class="big-question">왜 항상 평행사변형이 될까? 대각선 AC(또는 BD)와 <b>삼각형의 두 변의 중점을 연결한 선분의 성질</b>을 이용해 설명해 보세요.</div>
-    <textarea id="t2" placeholder="대각선 AC를 그으면 △ABC에서 E, F는 AB, BC의 중점이므로 …"></textarea>
-    <div class="aifb" id="aifb39"></div>
-    <div class="share-row"><button class="share-btn" id="sh2" disabled>📤 답변 공유</button><span class="note" id="shn2"></span></div>
     <div class="friends-box" id="fr2"></div>
   </div>
   <div class="why" id="why2">이유를 써서 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
