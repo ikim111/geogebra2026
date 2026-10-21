@@ -540,7 +540,8 @@ class GeoCanvas{
     return Infinity;
   }
   // 다각형의 변도 선분처럼 고를 수 있게(수직이등분선·원(반지름)·수선·길이 재기에서 변을 바로 클릭) — 2026-10-21
-  findSegLike(pt,tol){ const o=this.findObjectNear(pt,tol); if(o && (o.type==='segment'||o.type==='line'||o.type==='ray')) return o; let best=null,bd=tol;
+  findSegLike(pt,tol){ const o=this.findObjectNear(pt,tol); if(o && (o.type==='segment'||o.type==='line'||o.type==='ray')) return o; if(this.findPointNear(pt,tol)) return o;   // 점(꼭짓점) 근처를 누르면 점 고르기가 먼저(두 점을 차례로 누르는 방법)
+    let best=null,bd=tol;
     for(const q of this.objects){ if(q.type!=='polygon' || !q.ids) continue; const ids=q.ids; for(let i=0;i<ids.length;i++){ const a=this.resolvePoint(ids[i]), b=this.resolvePoint(ids[(i+1)%ids.length]); if(!a||!b) continue; const d=distToSegment(pt,a,b); if(d<bd){ bd=d; best={type:'segment', p1:ids[i], p2:ids[(i+1)%ids.length]}; } } }
     return best || o; }
   findObjectNear(pt,tol){

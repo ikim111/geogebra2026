@@ -275,6 +275,27 @@
   .qp select{font-size:15px;padding:3px 6px;border:1.5px solid #c5cad1;border-radius:8px;font-family:inherit;background:#fff;max-width:100%;}
   .qp select.wrong{border-color:#ef9a9a;background:#fff6f6;} .qp select.right{border-color:#66bb6a;background:#f1f8e9;}
   .sum-mini{background:#fffbe6;border:2px solid #ffca28;border-radius:10px;padding:8px 12px;line-height:1.8;color:#4a3800;margin-bottom:4px;}
+
+  .fig3{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px;}
+  .fig3 .fc{flex:1;min-width:200px;border:1px solid #d6dbe1;border-radius:10px;background:#fbfcfe;padding:4px 6px;text-align:center;font-size:14px;font-weight:bold;}
+  .fig3 svg{width:100%;display:block;}
+
+  .mission{border:2px solid #ffb74d;background:#fff8ef;border-radius:12px;padding:10px 12px;margin:8px 0;}
+  .mission .mh{font-weight:bold;font-size:16px;color:#e65100;margin-bottom:6px;}
+  .mission .ms{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1.5px solid #e0e4ea;background:#fff;border-radius:10px;padding:8px 10px;margin:5px 0;font-size:15.5px;color:#6b7280;}
+  .mission .ms .mn{flex:0 0 auto;font-weight:bold;font-size:13.5px;background:#eceff1;color:#455a64;border-radius:8px;padding:3px 9px;}
+  .mission .ms .mt{flex:1;min-width:220px;}
+  .mission .ms .mp{flex:0 0 auto;font-weight:bold;font-size:14px;color:#e65100;}
+  .mission .ms.cur{border-color:#ff9800;color:#1f2328;box-shadow:0 0 0 3px rgba(255,152,0,.25);animation:misP 1.6s ease-in-out infinite;}
+  .mission .ms.cur .mn{background:#ff9800;color:#fff;}
+  .mission .ms.done{border-color:#a5d6a7;background:#f1f8e9;color:#1b5e20;}
+  .mission .ms.done .mn{background:transparent;padding:0;font-size:18px;}
+  .mission .mdone{font-weight:bold;color:#2e7d32;margin-top:4px;}
+  @keyframes misP{50%{box-shadow:0 0 0 6px rgba(255,152,0,.12);}}
+  .toolbar button.need{border-color:#ff9800 !important;background:#fff3e0 !important;color:#e65100 !important;font-weight:bold;animation:toolP 1.2s ease-in-out infinite;}
+  @keyframes toolP{50%{box-shadow:0 0 0 5px rgba(255,152,0,.35);}}
+  .cue-pulse{animation:cueP 1.6s ease-in-out infinite;}
+  @keyframes cueP{50%{opacity:.25;}}
 </style></style>
 </head>
 <body>
@@ -320,7 +341,7 @@
       <button id="prevBtn">◀ 이전</button>
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">완료 0 / 4</div>
+        <div class="progress-text" id="progressText">완료 0 / 5</div>
       </div>
       <button id="nextBtn">다음 ▶</button>
     </div>
@@ -337,7 +358,7 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">1 직접 그려서 찾기</span><span class="badge pending" id="badge-a1">미완료</span></div>
     <h2>작도 도구로 외심, 내심, 무게중심을 직접 찾아보자</h2>
-    <p class="hint">탭을 골라 작도 도구로 선을 그리고, 선들이 만나는 곳에 <b>「교점」</b>으로 점을 찍어 보세요. 세 점을 모두 찾으면 아래 빈칸이 열려요.</p>
+    <p class="hint">탭을 골라 아래 <b>미션</b>을 차례로 해 보세요. 지금 할 미션과 눌러야 할 도구가 <b style="color:#e65100">주황색</b>으로 반짝여요. 세 점을 모두 찾으면 다음 화면으로 넘어갈 수 있어요.</p>
     <div class="ctabs" id="ctab1">
       <button type="button" class="ctab t-o" data-i="0">외심 O</button>
       <button type="button" class="ctab t-i" data-i="1">내심 I</button>
@@ -347,6 +368,17 @@
     <div class="geo-board"><div class="toolbar" id="geoTools1"></div>
       <svg class="gcanvas" id="geo1_0" viewBox="0 0 600 400"></svg><svg class="gcanvas" id="geo1_1" viewBox="0 0 600 400" style="display:none"></svg><svg class="gcanvas" id="geo1_2" viewBox="0 0 600 400" style="display:none"></svg></div>
     <div class="g-msg" id="cmsg1"></div>
+  </div>
+  <div class="why" id="why1">외심·내심·무게중심을 모두 직접 그려서 찾으면 다음으로 넘어갈 수 있어요.</div>
+</section>
+
+<!-- ===================== 화면 2: 세 점의 뜻 ===================== -->
+<section class="task activity" id="task-a2" data-task-id="2">
+  <div class="card">
+    <div class="act-head"><span class="act-tag">2 세 점의 뜻</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <h2>외심, 내심, 무게중심은 각각 어떤 선들의 교점일까?</h2>
+    <p class="hint">앞 화면에서 직접 그린 세 점이에요. 그림을 보며 빈칸을 채워 보세요.</p>
+    <div class="fig3" id="fig2s"></div>
     <div class="fill" id="fill1">
       <div>⦁ 삼각형의 <b style="color:#c62828">외심</b>은 세 변의 <select data-k="0"></select>의 교점이다.</div>
       <div>⦁ 삼각형의 <b style="color:#1565c0">내심</b>은 세 내각의 <select data-k="1"></select>의 교점이다.</div>
@@ -355,13 +387,13 @@
     <div class="row"><button type="button" class="okb" id="chk1">✔ 확인</button></div>
     <div class="g-msg" id="msg1"></div>
   </div>
-  <div class="why" id="why1">세 점을 모두 직접 찾고 빈칸을 바르게 채우면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">빈칸을 바르게 채우면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 2: 세 점의 위치 탐구 ===================== -->
-<section class="task activity" id="task-a2" data-task-id="2">
+<!-- ===================== 화면 3: 세 점의 위치 탐구 ===================== -->
+<section class="task activity" id="task-a3" data-task-id="3">
   <div class="card">
-    <div class="act-head"><span class="act-tag">2 세 점의 위치 탐구</span><span class="badge pending" id="badge-a2">미완료</span></div>
+    <div class="act-head"><span class="act-tag">3 세 점의 위치 탐구</span><span class="badge pending" id="badge-a3">미완료</span></div>
     <h2>삼각형 모양에 따라 외심, 내심, 무게중심은 어디에 있을까?</h2>
     <p class="hint">파란 손잡이(꼭짓점)를 끌어서 삼각형 모양을 바꿔 보세요. <b style="color:#c62828">외심 O</b>, <b style="color:#1565c0">내심 I</b>, <b style="color:#2e7d32">무게중심 G</b>가 함께 움직여요. <b>예각·직각·둔각삼각형</b>을 모두 만들어 보며 세 점이 삼각형의 안쪽에 있는지, 변 위에 있는지, 바깥에 있는지 살펴보세요.</p>
     <div class="g-layout">
@@ -383,16 +415,16 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why2">예각·직각·둔각삼각형을 모두 만들어 보고, 물음에 바르게 답하면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why3">예각·직각·둔각삼각형을 모두 만들어 보고, 물음에 바르게 답하면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 2: 정삼각형에서 ===================== -->
-<section class="task activity" id="task-a3" data-task-id="3">
+<!-- ===================== 화면 4: 정삼각형에서 ===================== -->
+<section class="task activity" id="task-a4" data-task-id="4">
   <div class="card">
-    <div class="act-head"><span class="act-tag">3 정삼각형에서</span><span class="badge pending" id="badge-a3">미완료</span></div>
+    <div class="act-head"><span class="act-tag">4 정삼각형에서</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>정삼각형에서 세 선은 어떤 관계가 있을까?</h2>
-    <p class="hint">정삼각형 ABC에서 작도 도구로 아래 세 선을 <b>직접</b> 그려 보세요. (중선 AD는 먼저 「중점」으로 BC의 중점 D를 찍고, 「선분」으로 A와 D를 이어요)</p>
-    <div class="clist" id="clist2"></div>
+    <p class="hint">정삼각형 ABC에서 작도 도구로 아래 <b>미션 세 개</b>를 차례로 해 보세요. 지금 할 미션과 눌러야 할 도구가 <b style="color:#e65100">주황색</b>으로 반짝여요.</p>
+    <div id="clist2"></div>
     <div class="geo-board"><div class="toolbar" id="geoTools2"></div><svg class="gcanvas" id="geo2" viewBox="0 0 600 400"></svg></div>
     <div class="g-msg" id="cmsg2"></div>
     <div class="fill">
@@ -408,13 +440,13 @@
       <div class="friends-box" id="fr2"></div>
     </div>
   </div>
-  <div class="why" id="why3">세 선을 직접 그려 관계를 고르고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why4">세 선을 직접 그려 관계를 고르고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
-<!-- ===================== 화면 3: 다른 삼각형에서도? ===================== -->
-<section class="task activity" id="task-a4" data-task-id="4">
+<!-- ===================== 화면 5: 다른 삼각형에서도? ===================== -->
+<section class="task activity" id="task-a5" data-task-id="5">
   <div class="card">
-    <div class="act-head"><span class="act-tag">4 다른 삼각형에서도?</span><span class="badge pending" id="badge-a4">미완료</span></div>
+    <div class="act-head"><span class="act-tag">5 다른 삼각형에서도?</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>정삼각형이 아닌 삼각형에서도 세 점이 일치할 수 있을까?</h2>
     <p class="hint">파란 손잡이(꼭짓점)를 끌어서 삼각형 모양을 바꿔 보세요. <b style="color:#c62828">O</b>, <b style="color:#1565c0">I</b>, <b style="color:#2e7d32">G</b>가 함께 움직여요. <span class="note">(세 번 이상 바꿔 보세요)</span></p>
     <div class="g-layout">
@@ -446,7 +478,7 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why4">모양을 세 번 이상 바꿔 보고, 두 물음에 답한 뒤 내 생각을 공유하면 완료돼요. 마지막 화면에서 제출하세요.</div>
+  <div class="why" id="why5">모양을 세 번 이상 바꿔 보고, 두 물음에 답한 뒤 내 생각을 공유하면 완료돼요. 마지막 화면에서 제출하세요.</div>
 </section>
 
     </div>
@@ -713,7 +745,8 @@ class GeoCanvas{
     return Infinity;
   }
   // 다각형의 변도 선분처럼 고를 수 있게(수직이등분선·원(반지름)·수선·길이 재기에서 변을 바로 클릭) — 2026-10-21
-  findSegLike(pt,tol){ const o=this.findObjectNear(pt,tol); if(o && (o.type==='segment'||o.type==='line'||o.type==='ray')) return o; let best=null,bd=tol;
+  findSegLike(pt,tol){ const o=this.findObjectNear(pt,tol); if(o && (o.type==='segment'||o.type==='line'||o.type==='ray')) return o; if(this.findPointNear(pt,tol)) return o;   // 점(꼭짓점) 근처를 누르면 점 고르기가 먼저(두 점을 차례로 누르는 방법)
+    let best=null,bd=tol;
     for(const q of this.objects){ if(q.type!=='polygon' || !q.ids) continue; const ids=q.ids; for(let i=0;i<ids.length;i++){ const a=this.resolvePoint(ids[i]), b=this.resolvePoint(ids[(i+1)%ids.length]); if(!a||!b) continue; const d=distToSegment(pt,a,b); if(d<bd){ bd=d; best={type:'segment', p1:ids[i], p2:ids[(i+1)%ids.length]}; } } }
     return best || o; }
   findObjectNear(pt,tol){
@@ -1136,9 +1169,10 @@ return { GeoCanvas, TOOL_META, restoreObjectSnapshot, snapshotOf };
 const MIN_TEXT = 5;
 const TASKS = [
   {id:1, key:'a1', title:'1. 직접 그려서 외심·내심·무게중심 찾기'},
-  {id:2, key:'a2', title:'2. 세 점의 위치 탐구 (예각·직각·둔각)'},
-  {id:3, key:'a3', title:'3. 정삼각형에서 세 선의 관계와 이유'},
-  {id:4, key:'a4', title:'4. 다른 삼각형에서도 일치할까?'}
+  {id:2, key:'a2', title:'2. 세 점의 뜻 (어떤 선들의 교점?)'},
+  {id:3, key:'a3', title:'3. 세 점의 위치 탐구 (예각·직각·둔각)'},
+  {id:4, key:'a4', title:'4. 정삼각형에서 세 선의 관계와 이유'},
+  {id:5, key:'a5', title:'5. 다른 삼각형에서도 일치할까?'}
 ];
 /* 판: 가로 0~12.67, 세로 0~12 (단위). 화면 1: 부등변 예각삼각형, 화면 2: 정삼각형(고정), 화면 3: 끌어서 바꾸는 삼각형 */
 const T1 = [[1, 1.5], [12, 1.5], [2.5, 8]];
@@ -1172,17 +1206,19 @@ const have2All = () => H2N.every(([k])=> state.s2.have[k]);
 const QA = {yes:'있다', no:'없다'}, QB = {line:'한 직선 위에 있다', same:'항상 일치한다', none:'아무 관계 없다'}, SEL2 = {same:'모두 같은 직선', par:'서로 평행', pt:'한 점에서만 만남'};
 
 function isDone(id){
-  if(id===1) return state.s1.found.every(Boolean) && state.s1.ok;
-  if(id===2){ const s = state.sP; return s.ok && s.moves>=2 && s.seen.a && s.seen.r && s.seen.o; }
-  if(id===3) return have2All() && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList().length>=1;
-  if(id===4) return state.s3.moves>=3 && state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3];
+  if(id===1) return state.s1.found.every(Boolean);
+  if(id===2) return state.s1.found.every(Boolean) && state.s1.ok;
+  if(id===3){ const s = state.sP; return s.ok && s.moves>=2 && s.seen.a && s.seen.r && s.seen.o; }
+  if(id===4) return have2All() && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList().length>=1;
+  if(id===5) return state.s3.moves>=3 && state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3];
   return false;
 }
 function valueOf(id){
-  if(id===1){ const s = state.s1, nm = v => (OPTS1.find(o=>o[0]===v)||[,'?'])[1]; return (s.n.some(Boolean) || s.a.some(Boolean)) ? `[찾은 점 ${['O','I','G'].filter((x,i)=>s.found[i]).join(',')||'-'} · 그린 선 ${s.n.join('/')}] 외심: ${nm(s.a[0])} · 내심: ${nm(s.a[1])} · 무게중심: ${nm(s.a[2])}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
-  if(id===2){ const s = state.sP; if(!s.moves && !PKEYS.some(k=>s.q[k])) return ''; const nm = k => ((POPT[k].find(o=>o[0]===s.q[k])||[,'?'])[1]); return `[모양 바꾸기 ${s.moves}번 · 만든 삼각형: ${[['a','예각'],['r','직각'],['o','둔각']].filter(([k])=>s.seen[k]).map(x=>x[1]).join(',')||'-'}] 외심(예각) ${nm('oa')} / 외심(직각) ${nm('or')} / 외심(둔각) ${nm('oo')} / 내심 ${nm('i')} / 무게중심 ${nm('g')}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}`; }
-  if(id===3){ const s = state.s2; return (s.sel || state.t2 || Object.values(s.have).some(Boolean)) ? `[그린 선: ${H2N.filter(([k])=>s.have[k]).map(x=>x[1]).join(', ')||'-'}] 세 선: ${SEL2[s.sel]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t2.trim()}` : ''; }
-  if(id===4){ const s = state.s3; return (s.moves || s.qa || state.t3) ? `[모양 바꾸기 ${s.moves}번] ⑴ ${QA[s.qa]||'?'} ⑵ ${QB[s.qb]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t3.trim()}` : ''; }
+  if(id===1){ const s = state.s1; return s.n.some(Boolean) ? `찾은 점 ${['O','I','G'].filter((x,i)=>s.found[i]).join(',')||'-'} · 그린 선 ${s.n.join('/')}` : ''; }
+  if(id===2){ const s = state.s1, nm = v => (OPTS1.find(o=>o[0]===v)||[,'?'])[1]; return s.a.some(Boolean) ? `외심: ${nm(s.a[0])} · 내심: ${nm(s.a[1])} · 무게중심: ${nm(s.a[2])}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
+  if(id===3){ const s = state.sP; if(!s.moves && !PKEYS.some(k=>s.q[k])) return ''; const nm = k => ((POPT[k].find(o=>o[0]===s.q[k])||[,'?'])[1]); return `[모양 바꾸기 ${s.moves}번 · 만든 삼각형: ${[['a','예각'],['r','직각'],['o','둔각']].filter(([k])=>s.seen[k]).map(x=>x[1]).join(',')||'-'}] 외심(예각) ${nm('oa')} / 외심(직각) ${nm('or')} / 외심(둔각) ${nm('oo')} / 내심 ${nm('i')} / 무게중심 ${nm('g')}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}`; }
+  if(id===4){ const s = state.s2; return (s.sel || state.t2 || Object.values(s.have).some(Boolean)) ? `[그린 선: ${H2N.filter(([k])=>s.have[k]).map(x=>x[1]).join(', ')||'-'}] 세 선: ${SEL2[s.sel]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t2.trim()}` : ''; }
+  if(id===5){ const s = state.s3; return (s.moves || s.qa || state.t3) ? `[모양 바꾸기 ${s.moves}번] ⑴ ${QA[s.qa]||'?'} ⑵ ${QB[s.qb]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t3.trim()}` : ''; }
   return '';
 }
 function collectData(){
@@ -1287,7 +1323,7 @@ function aifbRestore(d){
   document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
 
 
-aifbMount($('aifb40'), { unit:40, minLen:10, inputs:[$('t2')], answer: ()=>$('t2').value, ctx: ()=>'정삼각형 ABC에서 ∠A의 이등분선, BC의 수직이등분선, 중선 AD를 그려 보니 모두 같은 직선이었다(화면 3). ∠B, ∠C에서도 그려 볼 수 있다. 화면 1에서 외심=세 변의 수직이등분선의 교점, 내심=세 내각의 이등분선의 교점, 무게중심=세 중선의 교점임을 확인했다. 이제 정삼각형의 외심, 내심, 무게중심이 일치하는 이유를 쓰는 중이다.' });
+aifbMount($('aifb40'), { unit:40, minLen:10, inputs:[$('t2')], answer: ()=>$('t2').value, ctx: ()=>'정삼각형 ABC에서 ∠A의 이등분선, BC의 수직이등분선, 중선 AD를 그려 보니 모두 같은 직선이었다(화면 4). ∠B, ∠C에서도 그려 볼 수 있다. 화면 1·2에서 외심=세 변의 수직이등분선의 교점, 내심=세 내각의 이등분선의 교점, 무게중심=세 중선의 교점임을 확인했다. 이제 정삼각형의 외심, 내심, 무게중심이 일치하는 이유를 쓰는 중이다.' });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null, studentsRef:null,
@@ -1495,6 +1531,16 @@ function mkToolbar(bar, getCv, onTool){
   return btns;
 }
 function overlay(cv, html){ const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('pointer-events','none'); g.innerHTML = html; cv.svg.appendChild(g); }
+/* 미션 카드·필요한 도구 강조·작도판 위 안내(클릭을 막지 않는 겹친 그림) — 2026-10-21 */
+function cueLayer(cv, html){ const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('pointer-events','none'); g.setAttribute('class','cue'); g.innerHTML = html; cv.svg.insertBefore(g, cv.svg.childNodes[1] || null); }
+const cueSide = (P, Q) => `<line x1="${P[0]}" y1="${P[1]}" x2="${Q[0]}" y2="${Q[1]}" stroke="#ff9800" stroke-width="10" stroke-linecap="round" opacity=".45" class="cue-pulse"/>`;
+function cueArc(T, i){ const V = T[i], P = T[(i+1)%3], Q = T[(i+2)%3], r = 46, u = sub(P,V), v = sub(Q,V), a = [V[0]+u[0]/nrm(u)*r, V[1]+u[1]/nrm(u)*r], b = [V[0]+v[0]/nrm(v)*r, V[1]+v[1]/nrm(v)*r], sw = cross(u, v) > 0 ? 1 : 0;
+  return `<path d="M${V[0]},${V[1]} L${a[0]},${a[1]} A${r},${r} 0 0 ${sw} ${b[0]},${b[1]} Z" fill="rgba(255,152,0,.35)" stroke="#ff9800" stroke-width="3" class="cue-pulse"/>`; }
+const cueRing = p => `<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="none" stroke="#ff9800" stroke-width="3" stroke-dasharray="4 3" class="cue-pulse"/>`;
+const cueGuide = (P, Q) => `<line x1="${P[0]}" y1="${P[1]}" x2="${Q[0]}" y2="${Q[1]}" stroke="#ff9800" stroke-width="3" stroke-dasharray="8 6" opacity=".8" class="cue-pulse"/>`;
+function missionHTML(title, steps){ const cur = steps.findIndex(x=>!x.done);
+  return `<div class="mission"><div class="mh">🎯 ${title}</div>` + steps.map((x,k)=>`<div class="ms${x.done?' done':k===cur?' cur':''}"><span class="mn">${x.done?'✅':'미션 '+(k+1)}</span><span class="mt">${x.t}</span>${x.prog?`<span class="mp">${x.prog}</span>`:''}</div>`).join('') + (cur<0 ? '<div class="mdone">🎉 미션 완료!</div>' : '') + `</div>`; }
+function needTool(btns, tool){ if(btns) Object.entries(btns).forEach(([k,b])=> b.classList.toggle('need', k===tool)); }
 const ovDot = (p, col, label, dx, dy) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="${col}" stroke-width="3"/><circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="${col}"/><text x="${p[0]+(dx||12)}" y="${p[1]+(dy||-12)}" font-size="20" font-weight="bold" fill="${col}" stroke="#fff" stroke-width="4" paint-order="stroke" font-family="Times New Roman,serif" font-style="italic">${label}</text>`;
 
 /* ================= 화면 1: 직접 그려서 찾기 ================= */
@@ -1503,7 +1549,7 @@ const C1 = [
   {k:'I', n:'내심', col:COL.I, test:isAngBis, center:pIncenter, task:'<b style="color:#1565c0">내심 I</b>: 「각의 이등분선」 도구로 <b>세 내각의 이등분선</b>을 그리고(점 세 개를 누르되 가운데가 꼭짓점, 예: B→A→C), 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'내각의 이등분선', hintWrong:'각의 이등분선은 세 점을 누르는데 <b>두 번째가 각의 꼭짓점</b>이에요. (∠A라면 B → A → C)'},
   {k:'G', n:'무게중심', col:COL.G, test:isMedian, center:pCentroid, task:'<b style="color:#2e7d32">무게중심 G</b>: 「중점」 도구로 각 변의 <b>중점</b>을 찍고(양 끝 꼭짓점 누르기), 「선분」으로 꼭짓점과 <b>마주 보는 변의 중점</b>을 이어 중선을 그린 뒤, 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'중선', hintWrong:'중선은 꼭짓점과 <b>마주 보는 변의 중점</b>을 이은 선분이에요. 중점을 먼저 찍고 이어 보세요.'}
 ];
-let geo1 = [null,null,null], geo1Timer = [0,0,0], msgC1 = ['','',''];
+let geo1 = [null,null,null], geo1Timer = [0,0,0], msgC1 = ['','',''], MIS1 = [null,null,null];
 function eval1(i, cv){
   const c = C1[i], T = G1T, L = linesOf(cv), good = new Set();
   L.forEach(x=> [0,1,2].forEach(v=>{ if(c.test(x.l, T, v)) good.add(v); }));
@@ -1518,6 +1564,19 @@ function eval1(i, cv){
   else if(n===1) m = `<span class="note">✏️ ${c.lineName} 1개 완성! 하나 더 그려 보세요.</span>`;
   else if(n>=2 && !pt) m = `<span class="bad">${c.lineName} ${n}개 완성!</span> 선들이 만나는 곳에 <b>「교점」</b> 도구로 점을 찍어 보세요.`;
   msgC1[i] = m;
+  // 미션과 작도판 안내
+  const side = v => [T[(v+1)%3], T[(v+2)%3]], mOf = v => mid(T[(v+1)%3], T[(v+2)%3]);
+  let steps, cue = '';
+  if(i===0){ steps = [{t:'「<b>수직이등분선</b>」 도구 → 삼각형의 <b>변</b>을 누르기 (또는 변의 양 끝 꼭짓점을 차례로)', tool:'perpBisector', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[0]}];
+    if(!steps[0].done) [0,1,2].filter(v=>!good.has(v)).forEach(v=>{ cue += cueSide(...side(v)); }); }
+  else if(i===1){ steps = [{t:'「<b>각의 이등분선</b>」 도구 → 점 세 개를 차례로 누르기 (가운데가 꼭짓점, 예: B → A → C)', tool:'angleBisector', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[1]}];
+    if(!steps[0].done) [0,1,2].filter(v=>!good.has(v)).forEach(v=>{ cue += cueArc(T, v); }); }
+  else { const mids = [0,1,2].filter(v=> hasPointNear(cv, mOf(v), 5));
+    steps = [{t:'「<b>중점</b>」 도구 → 변의 양 끝 꼭짓점을 차례로 눌러 <b>각 변의 중점</b> 찍기', tool:'midpoint', prog:`${mids.length}/3`, done:mids.length>=2 || n>=2}, {t:'「<b>선분</b>」 도구 → 꼭짓점과 <b>마주 보는 변의 중점</b>을 잇기 (중선)', tool:'segment', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 중선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[2]}];
+    if(!steps[0].done) [0,1,2].filter(v=>!mids.includes(v)).forEach(v=>{ cue += cueSide(...side(v)); });
+    else if(!steps[1].done) mids.filter(v=>!good.has(v)).forEach(v=>{ cue += cueGuide(T[v], mOf(v)); }); }
+  MIS1[i] = {steps, tool: (steps.find(x=>!x.done)||{}).tool || null};
+  if(cue) cueLayer(cv, cue);
   if(s.found[i]) overlay(cv, ovDot(ctr, c.col, c.k, -26, 26));
   return !was && s.found[i];
 }
@@ -1544,7 +1603,7 @@ function showTab1(i){
 function paint1(){
   const s = state.s1, i = s.tab;
   document.querySelectorAll('#ctab1 .ctab').forEach(b=>{ const j = +b.dataset.i; b.classList.toggle('on', j===i); b.classList.toggle('done', s.found[j]); });
-  $('ctask1').innerHTML = C1[i].task;
+  const mi = MIS1[i]; $('ctask1').innerHTML = mi ? missionHTML(`${C1[i].n} ${C1[i].k} 찾기`, mi.steps) : C1[i].task; needTool(tb1, mi && !s.found[i] ? mi.tool : null);
   $('cmsg1').innerHTML = msgC1[i] || '';
   const all = s.found.every(Boolean);
   $('fill1').classList.toggle('locked', !all);
@@ -1552,8 +1611,9 @@ function paint1(){
     if(!sel.options.length) sel.innerHTML = `<option value="">선택</option>` + OPTS1.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
     sel.value = s.a[k] || ''; sel.disabled = s.ok || isLocked() || !all; sel.classList.toggle('right', s.ok); });
   $('chk1').disabled = s.ok || isLocked() || !all;
-  $('msg1').innerHTML = s.ok ? '<span class="ok">✅ 맞아요!</span> 외심은 세 변의 <b>수직이등분선</b>, 내심은 세 내각의 <b>이등분선</b>, 무게중심은 세 <b>중선</b>의 교점이에요. 이 삼각형에서는 세 점이 서로 다른 곳에 있죠? (탭을 바꿔 비교해 보세요)'
-    : (!all ? `<span class="note">세 점을 모두 찾으면 빈칸이 열려요. (지금 ${s.found.filter(Boolean).length}/3)</span>` : msg1);
+  $('msg1').innerHTML = s.ok ? '<span class="ok">✅ 맞아요!</span> 외심은 세 변의 <b>수직이등분선</b>, 내심은 세 내각의 <b>이등분선</b>, 무게중심은 세 <b>중선</b>의 교점이에요. 이 삼각형에서는 세 점이 서로 다른 곳에 있죠? (위 그림에서 비교해 보세요)'
+    : (!all ? `<span class="note">앞 화면에서 세 점을 모두 찾으면 빈칸이 열려요. (지금 ${s.found.filter(Boolean).length}/3)</span>` : msg1);
+  renderFig2s();
 }
 function render1(){ showTab1(state.s1.tab || 0); }
 let msg1 = '';
@@ -1569,10 +1629,23 @@ $('chk1').addEventListener('click', ()=>{
   msg1 = `<span class="bad">다시 생각해 보세요.</span> ${s.miss>=2 ? '💡 각 탭에서 어떤 도구로 선을 그렸는지 떠올려 보세요.' : '각 점을 찾을 때 그린 선이 어떤 선이었나요?'}`;
   paint1(); document.querySelectorAll('#fill1 select').forEach(sel=> sel.classList.toggle('wrong', wrong[+sel.dataset.k])); check1({now:true});
 });
-function check1(opts){ const n = state.s1.found.filter(Boolean).length; setWhy(1, '✅ 완료! '+NEXT, n<3 ? `세 점(외심·내심·무게중심)을 직접 그려서 찾아보세요. (지금 ${n}/3)` : '빈칸을 모두 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
+function check1(opts){ const n = state.s1.found.filter(Boolean).length; setWhy(1, '✅ 완료! '+NEXT, `세 점(외심·내심·무게중심)을 직접 그려서 찾아보세요. (지금 ${n}/3)`);
+  setWhy(2, '✅ 완료! '+NEXT, n<3 ? '앞 화면에서 세 점을 모두 찾고 오세요.' : '빈칸을 모두 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
+/* 화면 2: 앞 화면에서 찾은 세 점을 작은 그림 세 개로(움직이지 않음) */
+function renderFig2s(){
+  const T = G1T, s = state.s1, P = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`, L = (a,b,c,w,d) => `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w||2}"${d?` stroke-dasharray="${d}"`:''}/>`;
+  const ext = (a, b, k) => [a[0]+(b[0]-a[0])*k, a[1]+(b[1]-a[1])*k];
+  const tri = `<polygon points="${T.map(P).join(' ')}" fill="rgba(21,101,192,.07)" stroke="#1f2328" stroke-width="2.5"/>` + T.map((p,j)=>{ const g = pCentroid(T), d = [p[0]-g[0], p[1]-g[1]], n = Math.hypot(d[0],d[1])||1; return `<text x="${(p[0]+d[0]/n*24).toFixed(1)}" y="${(p[1]+d[1]/n*24+8).toFixed(1)}" font-size="26" font-weight="bold" text-anchor="middle">${'ABC'[j]}</text>`; }).join('');
+  const box = (k, nm, col, lines, ctr, ok) => `<div class="fc" style="color:${col}">${nm} ${k}${ok?'':' <span style="color:#999;font-weight:normal;">(아직)</span>'}<svg viewBox="-20 -10 640 420">${tri}${ok ? lines + `<circle cx="${ctr[0].toFixed(1)}" cy="${ctr[1].toFixed(1)}" r="9" fill="${col}"/><text x="${(ctr[0]+14).toFixed(1)}" y="${(ctr[1]-12).toFixed(1)}" font-size="30" font-weight="bold" fill="${col}" font-style="italic">${k}</text>` : ''}</svg></div>`;
+  const O = pCircum(T), I = pIncenter(T), G = pCentroid(T);
+  const lo = [0,1,2].map(i=>{ const m = mid(T[(i+1)%3], T[(i+2)%3]); return L(ext(O, m, -0.6), ext(O, m, 1.5), COL.O, 2, '7 5'); }).join('');
+  const li = [0,1,2].map(i=> L(T[i], ext(T[i], I, 1.6), COL.I, 2, '7 5')).join('');
+  const lg = [0,1,2].map(i=>{ const m = mid(T[(i+1)%3], T[(i+2)%3]); return L(T[i], m, COL.G, 2, '7 5') + `<circle cx="${m[0].toFixed(1)}" cy="${m[1].toFixed(1)}" r="5" fill="${COL.G}"/>`; }).join('');
+  $('fig2s').innerHTML = box('O','외심',COL.O,lo,O,s.found[0]) + box('I','내심',COL.I,li,I,s.found[1]) + box('G','무게중심',COL.G,lg,G,s.found[2]);
+}
 
 /* ================= 화면 2: 정삼각형에서 직접 그리기 ================= */
-let geo2 = null, geo2Timer = 0, msg2 = '', cmsg2 = '';
+let geo2 = null, geo2Timer = 0, msg2 = '', cmsg2 = '', MIS2 = {tool:'angleBisector', hasD:false}, tb2 = null;
 function eval2(cv){
   const T = G2T, s = state.s2, h = s.have, D = [(T[1][0]+T[2][0])/2, (T[1][1]+T[2][1])/2];
   linesOf(cv).forEach(x=>{
@@ -1580,6 +1653,13 @@ function eval2(cv){
     if((x.o.type==='perpBisector' || x.o.type==='perp') && isPerpBis(x.l, T, 0)) h.pb = true;
     if((x.o.type==='segment' || x.o.type==='line') && isMedian(x.l, T, 0) && hasPointNear(cv, D, 5)) h.med = true;
   });
+  const hasD = hasPointNear(cv, D, 5);
+  let cue = '', tool = null;
+  if(!h.bis){ cue = cueArc(T, 0); tool = 'angleBisector'; }
+  else if(!h.pb){ cue = cueSide(T[1], T[2]); tool = 'perpBisector'; }
+  else if(!h.med){ if(!hasD){ cue = cueSide(T[1], T[2]) + cueRing(D); tool = 'midpoint'; } else { cue = cueGuide(T[0], D); tool = 'segment'; } }
+  MIS2 = {tool, hasD};
+  if(cue) cueLayer(cv, cue);
   let ov = `<circle cx="${D[0]}" cy="${D[1]}" r="0" />`;
   if(have2All()){ ov += `<text x="${T[0][0]+14}" y="${(T[0][1]+D[1])/2}" font-size="15" font-weight="bold" fill="#6a1b9a" stroke="#fff" stroke-width="4" paint-order="stroke">세 선이 모두 겹쳐요!</text>`; }
   if(s.all){ const O = centroid(T); ov += ovDot(O, '#1f2328', 'O = I = G', 14, -10); }
@@ -1607,7 +1687,11 @@ function initGeo2(){
 function render2(){ initGeo2(); paint2(); }
 function paint2(){
   const s = state.s2;
-  $('clist2').innerHTML = H2N.map(([k,n])=>`<span class="${s.have[k]?'on':''}">${s.have[k]?'✓':'○'} ${n}</span>`).join('');
+  $('clist2').innerHTML = missionHTML('정삼각형 ABC에서 세 선 그리기', [
+    {t:'<b>∠A의 이등분선</b> — 「<b>각의 이등분선</b>」 도구 → <b>B → A → C</b> 차례로 누르기', done:s.have.bis},
+    {t:'<b>BC의 수직이등분선</b> — 「<b>수직이등분선</b>」 도구 → <b>변 BC</b> 누르기 (또는 B, C 차례로)', done:s.have.pb},
+    {t:'<b>중선 AD</b> — 「<b>중점</b>」 도구로 B, C를 눌러 <b>BC의 중점 D</b> 찍기 → 「<b>선분</b>」 도구로 <b>A와 D</b> 잇기', prog: s.have.med ? '' : (MIS2.hasD ? '중점 ✓ → 선분' : ''), done:s.have.med}]);
+  needTool(tb2, MIS2.tool);
   $('cmsg2').innerHTML = cmsg2;
   $('all2').classList.toggle('on', s.all); $('all2').style.display = s.ok ? '' : 'none';
   $('sel2').value = s.sel; $('sel2').disabled = s.ok || isLocked(); $('sel2').classList.toggle('right', s.ok);
@@ -1619,16 +1703,16 @@ $('all2').addEventListener('click', ()=>{ if(isLocked()) return; state.s2.all = 
 $('sel2').addEventListener('change', ()=>{ if(isLocked()) return; state.s2.sel = $('sel2').value; $('sel2').classList.remove('wrong'); msg2 = ''; paint2(); refreshAll({}); });
 $('chk2').addEventListener('click', ()=>{
   if(isLocked() || state.s2.ok) return; const s = state.s2;
-  if(!have2All()){ msg2 = '<span class="bad">먼저 세 선을 모두 직접 그려 보세요.</span> (위의 ○ 표시를 확인해요)'; paint2(); return; }
+  if(!have2All()){ msg2 = '<span class="bad">먼저 세 선을 모두 직접 그려 보세요.</span> (위의 미션을 확인해요)'; paint2(); return; }
   if(!s.sel){ msg2 = '<span class="bad">세 선의 관계를 골라 주세요.</span>'; paint2(); return; }
   if(s.sel === 'same'){ s.ok = true; paint2(); check2({now:true}); return; }
   s.miss++; msg2 = `<span class="bad">다시 살펴보세요.</span> 세 선이 그려진 자리를 비교해 보세요. ${s.miss>=2 ? '💡 세 선이 모두 A와 D를 지나나요?' : ''}`;
   paint2(); $('sel2').classList.add('wrong'); check2({now:true});
 });
-function check2(opts){ state.t2 = $('t2').value; const n = H2N.filter(([k])=>state.s2.have[k]).length; setWhy(3, '✅ 완료! '+NEXT, !have2All() ? `세 선을 직접 그려 보세요. (지금 ${n}/3)` : !state.s2.ok ? '세 선의 관계를 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(2); renderFriends(2); refreshAll(opts); }
+function check2(opts){ state.t2 = $('t2').value; const n = H2N.filter(([k])=>state.s2.have[k]).length; setWhy(4, '✅ 완료! '+NEXT, !have2All() ? `세 선을 직접 그려 보세요. (지금 ${n}/3)` : !state.s2.ok ? '세 선의 관계를 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(2); renderFriends(2); refreshAll(opts); }
 $('t2').addEventListener('input', ()=>check2());
 tb1 = mkToolbar($('geoTools1'), ()=> geo1[state.s1.tab]);
-mkToolbar($('geoTools2'), ()=> geo2);
+tb2 = mkToolbar($('geoTools2'), ()=> geo2);
 
 
 /* ================= 화면 2: 세 점의 위치 탐구 (2026-10-21) ================= */
@@ -1691,7 +1775,7 @@ $('chkp').addEventListener('click', ()=>{
   renderP(); document.querySelectorAll('#qp select').forEach(sel=> sel.classList.toggle('wrong', wrong.includes(sel.dataset.k))); checkP({now:true});
 });
 function checkP(opts){ const s = state.sP, miss = ['a','r','o'].filter(k=>!s.seen[k]);
-  setWhy(2, '✅ 완료! '+NEXT, miss.length ? `예각·직각·둔각삼각형을 모두 만들어 보세요. (아직: ${miss.map(k=>KN[k]).join(', ')})` : s.moves<2 ? `꼭짓점을 직접 끌어서 모양을 바꿔 보세요. (지금 ${s.moves}번, 2번 이상)` : '물음에 답하고 「확인」을 눌러 보세요.'); refreshAll(opts); }
+  setWhy(3, '✅ 완료! '+NEXT, miss.length ? `예각·직각·둔각삼각형을 모두 만들어 보세요. (아직: ${miss.map(k=>KN[k]).join(', ')})` : s.moves<2 ? `꼭짓점을 직접 끌어서 모양을 바꿔 보세요. (지금 ${s.moves}번, 2번 이상)` : '물음에 답하고 「확인」을 눌러 보세요.'); refreshAll(opts); }
 
 /* ================= 화면 3 ================= */
 let msg3 = '', lines3 = false;
@@ -1746,7 +1830,7 @@ $('chk3').addEventListener('click', ()=>{
   msg3 = `<span class="bad">다시 살펴보세요.</span> ${s.qa!=='no' ? '세 점이 일치할 때 세 변의 길이는 어땠나요? ' : ''}${s.qb!=='line' ? '「이등변삼각형 만들기」를 눌러 세 점의 위치를 보세요. ' : ''}${s.miss>=2 ? '💡 「작도선 보기」를 켜고 모양을 바꿔 보세요.' : ''}`;
   render3(); check3({now:true});
 });
-function check3(opts){ state.t3 = $('t3').value; setWhy(4, '✅ 완료! 마지막 화면에서 제출하세요.', state.s3.moves<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.s3.moves}번)` : !state.s3.ok ? '두 물음에 답하고 「확인」을 눌러 보세요.' : '내 생각을 쓰고 「📤 답변 공유」를 누르면 완료돼요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
+function check3(opts){ state.t3 = $('t3').value; setWhy(5, '✅ 완료! 마지막 화면에서 제출하세요.', state.s3.moves<3 ? `꼭짓점을 끌어 모양을 세 번 이상 바꿔 보세요. (지금 ${state.s3.moves}번)` : !state.s3.ok ? '두 물음에 답하고 「확인」을 눌러 보세요.' : '내 생각을 쓰고 「📤 답변 공유」를 누르면 완료돼요.'); paintShare(3); renderFriends(3); refreshAll(opts); }
 $('t3').addEventListener('input', ()=>check3());
 
 /* ---------- 친구들의 생각 / 답변 공유 ---------- */
@@ -1778,7 +1862,7 @@ function paintShare(n){
 function onShareChanged(){ renderFriends(2); renderFriends(3); }
 function onRevealChanged(){ render3(); }
 function aifbOnChange(){ check2({noSave:true}); }
-function onShowPage(id){ if(id===1) render1(); if(id===2) renderP(); if(id===3) render2(); if(id===4) render3(); }
+function onShowPage(id){ if(id===1) render1(); if(id===2) paint1(); if(id===3) renderP(); if(id===4) render2(); if(id===5) render3(); }
 function initActivity(){ render1(); renderP(); render2(); render3(); check1({noSave:true}); checkP({noSave:true}); check2({noSave:true}); check3({noSave:true}); }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 function restoreData(d){
