@@ -769,6 +769,10 @@ function quadFig(Q, opt){
   if(opt.ac) h += seg(Q[0], Q[2], '#6a1b9a', 2.2, '7 4');
   if(opt.bd) h += seg(Q[1], Q[3], '#00838f', 2.2, '7 4');
   h += `<polygon points="${E.map(p=>M.P(p)).join(' ')}" fill="rgba(255,193,7,.38)" stroke="#e0a800" stroke-width="2.2" stroke-linejoin="round"/>`;
+  // □EFGH의 네 변의 길이(변 가운데, 안쪽)와 네 각(꼭짓점 안쪽)을 그림 위에 바로 보여 준다(2026-10-21)
+  const g = mul(E.reduce((a,p)=>add(a,p),[0,0]), 1/4), tx = (p, t, col) => `<text x="${M.X(p[0]).toFixed(1)}" y="${M.Y(p[1]).toFixed(1)}" font-size="12.5" font-weight="bold" fill="${col}" text-anchor="middle" dominant-baseline="middle" paint-order="stroke" stroke="#fff" stroke-width="3">${t}</text>`;
+  E.forEach((p,i)=>{ const q = E[(i+1)%4], m = mid(p,q), v = sub(g, m), d = nrm(v)||1; h += tx(add(m, mul(v, 0.55/d)), f1(nrm(sub(q,p))), '#6d4c00');
+    const pr = E[(i+3)%4], w = sub(g, p), dw = nrm(w)||1; h += tx(add(p, mul(w, Math.min(1.25, dw*0.45)/dw)), angDeg(p, pr, q).toFixed(0)+'°', '#ad1457'); });
   E.forEach((p,i)=>{ const o = out(p, 15); h += dotAt(p,'#c62828') + lab(p, 'EFGH'[i], o[0], o[1], '#c62828', 15); });
   Q.forEach((p,i)=>{ const o = out(p, 17); h += dotAt(p,'#1f2328',3.5) + lab(p, 'ABCD'[i], o[0], o[1]); });
   return h;
@@ -784,7 +788,7 @@ function measHTML(Q, ac, bd){
   const E = Q.map((p,i)=> mid(p, Q[(i+1)%4])), L = (a,b) => f1(nrm(sub(b,a)));
   const p1 = isPar(sub(E[1],E[0]), sub(E[2],E[3])), p2 = isPar(sub(E[3],E[0]), sub(E[2],E[1]));
   let h = `📏 <span class="seg-t">EF</span> = <b>${L(E[0],E[1])}</b>, <span class="seg-t">FG</span> = <b>${L(E[1],E[2])}</b>, <span class="seg-t">GH</span> = <b>${L(E[2],E[3])}</b>, <span class="seg-t">HE</span> = <b>${L(E[3],E[0])}</b><br>`
-    + `<span class="ind${p1?' y':''}">EF ${p1?'∥':'∦'} HG ${p1?'✓':''}</span><span class="ind${p2?' y':''}">EH ${p2?'∥':'∦'} FG ${p2?'✓':''}</span><span class="ind">∠HEF = ${angDeg(E[0], E[3], E[1]).toFixed(0)}°</span>`;
+    + `<span class="ind${p1?' y':''}">EF ${p1?'∥':'∦'} HG ${p1?'✓':''}</span><span class="ind${p2?' y':''}">EH ${p2?'∥':'∦'} FG ${p2?'✓':''}</span><br><span class="ind">∠E = ${angDeg(E[0], E[3], E[1]).toFixed(0)}°</span><span class="ind">∠F = ${angDeg(E[1], E[0], E[2]).toFixed(0)}°</span><span class="ind">∠G = ${angDeg(E[2], E[1], E[3]).toFixed(0)}°</span><span class="ind">∠H = ${angDeg(E[3], E[2], E[0]).toFixed(0)}°</span>`;
   if(ac) h += `<br><span style="color:#6a1b9a;">📐 AC = <b>${L(Q[0],Q[2])}</b> → EF = HG = <b>${L(E[0],E[1])}</b> (AC의 ½), EF ∥ AC ∥ HG</span>`;
   if(bd) h += `<br><span style="color:#00838f;">📐 BD = <b>${L(Q[1],Q[3])}</b> → FG = EH = <b>${L(E[1],E[2])}</b> (BD의 ½), FG ∥ BD ∥ EH</span>`;
   return h;
