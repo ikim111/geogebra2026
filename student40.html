@@ -296,6 +296,11 @@
   @keyframes toolP{50%{box-shadow:0 0 0 5px rgba(255,152,0,.35);}}
   .cue-pulse{animation:cueP 1.6s ease-in-out infinite;}
   @keyframes cueP{50%{opacity:.25;}}
+
+  .geo-split{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
+  .geo-split .geo-board{flex:1 1 520px;max-width:620px;margin-top:0;}
+  .geo-split .geo-side{flex:1 1 280px;min-width:260px;}
+  .geo-split .geo-side .fill{margin-top:8px;}
 </style></style>
 </head>
 <body>
@@ -419,14 +424,18 @@
     <div class="act-head"><span class="act-tag">5 정삼각형: 세 선 그리기</span><span class="badge pending" id="badge-a5">미완료</span></div>
     <h2>정삼각형에서 세 선은 어떤 관계가 있을까?</h2>
     <p class="hint">정삼각형 ABC에서 작도 도구로 아래 <b>미션 세 개</b>를 차례로 해 보세요. 지금 할 미션과 눌러야 할 도구가 <b style="color:#e65100">주황색</b>으로 반짝여요.</p>
-    <div id="clist2"></div>
-    <div class="geo-board"><div class="toolbar" id="geoTools2"></div><svg class="gcanvas" id="geo2" viewBox="0 0 600 400"></svg></div>
-    <div class="g-msg" id="cmsg2"></div>
-    <div class="fill">
-      <div>세 선은 <select id="sel2"><option value="">선택</option><option value="same">모두 같은 직선이다</option><option value="par">서로 평행하다</option><option value="pt">한 점에서만 만난다</option></select></div>
+    <div class="geo-split">
+      <div class="geo-board"><div class="toolbar" id="geoTools2"></div><svg class="gcanvas" id="geo2" viewBox="0 0 600 400"></svg></div>
+      <div class="geo-side">
+        <div id="clist2"></div>
+        <div class="g-msg" id="cmsg2"></div>
+        <div class="fill">
+          <div>세 선은 <select id="sel2"><option value="">선택</option><option value="same">모두 같은 직선이다</option><option value="par">서로 평행하다</option><option value="pt">한 점에서만 만난다</option></select></div>
+        </div>
+        <div class="row"><button type="button" class="okb" id="chk2">✔ 확인</button><button type="button" class="sbtn" id="all2">∠B, ∠C에서도 그려 보기</button></div>
+        <div class="g-msg" id="msg2"></div>
+      </div>
     </div>
-    <div class="row"><button type="button" class="okb" id="chk2">✔ 확인</button><button type="button" class="sbtn" id="all2">∠B, ∠C에서도 그려 보기</button></div>
-    <div class="g-msg" id="msg2"></div>
   </div>
   <div class="why" id="why5">세 선을 직접 그리고 관계를 바르게 고르면 다음으로 넘어갈 수 있어요.</div>
 </section>
@@ -1737,7 +1746,7 @@ function paint2(){
   $('sel2').value = s.sel; $('sel2').disabled = s.ok || isLocked(); $('sel2').classList.toggle('right', s.ok);
   $('chk2').disabled = s.ok || isLocked();
   $('msg2').innerHTML = s.ok ? `<span class="ok">✅ 맞아요! 세 선은 모두 같은 직선이에요.</span> 정삼각형은 AB = AC인 <b>이등변삼각형</b>이기도 해서 ∠A의 이등분선이 BC를 수직이등분해요.${s.all ? ' ∠B, ∠C에서도 마찬가지예요. 세 직선이 만나는 점은?' : ' 「∠B, ∠C에서도 그려 보기」를 눌러 보세요.'}` : msg2;
-  $('q2').classList.toggle('locked', !s.ok);
+  // 이유 쓰는 칸은 화면 6에 따로 있으므로 항상 보이게 둔다(2026-10-21)
 }
 $('all2').addEventListener('click', ()=>{ if(isLocked()) return; state.s2.all = !state.s2.all; initGeo2(); helper2(geo2, state.s2.all); refreshAll({}); });
 $('sel2').addEventListener('change', ()=>{ if(isLocked()) return; state.s2.sel = $('sel2').value; $('sel2').classList.remove('wrong'); msg2 = ''; paint2(); refreshAll({}); });
