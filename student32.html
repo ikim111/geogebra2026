@@ -228,6 +228,8 @@
   .cmpwrap{border:1px solid #e0e4ea;border-radius:10px;padding:6px 8px;margin-bottom:10px;background:#fcfdff;}
   .cmp{width:100%;display:block;}
   .cmp .mv{transition:transform 1s ease;}
+  .ovl{animation:ovIn 1s ease;} @keyframes ovIn{from{transform:translate(120px,-30px);opacity:0;}to{transform:none;opacity:1;}}
+
   .cmprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0;}
   .ovb{border:1.5px solid #1565c0;background:#e3f2fd;color:#0d47a1;border-radius:10px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;}
   .cmp .mv text{transition:opacity .4s;} .cmp .mv.ov text{opacity:0;}
@@ -812,7 +814,7 @@ function renderSide(id){
       <div class="pickc">${CONG_OPTS.map(v=>`<button type="button" data-v="${v}" class="${c.cong===v?(ok?'on ok':'on no'):''}">${v} 합동</button>`).join('')}</div>
       <div class="g-msg">${!c.cong ? '' : ok ? `<span class="ok">✅ ${g.after}<br>△A′B′C′ ≡ △DEF 이므로 <b>△ABC ∽ △DEF (${g.name})</b></span>` : '<span class="bad">작도할 때 무엇을 같게 만들었는지(변? 각?) 떠올려 보세요.</span>'}</div>`
       + (id===4 && ok ? '<div class="note" style="margin-top:4px;">두 각이 같으면 밑변을 몇 배로 하든 같은 모양이 돼요. 그래서 각 두 개만 같으면 닮음이에요.</div>' : '');
-    const ovb = cg.querySelector('.ovb'); if(ovb) ovb.addEventListener('click', ()=>{ CMP_OV[id] = !CMP_OV[id]; const gg = cg.querySelector('.cmp .mv'); if(gg){ gg.style.transform = `translate(${CMP_OV[id]?240:0}px,0)`; gg.classList.toggle('ov', !!CMP_OV[id]); } ovb.textContent = CMP_OV[id] ? '↩ 떼어 놓기' : '🔍 △A′B′C′을 △DEF 위에 겹쳐 보기'; cg.querySelector('.ovmsg').textContent = CMP_OV[id] ? '딱 겹쳐요! 두 삼각형은 합동이에요.' : ''; });
+    const ovb = cg.querySelector('.ovb'); if(ovb) ovb.addEventListener('click', ()=>{ CMP_OV[id] = !CMP_OV[id]; RENDER[id](); });
     cg.querySelectorAll('.pickc button').forEach(b=> b.addEventListener('click', ()=>{ if(isLocked() || c.cong===g.cong) return; c.cong = b.dataset.v; if(c.cong!==g.cong) c.cmiss++; renderSide(id); CHECK[id]({now:true}); }));
   } else cg.innerHTML = '';
 }
@@ -855,10 +857,19 @@ function cmpHTML(id){
   const vD = {ab:'10', bc:'16', ca:'14', a:deg(T0.A), b:'60°', c:deg(T0.C)};
   const right = `<text x="290" y="16" font-size="13" font-weight="bold" fill="#0d47a1">✏️ 내가 작도한 △DEF</text>` + tri(280, 'rgba(21,101,192,.13)', '#1565c0') + marks(280, ['D','E','F'], vD);
   const left = `<text x="50" y="16" font-size="13" font-weight="bold" fill="#8d6e00">🔍 △ABC를 2배로 확대한 △A′B′C′</text>`;
-  const mv = `<g class="mv${CMP_OV[id]?' ov':''}" style="transform:translate(${CMP_OV[id]?240:0}px,0)">${tri(40, 'rgba(255,193,7,.32)', '#8d6e00', true)}${marks(40, ['A′','B′','C′'], vA)}</g>`;
+  const mv = `<g>${tri(40, 'rgba(255,193,7,.32)', '#8d6e00', true)}${marks(40, ['A′','B′','C′'], vA)}</g>`;
   return `<div class="cmpwrap"><svg class="cmp" viewBox="0 0 460 150">${left}${right}${mv}</svg>
-    <div class="cmprow"><button type="button" class="ovb">${CMP_OV[id] ? '↩ 떼어 놓기' : '🔍 △A′B′C′을 △DEF 위에 겹쳐 보기'}</button><span class="ovmsg ok">${CMP_OV[id] ? '딱 겹쳐요! 두 삼각형은 합동이에요.' : ''}</span></div>
+    <div class="cmprow"><button type="button" class="ovb">${CMP_OV[id] ? '↩ 겹친 △A′B′C′ 치우기' : '🔍 내 작도 위에 △A′B′C′ 겹쳐 보기'}</button><span class="ovmsg ok">${CMP_OV[id] ? '👈 작도판을 보세요. 딱 겹쳐요! 두 삼각형은 합동이에요.' : ''}</span></div>
     <div class="note">빨간 부분이 두 삼각형에서 서로 같은 부분이에요. 무엇이 같은지 비교해 보세요.</div></div>`;
+}
+/* 작도를 마치면 작도판 위에 △ABC를 2배로 확대한 △A′B′C′을 직접 겹쳐 보인다(B′ = E, C′는 EF 위). 예전에는 옆 비교 그림 안에서만 겹쳐 봤다(2026-10-21 바꿈) */
+function ovSVG(id){
+  const c = C_(id), E = {2:E2, 3:E3, 4:E4}[id];
+  if(!CMP_OV[id] || c.step < PG[id].steps.length) return '';
+  const A2 = [E[0]+2*T0.c*Math.cos(T0.B*RAD), E[1]+2*T0.c*Math.sin(T0.B*RAD)], B2 = E, C2 = [E[0]+2*T0.a, E[1]];
+  const g = cen(A2, B2, C2), L = (p, t) => { const dx = p[0]-g[0], dy = p[1]-g[1], d = Math.hypot(dx,dy)||1; return `<text x="${px(p[0]+dx/d*1.9)}" y="${py(p[1]+dy/d*1.9)+5}" text-anchor="middle" font-size="14" font-weight="bold" fill="#8d6e00">${t}</text>`; };
+  return `<g class="ovl"><polygon points="${P(A2)} ${P(B2)} ${P(C2)}" fill="rgba(255,193,7,.38)" stroke="#8d6e00" stroke-width="3" stroke-dasharray="8 5"/>${L(A2,'A′')}${L(B2,'B′')}${L(C2,'C′')}`
+    + `<text x="${px(g[0])}" y="${py(g[1])+5}" text-anchor="middle" font-size="14" font-weight="bold" fill="#2e7d32">딱 겹쳐요!</text></g>`;
 }
 /* ================= 화면 2: SSS 작도 ================= */
 RENDER[2] = function(){
@@ -875,7 +886,7 @@ RENDER[2] = function(){
   }
   h += seg(E,F,'#1565c0',3) + dot(E) + dot(F) + ptLab(E,'E') + ptLab(F,'F') + `<text x="${(px(E[0])+px(F[0]))/2}" y="${py(E[1])+20}" font-size="13" font-weight="bold" fill="#1565c0" text-anchor="middle">EF = ${v.f}</text>`;
   if(st===0) h += handle(F,'f');
-  $('g2').innerHTML = h; renderSide(2);
+  h += ovSVG(2); $('g2').innerHTML = h; renderSide(2);
 };
 dragOn($('g2'), (h, p)=>{ const c = state.c1, s = PG[2].steps;
   if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E2[0], 0.5, s[0].lo, s[0].hi);
@@ -898,7 +909,7 @@ RENDER[3] = function(){
   if(st>=3){ const g = cen(D,E,F); h += triPath(D,E,F) + seg(D,F,'#2e7d32',3) + sideLab(D,F,g,`DF = ${r1(dist(D,F))}`,'#2e7d32') + arcSVG(D,E,F,'#2e7d32') + arcSVG(F,D,E,'#2e7d32') + angLab(D,g,'∠D '+deg(angAt(D,E,F))) + angLab(F,g,'∠F '+deg(angAt(F,D,E)));
   }
   h += ptLab(E,'E') + dot(E);
-  $('g3').innerHTML = h; renderSide(3);
+  h += ovSVG(3); $('g3').innerHTML = h; renderSide(3);
 };
 dragOn($('g3'), (h, p)=>{ const c = state.c2, s = PG[3].steps;
   if(h==='ang' && c.step===0) c.vals.ang = snapTo(Math.atan2(p[1]-E3[1], p[0]-E3[0])/RAD, 1, s[0].lo, s[0].hi);
@@ -921,7 +932,7 @@ RENDER[4] = function(){
   if(st===3 && X) h += tapSVG(X);
   if(st>=4 && X){ const g = cen(X,E,F); h += triPath(X,E,F) + sideLab(E,X,g,`DE ≈ ${Math.round(dist(X,E))}`,'#2e7d32') + sideLab(X,F,g,`DF ≈ ${Math.round(dist(X,F))}`,'#2e7d32') + lab(X,g,'D') + angLab(X,g,'∠D '+deg(angAt(X,E,F)));
   }
-  $('g4').innerHTML = h; renderSide(4);
+  h += ovSVG(4); $('g4').innerHTML = h; renderSide(4);
 };
 dragOn($('g4'), (h, p)=>{ const c = state.c3, s = PG[4].steps, F = [E4[0]+c.vals.f, E4[1]];
   if(h==='f' && c.step===0) c.vals.f = snapTo(p[0]-E4[0], 0.5, s[0].lo, s[0].hi);
