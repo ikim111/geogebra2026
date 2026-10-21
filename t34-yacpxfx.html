@@ -375,7 +375,7 @@ function activityDetailHTML(s, id){
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
   if(id>=1 && id<=4){ let s2 = holeLine(d['h'+id], id); if(id===4){ const sols = arrOf(d.h4 && d.h4.sols); if(sols.length) s2 += kv('넣은 방법', sols.map(x=>{ const [o,k]=String(x).split('|'); return `중심(${o}) k=${k}`; }).join(' / ')); } return s2; }
-  if(id>=5 && id<=7){ const q = d['q'+id] || {}; let s2 = holeLine(d['h'+id], id); if(q.rel || q.ra || q.rb) s2 += kv(id===7?'⑴ O₁O₂와 H₁H₂':'⑴ BC와 B′C′', REL[q.rel]||'-') + kv(id===7?'⑵ PO₁:PH₁':'⑵ AB:AB′', q.ra||'-') + kv(id===7?'⑶ O₁O₂:H₁H₂':'⑶ BC:B′C′', q.rb||'-') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); return s2; }
+  if(id>=5 && id<=7){ const q = d['q'+id] || {}; let s2 = holeLine(d['h'+id], id); if(q.rel || q.ra || q.rb) s2 += kv(id===7?'⑴ O₁O₂와 H₁H₂':'⑴ BC와 B′C′', REL[q.rel]||'-') + kv(id===7?'⑵ PO₁:PH₁':'⑵ AB:AB′', q.ra||'-') + kv(id===7?'⑶ O₁O₂:H₁H₂':'⑶ BC:B′C′', q.rb||'-') + (id===6 ? kv('⑷ AB′:B′B = AC′:☐', ({AC:'AC',AC2:'AC′',CC:'C′C ✓',BC:'BC',BC2:'B′C′'})[q.rc]||'-') : '') + kv('확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직'); return s2; }
   if(id===8){ const h = d.h8 || {}, q = d.q8 || {}; if(!(Number(h.strokes)>0) && !q.checked) return '';
     const c2 = arrOf(h.c2);
     return kv('타수', h.strokes||0) + kv('흰 공 / 노란 공', `${h.inB?'⛳':'-'} / ${h.inC?'⛳':'-'}`) + kv('⑴ AB:AB′', q.ra||'-') + kv('⑵ AC:AC′', q.rb||'-') + kv('⑴⑵ 확인', q.checked ? (q.ok?'✅ 정답':'✗ 다시 생각') : '아직') + kv('⑶ 노란 홀 옮기기', h.both ? `⛳ 성공 (${c2.join(',')})` : c2.length===2 ? `옮기는 중 (${c2.join(',')})` : '-'); }
@@ -395,7 +395,7 @@ function taskAggregateHTML(id){
       inner += keys.length ? '<div style="margin-top:6px;">반 전체가 찾은 방법: ' + keys.map(x=>{ const [o,k]=x.split('|'); return `<span style="display:inline-block;background:#fff;border:1px solid #a5d6a7;border-radius:14px;padding:2px 10px;margin:2px;">중심(${o}) k=${k} <b>${cnt[x]}명</b></span>`; }).join('') + '</div>' : ''; }
     if(id>=5){ const qs = ss.map(d=>d['q'+id]).filter(q=>q && q.checked);
       const rows = [{label:'⑴ 평행하다 (정답)', n: qs.filter(q=>q.rel==='par').length, answer:true}, {label:'⑴ 수직이다', n: qs.filter(q=>q.rel==='perp').length}, {label:'⑴ 아무 관계 없다', n: qs.filter(q=>q.rel==='none').length},
-        {label:`⑵⑶ 비 모두 ${id===6?'2:1':'1:2'} (정답)`, n: qs.filter(q=>q.ok).length, answer:true}];
+        {label:`⑵⑶ 비 모두 ${id===6?'2:1':'1:2'} (정답)`, n: qs.filter(q=>q.ok).length, answer:true}].concat(id===6 ? [{label:'⑷ C′C (정답)', n: qs.filter(q=>q.rc==='CC').length, answer:true}] : []);
       inner += `<div style="margin-top:6px;">물음 확인한 학생 ${qs.length}명</div>` + (qs.length ? barsHTML(rows, qs.length) : ''); }
     return box(`${taskLabelOf(id)}`, inner);
   }

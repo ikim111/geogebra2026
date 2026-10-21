@@ -213,6 +213,37 @@
   .np-rec:empty{display:none;}
   .kctrl .chain-tag{background:#c62828;color:#fff;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:bold;}
   .golf .hdrag{cursor:grab;}
+
+  /* 🏌️ 게임 요소 */
+  .act-head .par-tag{margin-right:auto;}
+  .par-tag{margin-left:8px;background:#2e7d32;color:#fff;border-radius:10px;padding:2px 9px;font-size:12.5px;font-weight:bold;}
+  .scard{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f1f8e9;border:1px solid #c5e1a5;border-radius:10px;padding:5px 10px;margin:6px 0 8px;font-size:12.5px;}
+  .scard .sline{font-weight:bold;color:#33691e;}
+  .scard .sline.big{font-size:17px;width:100%;}
+  .scard .scells{display:flex;gap:3px;}
+  .scard .scell{min-width:34px;text-align:center;border:1px solid #c5cad1;border-radius:6px;background:#fff;line-height:1.15;padding:1px 2px;}
+  .scard .scell .sh{font-weight:bold;font-size:11px;color:#555;} .scard .scell .sp{font-size:9.5px;color:#888;} .scard .scell .ss{font-weight:bold;font-size:13px;}
+  .scard .scell.cur{outline:2px solid #1565c0;}
+  .scard .scell.hio{background:#fff59d;border-color:#f9a825;} .scard .scell.eagle{background:#b3e5fc;border-color:#0288d1;}
+  .scard .scell.birdie{background:#c8e6c9;border-color:#43a047;} .scard .scell.par{background:#f5f5f5;}
+  .scard .scell.bogey{background:#ffe0b2;border-color:#fb8c00;} .scard .scell.dbl{background:#ffcdd2;border-color:#e53935;}
+  .scard .stot{margin-left:auto;font-weight:bold;color:#1b5e20;} .scard .stot span{color:#555;font-weight:normal;}
+  .scard.final{padding:10px 14px;margin-bottom:12px;} .scard .scells.big .scell{min-width:52px;padding:4px;} .scard .scells.big .ss{font-size:18px;} .scard .scells.big .sh{font-size:13px;}
+  .scard.final .stot{margin-left:0;width:100%;}
+  .sname{font-size:19px;font-weight:bold;margin-bottom:4px;} .sname span{font-size:13px;font-weight:normal;color:#555;margin-left:4px;}
+  .sname.hio,.sname.eagle{color:#e65100;} .sname.birdie{color:#2e7d32;} .sname.par{color:#1565c0;} .sname.bogey,.sname.dbl{color:#6d4c41;}
+  .golf circle.sink{transform-box:fill-box;transform-origin:center;animation:sink .6s ease-in forwards;}
+  @keyframes sink{60%{transform:scale(.8);} 100%{transform:scale(.15);opacity:0;}}
+  #celebrate{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;display:none;}
+  #celebrate.on{display:block;pointer-events:auto;}
+  #celebrate i{position:absolute;top:-20px;border-radius:2px;animation-name:cfall;animation-timing-function:cubic-bezier(.2,.6,.4,1);animation-fill-mode:forwards;}
+  @keyframes cfall{to{transform:translate(var(--dx), 105vh) rotate(var(--rot));opacity:.9;}}
+  #celebrate .cban{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);border:4px solid #43a047;border-radius:22px;padding:16px 34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.25);animation:cpop .5s cubic-bezier(.2,1.6,.4,1);}
+  #celebrate.hio .cban,#celebrate.eagle .cban{border-color:#f9a825;background:#fffde7;} #celebrate.bogey .cban,#celebrate.dbl .cban{border-color:#90a4ae;}
+  #celebrate .ce{font-size:54px;line-height:1.1;} #celebrate .ct{font-size:36px;font-weight:900;color:#2e7d32;} #celebrate.hio .ct,#celebrate.eagle .ct{color:#e65100;} #celebrate.bogey .ct,#celebrate.dbl .ct{color:#546e7a;}
+  #celebrate .cs{font-size:15px;color:#555;margin-top:2px;}
+  @keyframes cpop{from{transform:translate(-50%,-50%) scale(.3);opacity:0;} to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+  .segsel{font-size:16px;padding:4px 6px;border:1.5px solid #c5cad1;border-radius:8px;font-family:'Times New Roman',serif;}
 </style></style>
 </head>
 <body>
@@ -388,10 +419,11 @@
         <label><input type="radio" name="rel6" value="none"> 아무 관계 없다</label></div>
       <div class="q5row"><span class="q5l">⑵ AB : AB′ = </span><input type="text" id="r6a" class="ratio" placeholder="예) 1:3" autocomplete="off"></div>
       <div class="q5row"><span class="q5l">⑶ BC : B′C′ = </span><input type="text" id="r6b" class="ratio" placeholder="예) 1:3" autocomplete="off"></div>
+      <div class="q5row"><span class="q5l">⑷ AB′ : B′B = AC′ : </span><select id="r6c" class="segsel"><option value="">선택</option><option value="AC">AC</option><option value="AC2">AC′</option><option value="CC">C′C</option><option value="BC">BC</option><option value="BC2">B′C′</option></select><span class="note">(홀에 넣으면 판에 길이가 보여요)</span></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;"><button class="btn" id="q6Check" disabled>✔ 확인하기</button><span id="q6Msg" class="note"></span></div>
     </div>
   </div>
-  <div class="why" id="why6">홀에 넣고, 세 물음에 답한 뒤 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why6">홀에 넣고, 네 물음에 답한 뒤 「확인하기」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 7: 홀 6: 중심 두 개, 홀 두 개 ===================== -->
@@ -464,7 +496,8 @@
         <h4>📦 정리: 삼각형과 평행선</h4>
         <svg viewBox="0 0 300 170" class="sum-fig" id="sumFig"></svg>
         <p>삼각형 ABC의 두 변 AB, AC(또는 그 연장선) 위에 점 B′, C′가 있을 때,</p>
-        <p class="sum-key"><b>BC ∥ B′C′</b> 이면 <b>AB : AB′ = AC : AC′ = BC : B′C′</b></p>
+        <p class="sum-key"><b>BC ∥ B′C′</b> 이면 ① <b>AB : AB′ = AC : AC′ = BC : B′C′</b></p>
+        <p class="sum-key">② <b>AB′ : B′B = AC′ : C′C</b> <span class="note" style="font-weight:normal;">(홀 5에서 찾았어요)</span></p>
         <p class="note">점 A를 중심으로 k배 확대한 그림이 바로 이 모양이에요.</p>
         <div class="question" style="font-size:15.5px;margin-top:8px;">🤔 <b>반대로</b>, 확대하지 않고 그냥 <b>BC와 평행하게</b> 선 B′C′를 그어도 AB : AB′ = AC : AC′ = BC : B′C′가 될까요? 왜 그럴까요? — 학습지 <b>학습하기➊</b>에서 닮음으로 확인해 봐요.</div>
       </div>
@@ -563,11 +596,19 @@ const HIT_TOL = 0.35;   // 홀인 판정 거리(단위)
 
 const state = {
   h: {1:newHole(), 2:newHole(), 3:newHole(3), 4:newHole(), 5:newHole(), 6:newHole(), 7:newHole(), 8:newHole()},
-  q5: {rel:'', ra:'', rb:'', checked:false, ok:false}, q6: {rel:'', ra:'', rb:'', checked:false, ok:false}, q7: {rel:'', ra:'', rb:'', checked:false, ok:false},
+  q5: {rel:'', ra:'', rb:'', checked:false, ok:false}, q6: {rel:'', ra:'', rb:'', rc:'', checked:false, ok:false}, q7: {rel:'', ra:'', rb:'', checked:false, ok:false},
   q8: {ra:'', rb:'', checked:false, ok:false},
   t9:'', shared:{9:false}, seen:{9:false}
 };
-function newHole(k){ return {k: k||1, o:null, strokes:0, done:false, tries:[], sols:[], inB:false, inC:false, c2:null, both:false}; }
+function newHole(k){ return {k: k||1, o:null, strokes:0, done:false, tries:[], sols:[], inB:false, inC:false, c2:null, both:false, score:0}; }
+/* ---------- 🏌️ 게임 요소(2026-10-21): 홀마다 파, 홀인 때 타수로 버디·파·보기, 스코어카드. 통과 조건과는 상관없음 ---------- */
+const PAR = {1:2, 2:2, 3:2, 4:3, 5:2, 6:2, 7:3, 8:4};
+const HNAME = n => n===1 ? '연습' : '홀 '+(n-1);
+const holeFin = n => n===8 ? !!state.h[8].both : !!state.h[n].done;
+const scoreOf = n => { const h = state.h[n]; return h.score || (holeFin(n) ? h.strokes : 0); };   // 처음 홀인했을 때의 타수(예전 기록은 지금 타수)
+function scoreName(st, par){ if(st===1) return {t:'홀인원', e:'🏆', c:'hio', n:140}; const d = st - par;
+  if(d<=-2) return {t:'이글', e:'🦅', c:'eagle', n:110}; if(d===-1) return {t:'버디', e:'🐦', c:'birdie', n:85}; if(d===0) return {t:'파', e:'⛳', c:'par', n:50};
+  if(d===1) return {t:'보기', e:'🙂', c:'bogey', n:22}; if(d===2) return {t:'더블 보기', e:'😅', c:'dbl', n:0}; return {t:`+${d}`, e:'💪', c:'dbl', n:0}; }
 let REVEAL = {};
 const SHARE = { all:{}, sent:{} };
 
@@ -613,7 +654,7 @@ function valueOf(id){
   if(id>=1 && id<=4){ const h = state.h[id]; if(!h.strokes) return '';
     const o = oOf(id); return `${h.done?'⛳ 홀인':'아직'} · ${h.strokes}타 · k=${fmtK(h.k)}${HOLES[id].pickO && o ? ` · 중심(${o[0]},${o[1]})` : ''}${id===4 && h.sols.length ? ` · 넣은 방법 ${h.sols.length}가지` : ''}`; }
   if(id>=5 && id<=7){ const h = state.h[id], q = state['q'+id]; if(!h.strokes && !q.checked) return '';
-    return `${h.done?'⛳ 홀인':'아직'} · ${h.strokes}타 · k=${fmtK(h.k)} / 관계: ${({par:'평행',perp:'수직',none:'관계없음'})[q.rel]||'-'}, AB:AB′=${q.ra||'-'}, BC:B′C′=${q.rb||'-'}${q.checked?(q.ok?' ✓':' ✗'):''}`; }
+    return `${h.done?'⛳ 홀인':'아직'} · ${h.strokes}타 · k=${fmtK(h.k)} / 관계: ${({par:'평행',perp:'수직',none:'관계없음'})[q.rel]||'-'}, AB:AB′=${q.ra||'-'}, BC:B′C′=${q.rb||'-'}${id===6 ? `, AB′:B′B=AC′:${({AC:'AC',AC2:'AC′',CC:'C′C',BC:'BC',BC2:'B′C′'})[q.rc]||'-'}` : ''}${q.checked?(q.ok?' ✓':' ✗'):''}`; }
   if(id===8){ const h = state.h[8], q = state.q8; if(!h.strokes && !q.checked) return '';
     return `${h.strokes}타 · 흰 공 ${h.inB?'⛳':'-'} · 노란 공 ${h.inC?'⛳':'-'} / AB:AB′=${q.ra||'-'}, AC:AC′=${q.rb||'-'}${q.checked?(q.ok?' ✓':' ✗'):''} / 노란 홀 옮기기: ${h.both ? `⛳ 성공 (${h.c2 ? h.c2.join(',') : ''})` : h.c2 ? `옮김 (${h.c2.join(',')})` : '-'}`; }
   if(id===9) return state.t9.trim();
@@ -621,7 +662,7 @@ function valueOf(id){
 }
 function collectData(){
   const H = {};
-  [1,2,3,4,5,6,7,8].forEach(n=>{ const h = state.h[n]; H['h'+n] = {k:h.k, o:h.o, strokes:h.strokes, done:h.done, tries:h.tries.slice(-30), sols:h.sols.slice(), inB:!!h.inB, inC:!!h.inC, c2:h.c2||null, both:!!h.both}; });
+  [1,2,3,4,5,6,7,8].forEach(n=>{ const h = state.h[n]; H['h'+n] = {k:h.k, o:h.o, strokes:h.strokes, done:h.done, tries:h.tries.slice(-30), sols:h.sols.slice(), inB:!!h.inB, inC:!!h.inC, c2:h.c2||null, both:!!h.both, score:h.score||0}; });
   return Object.assign(H, { q5: Object.assign({}, state.q5), q6: Object.assign({}, state.q6), q7: Object.assign({}, state.q7), q8: Object.assign({}, state.q8), t9: state.t9, shared: Object.assign({}, state.shared), seen: Object.assign({}, state.seen), aiFb: AIFB, aiReq: AIFB_REQ || null, ...aifbExtraData() });
 }
 /* 친구들에게 보여 줄 서술(이름 없이) — 내 답을 쓴 뒤에만 친구 답이 보인다 */
@@ -933,6 +974,9 @@ function renderHole(n){
     s += seg(B, C, 'stroke="#1565c0" stroke-width="3"');                                      // 공 사이 막대 BC
     s += `<g id="img${n}b" class="ghost"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="8" fill="rgba(255,255,255,.55)" stroke="#555" stroke-width="1.5" stroke-dasharray="3 2"/></g><g id="img${n}c" class="ghost"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="8" fill="rgba(253,216,53,.45)" stroke="#8d6e00" stroke-width="1.5" stroke-dasharray="3 2"/></g>`;
     s += `<g class="drag" data-v="b"><circle cx="${px(Bi[0])}" cy="${py(Bi[1])}" r="16" fill="transparent"/></g><g class="drag" data-v="c"><circle cx="${px(Ci[0])}" cy="${py(Ci[1])}" r="16" fill="transparent"/></g>`;
+    if(n===6 && h.done){ const tag = (P,Q,away) => { const m = [(P[0]+Q[0])/2,(P[1]+Q[1])/2], d = [Q[0]-P[0],Q[1]-P[1]], L = Math.hypot(d[0],d[1]); let nn = [-d[1]/L, d[0]/L]; if((away[0]-m[0])*nn[0] + (away[1]-m[1])*nn[1] > 0) nn = [-nn[0],-nn[1]];
+        const x = px(m[0]+nn[0]*0.9), y = py(m[1]+nn[1]*0.9), t = (Math.round(L*10)/10).toFixed(1); return `<rect x="${x-17}" y="${y-10}" width="34" height="19" rx="5" fill="#fff" stroke="#6a1b9a"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="12" font-weight="bold" fill="#6a1b9a">${t}</text>`; };
+      s += tag(A,B2,C) + tag(B2,B,C) + tag(A,C2,B) + tag(C2,C,B); }
     s += ballSVG(B, 'ball', 'B') + ballSVG2(C, '#fdd835', 'C');
     s += centerSVG(A) + `<text x="${px(A[0])-12}" y="${py(A[1])-10}" font-size="13" font-weight="bold" fill="#c62828">A</text>`;
   } else {
@@ -995,7 +1039,7 @@ function landed(n, hit){
   const H = HOLES[n], h = state.h[n], o = TWO(n) ? OB(n) : oOf(n);
   h.landed = true;
   if(hit){
-    h.done = true;
+    const first = !h.done; h.done = true; if(first) h.score = h.strokes;
     if(n===4){ const key = `${o[0]},${o[1]}|${fmtK(h.k)}`; if(!h.sols.includes(key)) h.sols.push(key); }
     let msg = `⛳ 홀인! (${h.strokes}타) 비율 k = ${fmtK(h.k)}`;
     if(!TWO(n)) msg += `<br><span style="font-weight:normal;">중심~공 : 중심~홀 = <b>${ratioText(h.k)}</b></span>`;
@@ -1003,7 +1047,8 @@ function landed(n, hit){
     else msg = `⛳ 두 공 모두 홀인! (${h.strokes}타) 비율 k = ${fmtK(h.k)}${h.k<0?' (중심 반대쪽)':''}<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(Math.abs(h.k))}</b></span>`;
     if(n===3) msg += `<br><span style="font-weight:normal;">중심 (${o[0]}, ${o[1]}) — 중심·공·홀이 <b>한 직선 위</b>에 있네요!</span>`;
     if(n===4) msg += `<br><span style="font-weight:normal;">다른 중심으로도 넣어 보세요. (지금까지 ${h.sols.length}가지)</span>`;
-    $('gm'+n).innerHTML = `<div class="hit">${msg}</div>`;
+    $('gm'+n).innerHTML = `<div class="hit">${first ? scoreTag(n) : ''}${msg}</div>`;
+    if(first) setTimeout(()=> celebrate(n), 30);
   } else {
     const q = TWO(n) ? null : imgOf(o, H.p, h.k);
     let why = '';
@@ -1015,15 +1060,16 @@ function landed(n, hit){
     $('gm'+n).innerHTML = `<span class="miss">🏌️ 아깝다! ${why}</span>`;
   }
   renderCtrl(n); renderHole(n); renderSols(); if(TWO(n)) paintQ(n);
+  if(hit) sinkBalls(n); renderScore();
   checkHole(n, {now:true});
 }
 /* 홀 7(평행하지 않은 홀): 한 공씩만 들어간다 */
 function landedNP(n, hb, hc){
   const H = HOLES[n], h = state.h[n]; h.landed = true;
   const k = fmtK(h.k);
-  if(hb && hc){ h.both = true;
-    $('gm'+n).innerHTML = `<div class="hit">⛳ 두 공 모두 한 번에 홀인! (k = ${k})<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(h.k)}</b> — 두 비가 같아지니 <b>B′C′ ∥ BC</b>가 됐어요!</span></div>`;
-    renderCtrl(n); renderHole(n); renderNP(); paintQ8(); checkQ8({now:true}); return; }
+  if(hb && hc){ const first = !h.both; h.both = true; if(first){ h.score = h.strokes; setTimeout(()=> celebrate(n), 30); }
+    $('gm'+n).innerHTML = `<div class="hit">${first ? scoreTag(n) : ''}⛳ 두 공 모두 한 번에 홀인! (k = ${k})<br><span style="font-weight:normal;">AB : AB′ = AC : AC′ = <b>${ratioText(h.k)}</b> — 두 비가 같아지니 <b>B′C′ ∥ BC</b>가 됐어요!</span></div>`;
+    renderCtrl(n); renderHole(n); sinkBalls(n); renderScore(); renderNP(); paintQ8(); checkQ8({now:true}); return; }
   const msg = hb ? `<div class="hit" style="background:#f5f5f5;border-color:#bbb;color:#333;">⚪ 흰 공만 홀인! (k = ${k}) 그런데 노란 공은 ${dist(imgOf(H.a,H.c,h.k),H.a) < dist(holeC(n),H.a) ? '못 미쳤어요' : '지나쳤어요'}.</div>`
     : hc ? `<div class="hit" style="background:#fffde7;border-color:#fdd835;color:#5d4037;">🟡 노란 공만 홀인! (k = ${k}) 그런데 흰 공은 ${dist(imgOf(H.a,H.b,h.k),H.a) < dist(holeB(n),H.a) ? '못 미쳤어요' : '지나쳤어요'}.</div>`
     : `<span class="miss">🏌️ 둘 다 안 들어갔어요. 흰 공·노란 공 하나씩이라도 넣어 보세요.</span>`;
@@ -1125,28 +1171,31 @@ function paintQ(n){
   const q = state['q'+n], ok = state.h[n].done;
   $('q'+n+'box').style.opacity = ok ? '1' : '.5';
   $('q'+n+'box').classList.toggle('locked', q.checked && q.ok || finalLocked);
-  $('q'+n+'Check').disabled = !ok || !(q.rel && parseRatio(q.ra)!=null && parseRatio(q.rb)!=null) || (q.checked && q.ok) || finalLocked;
+  $('q'+n+'Check').disabled = !ok || !(q.rel && parseRatio(q.ra)!=null && parseRatio(q.rb)!=null && (n!==6 || q.rc)) || (q.checked && q.ok) || finalLocked;
+  if(n===6){ $('r6c').disabled = (q.checked && q.ok) || finalLocked; }
 }
 function qResult(n){
   const q = state['q'+n], H = HOLES[n], want = H.qwant!=null ? H.qwant : 1/Math.abs(H.ans);
   const okRel = q.rel==='par', okA = Math.abs(parseRatio(q.ra) - want) < 1e-6, okB = Math.abs(parseRatio(q.rb) - want) < 1e-6;
-  return {okRel, okA, okB, ok: okRel && okA && okB};
+  const okC = n!==6 || q.rc==='CC';
+  return {okRel, okA, okB, okC, ok: okRel && okA && okB && okC};
 }
 const Q_OK = {5:'BC ∥ B′C′, 그리고 AB:AB′ = BC:B′C′ = 1:2 — 확대하면 대응하는 변은 평행하고 길이의 비는 모두 같아요.',
-  6:'BC ∥ B′C′, 그리고 AB:AB′ = BC:B′C′ = 2:1 — 줄여도(축소) 대응하는 변은 평행하고 길이의 비는 모두 같아요.',
+  6:'BC ∥ B′C′, 그리고 AB:AB′ = BC:B′C′ = 2:1 — 줄여도(축소) 대응하는 변은 평행하고 길이의 비는 모두 같아요. 또 AB′ : B′B = AC′ : C′C (여기서는 1 : 1) — 남은 부분끼리의 비도 같아요!',
   7:'O₁O₂ ∥ H₁H₂, 그리고 PO₁:PH₁ = O₁O₂:H₁H₂ = 1:2 — 홀 쪽 막대가 공 P를 사이에 두고 반대쪽에 생겨도 두 막대는 평행하고 길이의 비는 모두 같아요.'};
 function checkQ(n, opts){
   paintQ(n);
   const q = state['q'+n];
   if(q.checked){ const r = qResult(n);
     $('q'+n+'Msg').innerHTML = r.ok ? `<span class="ok">✅ 맞았어요! ${Q_OK[n]}</span>`
-      : `<span class="bad">다시 생각해 보세요 — ${[!r.okRel&&'⑴ 두 막대의 관계', !r.okA&&'⑵ AB:AB′', !r.okB&&'⑶ BC:B′C′'].filter(Boolean).join(', ')}</span>`; }
+      : `<span class="bad">다시 생각해 보세요 — ${[!r.okRel&&'⑴ 두 막대의 관계', !r.okA&&'⑵ AB:AB′', !r.okB&&'⑶ BC:B′C′', !r.okC&&'⑷ B′B와 짝이 되는 선분(AC′에서 이어진 나머지 부분)'].filter(Boolean).join(', ')}</span>`; }
   checkHole(n, opts);
 }
 const check5 = opts => checkQ(5, opts), paintQ5 = () => paintQ(5);
 [5,6,7].forEach(n=>{
   document.querySelectorAll('input[name=rel'+n+']').forEach(r=> r.addEventListener('change', ()=>{ if(finalLocked) return; state['q'+n].rel = r.value; state['q'+n].checked = false; $('q'+n+'Msg').textContent=''; checkQ(n); }));
   ['a','b'].forEach(x=> $('r'+n+x).addEventListener('input', ()=>{ if(finalLocked) return; state['q'+n]['r'+x] = $('r'+n+x).value; state['q'+n].checked = false; $('q'+n+'Msg').textContent=''; checkQ(n); }));
+  if(n===6) $('r6c').addEventListener('change', ()=>{ if(finalLocked) return; state.q6.rc = $('r6c').value; state.q6.checked = false; $('q6Msg').textContent=''; checkQ(6); });
   $('q'+n+'Check').addEventListener('click', ()=>{ if(finalLocked) return; state['q'+n].checked = true; state['q'+n].ok = qResult(n).ok; checkQ(n, {now:true}); });
 });
 
@@ -1199,11 +1248,42 @@ $('sh9').addEventListener('click', ()=>{
 function onShareChanged(){ renderFriends(9); }
 function onRevealChanged(){ paintSum(); }
 function aifbOnChange(){ paintSum(); check9({noSave:true}); }
-function onShowPage(taskId){ if(taskId===9){ renderRecap(); paintSum(); } if(taskId>=1 && taskId<=8) renderHole(taskId); }
+/* ---------- 🏌️ 스코어카드·축하 ---------- */
+function scoreTag(n){ const st = scoreOf(n), r = scoreName(st, PAR[n]); return `<div class="sname ${r.c}">${r.e} ${r.t}! <span>${st}타 · 파 ${PAR[n]}</span></div>`; }
+function scoreTotals(){ let st = 0, par = 0, cnt = 0; [1,2,3,4,5,6,7,8].forEach(n=>{ const v = scoreOf(n); if(v){ st += v; par += PAR[n]; cnt++; } }); return {st, par, cnt, d: st-par}; }
+const dTxt = d => d===0 ? '이븐(±0)' : (d>0 ? '+'+d : '−'+(-d));
+function scoreCells(cur){ return [1,2,3,4,5,6,7,8].map(n=>{ const v = scoreOf(n), r = v ? scoreName(v, PAR[n]) : null;
+  return `<div class="scell${n===cur?' cur':''}${r?' '+r.c:''}"><div class="sh">${n===1?'연습':n-1}</div><div class="sp">파 ${PAR[n]}</div><div class="ss">${v||'·'}</div></div>`; }).join(''); }
+function renderScore(){
+  const T = scoreTotals();
+  [1,2,3,4,5,6,7,8].forEach(n=>{ const box = $('sc'+n); if(box) box.innerHTML = `<div class="sline">🏌️ 스코어카드</div><div class="scells">${scoreCells(n)}</div><div class="stot">${T.cnt ? `총 <b>${T.st}</b>타 <span>(${dTxt(T.d)})</span>` : '아직 기록 없음'}</div>`; });
+  const f = $('scFinal'); if(f){ const cnt = {}; [1,2,3,4,5,6,7,8].forEach(n=>{ const v = scoreOf(n); if(v){ const t = scoreName(v, PAR[n]).t; cnt[t] = (cnt[t]||0)+1; } });
+    f.innerHTML = `<div class="sline big">🏌️ 내 스코어카드 — 총 <b>${T.st}</b>타 (파 ${T.par}, ${dTxt(T.d)})</div><div class="scells big">${scoreCells(0)}</div>`
+      + `<div class="stot">${Object.keys(cnt).map(t=>`${t} ${cnt[t]}번`).join(' · ') || '아직 홀인한 홀이 없어요.'}</div>`; }
+}
+function sinkBalls(n){ document.querySelectorAll(`#g${n} .ghost circle:first-child`).forEach(c=> c.classList.add('sink')); }
+function celebrate(n){
+  const r = scoreName(scoreOf(n), PAR[n]);
+  let ov = $('celebrate'); if(!ov){ ov = document.createElement('div'); ov.id = 'celebrate'; document.body.appendChild(ov); ov.addEventListener('click', ()=>{ ov.className = ''; ov.innerHTML = ''; }); }
+  const COL = ['#e53935','#fdd835','#43a047','#1e88e5','#8e24aa','#fb8c00','#00acc1'];
+  let conf = ''; for(let i=0;i<r.n;i++){ const x = Math.random()*100, dx = (Math.random()-0.5)*40, d = 1.4 + Math.random()*1.4, w = 6+Math.random()*7, rot = Math.random()*720;
+    conf += `<i style="left:${x}%;width:${w}px;height:${w*0.45+3}px;background:${COL[i%COL.length]};--dx:${dx}vw;--rot:${rot}deg;animation-duration:${d}s;animation-delay:${Math.random()*0.35}s"></i>`; }
+  ov.className = 'on ' + r.c;
+  ov.innerHTML = conf + `<div class="cban"><div class="ce">${r.e}</div><div class="ct">${r.t}!</div><div class="cs">${HNAME(n)} · ${scoreOf(n)}타 (파 ${PAR[n]})</div></div>`;
+  clearTimeout(celebrate._t); celebrate._t = setTimeout(()=>{ if(ov){ ov.className = ''; ov.innerHTML = ''; } }, r.n >= 85 ? 2600 : 1900);
+}
+function initGame(){
+  [1,2,3,4,5,6,7,8].forEach(n=>{ const sec = document.querySelector(`#task-a${n} .card`), head = sec && sec.querySelector('.act-head'); if(!head || $('sc'+n)) return;
+    const tag = head.querySelector('.act-tag'); if(tag) tag.insertAdjacentHTML('afterend', `<span class="par-tag">파 ${PAR[n]}</span>`);
+    head.insertAdjacentHTML('afterend', `<div class="scard" id="sc${n}"></div>`); });
+  const rc = $('recap9'); if(rc && !$('scFinal')) rc.insertAdjacentHTML('beforebegin', '<div class="scard final" id="scFinal"></div>');
+  renderScore();
+}
+function onShowPage(taskId){ renderScore(); if(taskId===9){ renderRecap(); paintSum(); } if(taskId>=1 && taskId<=8) renderHole(taskId); }
 
 function renderAll(){ [1,2,3,4,5,6,7,8].forEach(n=>{ renderCtrl(n); renderHole(n); }); renderSols(); renderNP(); [5,6,7].forEach(paintQ); paintQ8(); paintSum(); }
 function initActivity(){
-  renderAll();
+  initGame(); renderAll();
   [1,2,3,4].forEach(n=> checkHole(n, {noSave:true})); [5,6,7].forEach(n=> checkQ(n, {noSave:true})); checkQ8({noSave:true}); check9({noSave:true});
 }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
@@ -1215,17 +1295,17 @@ function restoreData(d){
     h.strokes = Number(s.strokes)||0; h.done = !!s.done;
     h.tries = arr(s.tries).filter(t=>t && typeof t==='object').map(t=>({k:Number(t.k), o: arr(t.o).length===2 ? arr(t.o).map(Number) : null, hit:!!t.hit, b:!!t.b, c:!!t.c}));
     h.sols = arr(s.sols).map(String); h.inB = !!s.inB; h.inC = !!s.inC;
-    const c2 = arr(s.c2).map(Number); h.c2 = (c2.length===2 && c2.every(Number.isInteger)) ? c2 : null; h.both = !!s.both; });
-  [5,6,7].forEach(n=>{ const dq = d['q'+n]; if(dq) state['q'+n] = {rel: ['par','perp','none'].includes(dq.rel) ? dq.rel : '', ra: String(dq.ra||''), rb: String(dq.rb||''), checked: !!dq.checked, ok: !!dq.ok};
+    const c2 = arr(s.c2).map(Number); h.c2 = (c2.length===2 && c2.every(Number.isInteger)) ? c2 : null; h.both = !!s.both; h.score = Number(s.score)||0; });
+  [5,6,7].forEach(n=>{ const dq = d['q'+n]; if(dq) state['q'+n] = {rel: ['par','perp','none'].includes(dq.rel) ? dq.rel : '', ra: String(dq.ra||''), rb: String(dq.rb||''), rc: ['AC','AC2','CC','BC','BC2'].includes(dq.rc) ? dq.rc : '', checked: !!dq.checked, ok: !!dq.ok};   // 예전 기록(⑷ 없음)은 ok 그대로
     const rr = document.querySelector(`input[name=rel${n}][value="${state['q'+n].rel}"]`); if(rr) rr.checked = true;
-    $('r'+n+'a').value = state['q'+n].ra; $('r'+n+'b').value = state['q'+n].rb; });
+    $('r'+n+'a').value = state['q'+n].ra; $('r'+n+'b').value = state['q'+n].rb; if(n===6) $('r6c').value = state.q6.rc || ''; });
   if(d.q8){ state.q8 = {ra: String(d.q8.ra||''), rb: String(d.q8.rb||''), checked: !!d.q8.checked, ok: !!d.q8.ok}; if(state.q8.checked && state.q8.ok) state.q8.ok = q8Result().ok; }
   $('r8a').value = state.q8.ra; $('r8b').value = state.q8.rb;
   state.t9 = d.t9 || (typeof d.t8==='string' ? d.t8 : '') || ''; $('t9').value = state.t9;   // 예전(정리=8번) 저장분도 읽기
   aifbRestore(d);
   const oldSum = !d.t9 && typeof d.t8==='string';
   state.shared[9] = !!(d.shared && d.shared[oldSum?8:9]); state.seen[9] = !!(d.seen && d.seen[oldSum?8:9]) || state.shared[9];
-  renderAll();
+  initGame(); renderAll(); renderScore();
   [1,2,3,4].forEach(n=> checkHole(n, {noSave:true})); [5,6,7].forEach(n=> checkQ(n, {noSave:true})); checkQ8({noSave:true}); check9({noSave:true});
 }
 
