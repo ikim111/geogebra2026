@@ -453,6 +453,10 @@ class GeoCanvas{
     if(c){ return Math.abs(dist(c.center,pt)-c.r); }
     return Infinity;
   }
+  // 다각형의 변도 선분처럼 고를 수 있게(수직이등분선·원(반지름)·수선·길이 재기에서 변을 바로 클릭) — 2026-10-21
+  findSegLike(pt,tol){ const o=this.findObjectNear(pt,tol); if(o && (o.type==='segment'||o.type==='line'||o.type==='ray')) return o; let best=null,bd=tol;
+    for(const q of this.objects){ if(q.type!=='polygon' || !q.ids) continue; const ids=q.ids; for(let i=0;i<ids.length;i++){ const a=this.resolvePoint(ids[i]), b=this.resolvePoint(ids[(i+1)%ids.length]); if(!a||!b) continue; const d=distToSegment(pt,a,b); if(d<bd){ bd=d; best={type:'segment', p1:ids[i], p2:ids[(i+1)%ids.length]}; } } }
+    return best || o; }
   findObjectNear(pt,tol){
     let best=null,bd=tol;
     for(const o of this.objects){
@@ -600,7 +604,7 @@ class GeoCanvas{
           const p=this.pickPoint(pt); this.pending.push(p.id);
           break;
         }
-        const segObj=this.findObjectNear(pt,TOUCH_TOL);
+        const segObj=this.findSegLike(pt,TOUCH_TOL);
         if(segObj && segObj.type==='segment'){
           const cId=this.pending[0]; this.pending=[];
           this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
@@ -612,7 +616,7 @@ class GeoCanvas{
       }
       case 'perpBisector': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          const segObj=this.findSegLike(pt,TOUCH_TOL);
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
             break;
@@ -682,7 +686,7 @@ class GeoCanvas{
           break;
         }
         const pId=this.pending[0]; this.pending=[];
-        const o=this.findObjectNear(pt,TOUCH_TOL);
+        const o=this.findSegLike(pt,TOUCH_TOL);
         if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')){
           this.addObject({type:'perp', p:pId, refP1:o.p1, refP2:o.p2});
         }
@@ -690,7 +694,7 @@ class GeoCanvas{
       }
       case 'lengthTool': {
         if(this.pending.length===0){
-          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          const segObj=this.findSegLike(pt,TOUCH_TOL);
           if(segObj && (segObj.type==='segment'||segObj.type==='line')){
             this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
             break;
