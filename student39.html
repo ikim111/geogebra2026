@@ -262,6 +262,9 @@
   .rtab th{background:#f3f6fa;}
   .rtab td.y{color:#2e7d32;font-weight:bold;} .rtab td.n{color:#9aa0a6;}
   .rtab td.r{font-weight:bold;color:#e65100;}
+
+  .must{margin-top:6px;background:#fff3e0;border:2px solid #fb8c00;border-radius:10px;padding:8px 12px;font-size:15px;color:#bf360c;animation:mustP 1.6s ease-in-out infinite;}
+  @keyframes mustP{50%{box-shadow:0 0 0 4px rgba(251,140,0,.25);}}
 </style></style>
 </head>
 <body>
@@ -324,7 +327,7 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">1 어떤 사각형일까?</span><span class="badge pending" id="badge-a1">미완료</span></div>
     <h2>사각형의 네 변의 중점을 연결한 사각형은 어떤 사각형이 될까?</h2>
-    <p class="hint">□ABCD의 꼭짓점(파란 손잡이)을 끌어 <b>모양을 마음대로 바꿔 보세요.</b> E, F, G, H는 각각 변 AB, BC, CD, DA의 <b>중점</b>이고, 노란 사각형이 <b>□EFGH</b>예요. 모양을 <b>3번 이상</b> 바꿔 보며 □EFGH를 관찰해 보세요.</p>
+    <p class="hint">□ABCD의 꼭짓점(파란 손잡이)을 끌어 <b>모양을 마음대로 바꿔 보세요.</b> E, F, G, H는 각각 변 AB, BC, CD, DA의 <b>중점</b>이고, 노란 사각형이 <b>□EFGH</b>예요. 모양을 여러 번 바꿔 보며 □EFGH를 관찰해 보세요.</p>
     <div class="g-layout">
       <div class="g-board"><svg id="g1" viewBox="0 0 360 400" class="board"></svg>
         <div class="row"><button type="button" class="sbtn" id="rst1">↺ 처음 모양</button></div></div>
@@ -335,7 +338,7 @@
       </div>
     </div>
   </div>
-  <div class="why" id="why1">모양을 3번 이상 바꾸고 □EFGH가 어떤 사각형인지 맞히면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why1">모양을 바꿔 보고 □EFGH가 어떤 사각형인지 맞히면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 2: 그 이유 ===================== -->
@@ -486,7 +489,7 @@ const mid = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
 const perp = v => [-v[1], v[0]];
 
 function isDone(id){
-  if(id===1) return state.s1.moves>=3 && state.s1.ok;
+  if(id===1) return state.s1.moves>=1 && state.s1.ok;
   if(id===2) return len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList('main').length>=1;
   if(id===3) return state.s2.ok;
   if(id===4) return len(state.t4)>=MIN_TEXT && state.shared[4] && aifbList('rule').length>=1;
@@ -796,11 +799,11 @@ function render1(){
   let h = grid() + quadFig(Q, {});
   if(!isLocked()) Q.forEach((p,i)=>{ h += handle(p, i); });
   $('g1').innerHTML = h;
-  $('now1').innerHTML = measHTML(Q, false, false) + `<br><span class="note">모양을 바꾼 횟수: ${s.moves}${s.moves<3?' (3번 이상 바꿔 보세요)':''}</span>`;
+  $('now1').innerHTML = measHTML(Q, false, false) + (s.moves<1 ? `<div class="must">👆 먼저 <b>파란 꼭짓점을 끌어서</b> □ABCD의 모양을 바꿔 보세요. 모양이 바뀌어도 □EFGH는 어떤 사각형인가요?</div>` : `<br><span class="note">모양을 바꾼 횟수: ${s.moves} — 여러 모양으로 바꿔 볼수록 좋아요.</span>`);
   $('a1').value = s.a; $('a1').disabled = s.ok || isLocked();
-  $('chk1').disabled = s.ok || isLocked() || s.moves < 3 || !s.a;
+  $('chk1').disabled = s.ok || isLocked() || s.moves < 1 || !s.a;
   $('msg1').innerHTML = s.ok ? '<span class="ok">✅ 맞아요! □ABCD를 어떻게 바꿔도 □EFGH는 항상 평행사변형이에요.</span> 왜 그럴까요? 다음 화면에서 설명해 봐요.'
-    : (msg1 || (s.moves < 3 ? '<span class="note">모양을 3번 이상 바꾸면 확인할 수 있어요.</span>' : ''));
+    : (msg1 || (s.moves < 1 ? '<span class="bad">꼭짓점을 끌어 모양을 바꿔 본 뒤에 확인할 수 있어요.</span>' : ''));
 }
 dragOn($('g1'), (k, p)=>{ if(!moveQ(k, p)) return false; msg1 = ''; render1(); return true; }, moved=>{ if(moved){ state.s1.moves++; render1(); check1({now:true}); } });
 $('rst1').addEventListener('click', ()=>{ if(isLocked()) return; state.s1.Q = Q0.map(p=>p.slice()); render1(); refreshAll({}); });
@@ -815,7 +818,7 @@ $('chk1').addEventListener('click', ()=>{
   render1(); check1({now:true});
 });
 function check1(opts){ const s = state.s1;
-  setWhy(1, '✅ 완료! '+NEXT, s.moves<3 ? `□ABCD의 모양을 3번 이상 바꿔 보세요. (지금 ${s.moves}번)` : '□EFGH가 어떤 사각형인지 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
+  setWhy(1, '✅ 완료! '+NEXT, s.moves<1 ? '먼저 파란 꼭짓점을 끌어 □ABCD의 모양을 바꿔 보세요.' : '□EFGH가 어떤 사각형인지 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
 
 /* ================= 화면 2: 이유 ================= */
 function render2(){
