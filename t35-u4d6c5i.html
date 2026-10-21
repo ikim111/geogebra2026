@@ -374,7 +374,7 @@ function activityDetailHTML(s, id){
   if(id===3){ const b = arrOf(d.bal); if(!b.some(x=>x && x.tries)) return ''; return b.map((x,i)=> x ? kv(TRI_NAMES[i], `${x.done?'⚖️ 수평':'아직'} · ${x.tries||0}번${arrOf(x.pin).length===2?` · 핀 (${x.pin[0]}, ${x.pin[1]})`:''}`) : '').join(''); }
   if(id===4){ const c = d.c6 || {}; if(!arrOf(d.lines6).some(Boolean) && !c.a) return '';
     return kv('그은 선', [0,1,2].filter(i=>arrOf(d.lines6)[i]).map(i=>'ABC'[i]).join(', ')||'-') + kv('변의 어디?', `${({mid:'중점',tri:'삼등분점',end:'끝점',any:'아무 점'})[c.a]||'-'} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`); }
-  if(id===5){ const w = d.w7 || {}; if(!w.moves && !d.tw) return ''; return kv('D 옮기기', `${w.moves||0}번 · ${w.found?'⚖️ 수평 찾음':'아직'}`) + tb(d.tw); }
+  if(id===5){ const w = d.w7 || {}; if(!w.moves && !d.tw) return ''; return kv('D 옮기기', `${w.moves||0}번 · ${w.found?'⚖️ 수평 찾음':'아직'}`) + tb(d.tw) + aiFbHTML({aiFb: d.aiFb_w}); }
   if(id===6){ const c = d.c7 || {}; return c.b ? kv('비', `${c.b} ${c.checked?(c.ok?'✅':'✗'):'(확인 전)'}`) : ''; }
   if(id===7){ if(!d.moves8 && !d.t8 && !d.r8) return ''; return kv('모양 바꾼 횟수', d.moves8||0) + (d.r8?kv('찾은 비', esc(d.r8)):'') + tb(d.t8); }
   if(id===8) return tb(d.t9) + aiFbHTML(d);

@@ -414,8 +414,9 @@
         <div class="g-msg" id="gmw"></div>
       </div>
     </div>
-    <div class="question" style="font-size:15.5px;margin-top:8px;">💭 D가 <b>BC의 중점</b>일 때 수평이 되는 <b>이유</b>를 △ABD와 △ADC의 <b>밑변·높이·넓이</b>를 이용해 설명해 보세요.</div>
-    <textarea id="tw" placeholder="D가 중점이면 BD와 DC의 길이가 ~이고, 두 삼각형의 높이는 ~이므로 ~"></textarea>
+    <div class="question" style="font-size:15.5px;margin-top:8px;">💭 D가 <b>BC의 중점</b>일 때 왜 수평이 될까요? 위에 보이는 <b>길이와 넓이</b>를 근거로 설명해 보세요.</div>
+    <textarea id="tw" placeholder="D가 중점이면 ~"></textarea>
+    <div class="aifb" id="aifbw"></div>
     <div class="share-row"><button class="share-btn" id="shw" disabled>📤 답변 공유</button><span class="note" id="shnw"></span></div>
     <div class="friends-box" id="frw"></div>
   </div>
@@ -584,7 +585,7 @@ function isDone(id){
   if(id===2) return state.hang.lines.every(Boolean) && state.hang.checked && state.hang.ok;
   if(id===3) return state.bal.every(b=>b.done);
   if(id===4) return state.lines6.every(Boolean) && state.c6.checked && state.c6.ok;
-  if(id===5) return state.w7.found && len(state.tw)>=MIN_TEXT && state.shared.w;
+  if(id===5) return state.w7.found && len(state.tw)>=MIN_TEXT && state.shared.w && aifbList('w').length>=1;
   if(id===6) return state.c7.checked && state.c7.ok;
   if(id===7) return state.moves8>=3 && (r8Ok() || len(state.t8)>=MIN_TEXT);   // t8: 예전 서술형으로 이미 쓴 학생
   if(id===8) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbList().length>=1;
@@ -712,6 +713,7 @@ function aifbRestore(d){
   Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
   document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
 
+aifbMount($('aifbw'), { key:'w', unit:'35w', minLen:10, inputs:[$('tw')], answer: ()=>$('tw').value, ctx: ()=>'△ABC를 자 위에 올렸고 자는 꼭짓점 A와 변 BC 위의 점 D를 지난다. 학생은 D를 끌어 D가 BC의 중점일 때만 수평이 되는 것을 찾았다. 화면에는 BD = DC = 5, 두 삼각형의 공통 높이 h = 14.4, 넓이 △ABD = △ADC = 36이 보인다.' });
 aifbMount($('aifb36'), { unit:35, minLen:10, inputs:[$('t9')], answer: ()=>$('t9').value, ctx: ()=>`화면 4·6에서 학생이 맞힌 규칙: 균형점 G는 세 중선(꼭짓점과 마주 보는 변의 중점을 이은 선분)이 만나는 점, 각 중선을 꼭짓점 쪽부터 2:1로 나눔. 화면 8 서술: ${state.t8.trim().slice(0,200)}` });
 /* ---------- 실시간 확인 (Firebase) ---------- */
 const RT = {
@@ -1055,7 +1057,7 @@ $('gw').addEventListener('pointermove', ev=>{ if(!dragW) return; const t = TRIS[
   state.w7.s = sv; dragW.moved = true; renderW(); });
 const endDragW = ()=>{ if(!dragW) return; if(dragW.moved){ state.w7.moves++; if(wBal()) state.w7.found = true; renderW(); checkW({now:true}); } dragW = null; };
 $('gw').addEventListener('pointerup', endDragW); $('gw').addEventListener('pointercancel', endDragW);
-function checkW(opts){ state.tw = $('tw').value; setWhy(5, '✅ 완료! '+NEXT, !state.w7.found ? '점 D를 끌어 삼각형이 수평이 되는 곳을 찾아보세요.' : '이유를 쓰고 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare('w'); renderFriends('w'); refreshAll(opts); }
+function checkW(opts){ state.tw = $('tw').value; setWhy(5, '✅ 완료! '+NEXT, !state.w7.found ? '점 D를 끌어 삼각형이 수평이 되는 곳을 찾아보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare('w'); renderFriends('w'); refreshAll(opts); }
 $('tw').addEventListener('input', ()=>checkW());
 
 /* ---------- 화면 6: 2:1 — 길이를 바로 보여 준다(좌표를 골라 AG=10, GD=5처럼 딱 떨어짐) ---------- */
@@ -1159,7 +1161,7 @@ function paintShare(n){
 
 function onShareChanged(){ renderFriends(9); renderFriends('w'); }
 function onRevealChanged(){ paintSum(); }
-function aifbOnChange(){ paintSum(); check9({noSave:true}); }
+function aifbOnChange(){ paintSum(); check9({noSave:true}); checkW({noSave:true}); }
 function onShowPage(taskId){ if(taskId===1){ if(!HANG) renderHang(0); renderRec2(); } if(taskId===2) renderRec2(); if(taskId===3) renderBal(0); if(taskId===4) renderG6(); if(taskId===5) renderW(); if(taskId===6) renderG7(); if(taskId===7) renderG8(); if(taskId===8){ renderRecap(); paintSum(); } }
 
 function renderAll(){ if(!HANG) renderHang(0); renderRec2(); renderTabs(); renderCtrl2(); renderBal(0); renderG6(); paintC6(); renderW(); renderG7(); paintC7(); renderG8(); paintSum(); }
