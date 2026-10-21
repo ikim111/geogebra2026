@@ -249,7 +249,7 @@
       <div class="agg" id="revealPanel">
         <span>👀 <b>학생 화면에 공개</b></span>
         <button class="rv" id="rv_sum" data-k="sum">정리 상자 (정삼각형의 외심·내심·무게중심)</button>
-        <span style="font-size:12px;color:#8a6d00;">(정리 상자는 학생이 화면 5의 물음을 맞히면 저절로 열려요. 필요할 때만 여기서 반 전체에 열어 주세요.)</span>
+        <span style="font-size:12px;color:#8a6d00;">(정리 상자는 학생이 화면 6의 물음을 맞히면 저절로 열려요. 필요할 때만 여기서 반 전체에 열어 주세요.)</span>
       </div>
       </details>
     </div>
@@ -299,7 +299,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 5</span>
+            <span id="previewLabel">1 / 6</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -345,14 +345,14 @@ const CONFIG = {
 const STAGES = [
   {t:'세 점의 뜻', d:'부등변삼각형에서 수직이등분선(O)·각의 이등분선(I)·중선(G) 직접 그려 찾기 (화면 1) → 빈칸 채우기 (화면 2)', tasks:[1,2], max:2, reveal:{},
    tip:'💬 "외심, 내심, 무게중심은 각각 어떤 선들의 교점이었나요?" — 이 삼각형에서는 세 점이 서로 다른 곳에 있다는 것을 짚어 주세요.'},
-  {t:'세 점의 위치 탐구', d:'꼭짓점을 끌며 예각·직각·둔각삼각형에서 O·I·G 위치 관찰 → 외심은 내부/빗변의 중점/외부, 내심·무게중심은 항상 내부 (화면 4)', tasks:[4], max:4, reveal:{},
-   tip:'💬 "외심은 언제 삼각형 밖으로 나갈까?" — 외접원을 켜고 직각삼각형에서 외심이 빗변의 중점에 오는 것을 함께 확인해 주세요.'},
-  {t:'정삼각형에서', d:'∠A의 이등분선 = BC의 수직이등분선 = 중선 AD 확인 → 세 점이 일치하는 이유 쓰기 + AI 피드백 (화면 3)', tasks:[3], max:3, reveal:{},
+  {t:'정삼각형에서', d:'∠A의 이등분선 = BC의 수직이등분선 = 중선 AD 직접 그려 확인 (화면 3) → 세 점이 일치하는 이유 쓰기 + AI 피드백 (화면 4)', tasks:[3,4], max:4, reveal:{},
    tip:'💬 "정삼각형은 어떤 삼각형이기도 할까요?" → 이등변삼각형! 꼭지각의 이등분선이 밑변을 수직이등분한다는 성질로 연결해 주세요.'},
-  {t:'다른 삼각형에서도?', d:'꼭짓점을 끌며 O, I, G 관찰 → 정삼각형이 아니면 일치 X, 이등변삼각형이면 한 직선 위 (화면 5)', tasks:[5], max:null, reveal:{},
+  {t:'세 점의 위치 탐구', d:'꼭짓점을 끌며 예각·직각·둔각삼각형에서 O·I·G 위치 관찰 → 외심은 내부/빗변의 중점/외부, 내심·무게중심은 항상 내부 (화면 5)', tasks:[5], max:5, reveal:{},
+   tip:'💬 "외심은 언제 삼각형 밖으로 나갈까?" — 외접원을 켜고 직각삼각형에서 외심이 빗변의 중점에 오는 것을 함께 확인해 주세요.'},
+  {t:'다른 삼각형에서도?', d:'꼭짓점을 끌며 세 점이 한 점으로 모일 수 있는지 관찰 → 정삼각형이 아니면 일치 X, 이등변삼각형이면 한 직선 위 (화면 6)', tasks:[6], max:null, reveal:{},
    tip:'💬 모둠별로 "세 점이 일치하는 삼각형을 찾았나요?" 이야기하게 하고, 이등변삼각형에서 세 점이 한 직선 위에 있는 까닭을 물어보세요.'}
 ];
-const TASK_LABELS = [ {id:1, key:'a1', label:'직접 그려서 찾기'}, {id:2, key:'a2', label:'세 점의 뜻'}, {id:3, key:'a3', label:'세 점의 위치 탐구'}, {id:4, key:'a4', label:'정삼각형에서 (이유)'}, {id:5, key:'a5', label:'다른 삼각형에서도?'} ];
+const TASK_LABELS = [ {id:1, key:'a1', label:'직접 그려서 찾기'}, {id:2, key:'a2', label:'세 점의 뜻'}, {id:3, key:'a3', label:'정삼각형: 세 선'}, {id:4, key:'a4', label:'정삼각형: 이유'}, {id:5, key:'a5', label:'세 점의 위치 탐구'}, {id:6, key:'a6', label:'다른 삼각형에서도?'} ];
 const PN = {in:'내부', edge:'변 위', out:'외부', always:'항상 내부', dep:'모양에 따라'}, PANS_T = {oa:'in', or:'edge', oo:'out', i:'always', g:'always'};
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
@@ -370,11 +370,12 @@ function activityDetailHTML(s, id){
     return kv('직접 찾은 점', ['외심 O','내심 I','무게중심 G'].map((x,i)=>`${x} ${f[i]?'✅':'—'}(선 ${n[i]||0}개)`).join(' · ')); }
   if(id===2){ const s1 = d.s1 || {}, a = arrOf(s1.a); if(!a.some(Boolean)) return '';
     return kv('빈칸', `외심 ${OPTN[a[0]]||'?'} · 내심 ${OPTN[a[1]]||'?'} · 무게중심 ${OPTN[a[2]]||'?'} ${s1.ok?'✅':''}${s1.miss?` (틀림 ${s1.miss}번)`:''}`); }
-  if(id===3){ const p = d.sP || {}, q = p.q || {}, sn = p.seen || {}; if(!p.moves && !Object.values(q).some(Boolean)) return '';
+  if(id===5){ const p = d.sP || {}, q = p.q || {}, sn = p.seen || {}; if(!p.moves && !Object.values(q).some(Boolean)) return '';
     return kv('만든 삼각형', `예각 ${sn.a?'✅':'—'} · 직각 ${sn.r?'✅':'—'} · 둔각 ${sn.o?'✅':'—'} (끌기 ${p.moves||0}번)`) + kv('외심 O', `예각 ${PN[q.oa]||'?'} · 직각 ${PN[q.or]||'?'} · 둔각 ${PN[q.oo]||'?'}`) + kv('내심·무게중심', `${PN[q.i]||'?'} · ${PN[q.g]||'?'} ${p.ok?'✅':''}${p.miss?` (틀림 ${p.miss}번)`:''}`); }
-  if(id===4){ const s2 = d.s2 || {}, hv = s2.have || {}; if(!s2.sel && !d.t2 && !hv.bis && !hv.pb && !hv.med) return '';
-    return kv('직접 그린 선', `∠A의 이등분선 ${hv.bis?'✅':'—'} · BC의 수직이등분선 ${hv.pb?'✅':'—'} · 중선 AD ${hv.med?'✅':'—'}`) + kv('세 선', `${SEL2N[s2.sel]||'?'} ${s2.ok?'✅':''}${s2.miss?` (틀림 ${s2.miss}번)`:''}`) + tb(d.t2) + aiFbHTML(d); }
-  if(id===5){ const s3 = d.s3 || {}; if(!s3.moves && !s3.qa && !d.t3) return '';
+  if(id===3){ const s2 = d.s2 || {}, hv = s2.have || {}; if(!s2.sel && !hv.bis && !hv.pb && !hv.med) return '';
+    return kv('직접 그린 선', `∠A의 이등분선 ${hv.bis?'✅':'—'} · BC의 수직이등분선 ${hv.pb?'✅':'—'} · 중선 AD ${hv.med?'✅':'—'}`) + kv('세 선', `${SEL2N[s2.sel]||'?'} ${s2.ok?'✅':''}${s2.miss?` (틀림 ${s2.miss}번)`:''}`); }
+  if(id===4) return tb(d.t2) + aiFbHTML(d);
+  if(id===6){ const s3 = d.s3 || {}; if(!s3.moves && !s3.qa && !d.t3) return '';
     return kv('모양 바꾸기', `${s3.moves||0}번`) + kv('⑴ 일치할 수 있나', QAN[s3.qa]||'?') + kv('⑵ 이등변삼각형', `${QBN[s3.qb]||'?'} ${s3.ok?'✅':''}${s3.miss?` (틀림 ${s3.miss}번)`:''}`) + tb(d.t3); }
   return '';
 }
@@ -387,11 +388,11 @@ function taskAggregateHTML(id){
     return box(`직접 그려서 찾기 (${all.length}명)`, barsHTML(['외심 O','내심 I','무게중심 G'].map((l,i)=>({label:l+' 찾음', n: all.filter(x=>arrOf(x.found)[i]).length, answer:true})), Math.max(1,all.length))); }
   if(id===2){ const xs = ss.map(d=>d.s1).filter(x=>x && arrOf(x.a).some(Boolean));
     return box(`세 점의 뜻 (${xs.length}명)`, `<div class="kv">빈칸 맞힘 <b>${xs.filter(x=>x.ok).length}</b>명 · 한 번 이상 틀림 <b>${xs.filter(x=>x.miss).length}</b>명</div>`); }
-  if(id===3){ const xs = ss.map(d=>d.sP).filter(x=>x && x.q && Object.values(x.q).some(Boolean)); if(!xs.length) return box('세 점의 위치 탐구', '아직 없어요.');
+  if(id===5){ const xs = ss.map(d=>d.sP).filter(x=>x && x.q && Object.values(x.q).some(Boolean)); if(!xs.length) return box('세 점의 위치 탐구', '아직 없어요.');
     return [['oa','외심 O — 예각삼각형'],['or','외심 O — 직각삼각형'],['oo','외심 O — 둔각삼각형']].map(([k,l])=> box(`${l} (${xs.length}명)`, barsHTML(['in','edge','out'].map(v=>({label:PN[v]+(v===PANS_T[k]?' (정답)':''), n: xs.filter(x=>x.q[k]===v).length, answer:v===PANS_T[k]})), xs.length))).join('') + `<div class="kv">모두 맞힘 <b>${xs.filter(x=>x.ok).length}</b>명</div>`; }
-  if(id===4){ const xs = ss.map(d=>d.s2).filter(x=>x && x.sel), pass = ss.filter(d=>{ const a = arrOf(d.aiFb).filter(e=>e && !e.skip); return a.length && !(a[a.length-1].fix||[]).length; }).length;
+  if(id===3 || id===4){ const xs = ss.map(d=>d.s2).filter(x=>x && x.sel), pass = ss.filter(d=>{ const a = arrOf(d.aiFb).filter(e=>e && !e.skip); return a.length && !(a[a.length-1].fix||[]).length; }).length;
     return box(`세 선의 관계 (${xs.length}명) · 이유 AI 통과 ${pass}명`, xs.length ? barsHTML(['same','par','pt'].map(k=>({label:SEL2N[k], n: xs.filter(x=>x.sel===k).length, answer:k==='same'})), xs.length) : '아직 없어요.'); }
-  if(id===5){ const xs = ss.map(d=>d.s3).filter(x=>x && (x.qa || x.qb)); if(!xs.length) return box('다른 삼각형에서도?', '아직 없어요.');
+  if(id===6){ const xs = ss.map(d=>d.s3).filter(x=>x && (x.qa || x.qb)); if(!xs.length) return box('다른 삼각형에서도?', '아직 없어요.');
     return box(`⑴ 정삼각형이 아니어도 일치할 수 있을까? (${xs.length}명)`, barsHTML(['yes','no'].map(k=>({label:QAN[k], n: xs.filter(x=>x.qa===k).length, answer:k==='no'})), xs.length))
       + box('⑵ 이등변삼각형에서 세 점은?', barsHTML(['line','same','none'].map(k=>({label:QBN[k], n: xs.filter(x=>x.qb===k).length, answer:k==='line'})), xs.length)); }
   return '';
