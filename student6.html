@@ -779,6 +779,8 @@ class GeoCanvas{
         break;
       }
       case 'midpoint': {
+        if(this.pending.length===0){ const so=this.findSegLike(pt,TOUCH_TOL);   // 선분(다각형의 변)을 누르면 바로 그 중점을 찍는다(2026-10-21)
+          if(so && (so.type==='segment') && !this.findPointNear(pt,TOUCH_TOL)){ const A=this.resolvePoint(so.p1), B=this.resolvePoint(so.p2); if(A&&B){ const m=mid(A,B); if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true}); } break; } }
         const p=this.pickPoint(pt); this.pending.push(p.id);
         if(this.pending.length>=2){
           const [aId,bId]=this.pending; this.pending=[];

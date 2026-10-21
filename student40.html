@@ -977,6 +977,8 @@ class GeoCanvas{
         break;
       }
       case 'midpoint': {
+        if(this.pending.length===0){ const so=this.findSegLike(pt,TOUCH_TOL);   // 선분(다각형의 변)을 누르면 바로 그 중점을 찍는다(2026-10-21)
+          if(so && (so.type==='segment') && !this.findPointNear(pt,TOUCH_TOL)){ const A=this.resolvePoint(so.p1), B=this.resolvePoint(so.p2); if(A&&B){ const m=mid(A,B); if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true}); } break; } }
         const p=this.pickPoint(pt); this.pending.push(p.id);
         if(this.pending.length>=2){
           const [aId,bId]=this.pending; this.pending=[];
@@ -1564,7 +1566,7 @@ const ovDot = (p, col, label, dx, dy) => `<circle cx="${p[0]}" cy="${p[1]}" r="9
 const C1 = [
   {k:'O', n:'외심', col:COL.O, test:isPerpBis, center:pCircum, task:'<b style="color:#c62828">외심 O</b>: 「수직이등분선」 도구로 <b>세 변의 수직이등분선</b>을 그리고(변의 양 끝 꼭짓점을 차례로 누르기), 선들이 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'변의 수직이등분선', hintWrong:'수직이등분선은 변의 <b>양 끝 두 꼭짓점</b>(예: A와 B)을 차례로 눌러 그려요.'},
   {k:'I', n:'내심', col:COL.I, test:isAngBis, center:pIncenter, task:'<b style="color:#1565c0">내심 I</b>: 「각의 이등분선」 도구로 <b>세 내각의 이등분선</b>을 그리고(점 세 개를 누르되 가운데가 꼭짓점, 예: B→A→C), 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'내각의 이등분선', hintWrong:'각의 이등분선은 세 점을 누르는데 <b>두 번째가 각의 꼭짓점</b>이에요. (∠A라면 B → A → C)'},
-  {k:'G', n:'무게중심', col:COL.G, test:isMedian, center:pCentroid, task:'<b style="color:#2e7d32">무게중심 G</b>: 「중점」 도구로 각 변의 <b>중점</b>을 찍고(양 끝 꼭짓점 누르기), 「선분」으로 꼭짓점과 <b>마주 보는 변의 중점</b>을 이어 중선을 그린 뒤, 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'중선', hintWrong:'중선은 꼭짓점과 <b>마주 보는 변의 중점</b>을 이은 선분이에요. 중점을 먼저 찍고 이어 보세요.'}
+  {k:'G', n:'무게중심', col:COL.G, test:isMedian, center:pCentroid, task:'<b style="color:#2e7d32">무게중심 G</b>: 「중점」 도구로 각 변의 <b>중점</b>을 찍고(변을 누르거나 양 끝 꼭짓점 누르기), 「선분」으로 꼭짓점과 <b>마주 보는 변의 중점</b>을 이어 중선을 그린 뒤, 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'중선', hintWrong:'중선은 꼭짓점과 <b>마주 보는 변의 중점</b>을 이은 선분이에요. 중점을 먼저 찍고 이어 보세요.'}
 ];
 let geo1 = [null,null,null], geo1Timer = [0,0,0], msgC1 = ['','',''], MIS1 = [null,null,null];
 function eval1(i, cv){
@@ -1589,7 +1591,7 @@ function eval1(i, cv){
   else if(i===1){ steps = [{t:'「<b>각의 이등분선</b>」 도구 → 점 세 개를 차례로 누르기 (가운데가 꼭짓점, 예: B → A → C)', tool:'angleBisector', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[1]}];
     if(!steps[0].done) [0,1,2].filter(v=>!good.has(v)).forEach(v=>{ cue += cueArc(T, v); }); }
   else { const mids = [0,1,2].filter(v=> hasPointNear(cv, mOf(v), 5));
-    steps = [{t:'「<b>중점</b>」 도구 → 변의 양 끝 꼭짓점을 차례로 눌러 <b>각 변의 중점</b> 찍기', tool:'midpoint', prog:`${mids.length}/3`, done:mids.length>=2 || n>=2}, {t:'「<b>선분</b>」 도구 → 꼭짓점과 <b>마주 보는 변의 중점</b>을 잇기 (중선)', tool:'segment', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 중선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[2]}];
+    steps = [{t:'「<b>중점</b>」 도구 → <b>변</b>을 눌러 <b>각 변의 중점</b> 찍기 (또는 양 끝 꼭짓점을 차례로)', tool:'midpoint', prog:`${mids.length}/3`, done:mids.length>=2 || n>=2}, {t:'「<b>선분</b>」 도구 → 꼭짓점과 <b>마주 보는 변의 중점</b>을 잇기 (중선)', tool:'segment', prog:`${Math.min(n,3)}/3`, done:n>=2}, {t:'「<b>교점</b>」 도구 → 중선들이 <b>만나는 곳</b>을 누르기', tool:'intersect', done:s.found[2]}];
     if(!steps[0].done) [0,1,2].filter(v=>!mids.includes(v)).forEach(v=>{ cue += cueSide(...side(v)); });
     else if(!steps[1].done) mids.filter(v=>!good.has(v)).forEach(v=>{ cue += cueGuide(T[v], mOf(v)); }); }
   MIS1[i] = {steps, tool: (steps.find(x=>!x.done)||{}).tool || null};
@@ -1707,7 +1709,7 @@ function paint2(){
   $('clist2').innerHTML = missionHTML('정삼각형 ABC에서 세 선 그리기', [
     {t:'<b>∠A의 이등분선</b> — 「<b>각의 이등분선</b>」 도구 → <b>B → A → C</b> 차례로 누르기', done:s.have.bis},
     {t:'<b>BC의 수직이등분선</b> — 「<b>수직이등분선</b>」 도구 → <b>변 BC</b> 누르기 (또는 B, C 차례로)', done:s.have.pb},
-    {t:'<b>중선 AD</b> — 「<b>중점</b>」 도구로 B, C를 눌러 <b>BC의 중점 D</b> 찍기 → 「<b>선분</b>」 도구로 <b>A와 D</b> 잇기', prog: s.have.med ? '' : (MIS2.hasD ? '중점 ✓ → 선분' : ''), done:s.have.med}]);
+    {t:'<b>중선 AD</b> — 「<b>중점</b>」 도구로 <b>변 BC</b>를 눌러(또는 B, C 차례로) <b>BC의 중점 D</b> 찍기 → 「<b>선분</b>」 도구로 <b>A와 D</b> 잇기', prog: s.have.med ? '' : (MIS2.hasD ? '중점 ✓ → 선분' : ''), done:s.have.med}]);
   needTool(tb2, MIS2.tool);
   $('cmsg2').innerHTML = cmsg2;
   $('all2').classList.toggle('on', s.all); $('all2').style.display = s.ok ? '' : 'none';
