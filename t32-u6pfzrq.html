@@ -309,7 +309,7 @@
           <div style="font-weight:bold;color:#0052a3;">👀 학생 화면 미리보기 모드</div>
           <div class="row">
             <button id="previewPrevBtn">◀ 이전</button>
-            <span id="previewLabel">1 / 4</span>
+            <span id="previewLabel">1 / 7</span>
             <button id="previewNextBtn">다음 ▶</button>
           </div>
         </div>
@@ -355,10 +355,10 @@ const CONFIG = {
 const STAGES = [
   {t:'닮음 조건 찾기', d:'6가지 중 조건을 골라 그려 보며 최소 조건 7가지(SSS 1 · SAS 3 · AA 3) 찾기 (화면 1)', tasks:[1], max:1, reveal:{},
    tip:'💬 "두 변 + 끼인각이 아닌 각은 왜 안 될까?" — 다르게 그려진 삼각형을 함께 보고, 13차시 평행사변형 조건 찾기와 비교해 주세요.'},
-  {t:'2배 닮은 삼각형 작도', d:'SSS(컴퍼스) → SAS(각 옮기기) → AA(두 각) 작도, 확대한 △A′B′C′과의 합동 조건 고르기 (화면 2~4)', tasks:[2,3,4], max:null, reveal:{},
+  {t:'2배 닮은 삼각형 작도', d:'SSS(컴퍼스) → SAS(각 옮기기) → AA(두 각) 작도, 확대한 △A′B′C′과의 합동 조건 고르기 (화면 2~7: 작도 → 겹쳐 보기·합동 조건)', tasks:[2,3,4,5,6,7], max:null, reveal:{},
    tip:'💬 "작도한 △DEF는 △ABC를 2배로 확대한 삼각형과 합동" — SSS·SAS·ASA 합동이 닮음 조건의 근거임을 짚어 주세요.'}
 ];
-const TASK_LABELS = [ {id:1, key:'a1', label:'닮음 조건 찾기'}, {id:2, key:'a2', label:'SSS 닮음 작도'}, {id:3, key:'a3', label:'SAS 닮음 작도'}, {id:4, key:'a4', label:'AA 닮음 작도'} ];
+const TASK_LABELS = [ {id:1, key:'a1', label:'닮음 조건 찾기'}, {id:2, key:'a2', label:'SSS 작도'}, {id:3, key:'a3', label:'SSS 겹쳐 보기·합동'}, {id:4, key:'a4', label:'SAS 작도'}, {id:5, key:'a5', label:'SAS 겹쳐 보기·합동'}, {id:6, key:'a6', label:'AA 작도'}, {id:7, key:'a7', label:'AA 겹쳐 보기·합동'} ];
 const TASK_IDS = TASK_LABELS.map(t=>t.id);
 function taskLabelOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.label:('과제 '+id); }
 function keyOf(id){ const t=TASK_LABELS.find(x=>x.id===id); return t?t.key:('p'+id); }
@@ -369,13 +369,14 @@ const MIN = [
 ];
 const ob = v => (v && typeof v==='object') ? v : {};
 const ar = v => Array.isArray(v) ? v : Object.values(ob(v));
-const KS = [{id:2, f:'c1', a:'SSS', n:4}, {id:3, f:'c2', a:'SAS', n:3}, {id:4, f:'c3', a:'ASA', n:4}];
+const KS = [{id:2, cid:3, f:'c1', a:'SSS', n:4}, {id:4, cid:5, f:'c2', a:'SAS', n:3}, {id:6, cid:7, f:'c3', a:'ASA', n:4}];
 const missSum = k => ar(k.miss).reduce((s,x)=>s+(+x||0),0);
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   if(id===1){ const f = ob(d.p1), fd = ar(f.found); if(!fd.length && !f.draws) return ''; return kv('찾은 최소 조건', `${fd.length}/7`) + kv('그려 본 횟수', f.draws||0) + `<div style="font-size:13px;">${MIN.map(m=>`${fd.includes(m.k)?'⭐':'—'} ${m.n}`).join(' · ')}</div>`; }
-  const K = KS.find(x=>x.id===id); if(K){ const k = ob(d[K.f]); if(!k.step && !missSum(k)) return ''; return kv('작도', `${Math.min(+k.step||0, K.n)}/${K.n}단계`) + (missSum(k) ? kv('확인에서 틀린 횟수', missSum(k)) : '') + (k.cong ? kv('합동 조건', `${esc(k.cong)} 합동 ${k.cong===K.a?'✅':'❌'}`) + (k.cmiss ? kv('합동 틀린 횟수', k.cmiss) : '') : ''); }
+  const K = KS.find(x=>x.id===id); if(K){ const k = ob(d[K.f]); if(!k.step && !missSum(k)) return ''; return kv('작도', `${Math.min(+k.step||0, K.n)}/${K.n}단계`) + (missSum(k) ? kv('확인에서 틀린 횟수', missSum(k)) : ''); }
+  const C = KS.find(x=>x.cid===id); if(C){ const k = ob(d[C.f]); if(!k.ov && !k.cong) return ''; return kv('겹쳐 보기', k.ov||k.cong ? '했음' : '아직') + (k.cong ? kv('합동 조건', `${esc(k.cong)} 합동 ${k.cong===C.a?'✅':'❌'}`) + (k.cmiss ? kv('합동 틀린 횟수', k.cmiss) : '') : ''); }
   return '';
 }
 function renderAggregate(){ renderStages(); }
@@ -385,8 +386,8 @@ function taskAggregateHTML(id){
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
   if(id===1){ const fs = ss.map(d=>ar(ob(d.p1).found)); const n = ss.filter(d=>ob(d.p1).draws).length;
     return box(`최소 조건 찾기 (그려 본 학생 ${n}명)`, barsHTML(MIN.map(m=>({label:m.n, n:fs.filter(f=>f.includes(m.k)).length, answer:true})), Math.max(1,n)) + `<div class="kv">7가지 모두 찾은 학생 <b>${fs.filter(f=>f.length>=7).length}</b>명</div>`); }
-  const K = KS.find(x=>x.id===id); if(K){ const ks = ss.map(d=>ob(d[K.f])); const ok = ks.filter(k=>k.cong===K.a).length, miss = ks.filter(k=>k.cmiss).length, built = ks.filter(k=>(+k.step||0)>=K.n).length, sm = ks.filter(k=>missSum(k)>=2).length;
-    return box(`${taskLabelOf(id)}`, `<div class="kv">작도를 마친 학생 <b>${built}</b>명 · 확인에서 2번 이상 틀린 학생 <b>${sm}</b>명</div><div class="kv">합동 조건(${K.a}) 맞힌 학생 <b>${ok}</b>명 · 한 번 이상 틀린 학생 <b>${miss}</b>명</div>`); }
+  const K = KS.find(x=>x.id===id || x.cid===id); if(K){ const ks = ss.map(d=>ob(d[K.f])); const ok = ks.filter(k=>k.cong===K.a).length, miss = ks.filter(k=>k.cmiss).length, built = ks.filter(k=>(+k.step||0)>=K.n).length, sm = ks.filter(k=>missSum(k)>=2).length;
+    return box(`${taskLabelOf(id)}`, id===K.id ? `<div class="kv">작도를 마친 학생 <b>${built}</b>명 · 확인에서 2번 이상 틀린 학생 <b>${sm}</b>명</div>` : `<div class="kv">합동 조건(${K.a}) 맞힌 학생 <b>${ok}</b>명 · 한 번 이상 틀린 학생 <b>${miss}</b>명</div>`); }
   return '';
 }
 function updateRevealBtns(){ renderStages(); renderTeacherView(); }
