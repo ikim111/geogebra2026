@@ -247,6 +247,25 @@
   .fill > div + div{margin-top:4px;}
   .sbtn.t-o.on{background:#c62828;border-color:#c62828;} .sbtn.t-i.on{background:#1565c0;border-color:#1565c0;} .sbtn.t-g.on{background:#2e7d32;border-color:#2e7d32;}
   .sum-body p{margin:6px 0;}
+
+  .geo-board{width:auto;max-width:640px;margin:8px 0;}
+  .geo-board .toolbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;}
+  .geo-board .toolbar button{font-size:13px;padding:6px 10px;border:1px solid #ccc;background:#fafafa;border-radius:6px;cursor:pointer;color:#333;font-family:inherit;}
+  .geo-board .toolbar button.active{background:#1565c0;border-color:#1565c0;color:#fff;}
+  .geo-board .toolbar button.reset{margin-left:auto;background:#fff3e0;border-color:#ffcc80;color:#e65100;}
+  .geo-board .toolbar button.undo{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+  .geo-board .toolbar button.redo{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32;}
+  svg.gcanvas{width:100%;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;touch-action:none;cursor:crosshair;}
+  body.final-locked .gcanvas, body.final-locked .geo-board .toolbar{pointer-events:none;opacity:.85;}
+  .ctabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;}
+  .ctab{border:2px solid #c5cad1;background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;color:#1f2328;}
+  .ctab.t-o.on{border-color:#c62828;background:#ffebee;color:#c62828;} .ctab.t-i.on{border-color:#1565c0;background:#e3f2fd;color:#1565c0;} .ctab.t-g.on{border-color:#2e7d32;background:#e8f5e9;color:#2e7d32;}
+  .ctab.done::after{content:' ✅';}
+  .ctask{background:#fffbe6;border-left:4px solid #f0a500;border-radius:6px;padding:8px 12px;font-size:15px;line-height:1.6;}
+  .clist{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;}
+  .clist span{border:1.5px solid #c5cad1;border-radius:16px;padding:4px 12px;font-size:14px;background:#fff;color:#6b7280;}
+  .clist span.on{border-color:#2e7d32;background:#e8f5e9;color:#1b5e20;font-weight:bold;}
+  .fill.locked{opacity:.5;pointer-events:none;}
 </style></style>
 </head>
 <body>
@@ -304,31 +323,30 @@
 
     <div id="taskContainer">
 
-<!-- ===================== 화면 1: 외심·내심·무게중심의 뜻 ===================== -->
+<!-- ===================== 화면 1: 직접 그려서 찾기 ===================== -->
 <section class="task activity" id="task-a1" data-task-id="1">
   <div class="card">
-    <div class="act-head"><span class="act-tag">1 세 점의 뜻</span><span class="badge pending" id="badge-a1">미완료</span></div>
-    <h2>외심, 내심, 무게중심은 각각 어떤 선들의 교점일까?</h2>
-    <p class="hint">아래 버튼을 눌러 세 가지 선을 그려 보세요. 세 선이 한 점에서 만나는 곳이 <b style="color:#c62828">외심 O</b>, <b style="color:#1565c0">내심 I</b>, <b style="color:#2e7d32">무게중심 G</b>예요.</p>
-    <div class="g-layout">
-      <div class="g-board"><svg id="g1" viewBox="0 0 400 380" class="board"></svg></div>
-      <div class="g-side">
-        <div class="row" id="tg1">
-          <button type="button" class="sbtn t-o" data-i="0">세 변의 수직이등분선 → O</button>
-          <button type="button" class="sbtn t-i" data-i="1">세 내각의 이등분선 → I</button>
-          <button type="button" class="sbtn t-g" data-i="2">세 중선 → G</button>
-        </div>
-        <div class="fill" id="fill1">
-          <div>⦁ 삼각형의 <b style="color:#c62828">외심</b>은 세 변의 <select data-k="0"></select>의 교점이다.</div>
-          <div>⦁ 삼각형의 <b style="color:#1565c0">내심</b>은 세 내각의 <select data-k="1"></select>의 교점이다.</div>
-          <div>⦁ 삼각형의 <b style="color:#2e7d32">무게중심</b>은 세 <select data-k="2"></select>의 교점이다.</div>
-        </div>
-        <div class="row"><button type="button" class="okb" id="chk1">✔ 확인</button></div>
-        <div class="g-msg" id="msg1"></div>
-      </div>
+    <div class="act-head"><span class="act-tag">1 직접 그려서 찾기</span><span class="badge pending" id="badge-a1">미완료</span></div>
+    <h2>작도 도구로 외심, 내심, 무게중심을 직접 찾아보자</h2>
+    <p class="hint">탭을 골라 작도 도구로 선을 그리고, 선들이 만나는 곳에 <b>「교점」</b>으로 점을 찍어 보세요. 세 점을 모두 찾으면 아래 빈칸이 열려요.</p>
+    <div class="ctabs" id="ctab1">
+      <button type="button" class="ctab t-o" data-i="0">외심 O</button>
+      <button type="button" class="ctab t-i" data-i="1">내심 I</button>
+      <button type="button" class="ctab t-g" data-i="2">무게중심 G</button>
     </div>
+    <div class="ctask" id="ctask1"></div>
+    <div class="geo-board"><div class="toolbar" id="geoTools1"></div>
+      <svg class="gcanvas" id="geo1_0" viewBox="0 0 600 400"></svg><svg class="gcanvas" id="geo1_1" viewBox="0 0 600 400" style="display:none"></svg><svg class="gcanvas" id="geo1_2" viewBox="0 0 600 400" style="display:none"></svg></div>
+    <div class="g-msg" id="cmsg1"></div>
+    <div class="fill" id="fill1">
+      <div>⦁ 삼각형의 <b style="color:#c62828">외심</b>은 세 변의 <select data-k="0"></select>의 교점이다.</div>
+      <div>⦁ 삼각형의 <b style="color:#1565c0">내심</b>은 세 내각의 <select data-k="1"></select>의 교점이다.</div>
+      <div>⦁ 삼각형의 <b style="color:#2e7d32">무게중심</b>은 세 <select data-k="2"></select>의 교점이다.</div>
+    </div>
+    <div class="row"><button type="button" class="okb" id="chk1">✔ 확인</button></div>
+    <div class="g-msg" id="msg1"></div>
   </div>
-  <div class="why" id="why1">세 가지 선을 모두 그려 보고 빈칸을 바르게 채우면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why1">세 점을 모두 직접 찾고 빈칸을 바르게 채우면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 2: 정삼각형에서 ===================== -->
@@ -336,22 +354,15 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">2 정삼각형에서</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>정삼각형에서 세 선은 어떤 관계가 있을까?</h2>
-    <p class="hint">정삼각형 ABC에서 아래 세 선을 하나씩 그려 보세요. 점 D는 BC의 중점이에요.</p>
-    <div class="g-layout">
-      <div class="g-board"><svg id="g2" viewBox="0 0 400 380" class="board"></svg></div>
-      <div class="g-side">
-        <div class="row" id="tg2">
-          <button type="button" class="sbtn t-i" data-i="0">∠A의 이등분선</button>
-          <button type="button" class="sbtn t-o" data-i="1">BC의 수직이등분선</button>
-          <button type="button" class="sbtn t-g" data-i="2">중선 AD</button>
-        </div>
-        <div class="fill">
-          <div>세 선은 <select id="sel2"><option value="">선택</option><option value="same">모두 같은 직선이다</option><option value="par">서로 평행하다</option><option value="pt">한 점에서만 만난다</option></select></div>
-        </div>
-        <div class="row"><button type="button" class="okb" id="chk2">✔ 확인</button><button type="button" class="sbtn" id="all2">∠B, ∠C에서도 그려 보기</button></div>
-        <div class="g-msg" id="msg2"></div>
-      </div>
+    <p class="hint">정삼각형 ABC에서 작도 도구로 아래 세 선을 <b>직접</b> 그려 보세요. (중선 AD는 먼저 「중점」으로 BC의 중점 D를 찍고, 「선분」으로 A와 D를 이어요)</p>
+    <div class="clist" id="clist2"></div>
+    <div class="geo-board"><div class="toolbar" id="geoTools2"></div><svg class="gcanvas" id="geo2" viewBox="0 0 600 400"></svg></div>
+    <div class="g-msg" id="cmsg2"></div>
+    <div class="fill">
+      <div>세 선은 <select id="sel2"><option value="">선택</option><option value="same">모두 같은 직선이다</option><option value="par">서로 평행하다</option><option value="pt">한 점에서만 만난다</option></select></div>
     </div>
+    <div class="row"><button type="button" class="okb" id="chk2">✔ 확인</button><button type="button" class="sbtn" id="all2">∠B, ∠C에서도 그려 보기</button></div>
+    <div class="g-msg" id="msg2"></div>
     <div class="qbox locked" id="q2">
       <div class="big-question">정삼각형의 외심, 내심, 무게중심이 일치하는 이유를 설명해 보세요.</div>
       <textarea id="t2" placeholder="정삼각형에서 ∠A의 이등분선은 …"></textarea>
@@ -360,7 +371,7 @@
       <div class="friends-box" id="fr2"></div>
     </div>
   </div>
-  <div class="why" id="why2">세 선을 그려 관계를 고르고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
+  <div class="why" id="why2">세 선을 직접 그려 관계를 고르고, 이유를 쓴 뒤 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.</div>
 </section>
 
 <!-- ===================== 화면 3: 다른 삼각형에서도? ===================== -->
@@ -421,8 +432,9 @@
 <script>
 /* ============================================================
    40. 7.4 삼각형의 무게중심 의사소통 — 정삼각형의 외심·내심·무게중심 (2026-10-21, 학습지 7.4 생각을 나누는 의사소통 2 ⑴~⑷)
-   ① 부등변삼각형에 세 변의 수직이등분선(O), 세 내각의 이등분선(I), 세 중선(G)을 그려 보고 빈칸(수직이등분선/이등분선/중선) 고르기
-   ② 정삼각형에서 ∠A의 이등분선·BC의 수직이등분선·중선 AD가 같은 직선임을 확인 → ∠B, ∠C에서도 → 외심·내심·무게중심이 일치하는 이유 쓰기 + AI 피드백(unit 40) + 답변 공유(share/why)
+   ① (2026-10-21 개편) 작도 도구(GEO.GeoCanvas)로 직접 그려서 찾기: 탭 3개(외심/내심/무게중심), 부등변삼각형에 수직이등분선·각의 이등분선·중선(중점+선분)을 그리고 교점을 찍으면
+      도형으로 판정(맞는 선 2개 이상 + 중심 근처 6px 안에 점) → 세 점을 다 찾으면 빈칸(수직이등분선/이등분선/중선) 고르기. 탭별 작도는 s1.snap[i]에 저장
+   ② 정삼각형에서 ∠A의 이등분선·BC의 수직이등분선·중선 AD를 직접 작도(도구 종류까지 판정, s2.have) → 같은 직선임을 확인 → ∠B, ∠C에서도 → 외심·내심·무게중심이 일치하는 이유 쓰기 + AI 피드백(unit 40) + 답변 공유(share/why)
    ③ 꼭짓점을 끌어 O, I, G의 위치·거리 관찰 → 정삼각형이 아니면 일치하지 않음, 이등변삼각형이면 한 직선 위 → 생각 공유(share/talk) → 정리 상자
    student21.html과 같은 틀을 scratchpad의 build.py로 가져왔다. 방: rooms/{반}__sim40.
    ACTIVITY_SUFFIX는 교사 화면과 반드시 동일해야 한다.
@@ -443,9 +455,646 @@ const FIREBASE_CONFIG = {
 const ACTIVITY_SUFFIX = '__sim40'; // teacher40.html과 반드시 동일해야 함
 const UNIT_LABEL = '7.4. 삼각형의 무게중심 의사소통 - 정삼각형의 외심·내심·무게중심';
 const UNIT_NO = 40;
+/* ---------- 작도 엔진(student0.html의 GeoCanvas를 그대로 가져옴). 이름 충돌을 막으려고 GEO 안에 감쌌다 ---------- */
+const GEO = (()=>{
+const GRID = 40;
+const TOUCH_TOL = 30; // 모바일에서 점 주변을 터치해도 잡히도록 넉넉하게 잡은 히트 반경(SVG 좌표계 기준)
+let _uid = 0;
+const uid = () => 'o' + (_uid++);
+
+/* ---------- 기하 수학 유틸 ---------- */
+const sub = (a,b) => ({x:a.x-b.x, y:a.y-b.y});
+const add = (a,b) => ({x:a.x+b.x, y:a.y+b.y});
+const scl = (a,s) => ({x:a.x*s, y:a.y*s});
+const norm = a => { const m = Math.hypot(a.x,a.y)||1; return {x:a.x/m,y:a.y/m}; };
+const perp = a => ({x:-a.y, y:a.x});
+const mid = (a,b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const samePt = (a,b,tol=5) => a && b && dist(a,b) < tol;
+
+function distToLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
+  return Math.abs((p.x-a.x)*dy - (p.y-a.y)*dx)/len;
+}
+function distToSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+  let t = len2===0?0:((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t = Math.max(0,Math.min(1,t));
+  return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
+}
+function lineLineIntersection(a1,b1,a2,b2){
+  const x1=a1.x,y1=a1.y,x2=b1.x,y2=b1.y,x3=a2.x,y3=a2.y,x4=b2.x,y4=b2.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-9) return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+}
+function circleLineIntersection(center,r,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const fx=a.x-center.x, fy=a.y-center.y;
+  const A=dx*dx+dy*dy, B=2*(fx*dx+fy*dy), C=fx*fx+fy*fy-r*r;
+  let disc=B*B-4*A*C;
+  if(disc<0) return [];
+  disc=Math.sqrt(disc);
+  const t1=(-B-disc)/(2*A), t2=(-B+disc)/(2*A);
+  const pts=[];
+  [t1,t2].forEach(t=>pts.push({x:a.x+t*dx, y:a.y+t*dy}));
+  return pts;
+}
+function circleCircleIntersection(c1,r1,c2,r2){
+  const d=dist(c1,c2);
+  if(d>r1+r2||d<Math.abs(r1-r2)||d===0) return [];
+  const a=(r1*r1-r2*r2+d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0,r1*r1-a*a));
+  const xm=c1.x+a*(c2.x-c1.x)/d, ym=c1.y+a*(c2.y-c1.y)/d;
+  return [
+    {x:xm+h*(c2.y-c1.y)/d, y:ym-h*(c2.x-c1.x)/d},
+    {x:xm-h*(c2.y-c1.y)/d, y:ym+h*(c2.x-c1.x)/d}
+  ];
+}
+function projectOntoLine(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoSegment(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy||1;
+  let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  return {x:a.x+t*dx, y:a.y+t*dy};
+}
+function projectOntoCircle(p,center,r){
+  const d=norm(sub(p,center));
+  return {x:center.x+d.x*r, y:center.y+d.y*r};
+}
+function angleDeg(a,b,c){
+  const v1=sub(a,b), v2=sub(c,b);
+  const mag=Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y) || 1;
+  let cos=(v1.x*v2.x+v1.y*v2.y)/mag;
+  cos=Math.max(-1,Math.min(1,cos));
+  return Math.acos(cos)*180/Math.PI;
+}
+function bisectorDir(a,b,c){
+  const u=norm(sub(a,b)), v=norm(sub(c,b));
+  let d=norm(add(u,v));
+  if(Math.hypot(d.x,d.y)<1e-6) d=perp(norm(sub(c,a)));
+  return d;
+}
+function arcInfo(b,a,c,r){
+  const a1=Math.atan2(a.y-b.y,a.x-b.x), a2=Math.atan2(c.y-b.y,c.x-b.x);
+  let diff=a2-a1;
+  while(diff<=-Math.PI) diff+=2*Math.PI;
+  while(diff>Math.PI) diff-=2*Math.PI;
+  const end=a1+diff;
+  const p1={x:b.x+r*Math.cos(a1), y:b.y+r*Math.sin(a1)};
+  const p2={x:b.x+r*Math.cos(end), y:b.y+r*Math.sin(end)};
+  const sweep = diff>0?1:0;
+  return {path:`M ${p1.x} ${p1.y} A ${r} ${r} 0 0 ${sweep} ${p2.x} ${p2.y}`, deg: Math.abs(diff)*180/Math.PI, mid:{x:b.x+(r+16)*Math.cos(a1+diff/2), y:b.y+(r+16)*Math.sin(a1+diff/2)}};
+}
+const ok = msg => ({ok:true,msg});
+const fail = msg => ({ok:false,msg});
+
+/* ---------- 도구 메타 ---------- */
+const TOOL_META = {
+  move:{label:'이동'}, point:{label:'점'}, line:{label:'직선'}, segment:{label:'선분'},
+  circleCP:{label:'원(중심,통과점)'}, circleCR:{label:'원(중심,반지름)'},
+  perpBisector:{label:'수직이등분선'}, angleBisector:{label:'각의 이등분선'}, perp:{label:'수선'},
+  intersect:{label:'교점'}, midpoint:{label:'중점'}, polygon:{label:'다각형'}, lengthTool:{label:'길이 재기'}, angleTool:{label:'각도 재기'},
+  angleInput:{label:'각도 입력 작도'}
+};
+const ALL_TOOLS = ['point','line','segment','circleCP','circleCR','intersect','midpoint','perp','perpBisector','angleBisector','polygon','lengthTool','angleTool','angleInput'];
+const TOOL_HELP = {
+  lengthTool: '"길이 재기" 도구를 클릭한 뒤, 선분을 바로 클릭하거나 점 두 개를 순서대로 클릭하세요. 화면에 길이 값이 나타나요.',
+  angleTool: '"각도 재기" 도구를 클릭한 뒤, 점 세 개를 순서대로 클릭하세요(가운데 점이 꼭짓점). 화면에 각도 값이 나타나요.',
+  perp: '"수선" 도구를 클릭한 뒤, 기준이 되는 직선/선분/반직선을 먼저 클릭하고, 그다음 그 직선에 수직인 선이 지나갈 점을 클릭하세요.'
+};
+const INTERSECTABLE = ['line','segment','perpBisector','circleCP','circleCR','angleBisector','perp'];
+
+/* ---------- GeoCanvas 클래스 ---------- */
+class GeoCanvas{
+  constructor(svgEl, cfg, onChange){
+    this.svg = svgEl;
+    this.width = cfg.width || 600;
+    this.height = cfg.height || 400;
+    this.points = [];
+    this.objects = [];
+    this.history = [];
+    this.tool = 'move';
+    this.pending = [];
+    this.pendingObjs = [];
+    this.dragging = null;
+    this.redoStack = [];
+    this.onChange = onChange || (()=>{});
+    (cfg.points||[]).forEach(p => this.addPoint(p.x,p.y,{label:p.label, locked:true}));
+    (cfg.presetObjects||[]).forEach(o => {
+      const resolved = Object.assign({}, o);
+      ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{
+        if(resolved[k] && typeof resolved[k]==='string'){ const pt=this.points.find(p=>p.label===resolved[k]); if(pt) resolved[k]=pt.id; }
+      });
+      if(resolved.ids) resolved.ids = resolved.ids.map(l=>{ const pt=this.points.find(p=>p.label===l); return pt?pt.id:l; });
+      const obj = Object.assign({id:uid(), locked:true}, resolved);
+      this.objects.push(obj);
+    });
+    this._wire();
+    this.render();
+  }
+  addPoint(x,y,opts={}){
+    const used = new Set(this.points.map(p=>p.label));
+    const pool = 'PQRSTUVWXYZLMNKJIHGFED'.split('');
+    const label = opts.label || pool.find(l=>!used.has(l)) || ('X'+this.points.length);
+    const p = {id:uid(), label, x, y, locked: !!opts.locked, constraint: opts.constraint||null, computed: opts.computed||null};
+    this.points.push(p);
+    if(!opts.locked || opts.trackHistory){ this.history.push({kind:'point', id:p.id}); this.redoStack=[]; }
+    return p;
+  }
+  // computed: {kind:'intersection', o1, o2} 형태의 점은 매 render()마다 두 도형(o1,o2)의 교점을
+  // 다시 계산해서 위치를 갱신한다. 두 점이 만나는 경우(원-원, 원-직선)에는 직전 위치에 더 가까운
+  // 쪽을 골라서, 도형을 움직여도 엉뚱한 교점으로 순간이동하지 않게 한다.
+  _recomputeComputedPoints(){
+    this.points.forEach(p=>{
+      if(!p.computed || p.computed.kind!=='intersection') return;
+      const o1=this.objects.find(o=>o.id===p.computed.o1), o2=this.objects.find(o=>o.id===p.computed.o2);
+      if(!o1||!o2) return;
+      const pts=this.computeIntersections(o1,o2);
+      if(!pts.length) return; // 교점이 사라지면 마지막 위치를 그대로 유지
+      let best=pts[0], bd=dist(pts[0],p);
+      pts.forEach(cand=>{ const d=dist(cand,p); if(d<bd){bd=d;best=cand;} });
+      p.x=best.x; p.y=best.y;
+    });
+  }
+  addObject(o){
+    const obj = Object.assign({id:uid(), locked:false}, o);
+    this.objects.push(obj);
+    this.history.push({kind:'object', id:obj.id});
+    this.redoStack=[];
+    return obj;
+  }
+  resolvePoint(id){ return this.points.find(p=>p.id===id); }
+  byLabel(label){ return this.points.find(p=>p.label===label); }
+  pickPoint(pt){ return this.findPointNear(pt,TOUCH_TOL) || this.addPoint(pt.x,pt.y); }
+  findPointNear(pt,tol){
+    let best=null,bd=tol;
+    for(const p of this.points){ const d=dist(p,pt); if(d<bd){bd=d;best=p;} }
+    return best;
+  }
+  getObjGeom(o){
+    switch(o.type){
+      case 'line': case 'segment': case 'perpBisector':
+        return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'circleCP': return {center:this.resolvePoint(o.center), through:this.resolvePoint(o.through)};
+      case 'circleCR': return {center:this.resolvePoint(o.center), r1:this.resolvePoint(o.r1), r2:this.resolvePoint(o.r2)};
+      case 'angleBisector': case 'angleLabel': return {a:this.resolvePoint(o.a), b:this.resolvePoint(o.b), c:this.resolvePoint(o.c)};
+      case 'polygon': return {pts:o.ids.map(id=>this.resolvePoint(id))};
+      case 'lengthLabel': return {p1:this.resolvePoint(o.p1), p2:this.resolvePoint(o.p2)};
+      case 'perp': return {p:this.resolvePoint(o.p), refP1:this.resolvePoint(o.refP1), refP2:this.resolvePoint(o.refP2)};
+    }
+  }
+  asLine(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='line'||o.type==='segment') return [g.p1,g.p2];
+    if(o.type==='perpBisector'){ const M=mid(g.p1,g.p2); const d=perp(norm(sub(g.p2,g.p1))); return [M, add(M,d)]; }
+    if(o.type==='angleBisector'){ const d=bisectorDir(g.a,g.b,g.c); return [g.b, add(g.b,d)]; }
+    if(o.type==='perp'){ const d=perp(norm(sub(g.refP2,g.refP1))); return [g.p, add(g.p,d)]; }
+    return null;
+  }
+  asCircle(o){
+    const g=this.getObjGeom(o);
+    if(o.type==='circleCP') return {center:g.center, r: dist(g.center,g.through)};
+    if(o.type==='circleCR') return {center:g.center, r: dist(g.r1,g.r2)};
+    return null;
+  }
+  _projectOntoObject(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(c) return projectOntoCircle(pt,c.center,c.r);
+    if(l) return o.type==='segment' ? projectOntoSegment(pt,l[0],l[1]) : projectOntoLine(pt,l[0],l[1]);
+    return pt;
+  }
+  objDistToPoint(o,pt){
+    const l=this.asLine(o), c=this.asCircle(o);
+    if(l){ return o.type==='segment' ? distToSegment(pt,l[0],l[1]) : distToLine(pt,l[0],l[1]); }
+    if(c){ return Math.abs(dist(c.center,pt)-c.r); }
+    return Infinity;
+  }
+  findObjectNear(pt,tol){
+    let best=null,bd=tol;
+    for(const o of this.objects){
+      if(!INTERSECTABLE.includes(o.type)) continue;
+      const g=this.getObjGeom(o);
+      if(Object.values(g).some(v=>!v)) continue;
+      const d=this.objDistToPoint(o,pt);
+      if(d<bd){bd=d;best=o;}
+    }
+    return best;
+  }
+  computeIntersections(o1,o2){
+    const l1=this.asLine(o1), c1=this.asCircle(o1), l2=this.asLine(o2), c2=this.asCircle(o2);
+    if(l1&&l2){ const p=lineLineIntersection(l1[0],l1[1],l2[0],l2[1]); return p?[p]:[]; }
+    if(l1&&c2) return circleLineIntersection(c2.center,c2.r,l1[0],l1[1]);
+    if(c1&&l2) return circleLineIntersection(c1.center,c1.r,l2[0],l2[1]);
+    if(c1&&c2) return circleCircleIntersection(c1.center,c1.r,c2.center,c2.r);
+    return [];
+  }
+  // 교점 도구 개선: 두 도형을 순서대로 각각 클릭하지 않아도, 두 도형이 실제로 교차하는
+  // 지점 자체를 터치하면 그 두 도형을 자동으로 찾아 바로 교점을 만들어준다(기존의
+  // "도형을 하나씩 순서대로 클릭" 방식도 그대로 남겨둔다 — handleToolClick의 'intersect' 참고).
+  findIntersectionNear(pt, tol){
+    const objs = this.objects.filter(o=>INTERSECTABLE.includes(o.type));
+    let best=null, bd=tol;
+    for(let i=0;i<objs.length;i++){
+      for(let j=i+1;j<objs.length;j++){
+        const o1=objs[i], o2=objs[j];
+        const g1=this.getObjGeom(o1), g2=this.getObjGeom(o2);
+        if(!g1||!g2) continue;
+        if(Object.values(g1).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        if(Object.values(g2).some(v=>Array.isArray(v)?v.some(x=>!x):!v)) continue;
+        this.computeIntersections(o1,o2).forEach(ip=>{
+          if(ip.x<0||ip.x>this.width||ip.y<0||ip.y>this.height) return;
+          const d=dist(pt,ip);
+          if(d<bd){ bd=d; best={o1,o2,point:ip}; }
+        });
+      }
+    }
+    return best;
+  }
+  setTool(t){ this.tool=t; this.pending=[]; this.pendingObjs=[]; this.render(); }
+  reset(){
+    this.points = this.points.filter(p=>p.locked);
+    this.objects = this.objects.filter(o=>o.locked);
+    this.history=[]; this.redoStack=[]; this.pending=[]; this.pendingObjs=[]; this.dragging=null;
+    this.render();
+  }
+  undo(){
+    const last = this.history.pop();
+    if(!last) return;
+    let entry;
+    if(last.kind==='point'){
+      const point = this.points.find(p=>p.id===last.id);
+      const relatedObjects = this.objects.filter(o=>this._refsPoint(o,last.id));
+      this.points = this.points.filter(p=>p.id!==last.id);
+      this.objects = this.objects.filter(o=>!this._refsPoint(o,last.id));
+      entry = {kind:'point', id:last.id, point, relatedObjects};
+    } else {
+      const object = this.objects.find(o=>o.id===last.id);
+      this.objects = this.objects.filter(o=>o.id!==last.id);
+      entry = {kind:'object', id:last.id, object};
+    }
+    this.redoStack.push(entry);
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  redo(){
+    const last = this.redoStack.pop();
+    if(!last) return;
+    if(last.kind==='point'){
+      if(last.point) this.points.push(last.point);
+      if(last.relatedObjects && last.relatedObjects.length) this.objects.push(...last.relatedObjects);
+    } else if(last.object){
+      this.objects.push(last.object);
+    }
+    this.history.push({kind:last.kind, id:last.id});
+    this.pending=[]; this.pendingObjs=[];
+    this.render();
+  }
+  _refsPoint(o,pid){
+    return [o.p1,o.p2,o.center,o.through,o.r1,o.r2,o.a,o.b,o.c,o.p,o.refP1,o.refP2].includes(pid) || (o.ids && o.ids.includes(pid));
+  }
+  getSvgCoords(e){
+    const pt = this.svg.createSVGPoint();
+    const t = e.touches && e.touches[0] ? e.touches[0] : e;
+    pt.x=t.clientX; pt.y=t.clientY;
+    const ctm = this.svg.getScreenCTM().inverse();
+    const loc = pt.matrixTransform(ctm);
+    return {x:loc.x, y:loc.y};
+  }
+  _wire(){
+    const down = e=>{
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      if(this.tool==='move'){
+        const p=this.findPointNear(pt,TOUCH_TOL);
+        if(p && !p.locked) this.dragging=p;
+        return;
+      }
+      this.handleToolClick(pt);
+    };
+    const move = e=>{
+      if(!this.dragging) return;
+      e.preventDefault();
+      const pt=this.getSvgCoords(e);
+      let nx=pt.x, ny=pt.y;
+      if(this.dragging.constraint){
+        const o=this.objects.find(ob=>ob.id===this.dragging.constraint.objId);
+        if(o){ const proj=this._projectOntoObject(o,pt); nx=proj.x; ny=proj.y; }
+      }
+      this.dragging.x = Math.max(0,Math.min(this.width,nx));
+      this.dragging.y = Math.max(0,Math.min(this.height,ny));
+      this.render();
+    };
+    const up = ()=>{ this.dragging=null; };
+    this.svg.addEventListener('mousedown', down);
+    this.svg.addEventListener('touchstart', down, {passive:false});
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move, {passive:false});
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+  }
+  handleToolClick(pt){
+    switch(this.tool){
+      case 'point': {
+        if(this.findPointNear(pt,TOUCH_TOL)) break;
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o){ const proj=this._projectOntoObject(o,pt); this.addPoint(proj.x,proj.y,{constraint:{objId:o.id}}); }
+        else { this.addPoint(pt.x,pt.y); }
+        break;
+      }
+      case 'line': case 'segment': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; if(a!==b) this.addObject({type:this.tool,p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'circleCP': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [c,t]=this.pending; if(c!==t) this.addObject({type:'circleCP',center:c,through:t}); this.pending=[]; }
+        break;
+      }
+      case 'circleCR': {
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt); this.pending.push(p.id);
+          break;
+        }
+        // 중심을 고른 뒤: 선분을 클릭하면 그 선분의 길이를 반지름으로 바로 사용
+        const segObj=this.findObjectNear(pt,TOUCH_TOL);
+        if(segObj && segObj.type==='segment'){
+          const cId=this.pending[0]; this.pending=[];
+          this.addObject({type:'circleCR', center:cId, r1:segObj.p1, r2:segObj.p2});
+          break;
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [c,r1,r2]=this.pending; this.addObject({type:'circleCR',center:c,r1,r2}); this.pending=[]; }
+        break;
+      }
+      case 'perpBisector': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'perpBisector', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'perpBisector',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleBisector': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleBisector',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'polygon': {
+        const p=this.pickPoint(pt);
+        if(this.pending.length>=3 && p.id===this.pending[0]){ this.addObject({type:'polygon', ids:[...this.pending]}); this.pending=[]; }
+        else this.pending.push(p.id);
+        break;
+      }
+      case 'intersect': {
+        // 두 도형이 만나는 지점을 바로 터치한 경우: 어떤 두 도형인지 자동으로 찾아 바로 교점을 만든다.
+        const direct = this.findIntersectionNear(pt, TOUCH_TOL);
+        if(direct){
+          if(!this.findPointNear(direct.point,6)){
+            this.addPoint(direct.point.x, direct.point.y, {locked:true, trackHistory:true, computed:{kind:'intersection', o1:direct.o1.id, o2:direct.o2.id}});
+          }
+          this.pendingObjs=[];
+          break;
+        }
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o){
+          this.pendingObjs.push(o);
+          if(this.pendingObjs.length>=2){
+            const [o1,o2]=this.pendingObjs;
+            if(o1!==o2){
+              const pts=this.computeIntersections(o1,o2);
+              pts.forEach(ip=>{
+                if(ip.x>=0&&ip.x<=this.width&&ip.y>=0&&ip.y<=this.height && !this.findPointNear(ip,6)){
+                  // computed 태그를 달아두면 o1/o2가 나중에 움직여도(그 위의 점을 드래그해도)
+                  // 이 교점이 매 render()마다 새 위치로 따라온다.
+                  this.addPoint(ip.x,ip.y,{locked:true, trackHistory:true, computed:{kind:'intersection', o1:o1.id, o2:o2.id}});
+                }
+              });
+            }
+            this.pendingObjs=[];
+          }
+        }
+        break;
+      }
+      case 'midpoint': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [aId,bId]=this.pending; this.pending=[];
+          if(aId!==bId){
+            const A=this.resolvePoint(aId), B=this.resolvePoint(bId);
+            if(A&&B){
+              const m=mid(A,B);
+              if(!this.findPointNear(m,6)) this.addPoint(m.x,m.y,{locked:true, trackHistory:true});
+            }
+          }
+        }
+        break;
+      }
+      case 'perp': {
+        // 1단계: 수선이 지나갈 점을 먼저 클릭한다(기존 점 또는 새 점).
+        if(this.pending.length===0){
+          const p=this.pickPoint(pt);
+          this.pending.push(p.id);
+          break;
+        }
+        // 2단계: 그 점을 지나고, 클릭한 직선류(직선/선분/반직선)에 수직인 선을 그린다.
+        // 주의: 그 점이 클릭한 직선/선분의 끝점(꼭짓점)이어도 수선을 그릴 수 있어야 한다
+        // (예: 선분 AB에서 점 A를 지나는 수선). 예전에는 pId!==o.p1 && pId!==o.p2 조건 때문에
+        // 이 경우가 막혀 있었다.
+        const pId=this.pending[0]; this.pending=[];
+        const o=this.findObjectNear(pt,TOUCH_TOL);
+        if(o && (o.type==='line'||o.type==='segment'||o.type==='ray')){
+          this.addObject({type:'perp', p:pId, refP1:o.p1, refP2:o.p2});
+        }
+        break;
+      }
+      case 'lengthTool': {
+        if(this.pending.length===0){
+          const segObj=this.findObjectNear(pt,TOUCH_TOL);
+          if(segObj && (segObj.type==='segment'||segObj.type==='line')){
+            this.addObject({type:'lengthLabel', p1:segObj.p1, p2:segObj.p2});
+            break;
+          }
+        }
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){ const [a,b]=this.pending; this.addObject({type:'lengthLabel',p1:a,p2:b}); this.pending=[]; }
+        break;
+      }
+      case 'angleTool': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=3){ const [a,b,c]=this.pending; this.addObject({type:'angleLabel',a,b,c}); this.pending=[]; }
+        break;
+      }
+      case 'angleInput': {
+        const p=this.pickPoint(pt); this.pending.push(p.id);
+        if(this.pending.length>=2){
+          const [bId,aId]=this.pending; this.pending=[];
+          const val=window.prompt('꼭짓점 → 팔 순서로 두 점을 선택했어요.\n각의 크기를 입력하세요 (도, 0~360):','60');
+          if(val!==null){
+            const deg=parseFloat(val);
+            if(!isNaN(deg)){
+              const B=this.resolvePoint(bId), A=this.resolvePoint(aId);
+              if(B&&A){
+                const dir=norm(sub(A,B)), rad=deg*Math.PI/180, len=dist(A,B)||100;
+                const rot={x:dir.x*Math.cos(rad)-dir.y*Math.sin(rad), y:dir.x*Math.sin(rad)+dir.y*Math.cos(rad)};
+                const C=this.addPoint(B.x+rot.x*len, B.y+rot.y*len, {});
+                this.addObject({type:'angleLabel', a:aId, b:bId, c:C.id});
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+    this.render();
+  }
+  render(){
+    this._recomputeComputedPoints();
+    const NS='http://www.w3.org/2000/svg';
+    while(this.svg.firstChild) this.svg.removeChild(this.svg.firstChild);
+    // grid
+    const g0=document.createElementNS(NS,'g');
+    for(let x=0;x<=this.width;x+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x); l.setAttribute('y1',0); l.setAttribute('x2',x); l.setAttribute('y2',this.height);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    for(let y=0;y<=this.height;y+=GRID){
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',0); l.setAttribute('y1',y); l.setAttribute('x2',this.width); l.setAttribute('y2',y);
+      l.setAttribute('stroke','#f0f0f0'); g0.appendChild(l);
+    }
+    this.svg.appendChild(g0);
+
+    const extend=(origin,dir,len=1000)=>({x1:origin.x-dir.x*len,y1:origin.y-dir.y*len,x2:origin.x+dir.x*len,y2:origin.y+dir.y*len});
+    const mkLine=(x1,y1,x2,y2,color,dash)=>{
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+      l.setAttribute('stroke',color); l.setAttribute('stroke-width',2);
+      if(dash) l.setAttribute('stroke-dasharray',dash);
+      this.svg.appendChild(l);
+    };
+
+    this.objects.forEach(o=>{
+      const g=this.getObjGeom(o);
+      if(!g || Object.values(g).some(v=>Array.isArray(v)? v.some(x=>!x) : !v)) return;
+      if(o.type==='line'){ const e=extend(g.p1,norm(sub(g.p2,g.p1))); mkLine(e.x1,e.y1,e.x2,e.y2,'#1565c0'); }
+      else if(o.type==='segment'){ mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#1565c0'); }
+      else if(o.type==='perpBisector'){
+        const M=mid(g.p1,g.p2), d=perp(norm(sub(g.p2,g.p1))); const e=extend(M,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#6a1b9a');
+      }
+      else if(o.type==='angleBisector'){
+        const d=bisectorDir(g.a,g.b,g.c);
+        mkLine(g.b.x,g.b.y,g.b.x+d.x*500,g.b.y+d.y*500,'#e65100');
+      }
+      else if(o.type==='perp'){
+        const d=perp(norm(sub(g.refP2,g.refP1))); const e=extend(g.p,d);
+        mkLine(e.x1,e.y1,e.x2,e.y2,'#00838f');
+      }
+      else if(o.type==='circleCP'||o.type==='circleCR'){
+        const c=this.asCircle(o);
+        const el=document.createElementNS(NS,'circle');
+        el.setAttribute('cx',c.center.x); el.setAttribute('cy',c.center.y); el.setAttribute('r',Math.max(c.r,0.1));
+        el.setAttribute('stroke','#2e7d32'); el.setAttribute('fill','none'); el.setAttribute('stroke-width',2);
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='polygon'){
+        const pts=g.pts.map(p=>`${p.x},${p.y}`).join(' ');
+        const el=document.createElementNS(NS,'polygon');
+        el.setAttribute('points',pts); el.setAttribute('fill','#1565c0'); el.setAttribute('fill-opacity','0.12');
+        el.setAttribute('stroke','#1565c0'); el.setAttribute('stroke-width','2');
+        this.svg.appendChild(el);
+      }
+      else if(o.type==='lengthLabel'){
+        mkLine(g.p1.x,g.p1.y,g.p2.x,g.p2.y,'#999','3,3');
+        const m=mid(g.p1,g.p2);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',m.x); t.setAttribute('y',m.y-8); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=(dist(g.p1,g.p2)/GRID).toFixed(2);
+        this.svg.appendChild(t);
+      }
+      else if(o.type==='angleLabel'){
+        const info=arcInfo(g.b,g.a,g.c,28);
+        const path=document.createElementNS(NS,'path');
+        path.setAttribute('d',info.path); path.setAttribute('stroke','#c62828'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','2');
+        this.svg.appendChild(path);
+        const t=document.createElementNS(NS,'text');
+        t.setAttribute('x',info.mid.x); t.setAttribute('y',info.mid.y); t.setAttribute('fill','#c62828');
+        t.setAttribute('font-size','13'); t.setAttribute('font-weight','bold'); t.setAttribute('text-anchor','middle');
+        t.textContent=info.deg.toFixed(1)+'°';
+        this.svg.appendChild(t);
+      }
+    });
+
+    // pending highlight
+    [...this.pending].forEach(id=>{
+      const p=this.resolvePoint(id); if(!p) return;
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',10);
+      c.setAttribute('fill','none'); c.setAttribute('stroke','#fbc02d'); c.setAttribute('stroke-width','3');
+      this.svg.appendChild(c);
+    });
+
+    // points
+    this.points.forEach(p=>{
+      const c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',5);
+      c.setAttribute('fill', p.locked ? '#212121' : '#0277bd');
+      c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+      this.svg.appendChild(c);
+      const t=document.createElementNS(NS,'text');
+      t.setAttribute('x',p.x+9); t.setAttribute('y',p.y-8);
+      t.setAttribute('font-size','14'); t.setAttribute('font-weight','bold'); t.setAttribute('fill','#222');
+      t.textContent=p.label;
+      this.svg.appendChild(t);
+    });
+
+    this.onChange(this);
+  }
+}
+/* 저장된 도형 스냅샷(objectSnapshots/{taskId})을 캔버스에 다시 그려 넣는다.
+   좌표(x,y)와 점-도형 연결 관계만 복원하고, 제약조건/계산점 메타데이터나 되돌리기 기록까지는
+   복원하지 않는다 — 그 정도만으로도 "다시 접속했더니 그려둔 도형이 사라졌다"는 문제는 해결된다.
+   (제출완료로 잠긴 과제는 캔버스가 pointer-events:none이라 어차피 읽기전용으로만 보인다.) */
+function restoreObjectSnapshot(cv, snapshot){
+  if(!cv || !snapshot) return;
+  const remap = {};
+  (snapshot.points||[]).forEach(sp=>{
+    let target = cv.points.find(p=>p.label===sp.label);
+    if(target){ target.x=sp.x; target.y=sp.y; }
+    else { target = cv.addPoint(sp.x, sp.y, {label:sp.label}); }
+    remap[sp.id] = target.id;
+  });
+  const keys=['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'];
+  (snapshot.objects||[]).forEach(so=>{
+    const obj = {type:so.type};
+    keys.forEach(k=>{ if(so[k]!=null) obj[k] = (remap[so[k]]!==undefined) ? remap[so[k]] : so[k]; });
+    if(so.ids) obj.ids = so.ids.map(id=> remap[id]!==undefined ? remap[id] : id);
+    cv.addObject(obj);
+  });
+  cv.render();
+}
+
+/* ---------- 과제 정의 ---------- */
+function snapshotOf(cv){ return { points: cv.points.map(p=>({id:p.id, x:Math.round(p.x), y:Math.round(p.y), label:p.label})), objects: cv.objects.filter(o=>!o.locked).map(o=>{ const s={id:o.id,type:o.type}; ['p1','p2','center','through','r1','r2','a','b','c','p','refP1','refP2'].forEach(k=>{ if(o[k]!=null) s[k]=o[k]; }); if(o.ids) s.ids=o.ids; return s; }) }; }
+return { GeoCanvas, TOOL_META, restoreObjectSnapshot, snapshotOf };
+})();
+
 const MIN_TEXT = 5;
 const TASKS = [
-  {id:1, key:'a1', title:'1. 외심·내심·무게중심의 뜻'},
+  {id:1, key:'a1', title:'1. 직접 그려서 외심·내심·무게중심 찾기'},
   {id:2, key:'a2', title:'2. 정삼각형에서 세 선의 관계와 이유'},
   {id:3, key:'a3', title:'3. 다른 삼각형에서도 일치할까?'}
 ];
@@ -457,8 +1106,8 @@ const OPTS1 = [['perp','수직이등분선'], ['bis','이등분선'], ['med','�
 const ANS1 = ['perp', 'bis', 'med'];
 
 const state = {
-  s1:{on:[false,false,false], a:['','',''], ok:false, miss:0},
-  s2:{on:[false,false,false], all:false, sel:'', ok:false, miss:0},
+  s1:{found:[false,false,false], n:[0,0,0], snap:[null,null,null], tab:0, a:['','',''], ok:false, miss:0},
+  s2:{have:{bis:false, pb:false, med:false}, snap:null, all:false, sel:'', ok:false, miss:0},
   t2:'',
   s3:{T: T30.map(p=>p.slice()), moves:0, qa:'', qb:'', ok:false, miss:0},
   t3:'', shared:{2:false,3:false}, seen:{2:false,3:false}
@@ -468,17 +1117,19 @@ const SHARE = { all:{}, sent:{} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const len = s => String(s||'').trim().length;
+const H2N = [['bis','∠A의 이등분선'],['pb','BC의 수직이등분선'],['med','중선 AD']];
+const have2All = () => H2N.every(([k])=> state.s2.have[k]);
 const QA = {yes:'있다', no:'없다'}, QB = {line:'한 직선 위에 있다', same:'항상 일치한다', none:'아무 관계 없다'}, SEL2 = {same:'모두 같은 직선', par:'서로 평행', pt:'한 점에서만 만남'};
 
 function isDone(id){
-  if(id===1) return state.s1.on.every(Boolean) && state.s1.ok;
-  if(id===2) return state.s2.on.every(Boolean) && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList().length>=1;
+  if(id===1) return state.s1.found.every(Boolean) && state.s1.ok;
+  if(id===2) return have2All() && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList().length>=1;
   if(id===3) return state.s3.moves>=3 && state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3];
   return false;
 }
 function valueOf(id){
-  if(id===1){ const s = state.s1, nm = v => (OPTS1.find(o=>o[0]===v)||[,'?'])[1]; return (s.on.some(Boolean) || s.a.some(Boolean)) ? `외심: ${nm(s.a[0])} · 내심: ${nm(s.a[1])} · 무게중심: ${nm(s.a[2])}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
-  if(id===2){ const s = state.s2; return (s.sel || state.t2) ? `세 선: ${SEL2[s.sel]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t2.trim()}` : ''; }
+  if(id===1){ const s = state.s1, nm = v => (OPTS1.find(o=>o[0]===v)||[,'?'])[1]; return (s.n.some(Boolean) || s.a.some(Boolean)) ? `[찾은 점 ${['O','I','G'].filter((x,i)=>s.found[i]).join(',')||'-'} · 그린 선 ${s.n.join('/')}] 외심: ${nm(s.a[0])} · 내심: ${nm(s.a[1])} · 무게중심: ${nm(s.a[2])}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''}` : ''; }
+  if(id===2){ const s = state.s2; return (s.sel || state.t2 || Object.values(s.have).some(Boolean)) ? `[그린 선: ${H2N.filter(([k])=>s.have[k]).map(x=>x[1]).join(', ')||'-'}] 세 선: ${SEL2[s.sel]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t2.trim()}` : ''; }
   if(id===3){ const s = state.s3; return (s.moves || s.qa || state.t3) ? `[모양 바꾸기 ${s.moves}번] ⑴ ${QA[s.qa]||'?'} ⑵ ${QB[s.qb]||'?'}${s.ok?' ✓':''}${s.miss?` (틀림 ${s.miss}번)`:''} / ${state.t3.trim()}` : ''; }
   return '';
 }
@@ -495,7 +1146,6 @@ function pushShare(rt){
   Object.keys(e).forEach(kind=>{ const j = JSON.stringify(e[kind]); if(SHARE.sent[kind] === j) return; SHARE.sent[kind] = j; rt.shareRef.child(kind+'/'+rt.studentKey).set(e[kind]); });
 }
 const shareOf = kind => (SHARE.all && SHARE.all[kind]) || {};
-
 /* ---------- 🤖 AI 피드백 받기(연습): 보완할 점이 없으면 정리 상자가 열린다. 3번까지, 결과는 data.aiFb ---------- */
 /* ---------- 🤖 AI 피드백 받기(연습): 수행평가 2부와 같은 방식. 한 곳당 3번까지(비용 절약), 결과는 data.aiFb에 저장 → 교사 화면에서 볼 수 있다 ---------- */
 const AIFB_MAX = 3;
@@ -583,6 +1233,7 @@ function aifbRestore(d){
   AIFB_REQ = +(d && d.aiReq) || 0; AIFB = arr(d && d.aiFb);
   Object.keys(d||{}).forEach(k=>{ if(/^aiFb_/.test(k)) AIFB_SETS[k.slice(5)] = arr(d[k]); });
   document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint()); }
+
 
 aifbMount($('aifb40'), { unit:40, minLen:10, inputs:[$('t2')], answer: ()=>$('t2').value, ctx: ()=>'정삼각형 ABC에서 ∠A의 이등분선, BC의 수직이등분선, 중선 AD를 그려 보니 모두 같은 직선이었다(화면 2). ∠B, ∠C에서도 그려 볼 수 있다. 화면 1에서 외심=세 변의 수직이등분선의 교점, 내심=세 내각의 이등분선의 교점, 무게중심=세 중선의 교점임을 확인했다. 이제 정삼각형의 외심, 내심, 무게중심이 일치하는 이유를 쓰는 중이다.' });
 /* ---------- 실시간 확인 (Firebase) ---------- */
@@ -762,88 +1413,170 @@ function rightMark(at, along, toward, col){ const u = mul(sub(along, at), 0.32/(
   const p1 = add(at,u), p2 = add(add(at,u),v), p3 = add(at,v); return `<polyline points="${M.P(p1)} ${M.P(p2)} ${M.P(p3)}" fill="none" stroke="${col}" stroke-width="1.6"/>`; }
 function tick(p, q, col, n){ const m = mid(p,q), u = mul(perp(sub(q,p)), 0.18/(dist(p,q)||1)), t = mul(sub(q,p), 0.09/(dist(p,q)||1)); let h = ''; for(let k=0;k<(n||1);k++){ const o = mul(t, k - ((n||1)-1)/2); h += seg(add(add(m,o),u), sub(add(m,o),u), col, 1.8); } return h; }
 
-/* ================= 화면 1 ================= */
-let msg1 = '';
-function render1(){
-  const T = T1, s = state.s1; let h = triSVG(T, ['A','B','C']);
-  if(s.on[0]){ [0,1,2].forEach(i=>{ h += perpBisSVG(T, i, COL.O, 1.8, 'stroke-dasharray="7 4" opacity=".85"'); const m = midOpp(T,i); h += rightMark(m, T[(i+1)%3], circum(T), COL.O) + dotAt(m, COL.O, 3); }); }
-  if(s.on[1]){ [0,1,2].forEach(i=>{ h += seg(T[i], footBis(T,i), COL.I, 2); }); }
-  if(s.on[2]){ [0,1,2].forEach(i=>{ const m = midOpp(T,i); h += seg(T[i], m, COL.G, 2, 'stroke-dasharray="2 4"') + dotAt(m, COL.G, 3); }); }
-  if(s.on[0]){ const O = circum(T); h += dotAt(O, COL.O, 5) + lab(O, 'O', 12, -8, COL.O); }
-  if(s.on[1]){ const I = incenter(T); h += dotAt(I, COL.I, 5) + lab(I, 'I', -12, -8, COL.I); }
-  if(s.on[2]){ const G = centroid(T); h += dotAt(G, COL.G, 5) + lab(G, 'G', 10, 18, COL.G); }
-  if(!s.on.some(Boolean)) h += `<text x="200" y="30" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👉 오른쪽 버튼을 눌러 선을 그려 보세요</text>`;
-  $('g1').innerHTML = h;
-  document.querySelectorAll('#tg1 button').forEach(b=> b.classList.toggle('on', s.on[+b.dataset.i]));
+/* ================= 작도판 공통 (GEO.GeoCanvas, 600×400 px 좌표) ================= */
+const G1T = [[160,70],[70,340],[530,330]];                                  // 화면 1: 부등변 예각삼각형 A(위), B, C
+const G2T = [[300,48],[130,48+170*Math.sqrt(3)],[470,48+170*Math.sqrt(3)]];  // 화면 2: 정삼각형 A(위), B, C
+const GEO_TOOLS = ['segment','midpoint','perpBisector','angleBisector','intersect'];
+const pxd = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+const xy = p => [p.x, p.y];
+function lineDist(p, l){ const d = [l[1][0]-l[0][0], l[1][1]-l[0][1]], n = Math.hypot(d[0],d[1])||1; return Math.abs((p[0]-l[0][0])*d[1] - (p[1]-l[0][1])*d[0]) / n; }
+function lineDir(l){ const d = [l[1][0]-l[0][0], l[1][1]-l[0][1]], n = Math.hypot(d[0],d[1])||1; return [d[0]/n, d[1]/n]; }
+const LINE_TYPES = ['line','segment','perpBisector','angleBisector','perp'];
+/* 캔버스에 그린 선들(무한 직선으로 보고) [{o, l:[p,q]}] */
+function linesOf(cv){ const out = []; cv.objects.forEach(o=>{ if(o.locked || !LINE_TYPES.includes(o.type)) return; const L = cv.asLine(o); if(!L || !L[0] || !L[1]) return; const l = [xy(L[0]), xy(L[1])]; if(pxd(l[0],l[1]) < 1e-6) return; out.push({o, l}); }); return out; }
+const parallelTo = (l, d, tolDeg) => { const u = lineDir(l); return Math.abs(u[0]*d[1] - u[1]*d[0]) < Math.sin((tolDeg||1.5)*Math.PI/180); };
+/* 삼각형 T의 꼭짓점 i에 대한 세 선 판정 */
+function isPerpBis(l, T, i){ const P = T[(i+1)%3], Q = T[(i+2)%3], m = [(P[0]+Q[0])/2, (P[1]+Q[1])/2], d = lineDir([P,Q]); return lineDist(m, l) < 4 && parallelTo(l, [-d[1], d[0]]); }
+function isAngBis(l, T, i){ const V = T[i], P = T[(i+1)%3], Q = T[(i+2)%3], u = lineDir([V,P]), v = lineDir([V,Q]), d = lineDir([[0,0],[u[0]+v[0], u[1]+v[1]]]); return lineDist(V, l) < 4 && parallelTo(l, d); }
+function isMedian(l, T, i){ const V = T[i], P = T[(i+1)%3], Q = T[(i+2)%3], m = [(P[0]+Q[0])/2, (P[1]+Q[1])/2]; return lineDist(V, l) < 4 && lineDist(m, l) < 4; }
+const hasPointNear = (cv, p, tol) => cv.points.some(q=> pxd(xy(q), p) < (tol||6));
+const pCircum = T => circum(T), pIncenter = T => incenter(T), pCentroid = T => centroid(T);
+function mkToolbar(bar, getCv, onTool){
+  bar.innerHTML = ''; const btns = {};
+  const mk = (label, cls) => { const x = document.createElement('button'); x.type = 'button'; x.textContent = label; if(cls) x.className = cls; bar.appendChild(x); return x; };
+  btns.move = mk('이동'); btns.move.classList.add('active');
+  GEO_TOOLS.forEach(k=> btns[k] = mk(GEO.TOOL_META[k].label));
+  Object.entries(btns).forEach(([k,x])=> x.addEventListener('click', ()=>{ if(isLocked()) return; const cv = getCv(); if(!cv) return; cv.setTool(k); Object.values(btns).forEach(y=>y.classList.remove('active')); x.classList.add('active'); if(onTool) onTool(k); }));
+  mk('↩️', 'undo').addEventListener('click', ()=>{ const cv = getCv(); if(cv && !isLocked()) cv.undo(); });
+  mk('↪️', 'redo').addEventListener('click', ()=>{ const cv = getCv(); if(cv && !isLocked()) cv.redo(); });
+  mk('초기화', 'reset').addEventListener('click', ()=>{ const cv = getCv(); if(cv && !isLocked()) cv.reset(); });
+  return btns;
+}
+function overlay(cv, html){ const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('pointer-events','none'); g.innerHTML = html; cv.svg.appendChild(g); }
+const ovDot = (p, col, label, dx, dy) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="${col}" stroke-width="3"/><circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="${col}"/><text x="${p[0]+(dx||12)}" y="${p[1]+(dy||-12)}" font-size="20" font-weight="bold" fill="${col}" stroke="#fff" stroke-width="4" paint-order="stroke" font-family="Times New Roman,serif" font-style="italic">${label}</text>`;
+
+/* ================= 화면 1: 직접 그려서 찾기 ================= */
+const C1 = [
+  {k:'O', n:'외심', col:COL.O, test:isPerpBis, center:pCircum, task:'<b style="color:#c62828">외심 O</b>: 「수직이등분선」 도구로 <b>세 변의 수직이등분선</b>을 그리고(변의 양 끝 꼭짓점을 차례로 누르기), 선들이 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'변의 수직이등분선', hintWrong:'수직이등분선은 변의 <b>양 끝 두 꼭짓점</b>(예: A와 B)을 차례로 눌러 그려요.'},
+  {k:'I', n:'내심', col:COL.I, test:isAngBis, center:pIncenter, task:'<b style="color:#1565c0">내심 I</b>: 「각의 이등분선」 도구로 <b>세 내각의 이등분선</b>을 그리고(점 세 개를 누르되 가운데가 꼭짓점, 예: B→A→C), 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'내각의 이등분선', hintWrong:'각의 이등분선은 세 점을 누르는데 <b>두 번째가 각의 꼭짓점</b>이에요. (∠A라면 B → A → C)'},
+  {k:'G', n:'무게중심', col:COL.G, test:isMedian, center:pCentroid, task:'<b style="color:#2e7d32">무게중심 G</b>: 「중점」 도구로 각 변의 <b>중점</b>을 찍고(양 끝 꼭짓점 누르기), 「선분」으로 꼭짓점과 <b>마주 보는 변의 중점</b>을 이어 중선을 그린 뒤, 만나는 곳을 「교점」으로 찍어 보세요.', lineName:'중선', hintWrong:'중선은 꼭짓점과 <b>마주 보는 변의 중점</b>을 이은 선분이에요. 중점을 먼저 찍고 이어 보세요.'}
+];
+let geo1 = [null,null,null], geo1Timer = [0,0,0], msgC1 = ['','',''];
+function eval1(i, cv){
+  const c = C1[i], T = G1T, L = linesOf(cv), good = new Set();
+  L.forEach(x=> [0,1,2].forEach(v=>{ if(c.test(x.l, T, v)) good.add(v); }));
+  if(i===2) [0,1,2].forEach(v=>{ if(good.has(v)){ const P = T[(v+1)%3], Q = T[(v+2)%3]; if(!hasPointNear(cv, [(P[0]+Q[0])/2,(P[1]+Q[1])/2], 5)) good.delete(v); } });
+  const ctr = c.center(T), pt = hasPointNear(cv, ctr, 6), n = good.size, s = state.s1;
+  s.n[i] = n;
+  const was = s.found[i];
+  if(n>=2 && pt) s.found[i] = true;
+  let m = '';
+  if(s.found[i]) m = `<span class="ok">🎉 ${c.n} ${c.k}를 찾았어요!</span> ` + (n>=3 ? `세 ${c.lineName}이 모두 한 점 ${c.k}에서 만나요.` : `세 번째 ${c.lineName}도 그려 보면 같은 점 ${c.k}를 지나요. 그려 보세요!`);
+  else if(L.length && !n) m = `<span class="bad">그은 선이 아직 ${c.lineName}이 아니에요.</span> ${c.hintWrong}`;
+  else if(n===1) m = `<span class="note">✏️ ${c.lineName} 1개 완성! 하나 더 그려 보세요.</span>`;
+  else if(n>=2 && !pt) m = `<span class="bad">${c.lineName} ${n}개 완성!</span> 선들이 만나는 곳에 <b>「교점」</b> 도구로 점을 찍어 보세요.`;
+  msgC1[i] = m;
+  if(s.found[i]) overlay(cv, ovDot(ctr, c.col, c.k, -26, 26));
+  return !was && s.found[i];
+}
+function initGeo1(i){
+  if(geo1[i]) return;
+  const pts = G1T.map((p,j)=>({label:'ABC'[j], x:p[0], y:p[1]}));
+  geo1[i] = new GEO.GeoCanvas($('geo1_'+i), {points: pts, presetObjects:[{type:'polygon', ids:['A','B','C']}]}, inst=>{
+    if(!geo1[i] && inst) geo1[i] = inst;
+    const newly = eval1(i, inst);
+    if(state.s1.tab===i) paint1();
+    clearTimeout(geo1Timer[i]); geo1Timer[i] = setTimeout(()=>{ state.s1.snap[i] = GEO.snapshotOf(inst); refreshAll({}); }, 600);
+    if(newly) check1({now:true});
+  });
+  if(state.s1.snap[i]) GEO.restoreObjectSnapshot(geo1[i], state.s1.snap[i]);
+}
+let tb1 = null;
+function showTab1(i){
+  state.s1.tab = i;
+  [0,1,2].forEach(j=>{ $('geo1_'+j).style.display = j===i ? '' : 'none'; });
+  initGeo1(i);
+  if(tb1){ geo1[i].setTool('move'); Object.values(tb1).forEach(y=>y.classList.remove('active')); tb1.move.classList.add('active'); }
+  paint1();
+}
+function paint1(){
+  const s = state.s1, i = s.tab;
+  document.querySelectorAll('#ctab1 .ctab').forEach(b=>{ const j = +b.dataset.i; b.classList.toggle('on', j===i); b.classList.toggle('done', s.found[j]); });
+  $('ctask1').innerHTML = C1[i].task;
+  $('cmsg1').innerHTML = msgC1[i] || '';
+  const all = s.found.every(Boolean);
+  $('fill1').classList.toggle('locked', !all);
   document.querySelectorAll('#fill1 select').forEach(sel=>{ const k = +sel.dataset.k;
     if(!sel.options.length) sel.innerHTML = `<option value="">선택</option>` + OPTS1.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
-    sel.value = s.a[k] || ''; sel.disabled = s.ok || isLocked(); sel.classList.toggle('right', s.ok); });
-  $('chk1').disabled = s.ok || isLocked();
-  $('msg1').innerHTML = s.ok ? '<span class="ok">✅ 맞아요!</span> 외심은 세 변의 <b>수직이등분선</b>, 내심은 세 내각의 <b>이등분선</b>, 무게중심은 세 <b>중선</b>의 교점이에요. 이 삼각형에서는 세 점이 서로 다른 곳에 있죠?' : msg1;
+    sel.value = s.a[k] || ''; sel.disabled = s.ok || isLocked() || !all; sel.classList.toggle('right', s.ok); });
+  $('chk1').disabled = s.ok || isLocked() || !all;
+  $('msg1').innerHTML = s.ok ? '<span class="ok">✅ 맞아요!</span> 외심은 세 변의 <b>수직이등분선</b>, 내심은 세 내각의 <b>이등분선</b>, 무게중심은 세 <b>중선</b>의 교점이에요. 이 삼각형에서는 세 점이 서로 다른 곳에 있죠? (탭을 바꿔 비교해 보세요)'
+    : (!all ? `<span class="note">세 점을 모두 찾으면 빈칸이 열려요. (지금 ${s.found.filter(Boolean).length}/3)</span>` : msg1);
 }
-document.querySelectorAll('#tg1 button').forEach(b=> b.addEventListener('click', ()=>{ if(isLocked()) return; const i = +b.dataset.i; state.s1.on[i] = state.s1.ok ? true : !state.s1.on[i]; render1(); check1({}); }));
-$('fill1').addEventListener('change', e=>{ const sel = e.target.closest('select'); if(!sel || isLocked()) return; state.s1.a[+sel.dataset.k] = sel.value; sel.classList.remove('wrong'); msg1 = ''; render1(); refreshAll({}); });
+function render1(){ showTab1(state.s1.tab || 0); }
+let msg1 = '';
+$('ctab1').addEventListener('click', e=>{ const b = e.target.closest('.ctab'); if(!b) return; showTab1(+b.dataset.i); refreshAll({}); });
+$('fill1').addEventListener('change', e=>{ const sel = e.target.closest('select'); if(!sel || isLocked()) return; state.s1.a[+sel.dataset.k] = sel.value; sel.classList.remove('wrong'); msg1 = ''; paint1(); refreshAll({}); });
 $('chk1').addEventListener('click', ()=>{
   if(isLocked() || state.s1.ok) return; const s = state.s1;
-  if(!s.on.every(Boolean)){ msg1 = '<span class="bad">먼저 세 가지 선을 모두 그려 보세요.</span>'; render1(); return; }
-  if(s.a.some(x=>!x)){ msg1 = '<span class="bad">빈칸 세 개를 모두 골라 주세요.</span>'; render1(); return; }
+  if(!s.found.every(Boolean)){ msg1 = '<span class="bad">먼저 세 점을 모두 찾아 보세요.</span>'; paint1(); return; }
+  if(s.a.some(x=>!x)){ msg1 = '<span class="bad">빈칸 세 개를 모두 골라 주세요.</span>'; paint1(); return; }
   const wrong = s.a.map((x,i)=> x !== ANS1[i]);
-  if(!wrong.some(Boolean)){ s.ok = true; render1(); check1({now:true}); return; }
+  if(!wrong.some(Boolean)){ s.ok = true; paint1(); check1({now:true}); return; }
   s.miss++;
-  msg1 = `<span class="bad">다시 생각해 보세요.</span> ${s.miss>=2 ? '💡 빨간 점선은 변의 중점에서 변에 <b>수직</b>으로 그은 선, 파란 선은 각을 <b>둘로 똑같이 나눈</b> 선, 초록 점선은 꼭짓점과 마주 보는 변의 <b>중점</b>을 이은 선이에요.' : '그림에서 각 점에 모이는 선이 어떤 선인지 살펴보세요.'}`;
-  render1(); document.querySelectorAll('#fill1 select').forEach(sel=> sel.classList.toggle('wrong', wrong[+sel.dataset.k])); check1({now:true});
+  msg1 = `<span class="bad">다시 생각해 보세요.</span> ${s.miss>=2 ? '💡 각 탭에서 어떤 도구로 선을 그렸는지 떠올려 보세요.' : '각 점을 찾을 때 그린 선이 어떤 선이었나요?'}`;
+  paint1(); document.querySelectorAll('#fill1 select').forEach(sel=> sel.classList.toggle('wrong', wrong[+sel.dataset.k])); check1({now:true});
 });
-function check1(opts){ setWhy(1, '✅ 완료! '+NEXT, !state.s1.on.every(Boolean) ? `세 가지 선을 모두 그려 보세요. (지금 ${state.s1.on.filter(Boolean).length}/3)` : '빈칸을 모두 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
+function check1(opts){ const n = state.s1.found.filter(Boolean).length; setWhy(1, '✅ 완료! '+NEXT, n<3 ? `세 점(외심·내심·무게중심)을 직접 그려서 찾아보세요. (지금 ${n}/3)` : '빈칸을 모두 골라 「확인」을 눌러 보세요.'); refreshAll(opts); }
 
-/* ================= 화면 2 ================= */
-let msg2 = '';
-function arcMark(V, P, Q, r, col){ // ∠PVQ 위 작은 호
-  const a1 = Math.atan2(P[1]-V[1], P[0]-V[0]), a2 = Math.atan2(Q[1]-V[1], Q[0]-V[0]);
-  const p1 = add(V, [r*Math.cos(a1), r*Math.sin(a1)]), p2 = add(V, [r*Math.cos(a2), r*Math.sin(a2)]);
-  const sweep = cross(sub(P,V), sub(Q,V)) > 0 ? 0 : 1;
-  return `<path d="M${M.P(p1)} A${(r*M.u).toFixed(1)},${(r*M.u).toFixed(1)} 0 0 ${sweep} ${M.P(p2)}" fill="none" stroke="${col}" stroke-width="2"/>`; }
-function threeLines(T, i, w){ // 꼭짓점 i: 각의 이등분선(굵고 연한 파랑), 대변의 수직이등분선(빨간 긴 점선), 중선(초록 점선)
-  const s = state.s2, on = i===0 ? s.on : [true,true,true], k = w || 1; let h = '';
-  const D = midOpp(T, i);
-  if(on[0]) h += seg(T[i], footBis(T,i), 'rgba(21,101,192,.35)', 9*k);
-  if(on[1]) h += perpBisSVG(T, i, COL.O, 2.2*k, 'stroke-dasharray="9 6"');
-  if(on[2]) h += seg(T[i], D, COL.G, 2.6*k, 'stroke-dasharray="2 5"');
-  return h;
+/* ================= 화면 2: 정삼각형에서 직접 그리기 ================= */
+let geo2 = null, geo2Timer = 0, msg2 = '', cmsg2 = '';
+function eval2(cv){
+  const T = G2T, s = state.s2, h = s.have, D = [(T[1][0]+T[2][0])/2, (T[1][1]+T[2][1])/2];
+  linesOf(cv).forEach(x=>{
+    if(x.o.type==='angleBisector' && isAngBis(x.l, T, 0)) h.bis = true;
+    if((x.o.type==='perpBisector' || x.o.type==='perp') && isPerpBis(x.l, T, 0)) h.pb = true;
+    if((x.o.type==='segment' || x.o.type==='line') && isMedian(x.l, T, 0) && hasPointNear(cv, D, 5)) h.med = true;
+  });
+  let ov = `<circle cx="${D[0]}" cy="${D[1]}" r="0" />`;
+  if(have2All()){ ov += `<text x="${T[0][0]+14}" y="${(T[0][1]+D[1])/2}" font-size="15" font-weight="bold" fill="#6a1b9a" stroke="#fff" stroke-width="4" paint-order="stroke">세 선이 모두 겹쳐요!</text>`; }
+  if(s.all){ const O = centroid(T); ov += ovDot(O, '#1f2328', 'O = I = G', 14, -10); }
+  overlay(cv, ov);
+  cmsg2 = have2All() ? '<span class="ok">✅ 세 선을 모두 그렸어요!</span> 세 선이 어떻게 그려졌는지 잘 보고 아래에서 관계를 골라 보세요.' : '';
 }
-function render2(){
-  const T = T2, s = state.s2, [A,B,C] = T, D = midOpp(T, 0); let h = triSVG(T, ['A','B','C']);
-  if(s.all) [1,2].forEach(i=>{ h += threeLines(T, i, 0.75); });
-  h += threeLines(T, 0, 1);
-  if(s.on[0]) h += arcMark(A, B, D, 0.9, COL.I) + arcMark(A, D, C, 1.05, COL.I);
-  if(s.on[1]) h += rightMark(D, C, A, COL.O);
-  if(s.on[1] || s.on[2]) h += tick(B, D, '#6a1b9a', 1) + tick(D, C, '#6a1b9a', 1);
-  h += dotAt(D, '#6a1b9a', 4) + lab(D, 'D', -16, 22, '#6a1b9a');
-  if(s.all){ const O = centroid(T); h += dotAt(O, '#1f2328', 6) + `<text x="${M.X(O[0])+10}" y="${M.Y(O[1])-8}" font-size="14" font-weight="bold" fill="#1f2328">O = I = G</text>`; }
-  h += `<g font-size="12" font-weight="bold"><rect x="8" y="8" width="150" height="62" rx="6" fill="#fff" stroke="#d6dbe1"/>`
-    + `<line x1="16" y1="22" x2="40" y2="22" stroke="rgba(21,101,192,.45)" stroke-width="8"/><text x="46" y="26" fill="#1565c0">각의 이등분선</text>`
-    + `<line x1="16" y1="40" x2="40" y2="40" stroke="${COL.O}" stroke-width="2.2" stroke-dasharray="9 6"/><text x="46" y="44" fill="${COL.O}">수직이등분선</text>`
-    + `<line x1="16" y1="58" x2="40" y2="58" stroke="${COL.G}" stroke-width="2.6" stroke-dasharray="2 5"/><text x="46" y="62" fill="${COL.G}">중선</text></g>`;
-  $('g2').innerHTML = h;
-  document.querySelectorAll('#tg2 button').forEach(b=> b.classList.toggle('on', s.on[+b.dataset.i]));
+function helper2(cv, on){
+  cv.objects = cv.objects.filter(o=> !o.helper);
+  if(on){ const id = l => cv.byLabel(l).id;
+    [['perpBisector',{p1:id('A'), p2:id('C')}], ['perpBisector',{p1:id('A'), p2:id('B')}], ['angleBisector',{a:id('A'), b:id('B'), c:id('C')}], ['angleBisector',{a:id('A'), b:id('C'), c:id('B')}]]
+      .forEach(([t,o],k)=> cv.objects.push(Object.assign({id:'hlp'+k, type:t, locked:true, helper:true}, o))); }
+  cv.render();
+}
+function initGeo2(){
+  if(geo2) return;
+  const pts = G2T.map((p,j)=>({label:'ABC'[j], x:Math.round(p[0]), y:Math.round(p[1])}));
+  geo2 = new GEO.GeoCanvas($('geo2'), {points: pts, presetObjects:[{type:'polygon', ids:['A','B','C']}]}, inst=>{
+    const before = have2All(); eval2(inst); paint2();
+    clearTimeout(geo2Timer); geo2Timer = setTimeout(()=>{ state.s2.snap = GEO.snapshotOf(inst); refreshAll({}); }, 600);
+    if(!before && have2All()) check2({now:true});
+  });
+  if(state.s2.snap) GEO.restoreObjectSnapshot(geo2, state.s2.snap);
+  if(state.s2.all) helper2(geo2, true);
+}
+function render2(){ initGeo2(); paint2(); }
+function paint2(){
+  const s = state.s2;
+  $('clist2').innerHTML = H2N.map(([k,n])=>`<span class="${s.have[k]?'on':''}">${s.have[k]?'✓':'○'} ${n}</span>`).join('');
+  $('cmsg2').innerHTML = cmsg2;
   $('all2').classList.toggle('on', s.all); $('all2').style.display = s.ok ? '' : 'none';
   $('sel2').value = s.sel; $('sel2').disabled = s.ok || isLocked(); $('sel2').classList.toggle('right', s.ok);
   $('chk2').disabled = s.ok || isLocked();
   $('msg2').innerHTML = s.ok ? `<span class="ok">✅ 맞아요! 세 선은 모두 같은 직선이에요.</span> 정삼각형은 AB = AC인 <b>이등변삼각형</b>이기도 해서 ∠A의 이등분선이 BC를 수직이등분해요.${s.all ? ' ∠B, ∠C에서도 마찬가지예요. 세 직선이 만나는 점은?' : ' 「∠B, ∠C에서도 그려 보기」를 눌러 보세요.'}` : msg2;
   $('q2').classList.toggle('locked', !s.ok);
 }
-document.querySelectorAll('#tg2 button').forEach(b=> b.addEventListener('click', ()=>{ if(isLocked()) return; const i = +b.dataset.i; state.s2.on[i] = state.s2.ok ? true : !state.s2.on[i]; msg2 = ''; render2(); check2({}); }));
-$('all2').addEventListener('click', ()=>{ if(isLocked()) return; state.s2.all = !state.s2.all; render2(); refreshAll({}); });
-$('sel2').addEventListener('change', ()=>{ if(isLocked()) return; state.s2.sel = $('sel2').value; $('sel2').classList.remove('wrong'); msg2 = ''; render2(); refreshAll({}); });
+$('all2').addEventListener('click', ()=>{ if(isLocked()) return; state.s2.all = !state.s2.all; initGeo2(); helper2(geo2, state.s2.all); refreshAll({}); });
+$('sel2').addEventListener('change', ()=>{ if(isLocked()) return; state.s2.sel = $('sel2').value; $('sel2').classList.remove('wrong'); msg2 = ''; paint2(); refreshAll({}); });
 $('chk2').addEventListener('click', ()=>{
   if(isLocked() || state.s2.ok) return; const s = state.s2;
-  if(!s.on.every(Boolean)){ msg2 = '<span class="bad">먼저 세 선을 모두 그려 보세요.</span>'; render2(); return; }
-  if(!s.sel){ msg2 = '<span class="bad">세 선의 관계를 골라 주세요.</span>'; render2(); return; }
-  if(s.sel === 'same'){ s.ok = true; render2(); check2({now:true}); return; }
+  if(!have2All()){ msg2 = '<span class="bad">먼저 세 선을 모두 직접 그려 보세요.</span> (위의 ○ 표시를 확인해요)'; paint2(); return; }
+  if(!s.sel){ msg2 = '<span class="bad">세 선의 관계를 골라 주세요.</span>'; paint2(); return; }
+  if(s.sel === 'same'){ s.ok = true; paint2(); check2({now:true}); return; }
   s.miss++; msg2 = `<span class="bad">다시 살펴보세요.</span> 세 선이 그려진 자리를 비교해 보세요. ${s.miss>=2 ? '💡 세 선이 모두 A와 D를 지나나요?' : ''}`;
-  render2(); $('sel2').classList.add('wrong'); check2({now:true});
+  paint2(); $('sel2').classList.add('wrong'); check2({now:true});
 });
-function check2(opts){ state.t2 = $('t2').value; setWhy(2, '✅ 완료! '+NEXT, !state.s2.on.every(Boolean) ? `세 선을 모두 그려 보세요. (지금 ${state.s2.on.filter(Boolean).length}/3)` : !state.s2.ok ? '세 선의 관계를 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(2); renderFriends(2); refreshAll(opts); }
+function check2(opts){ state.t2 = $('t2').value; const n = H2N.filter(([k])=>state.s2.have[k]).length; setWhy(2, '✅ 완료! '+NEXT, !have2All() ? `세 선을 직접 그려 보세요. (지금 ${n}/3)` : !state.s2.ok ? '세 선의 관계를 골라 「확인」을 눌러 보세요.' : '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(2); renderFriends(2); refreshAll(opts); }
 $('t2').addEventListener('input', ()=>check2());
+tb1 = mkToolbar($('geoTools1'), ()=> geo1[state.s1.tab]);
+mkToolbar($('geoTools2'), ()=> geo2);
 
 /* ================= 화면 3 ================= */
 let msg3 = '', lines3 = false;
@@ -936,8 +1669,11 @@ const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.value
 function restoreData(d){
   if(!d) return;
   const b3 = v => [0,1,2].map(i=>!!arr(v)[i]);
-  const s1 = d.s1 || {}; state.s1 = { on: b3(s1.on), a: [0,1,2].map(i=> OPTS1.some(o=>o[0]===arr(s1.a)[i]) ? arr(s1.a)[i] : ''), ok: !!s1.ok, miss: +s1.miss || 0 };
-  const s2 = d.s2 || {}; state.s2 = { on: b3(s2.on), all: !!s2.all, sel: SEL2[s2.sel] ? s2.sel : '', ok: !!s2.ok, miss: +s2.miss || 0 };
+  const snapOk = v => (v && typeof v==='object') ? {points: arr(v.points), objects: arr(v.objects).map(o=> Object.assign({}, o, o.ids ? {ids: arr(o.ids)} : {}))} : null;
+  const s1 = d.s1 || {}; state.s1 = { found: b3(s1.found), n: [0,1,2].map(i=> +arr(s1.n)[i] || 0), snap: [0,1,2].map(i=> snapOk(arr(s1.snap)[i])), tab: [0,1,2].includes(+s1.tab) ? +s1.tab : 0, a: [0,1,2].map(i=> OPTS1.some(o=>o[0]===arr(s1.a)[i]) ? arr(s1.a)[i] : ''), ok: !!s1.ok, miss: +s1.miss || 0 };
+  const s2 = d.s2 || {}, hv = s2.have || {}; state.s2 = { have: {bis: !!hv.bis, pb: !!hv.pb, med: !!hv.med}, snap: snapOk(s2.snap), all: !!s2.all, sel: SEL2[s2.sel] ? s2.sel : '', ok: !!s2.ok, miss: +s2.miss || 0 };
+  geo1.forEach((cv,i)=>{ if(cv){ cv.reset(); if(state.s1.snap[i]) GEO.restoreObjectSnapshot(cv, state.s1.snap[i]); } });
+  if(geo2){ geo2.reset(); if(state.s2.snap) GEO.restoreObjectSnapshot(geo2, state.s2.snap); if(state.s2.all) helper2(geo2, true); }
   const s3 = d.s3 || {}, T = arr(s3.T).map(p=>arr(p).map(Number));
   state.s3 = { T: (T.length===3 && T.every(p=>p.length===2 && p.every(Number.isFinite))) ? T : T30.map(p=>p.slice()), moves: +s3.moves || 0, qa: QA[s3.qa] ? s3.qa : '', qb: QB[s3.qb] ? s3.qb : '', ok: !!s3.ok, miss: +s3.miss || 0 };
   state.t2 = String(d.t2 || ''); $('t2').value = state.t2;

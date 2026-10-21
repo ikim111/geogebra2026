@@ -363,10 +363,10 @@ function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
   const tb = t => t && String(t).trim() ? `<div style="background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:6px;">${esc(t)}</div>` : '';
-  if(id===1){ const s1 = d.s1 || {}, a = arrOf(s1.a); if(!a.some(Boolean) && !arrOf(s1.on).some(Boolean)) return '';
-    return kv('그린 선', `${arrOf(s1.on).filter(Boolean).length}/3`) + kv('빈칸', `외심 ${OPTN[a[0]]||'?'} · 내심 ${OPTN[a[1]]||'?'} · 무게중심 ${OPTN[a[2]]||'?'} ${s1.ok?'✅':''}${s1.miss?` (틀림 ${s1.miss}번)`:''}`); }
-  if(id===2){ const s2 = d.s2 || {}; if(!s2.sel && !d.t2) return '';
-    return kv('세 선', `${SEL2N[s2.sel]||'?'} ${s2.ok?'✅':''}${s2.miss?` (틀림 ${s2.miss}번)`:''}`) + tb(d.t2) + aiFbHTML(d); }
+  if(id===1){ const s1 = d.s1 || {}, a = arrOf(s1.a), f = arrOf(s1.found), n = arrOf(s1.n); if(!a.some(Boolean) && !f.some(Boolean) && !n.some(Boolean)) return '';
+    return kv('직접 찾은 점', ['외심 O','내심 I','무게중심 G'].map((x,i)=>`${x} ${f[i]?'✅':'—'}(선 ${n[i]||0}개)`).join(' · ')) + kv('빈칸', `외심 ${OPTN[a[0]]||'?'} · 내심 ${OPTN[a[1]]||'?'} · 무게중심 ${OPTN[a[2]]||'?'} ${s1.ok?'✅':''}${s1.miss?` (틀림 ${s1.miss}번)`:''}`); }
+  if(id===2){ const s2 = d.s2 || {}, hv = s2.have || {}; if(!s2.sel && !d.t2 && !hv.bis && !hv.pb && !hv.med) return '';
+    return kv('직접 그린 선', `∠A의 이등분선 ${hv.bis?'✅':'—'} · BC의 수직이등분선 ${hv.pb?'✅':'—'} · 중선 AD ${hv.med?'✅':'—'}`) + kv('세 선', `${SEL2N[s2.sel]||'?'} ${s2.ok?'✅':''}${s2.miss?` (틀림 ${s2.miss}번)`:''}`) + tb(d.t2) + aiFbHTML(d); }
   if(id===3){ const s3 = d.s3 || {}; if(!s3.moves && !s3.qa && !d.t3) return '';
     return kv('모양 바꾸기', `${s3.moves||0}번`) + kv('⑴ 일치할 수 있나', QAN[s3.qa]||'?') + kv('⑵ 이등변삼각형', `${QBN[s3.qb]||'?'} ${s3.ok?'✅':''}${s3.miss?` (틀림 ${s3.miss}번)`:''}`) + tb(d.t3); }
   return '';
@@ -376,7 +376,8 @@ function barsHTML(rows, total){ return rows.map(r=>`<div class="barrow${r.answer
 function taskAggregateHTML(id){
   const box = (title, inner) => `<div class="aggbox"><h4>📊 ${title}</h4>${inner}</div>`;
   const ss = Object.values(allStudents).map(s=>(s&&s.data)||{});
-  if(id===1){ const xs = ss.map(d=>d.s1).filter(x=>x && arrOf(x.a).some(Boolean)); return box(`빈칸 채우기 (${xs.length}명)`, `<div class="kv">맞힘 <b>${xs.filter(x=>x.ok).length}</b>명 · 한 번 이상 틀림 <b>${xs.filter(x=>x.miss).length}</b>명</div>`); }
+  if(id===1){ const all = ss.map(d=>d.s1).filter(x=>x && (arrOf(x.found).some(Boolean) || arrOf(x.n).some(Boolean))), xs = ss.map(d=>d.s1).filter(x=>x && arrOf(x.a).some(Boolean));
+    return box(`직접 그려서 찾기 (${all.length}명)`, barsHTML(['외심 O','내심 I','무게중심 G'].map((l,i)=>({label:l+' 찾음', n: all.filter(x=>arrOf(x.found)[i]).length, answer:true})), Math.max(1,all.length)) + `<div class="kv">빈칸 맞힘 <b>${xs.filter(x=>x.ok).length}</b>명 · 한 번 이상 틀림 <b>${xs.filter(x=>x.miss).length}</b>명</div>`); }
   if(id===2){ const xs = ss.map(d=>d.s2).filter(x=>x && x.sel), pass = ss.filter(d=>{ const a = arrOf(d.aiFb).filter(e=>e && !e.skip); return a.length && !(a[a.length-1].fix||[]).length; }).length;
     return box(`세 선의 관계 (${xs.length}명) · 이유 AI 통과 ${pass}명`, xs.length ? barsHTML(['same','par','pt'].map(k=>({label:SEL2N[k], n: xs.filter(x=>x.sel===k).length, answer:k==='same'})), xs.length) : '아직 없어요.'); }
   if(id===3){ const xs = ss.map(d=>d.s3).filter(x=>x && (x.qa || x.qb)); if(!xs.length) return box('다른 삼각형에서도?', '아직 없어요.');
