@@ -302,7 +302,7 @@
           <button type="button" data-i="ab">AB : DE = 1 : 2</button><button type="button" data-i="bc">BC : EF = 1 : 2</button><button type="button" data-i="ca">CA : FD = 1 : 2</button>
           <button type="button" data-i="a">∠A = ∠D</button><button type="button" data-i="b">∠B = ∠E</button><button type="button" data-i="c">∠C = ∠F</button>
         </div>
-        <div class="drawrow"><button type="button" class="drawb sec" id="drawBtn">↻ 같은 조건으로 다시 그리기</button><span class="note" id="drawN"></span></div>
+        <div class="drawrow"><button type="button" class="drawb sec" id="drawBtn" disabled>↩ 뒤로가기</button><span class="note" id="drawN"></span></div>
         <div class="result" id="res1"></div>
         <div class="found">
           <div class="cap">⭐ 찾은 최소 조건 <span id="foundN">0 / 7</span></div>
@@ -724,6 +724,7 @@ function placeDEF(t){   // 판 가운데 놓는다. 못 넣으면 null
 }
 function angsOf(pl){ const {D,E,F} = pl; return {D:angAt(D,E,F), E:angAt(E,D,F), F:angAt(F,D,E)}; }
 let draw1 = null;   // 마지막 그림 (저장하지 않음)
+const BACK1 = [];   // 「뒤로가기」: 조건을 바꾸기 전의 조건·그림 (저장하지 않음)
 function doDraw(){
   const set = state.p1.sel.slice(), canon = forcedSet(set);
   let res = null;
@@ -745,6 +746,7 @@ function render1(){
   const sel = state.p1.sel;
   document.querySelectorAll('#pickItems button').forEach(b=>{ b.classList.toggle('on', sel.includes(b.dataset.i)); b.disabled = isLocked(); });
   $('drawN').textContent = state.p1.draws ? `그린 횟수 ${state.p1.draws}번` : '';
+  $('drawBtn').disabled = !BACK1.length || isLocked();
   drawRef(1, ['ab','bc','ca','a','b','c'], draw1 ? draw1.set : sel);
   let h = gridSVG();
   if(!draw1){
@@ -767,7 +769,7 @@ function render1(){
     const m = minimalOf(set);
     $('res1').className = 'result ' + (draw1.kind==='free' ? 'lose' : 'win');
     $('res1').innerHTML = !set.length ? '조건이 없으면 아무 삼각형이나 그려져요. 조건을 골라 보세요.'
-      : draw1.kind==='canon' ? (m ? `⭐ 몇 번을 다시 그려도 항상 닮음! <b>${m.n}</b>` : '✅ 항상 닮음이에요. 그런데 <b>빼도 되는 조건</b>이 섞여 있어요. 더 적게 골라 보세요.')
+      : draw1.kind==='canon' ? (m ? `⭐ 어떻게 그려도 항상 닮음! <b>${m.n}</b>` : '✅ 항상 닮음이에요. 그런데 <b>빼도 되는 조건</b>이 섞여 있어요. 더 적게 골라 보세요.')
       : draw1.kind==='geo' ? '🤔 이 △ABC에서는 닮은 삼각형만 그려져요. 그런데 고른 각이 고른 두 변 <b>사이의 각(끼인각)이 아니에요</b>. 이런 조합은 삼각형 모양에 따라 닮지 않은 삼각형이 생길 수 있어서 <b>닮음 조건이 아니에요</b>. 끼인각으로 바꿔 보세요!'
       : '❌ 고른 조건은 모두 지켰는데, △ABC와 <b>닮지 않은</b> 삼각형이 그려졌어요.';
   }
@@ -777,8 +779,9 @@ function render1(){
   $('sumCard').style.display = isDone(1) ? '' : 'none';
 }
 document.querySelectorAll('#pickItems button').forEach(b=> b.addEventListener('click', ()=>{ if(isLocked()) return; const i = b.dataset.i, s = state.p1.sel;
+  BACK1.push({sel: s.slice(), draw: draw1}); if(BACK1.length > 30) BACK1.shift();
   state.p1.sel = s.includes(i) ? s.filter(x=>x!==i) : s.concat(i); state.p1.sel.sort((x,y)=>ITEMS.findIndex(t=>t.i===x)-ITEMS.findIndex(t=>t.i===y)); doDraw(); }));
-$('drawBtn').addEventListener('click', ()=>{ if(isLocked()) return; doDraw(); });
+$('drawBtn').addEventListener('click', ()=>{ if(isLocked() || !BACK1.length) return; const b = BACK1.pop(); state.p1.sel = b.sel; draw1 = b.draw; render1(); check1({now:true}); });
 function check1(opts){ setWhy(1, '✅ 완료! 정리표를 확인하고 '+NEXT, `최소 조건 7가지를 모두 찾으면 다음으로 넘어갈 수 있어요. (지금 ${state.p1.found.length}/7)`); refreshAll(opts); }
 
 /* ================= 작도 화면 공통: 단계 목록 · 입력칸 · 확인 버튼 · 합동 고르기 ================= */
