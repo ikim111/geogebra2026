@@ -1097,7 +1097,7 @@ const fbMax = () => AI_FB_MAX + bonusFb(), chatMax = () => AI_CHAT_MAX + bonusCh
 const AI = {
   logs: [], loaded: false, teacherOff: false, busy: false,
   offReason(){
-    if(PREVIEW_MODE) return '미리보기에서는 AI를 쓸 수 없어요.';
+    if(PREVIEW_MODE) return '';   // 2026-10-23: 선생님이 미리보기에서 AI 답을 시험해 볼 수 있게(기록은 저장되지 않음)
     if(!RT.connected) return '실시간 연결이 되어야 AI를 쓸 수 있어요.';
     if(this.teacherOff) return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)';
     if(finalLocked) return '제출한 뒤에는 AI를 쓸 수 없어요. 고치려면 "제출 취소"를 누르세요.';
