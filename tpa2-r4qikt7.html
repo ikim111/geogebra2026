@@ -613,11 +613,37 @@ const flagsOf = l => (Array.isArray(l && l.flags) ? l.flags : (l && l.flags && t
 const flagChips = l => flagsOf(l).map(f=>`<span class="flagchip">${FLAG_NAME[f]}</span>`).join('');
 const flaggedChats = s => aiLogsOf(s).filter(l=> l.type==='chat' && flagsOf(l).length);
 const __flagSeen = new Set(); let __flagInit = false;
+/* 🔔 경고 소리(2026-10-23): AI 이상 사용 ⚠️ → 높은 삐삐 2번, 🙋 AI 기회 요청 → 부드러운 띵동. 켜고 끄기는 왼쪽 아래 버튼(이 기기에 기억) */
+let __snd = true; try{ __snd = localStorage.getItem('tpa2Sound') !== 'off'; }catch(e){}
+let __actx = null;
+function actx(){ try{ if(!__actx) __actx = new (window.AudioContext||window.webkitAudioContext)(); if(__actx.state==='suspended') __actx.resume(); }catch(e){} return __actx; }
+document.addEventListener('pointerdown', ()=>actx(), { once:true });   // 브라우저는 클릭이 한 번 있어야 소리를 낼 수 있다
+function beep(kind){
+  if(!__snd) return; const c = actx(); if(!c) return;
+  const notes = kind==='req' ? [[784,0,.18],[1047,.2,.3]] : [[1320,0,.12],[1320,.18,.12]];
+  notes.forEach(([f,t,d])=>{ const o=c.createOscillator(), g=c.createGain(); o.type = kind==='req' ? 'sine' : 'square'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001, c.currentTime+t); g.gain.exponentialRampToValueAtTime(kind==='req'?0.25:0.12, c.currentTime+t+0.01); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+t+d);
+    o.connect(g).connect(c.destination); o.start(c.currentTime+t); o.stop(c.currentTime+t+d+0.02); });
+}
+(function(){ const b = document.createElement('button'); b.type='button'; b.id='sndBtn';
+  b.style.cssText='position:fixed;left:12px;bottom:12px;z-index:9999;border:1px solid #ccc;background:#fff;border-radius:18px;padding:6px 12px;font-size:13px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);font-family:inherit;';
+  const paint = ()=>{ b.textContent = __snd ? '🔔 경고 소리 켜짐' : '🔕 경고 소리 꺼짐'; b.style.color = __snd ? '#311b92' : '#999'; };
+  b.addEventListener('click', ()=>{ __snd = !__snd; try{ localStorage.setItem('tpa2Sound', __snd?'on':'off'); }catch(e){} paint(); if(__snd) beep('flag'); });
+  paint(); document.body.appendChild(b); })();
+let __reqSeen = null;
+function checkNewReqs(){
+  const td = acDay(Date.now()), ids = [];
+  Object.keys(allStudents||{}).forEach(k=>{ const s = allStudents[k]||{}, r = s.aiReq, bo = s.aiBonus||{}; if(r && r.day===td && (+r.ts||0) > (+bo.ts||0)) ids.push(k+'|'+r.ts); });
+  if(__reqSeen && ids.some(id=>!__reqSeen.has(id))) beep('req');
+  __reqSeen = new Set(ids);
+}
 function checkNewFlags(){
+  checkNewReqs();
   const fresh = [];
   Object.keys(allStudents).forEach(k=>{ const s=allStudents[k]||{}; flaggedChats(s).forEach(l=>{ const id=k+'|'+l.ts; if(!__flagSeen.has(id)){ __flagSeen.add(id); if(__flagInit) fresh.push({k,s,l}); } }); });
   __flagInit = true;
   if(!fresh.length) return;
+  beep('flag');
   const f = fresh[fresh.length-1];
   let t = document.getElementById('flagToast');
   if(!t){ t = document.createElement('div'); t.id='flagToast'; document.body.appendChild(t);
