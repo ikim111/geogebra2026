@@ -107,7 +107,9 @@
   .calc-tool .ct-out{margin:8px 0;font-size:15px;color:#333;} .calc-tool .ct-out b{color:#1a237e;font-size:16px;} .calc-tool .ct-out.warn{color:#c62828;}
   .qskip{margin:10px 0;padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-size:14px;}
   .qskip button,.qdone-btn{margin-left:8px;padding:5px 10px;border-radius:6px;border:1px solid #66bb6a;background:#fff;color:#2e7d32;font-weight:bold;cursor:pointer;font-family:inherit;font-size:13px;}
-  .qdone-row{margin-top:8px;padding:8px 10px;border-radius:8px;background:#e8f5e9;color:#2e7d32;font-size:13.5px;}
+  .qdone-row{margin:6px 0 10px;padding:12px 14px;border-radius:10px;background:#e8f5e9;border:2px solid #66bb6a;color:#1b5e20;font-size:15px;font-weight:bold;line-height:1.5;}
+  .qdone-row small{display:block;font-weight:normal;font-size:13px;color:#2e7d32;}
+  .qdone-row .qdone-btn{display:block;margin:8px 0 0;padding:9px 16px;font-size:15px;background:#43a047;color:#fff;border-color:#2e7d32;}
   .aichk{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 4px;}
   .aichk span{font-size:12.5px;padding:3px 8px;border-radius:12px;background:#f0f2f5;color:#555;}
   .aichk span b{margin-left:3px;} .aichk .o{background:#e8f1fc;color:#1565c0;} .aichk .t{background:#fff8e1;color:#9a6b00;} .aichk .x{background:#ffebee;color:#c62828;}
@@ -1179,14 +1181,14 @@ function paintQFb(w){
   if(last){
     const c = typeof last.checks==='string' ? last.checks : '';
     h += `<div class="fb-out"><div class="when">${fmtWhen(last.ts)}${last.q ? ` · 평가한 질문: "${esc(last.q)}"` : ''}</div>`;
+    // 6가지 모두 ○이고 지금 질문 그대로이면 확정할 수 있다(3차는 마지막이라 확정 불필요) — 2026-10-23: 잘 보이게 맨 위로
+    if(w<3 && c==='OOOOOO' && String(last.q||'').trim()===v('q'+w) && state.qDone!==w)
+      h += `<div class="qdone-row">🎉 6가지가 모두 ○예요! ${w===1?'2차·3차':'3차'} 질문은 안 써도 돼요.<small>아래 버튼을 누르면 이 질문으로 확정하고 바로 다음으로 넘어가요.</small><button type="button" class="qdone-btn" data-qdone="${w}">✅ ${w}차 질문으로 확정하기</button></div>`;
     if(c) h += `<div class="aichk">${CHK_SHORT.map((t,i)=>{ const x=c[i]; return `<span class="${x==='O'?'o':x==='△'?'t':x==='X'?'x':''}" title="${esc(SELF_CHECKS[i])}">${i+1}. ${t}<b>${x==='O'?'○':x==='△'?'△':x==='X'?'✕':'–'}</b></span>`; }).join('')}</div>`;
     (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
     if((last.fix||[]).length) last.fix.forEach(t=> h += `<div class="row fix"><span class="tag">개선 아이디어</span><span>${esc(t)}</span></div>`);
     else h += `<div class="row none"><span class="tag">개선 아이디어</span><span>없어요. 지금처럼 하면 돼요! 👍</span></div>`;
     h += `<div class="note">※ AI의 피드백이 항상 맞는 것은 아니에요. 참고해서 스스로 판단해요.${window.reportOpen ? ` <button type="button" class="aifb-wrong" data-wrong="1" data-wq="${w}">🤔 AI가 틀린 것 같아요</button>` : ''}</div>`;
-    // 6가지 모두 ○이고 지금 질문 그대로이면 확정할 수 있다(3차는 마지막이라 확정 불필요)
-    if(w<3 && c==='OOOOOO' && String(last.q||'').trim()===v('q'+w) && state.qDone!==w)
-      h += `<div class="qdone-row">🎉 6가지가 모두 ○예요! 이 질문으로 확정하고 남은 차수를 건너뛸 수 있어요.<button type="button" class="qdone-btn" data-qdone="${w}">✅ ${w}차 질문으로 확정</button></div>`;
     h += `</div>`;
   }
   box.innerHTML = h;
