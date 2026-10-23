@@ -145,6 +145,9 @@
   .ac-conv .msg .tm{display:block;font-size:11px;color:#999;margin-top:2px;}
   .ac-conv .fbk{align-self:stretch;border:1px dashed #d1c4e9;background:#faf8fe;border-radius:8px;padding:6px 10px;font-size:13px;}
   .ac-conv mark, .ac-feed mark{background:#fff59d;}
+  .ac-req .rq{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 0;border-bottom:1px dashed #eee;font-size:13.5px;}
+  .ac-req .rq button{padding:4px 9px;font-size:12px;background:#ede7f6;color:#4527a0;border:1px solid #d1c4e9;}
+  .ac-req .rq button.rs{background:#fff;color:#c62828;border-color:#ef9a9a;}
   .ac-bonus{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:#555;background:#f7f4fd;border-radius:8px;padding:6px 10px;}
   .ac-bonus .sp{flex:1;}
   .ac-bonus button{padding:4px 9px;font-size:12px;background:#ede7f6;color:#4527a0;border:1px solid #d1c4e9;}
@@ -322,7 +325,7 @@
       <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
       <button class="tab-btn" data-tab="teacher">② 교사용 뷰</button>
       <button class="tab-btn" data-tab="student">③ 학생용</button>
-      <button class="tab-btn" data-tab="aichat">④ AI 대화</button>
+      <button class="tab-btn" data-tab="aichat">④ AI 대화<span id="acReqBadge" style="display:none;margin-left:5px;background:#e53935;color:#fff;border-radius:10px;padding:1px 7px;font-size:12px;"></span></button>
     </div>
 
     <div id="tab-summary" class="tab-panel active">
@@ -372,6 +375,7 @@
         <input type="search" id="acSearch" placeholder="🔍 대화 검색 (예: 숙제, 답 알려줘)" style="flex:1;min-width:180px;">
         <button type="button" class="pause" id="acExcelBtn">📥 엑셀 다운로드</button>
       </div>
+      <div id="acReqWrap" style="display:none;"><div class="teacher-col-title">🙋 AI 기회 요청 <span style="font-weight:normal;color:#999;">(오늘 기회를 다 쓴 학생이 요청했어요 · 주면 학생 화면이 바로 풀려요)</span></div><div class="panel ac-req" id="acReq"></div></div>
       <div class="teacher-col-title">⚠️ 확인 필요 <span style="font-weight:normal;color:#999;">(AI 도우미를 이상하게 쓴 것 같은 질문 · 누르면 그 학생 대화로 · 학생 화면에는 안 보여요)</span></div>
       <div class="panel ac-flag" id="acFlag"></div>
       <div class="teacher-col-title">⚡ 실시간 질문 흐름 <span style="font-weight:normal;color:#999;">(최근 질문이 위로 · 누르면 그 학생 대화로)</span></div>
@@ -646,7 +650,33 @@ function acEntries(s){
 const __acCache = {};
 function acSet(id, html){ if(__acCache[id]===html) return false; __acCache[id]=html; document.getElementById(id).innerHTML = html; return true; }
 let __acLastSel = null;
+/* 🙋 AI 기회 요청(2026-10-23): students/{key}/aiReq = {day, kind, step, ts} — aiBonus.ts보다 나중이면 대기 중 */
+function renderAiReq(){
+  const wrap = document.getElementById('acReqWrap'), box = document.getElementById('acReq'); if(!wrap || !box) return;
+  const td = acDay(Date.now());
+  const rq = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=>{ const r = s.aiReq, b = s.aiBonus || {}; return r && r.day===td && (+r.ts||0) > (+b.ts||0); })
+    .sort((a,b)=>(a.s.aiReq.ts||0)-(b.s.aiReq.ts||0));
+  wrap.style.display = rq.length ? '' : 'none';
+  const bd = document.getElementById('acReqBadge'); if(bd){ bd.style.display = rq.length ? '' : 'none'; bd.textContent = '🙋'+rq.length; }
+  box.innerHTML = rq.map(({k,s})=>{ const r = s.aiReq, what = r.kind==='chat' ? '💬 AI 도우미' : `🤖 AI 피드백${r.step?` (step${r.step})`:''}`;
+    return `<div class="rq"><b>${esc(displayName(k,s.name,s.number))}</b> <span>${what} · ${esc(acTime(r.ts))}</span> `
+      + (r.kind==='chat' ? `<button type="button" data-reqgrant="${esc(k)}" data-kind="chat" data-n="5">챗봇 +5</button><button type="button" data-reqgrant="${esc(k)}" data-kind="chat" data-n="10">챗봇 +10</button>`
+                         : `<button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="1">피드백 +1</button><button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="3">피드백 +3</button>`)
+      + `<button type="button" data-acsel="${esc(k)}">대화 보기</button><button type="button" class="rs" data-reqno="${esc(k)}">거절</button></div>`; }).join('');
+}
+document.addEventListener('click', async e=>{
+  const g = e.target.closest && e.target.closest('[data-reqgrant]'), no = e.target.closest && e.target.closest('[data-reqno]');
+  if(!g && !no) return;
+  const k = (g||no).dataset.reqgrant || (g||no).dataset.reqno, s = allStudents[k]; if(!s || !currentRoomKey) return;
+  const base = db.ref('rooms/'+currentRoomKey+'/students/'+k);
+  if(g){ const td = acDay(Date.now()), cur = (s.aiBonus && s.aiBonus.day===td) ? s.aiBonus : {fb:0, chat:0};
+    const next = {day:td, fb:+cur.fb||0, chat:+cur.chat||0, ts:Date.now()}; next[g.dataset.kind] += +g.dataset.n;
+    await base.child('aiBonus').set(next); s.aiBonus = next; }
+  else { await base.child('aiReq').set(null); delete s.aiReq; }
+  renderAiChatTab();
+});
 function renderAiChatTab(){
+  renderAiReq();
   const panel = document.getElementById('tab-aichat'); if(!panel || !panel.classList.contains('active')) return;
   const keys = Object.keys(allStudents);
   // ⚠️ 확인 필요(오늘만/전체 범위만 따르고 검색과는 무관)
@@ -702,7 +732,7 @@ document.addEventListener('click', async e=>{
   const cur = (s.aiBonus && s.aiBonus.day===td) ? s.aiBonus : {day:td, fb:0, chat:0};
   let next;
   if(b.dataset.bonus==='reset') next = null;
-  else { next = {day:td, fb:+cur.fb||0, chat:+cur.chat||0}; next[b.dataset.bonus] += +b.dataset.n; }
+  else { next = {day:td, fb:+cur.fb||0, chat:+cur.chat||0, ts:Date.now()}; next[b.dataset.bonus] += +b.dataset.n; }
   await db.ref('rooms/'+currentRoomKey+'/students/'+acSel+'/aiBonus').set(next);
   if(next) s.aiBonus = next; else delete s.aiBonus;
   renderAiChatTab();
