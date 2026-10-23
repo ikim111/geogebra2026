@@ -592,7 +592,7 @@ function openAiLog(key){
   u.logs.slice().reverse().forEach(l=>{
     if(l.type==='chat'){
       h += `<div class="ent"><div class="meta"><span><b>💬 AI 도우미</b></span><span>${when(l.ts)}</span></div>
-        <div class="q">🙋 ${esc(l.q)}</div><div class="a">🤖 ${esc(l.a)}</div></div>`;
+        <div class="q">🙋 ${l.img?`<a href="${esc(l.img)}" target="_blank" rel="noopener">📷 사진</a> `:''}${esc(l.q)}</div><div class="a">🤖 ${esc(l.a)}</div></div>`;
     } else {
       h += `<div class="ent"><div class="meta"><span><b>🤖 AI 피드백 · step${l.step}${l.target?' '+esc(l.target)+' 질문':''}</b></span><span>${when(l.ts)}</span></div>
         ${l.snap?`<div class="snap">학생 글(피드백 받을 때): ${esc(l.snap)}</div>`:''}
@@ -711,7 +711,7 @@ function renderAiChatTab(){
       ${(+bo.fb||+bo.chat)?`<button type="button" data-bonus="reset" class="rs">추가 취소</button>`:''}</div>`, lastDay = '';
   es.forEach(l=>{
     const d = acDay(l.ts); if(d!==lastDay){ h += `<div class="day">${esc(acDate(l.ts))}</div>`; lastDay = d; }
-    if(l.type==='chat') h += `<div class="msg me${flagsOf(l).length?' flagged':''}">${flagsOf(l).length?`<div>${flagChips(l)}</div>`:''}${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
+    if(l.type==='chat') h += `<div class="msg me${flagsOf(l).length?' flagged':''}">${flagsOf(l).length?`<div>${flagChips(l)}</div>`:''}${l.img?`<a href="${esc(l.img)}" target="_blank" rel="noopener"><img src="${esc(l.img)}" alt="첨부 사진" style="display:block;max-width:200px;max-height:200px;border-radius:6px;margin-bottom:4px;"></a>`:''}${acHl(l.q||'')}<span class="tm">${esc(acTime(l.ts))}</span></div><div class="msg ai">${acHl(l.a||'')}<span class="tm">🤖 ${esc(acTime(l.ts))}</span></div>`;
     else h += `<div class="fbk"><b>🤖 AI 피드백 · step${l.step}</b> <span style="color:#999;font-size:11.5px;">${esc(acTime(l.ts))}</span>${(l.good||[]).map(t=>`<div>👍 ${acHl(t)}</div>`).join('')}${(l.fix||[]).length?l.fix.map(t=>`<div>🔧 ${acHl(t)}</div>`).join(''):'<div>🔧 보완할 점 없음</div>'}</div>`;
   });
   if(!es.length) h += `<div class="text-answer-empty">${acRange==='today'?'오늘 기록이 없어요. "전체"를 눌러 보세요.':'기록이 없어요.'}</div>`;

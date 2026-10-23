@@ -246,6 +246,11 @@
   .chat-in textarea{flex:1;font-family:inherit;font-size:14.5px;border:1px solid #c5cad1;border-radius:8px;padding:9px 11px;resize:none;min-height:44px;}
   .chat-in button{border:none;background:#00897b;color:#fff;font-weight:bold;border-radius:8px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit;}
   .chat-in button:disabled{background:#a7d3cd;cursor:not-allowed;}
+  .chat-in .chat-img-btn{background:#e0f2f1;color:#00695c;padding:0 12px;font-size:18px;}
+  .chat-img-prev{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:#00695c;}
+  .chat-img-prev img{max-height:70px;max-width:120px;border-radius:6px;border:1px solid #b2dfdb;}
+  .chat-img-prev button{border:none;background:#ffebee;color:#c62828;border-radius:6px;padding:3px 8px;cursor:pointer;font-family:inherit;}
+  .msg img.cimg{display:block;max-width:220px;max-height:220px;border-radius:8px;margin-bottom:5px;cursor:zoom-in;}
   .todo.ok{color:var(--green);font-weight:bold;}
   .chat-watch{font-size:12.5px;font-weight:bold;color:#8d6e00;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:5px 10px;margin:6px 0;}
 
@@ -532,7 +537,7 @@
           ※ 대화 내용은 선생님이 볼 수 있어요.</div>
         <div class="chat-watch">👀 AI와 나눈 대화는 선생님이 모두 볼 수 있어요. 수업에 필요한 것만 물어봐요.</div>
         <div class="chat-log" id="chatLog"></div>
-        <div class="chat-in"><textarea id="chatInput" rows="1" maxlength="500" placeholder="AI 도우미에게 물어볼 내용을 적어요 (Enter: 보내기, Shift+Enter: 줄바꿈)"></textarea><button type="button" id="chatSend">보내기</button></div>
+        <div id="chatImgPrev" class="chat-img-prev" style="display:none;"></div><div class="chat-in"><button type="button" id="chatImgBtn" class="chat-img-btn" title="사진 첨부">📷</button><textarea id="chatInput" rows="1" maxlength="500" placeholder="AI 도우미에게 물어볼 내용을 적어요 (Enter: 보내기, Shift+Enter: 줄바꿈)"></textarea><button type="button" id="chatSend">보내기</button></div>
         <div class="ai-off" id="chatOff"></div>
       </div>
     </div>
@@ -1270,12 +1275,13 @@ function paintChat(){
   const log = $('chatLog'); if(!log) return;
   const chats = AI.chats(), left = chatMax() - AI.today(chats).length, off = AI.offReason();
   let h = chats.length ? '' : '<div class="msg ai">안녕하세요! 탐구 질문 만들기나 자료 찾기가 막막하면 편하게 물어보세요. 답을 대신 알려 주지는 않지만, 스스로 해낼 수 있게 도와줄게요 🙂</div>';
-  chats.forEach(c=>{ h += `<div class="msg me">${esc(c.q)}</div><div class="msg ai">${esc(c.a)}</div>`; });
-  if(AI.busy==='chat') h += `<div class="msg me">${esc(AI.pendingQ||'')}</div><div class="msg ai wait">생각하는 중…</div>`;
+  const imgTag = u => u ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img class="cimg" src="${esc(u)}" alt="첨부 사진"></a>` : '';
+  chats.forEach(c=>{ h += `<div class="msg me">${imgTag(c.img)}${esc(c.q)}</div><div class="msg ai">${esc(c.a)}</div>`; });
+  if(AI.busy==='chat') h += `<div class="msg me">${AI.pendingImg ? '📷 사진 올리는 중… ' : ''}${esc(AI.pendingQ||'')}</div><div class="msg ai wait">생각하는 중…</div>`;
   log.innerHTML = h; log.scrollTop = log.scrollHeight;
   $('chatLeft').textContent = `오늘 남은 질문 ${Math.max(0,left)}/${chatMax()}${bonusChat()?` (선생님 추가 +${bonusChat()})`:''}`;
   const dis = !!off || left<=0 || !!AI.busy;
-  $('chatSend').disabled = dis; $('chatInput').disabled = !!off || left<=0;
+  $('chatSend').disabled = dis; $('chatInput').disabled = !!off || left<=0; $('chatImgBtn').disabled = dis;
   $('chatOff').innerHTML = off ? esc(off) : (left<=0 ? `오늘 AI 도우미 질문 ${chatMax()}번을 모두 썼어요.${reqHTML('chat', 0)}` : '');
 }
 /* ---------- AI 도우미 이상 사용 표시(2026-10-12) — 학생에게는 보이지 않고 teacherpa2.html에 ⚠️로 표시 ----------
@@ -1299,22 +1305,51 @@ function chatFlags(q, aiFlag){
   if(prev.filter(c=> Date.now()-(c.ts||0) < 60000).length >= 3) f.add('spam');               // 1분에 4번째 질문
   return [...f];
 }
+/* 📷 AI 도우미에 사진 첨부(2026-10-23): 한 번에 1장. 줄여서 Vercel Blob에 올리고 주소를 AI에 보낸다. 기록 {..., img:url} */
+let chatImg = null;   // 고른 사진 File(줄인 것)
+function paintChatImg(){
+  const box = $('chatImgPrev'); if(!box) return;
+  if(!chatImg){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'flex';
+  box.innerHTML = `<img src="${URL.createObjectURL(chatImg)}" alt="첨부할 사진"><span>📷 사진 1장 첨부 — 질문과 함께 보내요</span><button type="button" id="chatImgDel">✕ 빼기</button>`;
+  $('chatImgDel').onclick = ()=>{ chatImg = null; paintChatImg(); };
+}
+$('chatImgBtn').addEventListener('click', ()=>{
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async ()=>{ const f0 = (inp.files||[])[0]; if(!f0) return;
+    if(!/^image\//.test(f0.type)){ alert('사진(이미지)만 첨부할 수 있어요.'); return; }
+    const f = await shrinkImage(f0); if(f.size > 10*1024*1024){ alert('사진이 너무 커요(10MB 넘음).'); return; }
+    chatImg = f; paintChatImg(); $('chatInput').focus(); };
+  inp.click();
+});
+async function uploadChatImg(f){
+  const room = (CURRENT_PROFILE && CURRENT_PROFILE.classNo) || 'x', num = (CURRENT_PROFILE && CURRENT_PROFILE.number) || 'x';
+  const safe = s => String(s).replace(/[^\w.-]+/g,'_').slice(0,30) || 'x';
+  const ext = (f.name.match(/\.(\w+)$/)||[,'jpg'])[1].toLowerCase();
+  const upload = await loadBlobLib();
+  const blob = await upload(`prob32/${safe(room)}/${safe(num)}/chat-${Date.now()}.${ext}`, f, { access:'public', handleUploadUrl:'/api/blob-upload', contentType: f.type || 'image/jpeg' });
+  return blob.url;
+}
 async function sendChat(){
-  const inp = $('chatInput'), q = inp.value.trim();
-  if(!q || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= chatMax()) return;
-  AI.busy = 'chat'; AI.pendingQ = q; inp.value = ''; paintChat();
+  const inp = $('chatInput'); let q = inp.value.trim();
+  if((!q && !chatImg) || AI.busy || AI.offReason() || AI.today(AI.chats()).length >= chatMax()) return;
+  if(!q) q = '(사진을 보내요) 이 사진 좀 봐 줘';
+  const imgFile = chatImg;
+  AI.busy = 'chat'; AI.pendingQ = q; AI.pendingImg = !!imgFile; inp.value = ''; paintChat();
+  let img = '';
   try{
+    if(imgFile){ img = await uploadChatImg(imgFile); chatImg = null; paintChatImg(); }
     const history = [];
-    AI.chats().slice(-5).forEach(c=>{ history.push({role:'user', content:c.q}); history.push({role:'assistant', content:c.a}); });
-    const res = await fetch('/api/chat-help', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:q, history, work: collectData() }) });
+    AI.chats().slice(-5).forEach(c=>{ history.push({role:'user', content:(c.img ? '[사진 첨부] ' : '') + c.q}); history.push({role:'assistant', content:c.a}); });
+    const res = await fetch('/api/chat-help', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:q, image: img || undefined, history, work: collectData() }) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.reply) throw new Error(j.error || ('HTTP '+res.status));
     const w = collectData();
     const flags = chatFlags(q, j.flag);
-    AI.log(Object.assign({ type:'chat', q, a:j.reply, ctx: [w.finalQ||w.q3||w.q2||w.q1||'', w.subject||''].join(' ').slice(0,300) },
+    AI.log(Object.assign({ type:'chat', q, a:j.reply }, img ? { img } : {}, { ctx: [w.finalQ||w.q3||w.q2||w.q1||'', w.subject||''].join(' ').slice(0,300) },
       flags.length ? { flags, flagWhy: j.flag && j.flag!=='none' ? (j.flagWhy||'') : '' } : {}));
-  }catch(err){ inp.value = q; alert('AI 도우미가 답하지 못했어요. 잠시 후 다시 보내 보세요.\n('+(err.message||err)+')'); }
-  AI.busy = false; AI.pendingQ = ''; paintChat(); TASKS.forEach(t=>paintStepFb(t.id));
+  }catch(err){ inp.value = q; if(imgFile && !chatImg){ chatImg = imgFile; paintChatImg(); } alert('AI 도우미가 답하지 못했어요. 잠시 후 다시 보내 보세요.\n('+(err.message||err)+')'); }
+  AI.busy = false; AI.pendingQ = ''; AI.pendingImg = false; paintChat(); TASKS.forEach(t=>paintStepFb(t.id));
 }
 $('chatSend').addEventListener('click', sendChat);
 $('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); sendChat(); } });

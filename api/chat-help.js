@@ -15,6 +15,8 @@ module.exports = async (req, res) => {
   const b = bodyOf(req);
   const message = S(b.message, 500);
   if (!message) { res.status(400).json({ error: '질문이 비어 있습니다.' }); return; }
+  // 📷 사진 첨부(2026-10-23): 학생 화면이 Vercel Blob에 올린 사진 주소만 받는다
+  const image = (typeof b.image === 'string' && /^https:\/\/[\w.-]+\.public\.blob\.vercel-storage\.com\//.test(b.image)) ? b.image.slice(0, 500) : '';
   const w = (b.work && typeof b.work === 'object') ? b.work : {};
   const srcs = (Array.isArray(w.sources) ? w.sources : []).filter(x => x && (x.site || x.what)).map(x => S(x.site, 80) || S(x.what, 80)).join(', ');
   const system = `너는 중학교 2학년 학생이 확률 탐구 글쓰기(수행평가)를 준비할 때 돕는 "AI 도우미"이다.
@@ -31,6 +33,7 @@ ${STUDENT_AI_RULES}
 - 너는 웹사이트를 직접 열어 볼 수 없다. 사이트의 정확한 메뉴 위치나 자료가 있는지 없는지를 단정하지 말고 "~에 있을 수 있어요", "~를 찾아보면 좋겠어요"처럼 말한다. 학생이 "없다"고 하면 확인한 척하거나 "제가 확인하지 않고"처럼 말하지 말고, 사이트를 직접 볼 수 없어 정확하지 않을 수 있다고 솔직하게 말한다.
 - 자료를 못 찾아 막히면 다른 길을 함께 제안한다: 같은 사이트의 다른 메뉴(예: 순위·기록·통계표), 다른 공식 사이트, 원하는 자료가 없을 때 질문을 조금 바꾸는 방법. 그래도 어려우면 "선생님께 물어보세요"라고 안내한다. 고객센터·기관에 문의하라는 안내는 하지 않는다.
 - 학생이 답답해하거나 짜증을 내면 먼저 짧게 공감하고("많이 답답했겠어요" 등), 짧고 분명하게 답한다.
+- 학생이 사진을 보내면(사이트 화면, 표, 그래프, 학습지 등) 사진 내용을 보고 무엇을 찾았는지·어디를 보면 좋을지 돕는다. 사진 속 수치로 학생 주제의 확률 계산 결과를 대신 내 주지는 않는다(어떤 수를 분자·분모로 쓸지 생각하게 한다). 사진이 흐리거나 잘 안 보이면 다시 찍어 달라고 한다. 사진이 수업과 관계없으면 offtopic이다.
 - 수업과 관계없는 이야기에는 답하지 않고, 탐구 글쓰기로 돌아오도록 부드럽게 안내한다.
 - 답은 250자 이내로 짧게 쓴다. 단, 정말 막막한 학생에게 쉬운 탐구 자료 목록을 보여 줄 때는 350자까지 괜찮다.
 - ${RECOMMENDED_SITES}
@@ -92,7 +95,7 @@ flag는 학생의 "이번 질문"만 보고 하나를 고른다(애매하면 non
   const responseFormat = { type: 'json_schema', json_schema: { name: 'chat_reply', strict: true, schema: {
     type: 'object', additionalProperties: false, required: ['reply', 'flag', 'why'],
     properties: { reply: { type: 'string' }, flag: { type: 'string', enum: FLAGS }, why: { type: 'string' } } } } };
-  const r = await callOpenAI([{ role: 'system', content: system }, ...history, { role: 'user', content: message }], { maxTokens: 2500, responseFormat });
+  const r = await callOpenAI([{ role: 'system', content: system }, ...history, { role: 'user', content: image ? [{ type: 'text', text: message }, { type: 'image_url', image_url: { url: image } }] : message }], { maxTokens: 2500, responseFormat });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   let text = String(r.text || '').trim(), reply = text, flag = 'none', flagWhy = '';
   try {
