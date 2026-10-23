@@ -722,7 +722,7 @@ function collectData(){
 /* ---------- 입력칸 연결(자동 늘어나는 글상자 + 자동 저장) ---------- */
 function autoGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function bindField(el){
-  el.addEventListener('input', ()=>{ state.f[el.dataset.k] = el.value; if(el.tagName==='TEXTAREA') autoGrow(el); changed(); });
+  el.addEventListener('input', ()=>{ state.f[el.dataset.k] = el.value; if(el.tagName==='TEXTAREA') autoGrow(el); changed(); if(el.dataset.k==='finalQ' && typeof paintStepFb==='function') paintStepFb(2); });
 }
 document.querySelectorAll('[data-k]').forEach(bindField);
 
@@ -763,7 +763,7 @@ document.addEventListener('click', e=>{
 });
 $('copyQ3').addEventListener('click', ()=>{
   const q = lastQ(); if(!q){ alert('step1에 적은 탐구 질문이 아직 없어요.'); return; }
-  const t = document.querySelector('[data-k="finalQ"]'); t.value = q; state.f.finalQ = q; autoGrow(t); changed();
+  const t = document.querySelector('[data-k="finalQ"]'); t.value = q; state.f.finalQ = q; autoGrow(t); changed(); paintStepFb(2);
 });
 
 
@@ -1178,6 +1178,12 @@ function paintTeacherFb(isNew){
   if(isNew && st){ st.classList.remove('tfb-new'); void st.offsetWidth; st.classList.add('tfb-new'); }
 }
 const fmtWhen = ts => ts ? new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+/* 2026-10-23: 최종 질문이 step1·step2에서 AI가 본 적 없는 질문이면 step2 AI 피드백이 질문도 함께 점검(횟수 추가 없음) */
+const nq = x => String(x||'').replace(/\s+/g,'');
+function needQCheck(){
+  const f = nq(v('finalQ')); if(!f) return false;
+  return !AI.logs.some(l=> l.type==='feedback' && ((l.step===1 && (nq(l.q)===f || (!l.q && nq(l.snap).includes(f)))) || (l.step===2 && l.qcheck && nq(l.q)===f)));
+}
 function paintStepFb(n){
   if(n===1){ paintQFb(1); paintQFb(2); paintQFb(3); return; }
   const box = $('aiFb'+n); if(!box) return;
@@ -1186,6 +1192,7 @@ function paintStepFb(n){
     <button type="button" class="ai-btn" data-fb="${n}" ${(off || left<=0 || AI.busy) ? 'disabled' : ''}>${AI.busy===n ? '🤖 살펴보는 중…' : '🤖 AI 피드백 받기'}</button></div>`;
   if(off) h += `<div class="ai-off">${off}</div>`;
   else if(left<=0) h += `<div class="ai-off">오늘 이 step의 AI 피드백 ${fbMax()}번을 모두 썼어요. 이제 스스로 점검해 봐요!${reqHTML('fb', n)}</div>`;
+  if(n===2 && needQCheck()) h += `<div class="ai-off" style="color:#5e35b1;">🔍 최종 탐구 질문이 step1에서 AI가 본 질문과 달라요. 이번 피드백에서 질문도 함께 점검해 줘요.</div>`;
   if(last){
     h += `<div class="fb-out"><div class="when">${used.length}번째 피드백 · ${fmtWhen(last.ts)}</div>`;
     (last.good||[]).forEach(t=> h += `<div class="row good"><span class="tag">좋은 점</span><span>${esc(t)}</span></div>`);
@@ -1202,11 +1209,12 @@ async function requestStepFb(n, w){
   try{
     RT.flushPending();
     const data = collectData();
-    const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(n===1 ? { step:n, which:w, data } : { step:n, data }) });
+    const res = await fetch('/api/step-feedback', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(n===1 ? { step:n, which:w, data } : { step:n, data, qcheck: n===2 && needQCheck() }) });
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !Array.isArray(j.good)) throw new Error(j.error || ('HTTP '+res.status));
     const entry = { type:'feedback', step:n, good:j.good, fix:j.fix||[], snap: stepSnapshot(n, data) };
     if(n===1){ entry.checks = Array.isArray(j.checks) ? j.checks.join('') : ''; entry.target = w+'차'; entry.q = v('q'+w); }
+    if(n===2 && needQCheck()){ entry.qcheck = true; entry.q = v('finalQ'); }
     AI.log(entry);
   }catch(err){ alert('AI 피드백을 받지 못했어요. 잠시 후 다시 눌러 보세요.\n('+(err.message||err)+')\n※ 실패한 경우는 횟수에 들어가지 않아요.'); }
   AI.busy = false; AI.busyQ = 0; AI.paint();

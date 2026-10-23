@@ -118,6 +118,16 @@ module.exports = async (req, res) => {
   if (!st) { res.status(400).json({ error: 'step이 올바르지 않습니다.' }); return; }
   let d = (b.data && typeof b.data === 'object') ? b.data : {};
   const isStep1 = parseInt(b.step, 10) === 1;
+  // 2026-10-23: step1에서 AI가 본 적 없는 새 최종 질문이면 step2 피드백에서 질문도 함께 점검(학생 화면이 qcheck:true로 보냄)
+  const qcheck = parseInt(b.step, 10) === 2 && !!b.qcheck && !!S(d.finalQ);
+  const QCHECK = `
+
+[최종 질문 점검 — 이번에만 추가]
+학생의 최종 탐구 질문은 step1에서 AI 점검을 받지 않은 새 질문이다. 계획 피드백에 더해 이 질문을 아래 3가지로 본다.
+(1) 확률 질문인가? 어떤 일이 일어날 확률(가능성)을 구하는 질문이어야 한다. "누가 연봉이 높을까?"처럼 확률이 아닌 값을 비교하거나, "~할 확률이 높을 확률"처럼 확률을 두 번 겹쳐 묻는 것은 안 된다.
+(2) 질문 유형이 맞는가? 예측형 = 한 사건의 확률, 비교/선택형 = 둘 이상의 확률 비교.
+(3) 현실적으로 공식 통계나 기록으로 확률을 구할 수 있는가? (앞으로 일어날 일도 지난 기록으로 구할 수 있으면 괜찮다.)
+문제가 있으면 fix의 첫 항목을 "[질문 점검]"으로 시작해 무엇이 문제인지만 짧게 알려 준다(고친 질문은 주지 않는다). 위 '보완할 점은 ~에만 쓴다' 제한은 이 항목에는 적용하지 않는다. 문제가 없으면 질문에 대해서는 따로 말하지 않는다.`;
   const w = parseInt(b.which, 10);
   const [tLabel, tQ] = (w === 1 || w === 2 || w === 3) ? [w + '차', S(d['q' + w])] : latestQ(d);
   if (isStep1 && (w === 2 || w === 3)) d = Object.assign({}, d, { selfCheck: d['selfCheck' + w] || '' }); // 그 차수의 자기평가
@@ -138,14 +148,14 @@ ${STUDENT_AI_RULES}
 - ${RECOMMENDED_SITES}
 
 [확인 기준 — ${st.name}]
-${st.check}
+${st.check}${qcheck ? QCHECK : ''}
 
 ${isStep1 ? CHECK_GUIDE + '\n\n' : ''}[출력]
 JSON 하나만 출력한다: ${isStep1 ? '{"checks":["O","△","O","O","X","O"], "good":["좋은 점"], "fix":["개선 아이디어"]}' : '{"good":["잘한 점"], "fix":["보완할 점"]}'}
 - good 최대 2개, fix 최대 2개. 각 문장은 80자 이내.
 
 [학생이 적은 내용]
-${st.text(d)}${isStep1 ? `\n평가할 질문(${tLabel || '없음'}): ${tQ || '(비어 있음)'}` : ''}`;
+${st.text(d)}${qcheck ? `\n질문 유형: ${S(d.qtype) || '(안 고름)'}` : ''}${isStep1 ? `\n평가할 질문(${tLabel || '없음'}): ${tQ || '(비어 있음)'}` : ''}`;
   const r = await callOpenAI(prompt, { maxTokens: 3000, responseFormat: isStep1 ? RESPONSE_FORMAT_1 : RESPONSE_FORMAT });
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
