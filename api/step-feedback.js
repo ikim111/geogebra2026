@@ -12,6 +12,8 @@ const S = x => String(x == null ? '' : x).slice(0, 3000).trim();
 const SELF = ['확률을 구하는 질문인가?', '예측형 또는 비교·선택형 질문의 형태인가?', '대상·기간·조건이 정해져 있는가?', '공식 통계·기록으로 답을 구할 수 있는 질문인가?', '자료의 수치로 확률을 계산하거나 비교할 수 있는 질문인가?', '윤리적으로 올바른가?'];
 const DATA = ['자료 1이 질문에 맞음', '자료 2가 맞고 다른 정보', '계산에 필요한 수치 모두'];
 
+const SHORT_LINK_HOSTS = ['url.kr','bit.ly','han.gl','me2.do','vo.la','tinyurl.com','t.ly','naver.me','buly.kr','abit.ly','goo.gl','shorturl.at','is.gd','c11.kr','zrr.kr','lrl.kr','vvd.bz','t.co','rebrand.ly','cutt.ly','short.io','link.kr','ko.gl','gg.gg','2u.pw']; // studentpa2.html과 같게(2026-10-23)
+const isShortLink = l => { try { const t = String(l || '').trim(); return SHORT_LINK_HOSTS.includes(new URL(/^https?:\/\//i.test(t) ? t : 'https://' + t).hostname.toLowerCase().replace(/^www\./, '')); } catch (e) { return false; } };
 const STEPS = {
   1: { name: 'step1 탐구 질문 만들기',
     // 선생님 지정(2026-10-06): step1에서는 아래 3가지만 중점적으로 본다. 자료를 찾아보라는 말은 하지 않는다(그건 step3).
@@ -59,13 +61,13 @@ const STEPS = {
 - 두 자료로 step2의 확률 계산식에 필요한 수치를 얻을 수 있어 보이는가?
 - 자료 수집 점검 체크리스트를 했는가?
 ※ 링크가 실제로 그 자료인지는 확인할 수 없으므로 판단하지 않는다. 확률 계산·분석은 step4에서 하므로 요구하지 않는다.
-보완할 점(fix)은 자료가 2개보다 적거나, 출처·링크가 빠졌거나, 인정되지 않는 출처가 있거나, 탐구 질문과 전혀 관계없는 자료일 때에만 쓴다.`,
+보완할 점(fix)은 자료가 2개보다 적거나, 출처·링크가 빠졌거나, 링크가 짧은 주소이거나, 인정되지 않는 출처가 있거나, 탐구 질문과 전혀 관계없는 자료일 때에만 쓴다.`,
     text: d => `최종 탐구 질문: ${S(d.finalQ) || S(d.q3) || S(d.q2) || S(d.q1) || '-'}
 계획한 확률 계산식: ${S(d.plan2) || '-'}
 찾은 자료:
 ${(Array.isArray(d.sources) ? d.sources : []).filter(x => x && (S(x.what) || S(x.site) || S(x.link))).map((x, i) => {
   const bl = bannedSourceKind(x.link, x.site);
-  return `[자료 ${i + 1}] 사용할 내용: ${S(x.what) || '-'} / 출처: ${S(x.site) || '-'} / 링크: ${S(x.link) || '(없음)'}${bl ? ` ← 프로그램 판단: ${bl}(자료로 인정 안 됨)` : ''}`; }).join('\n') || '(자료 없음)'}
+  return `[자료 ${i + 1}] 사용할 내용: ${S(x.what) || '-'} / 출처: ${S(x.site) || '-'} / 링크: ${S(x.link) || '(없음)'}${bl ? ` ← 프로그램 판단: ${bl}(자료로 인정 안 됨)` : isShortLink(x.link) ? ' ← 프로그램 판단: 짧은 주소(원래 주소로 바꾸라고 알려 줄 것)' : ''}`; }).join('\n') || '(자료 없음)'}
 학생의 자료 점검 체크: ${DATA.map((t, i) => `${t} ${String(d.dataCheck || '')[i] === '1' ? '☑' : '☐'}`).join(' ')}` },
   4: { name: 'step4 자료 분석·확률 계산하기',
     check: `중학교 2학년 수준으로 너그럽게 본다.
