@@ -1195,6 +1195,7 @@ function renderGrid(){
     nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
+    { const pt = +((s.data||{}).pasteTry)||0; if(pt){ const b=document.createElement('span'); b.textContent='✋'+pt; b.title='붙여넣기 시도 '+pt+'번(막혔음)'; b.style.cssText='margin-left:4px;font-size:11px;color:#c62828;background:#ffebee;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     if(s.submitted){
       const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
       tdName.appendChild(sc);
