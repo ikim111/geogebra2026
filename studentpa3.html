@@ -165,6 +165,17 @@
   .fb-sec.st-ok{border-left:5px solid #2e7d32;background:#f3faf3;}
   .fb-sec.st-mid{border-left:5px solid #f0a500;background:#fffaf0;}
   .fb-sec.st-bad{border-left:5px solid #c62828;background:#fff6f6;}
+  .spell-box{margin:4px 0 14px;padding:10px 12px;border:1px solid #c5cae9;border-radius:10px;background:#f5f6ff;font-size:14px;}
+  .spell-box .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .spell-box .hd small{color:#666;}
+  .spell-box button.sp-go{border:none;background:#3949ab;color:#fff;font-weight:bold;border-radius:8px;padding:7px 14px;font-size:14px;cursor:pointer;font-family:inherit;}
+  .spell-box button.sp-go:disabled{background:#9fa8da;cursor:not-allowed;}
+  .spell-box .sp-list{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+  .spell-box .sp-item{background:#fff;border:1px solid #e0e3f5;border-radius:6px;padding:5px 9px;cursor:pointer;}
+  .spell-box .sp-item:hover{background:#e8eaf6;}
+  .spell-box .sp-item s{color:#c62828;} .spell-box .sp-item b{color:#2e7d32;}
+  .spell-box .sp-item.fixed{opacity:.5;}
+  .spell-box .sp-msg{margin-top:6px;color:#555;}
 </style>
 </head>
 <body>
@@ -255,6 +266,7 @@
       <ul class="tips"><li>탐구 질문에 대한 최종 답</li><li>추가로 고려하면 좋을 변수, 더 알아보고 싶은 점</li></ul>
       <textarea data-k="concl"></textarea>
     </div>
+    <div class="spell-box" id="spellBox"></div>
     <div class="sec">
       <div class="sec-head"><span class="lab">[자료 출처]<small>자료 2개 이상(필요한 만큼) · 글자 수에는 들어가지 않아요</small></span><span class="cnt" id="cnt-src">0개</span></div>
       <ul class="tips"><li>자료마다 <b>기관·자료 이름</b>, <b>링크</b>(자료를 만든 기관의 첫 화면 주소도 OK), <b>활용한 부분 스크린샷·PDF</b>(여러 개 가능·각 10MB)를 <b style="color:#c62828;">모두 꼭</b> 남겨요.</li><li style="color:#c62828;">🚫 블로그·카페·커뮤니티·SNS·위키(나무위키·위키백과)·지식iN·유튜브·개인 글·AI가 만든 글은 자료로 인정하지 않아요.</li><li>예) KBO, 2024 KBO 리그 및 KIA 타이거즈 정규시즌 기록 — https://www.koreabaseball.com/…</li></ul>
@@ -694,6 +706,7 @@ const RT = {
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
     this.db.ref('rooms/' + this.sanitize(room) + PREP_SUFFIX + '/students/' + this.studentKey + '/data').once('value')
       .then(snap=> renderPrep(snap.val())).catch(()=> renderPrep(null));
+    this.studentRef.child('spell').on('value', sp=>{ const v = sp.val() || {}; SPELL.day = v.day||''; SPELL.n = +v.n||0; SPELL.total = +v.total||0; paintSpell(); });
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
       this.paused = !!c.paused; applyPauseLock(this.paused);
@@ -745,6 +758,50 @@ function restoreData(d){
 }
 function paintAll(){ document.querySelectorAll('textarea[data-k]').forEach(autoGrow); }
 
+/* ---------- 🔤 맞춤법 확인(2026-10-23 선생님 요청) — 하루 3번, 틀린 낱말과 맞는 표기만 보여 주고 학생이 직접 고친다 ----------
+   api/spell-check.js. 사용 횟수는 students/{key}/spell = {day, n(오늘), total} — tpa3 선생님 화면에 표시 */
+const SPELL_MAX = 3, SPELL_SEC = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
+const SPELL = { day:'', n:0, total:0, busy:false, items:null, err:'' };
+const spellDay = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+const spellUsed = () => SPELL.day===spellDay() ? SPELL.n : 0;
+function paintSpell(){
+  const box = $('spellBox'); if(!box) return;
+  const left = SPELL_MAX - spellUsed();
+  const off = PREVIEW_MODE ? '' : (!RT.connected ? '실시간 연결이 되어야 쓸 수 있어요.' : finalLocked ? '제출한 뒤에는 쓸 수 없어요.' : '');
+  let h = `<div class="hd"><button type="button" class="sp-go" id="spellGo" ${(off || left<=0 || SPELL.busy) ? 'disabled' : ''}>${SPELL.busy ? '🔤 확인하는 중…' : '🔤 맞춤법 확인'}</button>
+    <small>틀린 맞춤법·띄어쓰기만 알려 줘요. 고치는 건 직접 해요! · 오늘 남은 횟수 ${Math.max(0,left)}/${SPELL_MAX}</small></div>`;
+  if(off) h += `<div class="sp-msg">${esc(off)}</div>`;
+  if(SPELL.err) h += `<div class="sp-msg" style="color:#c62828;">${esc(SPELL.err)}</div>`;
+  if(SPELL.items){
+    if(!SPELL.items.length) h += `<div class="sp-msg" style="color:#2e7d32;">✅ 눈에 띄는 맞춤법·띄어쓰기 실수가 없어요. (AI가 놓친 것이 있을 수 있어요)</div>`;
+    else h += `<div class="sp-msg">아래를 누르면 그 낱말이 있는 곳으로 가요. 직접 고쳐 써요.</div><div class="sp-list">` + SPELL.items.map((x,i)=>{
+      const fixed = !String(state.f[x.sec]||'').includes(x.wrong);
+      return `<div class="sp-item${fixed?' fixed':''}" data-spi="${i}">${SPELL_SEC[x.sec]||''}: <s>${esc(x.wrong)}</s> → <b>${esc(x.right)}</b>${fixed?' ✔ 고쳤어요':''}</div>`; }).join('') + '</div>';
+  }
+  box.innerHTML = h;
+}
+document.addEventListener('click', async e=>{
+  const go = e.target.closest && e.target.closest('#spellGo');
+  const it = e.target.closest && e.target.closest('[data-spi]');
+  if(it && SPELL.items){ const x = SPELL.items[+it.dataset.spi]; const ta = document.querySelector(`textarea[data-k="${x.sec}"]`); const i = ta ? ta.value.indexOf(x.wrong) : -1;
+    if(ta && i>=0){ ta.focus(); ta.setSelectionRange(i, i + x.wrong.length); const lh = parseFloat(getComputedStyle(ta).lineHeight)||22; ta.scrollIntoView({block:'center'}); } return; }
+  if(!go || SPELL.busy || spellUsed() >= SPELL_MAX) return;
+  if(!PREVIEW_MODE && (!RT.connected || finalLocked)) return;
+  const text = {}; Object.keys(SPELL_SEC).forEach(k=> text[k] = String(state.f[k]||''));
+  if(!Object.values(text).some(t=>t.trim())){ SPELL.err = '먼저 보고서를 써요.'; paintSpell(); return; }
+  SPELL.busy = true; SPELL.err = ''; paintSpell();
+  try{
+    const r = await fetch('/api/spell-check', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(text) });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !Array.isArray(j.items)) throw new Error(j.error || ('HTTP '+r.status));
+    SPELL.items = j.items;
+    const day = spellDay(), n = spellUsed() + 1; SPELL.day = day; SPELL.n = n; SPELL.total = (SPELL.total||0) + 1;
+    if(RT.connected && !PREVIEW_MODE) RT.studentRef.child('spell').set({ day, n, total: SPELL.total, lastTs: Date.now(), lastN: j.items.length }).catch(()=>{});
+  }catch(err){ SPELL.err = '맞춤법 확인을 하지 못했어요. 잠시 후 다시 눌러 보세요. (실패한 경우는 횟수에 들어가지 않아요)'; }
+  SPELL.busy = false; paintSpell();
+});
+document.addEventListener('input', e=>{ if(SPELL.items && e.target && e.target.matches && e.target.matches('textarea[data-k]')){ clearTimeout(paintSpell._t); paintSpell._t = setTimeout(paintSpell, 400); } });
+paintSpell();
 function applyPauseLock(paused){ document.body.classList.toggle('app-paused', paused); $('lockOverlay').style.display = paused ? 'flex' : 'none'; updateNavButtons(); }
 document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('app-paused')) e.preventDefault(); });
 function flushBeforeLeaving(){ if(RT.connected) RT.flushPending(); }
@@ -811,6 +868,7 @@ $('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIde
 /* ---------- 제출 / 백업 ---------- */
 let finalLocked = false;
 function applyFinalLock(locked){
+  setTimeout(()=>{ if(typeof paintSpell==='function') paintSpell(); }, 0);
   finalLocked = locked;
   document.body.classList.toggle('final-locked', locked);
   document.querySelectorAll('textarea[data-k], #srcRows input').forEach(t=> t.readOnly = locked);

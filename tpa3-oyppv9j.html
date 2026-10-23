@@ -456,15 +456,17 @@ function repHash(s){ const r=repOf(s), t=[r.title,r.intro,r.body,r.concl,r.sourc
 const SEC_KO = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
 function igOf(s){ const g=(s&&s.data&&s.data.integrity)||{}; return { paste:+g.paste||0, big: arrOf(g.big).filter(Boolean), away:+g.away||0, awayMs:+g.awayMs||0 }; }
 const igFlag = s => { const g=igOf(s); return g.paste>0 || g.big.length>0; };
+function spellHTML(s){ const sp = (s && s.spell) || {}; if(!+sp.total) return '';
+  return `<div style="background:#f5f6ff;border:1px solid #c5cae9;border-radius:8px;padding:5px 10px;margin:6px 0;font-size:13px;color:#283593;">🔤 맞춤법 확인 <b>${+sp.total}번</b> 사용${sp.lastTs?` · 마지막 ${fmtTime(sp.lastTs)} (고칠 곳 ${+sp.lastN||0}개 안내)`:''}</div>`; }
 function igHTML(s){
   const g = igOf(s);
-  if(!g.paste && !g.big.length && !g.away) return '';
+  if(!g.paste && !g.big.length && !g.away) return spellHTML(s);
   const min = Math.round(g.awayMs/60000);
   let h = `<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:7px 10px;margin:6px 0;font-size:13px;color:#7a4300;">
     ⚠️ <b>붙여넣기 시도 ${g.paste}회</b> · <b>한꺼번에 입력 ${g.big.length}회</b> · 다른 화면으로 나감 ${g.away}회${g.away?` (약 ${min<1?'1분 미만':min+'분'})`:''}
     <span style="color:#999;">— 참고용(음성 입력·자동완성도 '한꺼번에 입력'에 걸릴 수 있어요)</span>`;
   if(g.big.length) h += '<ul style="margin:4px 0 0;padding-left:18px;">' + g.big.slice(-8).map(b=>`<li>${fmtTime(b.at)} ${SEC_KO[b.k]||''} ${+b.n||0}자: “${esc(b.t||'')}${(+b.n||0)>80?'…':''}”</li>`).join('') + '</ul>';
-  return h + '</div>';
+  return h + '</div>' + spellHTML(s);
 }
 function activityDetailHTML(s, id, key){
   if(!hasReport(s)) return key ? gradeBoxHTML(key, s) : '';
