@@ -302,6 +302,11 @@
         <span id="schedNow" style="font-size:12.5px;color:#5e35b1;font-weight:bold;"></span>
         <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
       </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="send" id="qScanBtn" style="background:#6a1b9a;">🔍 질문 한눈에 점검</button>
+        <button class="send" id="readyBtn" style="background:#2e7d32;">📋 2부 준비 점검</button>
+        <span style="font-size:12px;color:#888;">💤 노란 줄 = 10분 넘게 아무것도 안 고친 학생(접속 중)</span>
+      </div>
       <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
         <div id="paceTrack" class="pace-track"></div>
@@ -1147,6 +1152,61 @@ function effClassEnded(c, now){
   return past.length ? past[past.length-1][1] : !!c.classEnded;
 }
 let __ctl = null;
+setInterval(()=>{ if(currentRoomKey && typeof renderGrid==='function') renderGrid(); }, 60000);   // 💤 멈춘 시간이 늘어나도록 1분마다 다시 그림
+/* ---------- 📋 2부 준비 점검 · 🔍 질문 한눈에 점검 (2026-10-26) ---------- */
+function bigModal(title, html){
+  let m = document.getElementById('bigModal'); if(m) m.remove();
+  m = document.createElement('div'); m.id = 'bigModal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML = `<div style="background:#fff;border-radius:12px;padding:16px 18px;max-width:980px;width:96vw;max-height:90vh;overflow:auto;font-size:13.5px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><b style="font-size:17px;color:#311b92;">${title}</b><span style="flex:1"></span><button type="button" id="bigClose" style="padding:5px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;">닫기</button></div>
+    <div id="bigBody">${html}</div></div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e=>{ if(e.target===m || e.target.id==='bigClose') m.remove(); const g = e.target.closest('[data-goto]'); if(g){ selectedKey = g.dataset.goto; m.remove(); renderGrid(); } });
+  return m;
+}
+const okUrl = u => /^https?:\/\/\S+\.\S+/i.test(String(u||'').trim());
+function readiness(s){
+  const d = (s && s.data) || {}, src = Array.isArray(d.sources) ? d.sources : Object.values(d.sources||{});
+  const filled = src.filter(x=> x && (str(x.what)||str(x.site)||str(x.link)));
+  const good = filled.filter(x=> str(x.what) && str(x.site) && okUrl(x.link) && (Array.isArray(x.files)?x.files:Object.values(x.files||{})).length && !bannedSourceKind(x.link, x.site));
+  const miss = [];
+  if(!str(d.finalQ)) miss.push('최종 질문');
+  if(!str(d.plan2)) miss.push('계산식(step2)');
+  if(good.length < 2) miss.push(`공식 자료 ${good.length}/2`);
+  filled.forEach((x,i)=>{ const f=[]; if(!okUrl(x.link)) f.push('링크'); if(!(Array.isArray(x.files)?x.files:Object.values(x.files||{})).length) f.push('스크린샷'); if(bannedSourceKind(x.link, x.site)) f.push('인정 안 되는 출처'); if(f.length) miss.push(`자료${i+1} ${f.join('·')}`); });
+  if(!str(d.calc)) miss.push('확률 계산(step4)');
+  if(!str(d.meaning)) miss.push('해석(step4)');
+  if(!str(d.oIntro) || !str(d.oBody) || !str(d.oConcl)) miss.push('개요(step5)');
+  return { good: good.length, miss };
+}
+document.getElementById('readyBtn').addEventListener('click', ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  const rows = Object.keys(allStudents).map(k=>({k, s:allStudents[k]||{}})).sort((a,b)=> byNumber(a.s, b.s)).map(o=> Object.assign(o, readiness(o.s)));
+  const ready = rows.filter(r=>!r.miss.length).length;
+  bigModal(`📋 2부 준비 점검 — ${esc(currentRoomName)}반 (준비 끝 ${ready}/${rows.length}명)`,
+    `<div style="color:#666;margin-bottom:6px;">2부 보고서를 쓰려면 필요한 것: 최종 질문 · 계산식 · 링크와 스크린샷이 있는 공식 자료 2개 · 확률 계산과 해석 · 개요. 이름을 누르면 그 학생으로 가요.</div>
+     <table style="width:100%;border-collapse:collapse;"><tr style="background:#e8f5e9;"><th style="padding:5px;text-align:left;">학생</th><th>자료</th><th style="text-align:left;">빠진 것</th></tr>
+     ${rows.map(r=>`<tr style="border-bottom:1px solid #eee;${r.miss.length?'':'background:#f1f8e9;'}"><td style="padding:5px;white-space:nowrap;"><a href="#" data-goto="${esc(r.k)}">${esc(displayName(r.k,r.s.name,r.s.number))}</a></td>
+       <td style="text-align:center;">${r.good}/2</td><td style="color:${r.miss.length?'#c62828':'#2e7d32'};">${r.miss.length ? esc(r.miss.join(', ')) : '✅ 준비 끝'}</td></tr>`).join('')}</table>`);
+});
+document.getElementById('qScanBtn').addEventListener('click', async ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  const items = Object.keys(allStudents).map(k=>{ const d = (allStudents[k]||{}).data || {}; return { id:k, q: str(d.finalQ) || str(d.q3) || str(d.q2) || str(d.q1), qtype: str(d.qtype) }; }).filter(x=>x.q);
+  if(!items.length){ alert('아직 질문을 쓴 학생이 없어요.'); return; }
+  const m = bigModal(`🔍 질문 한눈에 점검 — ${esc(currentRoomName)}반`, `<div style="padding:20px;color:#666;">🤖 ${items.length}명의 질문을 살펴보는 중… (20~40초)</div>`);
+  try{
+    const r = await fetch('/api/question-scan', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ items: items.slice(0,40) }) });
+    const j = await r.json().catch(()=>({})); if(!r.ok || !Array.isArray(j.flagged)) throw new Error(j.error || ('HTTP '+r.status));
+    const byId = Object.fromEntries(items.map(x=>[x.id, x]));
+    const body = document.getElementById('bigBody'); if(!body) return;
+    body.innerHTML = `<div style="color:#666;margin-bottom:6px;">${items.length}명 중 <b>${j.flagged.length}명</b>의 질문을 직접 확인해 보세요. (AI 판단이라 틀릴 수 있어요 · 학생에게는 보이지 않아요 · 이름을 누르면 그 학생으로 가요)</div>`
+      + (j.flagged.length ? j.flagged.map(f=>{ const s = allStudents[f.id]||{}, it = byId[f.id]||{};
+          return `<div style="border:1px solid #e1bee7;border-radius:8px;padding:7px 10px;margin:5px 0;"><a href="#" data-goto="${esc(f.id)}"><b>${esc(displayName(f.id,s.name,s.number))}</b></a> ${f.issues.map(i=>`<span style="background:#f3e5f5;color:#6a1b9a;border-radius:8px;padding:0 6px;font-size:12px;margin-left:3px;">${esc(i)}</span>`).join('')}
+            <div style="margin-top:3px;">“${esc(it.q)}” <span style="color:#999;">(${esc(it.qtype||'유형 없음')})</span></div><div style="color:#6a1b9a;margin-top:2px;">→ ${esc(f.why)}</div></div>`; }).join('')
+        : '<div style="color:#2e7d32;font-weight:bold;">✅ 따로 확인할 질문이 없어요.</div>');
+  }catch(err){ const body = document.getElementById('bigBody'); if(body) body.innerHTML = `<div style="color:#c62828;">점검하지 못했어요: ${esc(err.message||err)}</div>`; }
+});
 /* 🙋 학생별 따로 열기(2026-10-26): students/{key}/personalOpen = {startAt, endAt, setAt} — 결석생 등. 그 시간에는 반이 잠겨 있어도 그 학생만 열린다 */
 function tpListHTML(){
   const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.timePass && (+s.timePass.until > now - 86400000 || s.timePass.startedAt && tpEndT(s.timePass) > now - 86400000));
@@ -1327,6 +1387,8 @@ function renderGrid(){
     totalPct += pct;
     if(isAllDone(s)) allDoneCount++;
     const idle = s.online===false;
+    // 💤 멈춰 있는 학생(2026-10-26): 접속 중인데 10분 넘게 아무것도 안 고침(editedAt·taskSince·joinedAt 중 가장 최근 기준), 아직 다 끝내지 않음
+    const lastMove = Math.max(+s.editedAt||0, +s.taskSince||0, +s.joinedAt||0), stuckMin = (!idle && !s.submitted && !isAllDone(s) && lastMove) ? Math.floor((Date.now()-lastMove)/60000) : 0;
 
     const tr = document.createElement('tr');
     tr.className = [(item.key===selectedKey?'selected':''), (idle?'idle':'')].filter(Boolean).join(' ');
@@ -1349,6 +1411,7 @@ function renderGrid(){
     nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
+    if(stuckMin >= 10){ tr.style.background = '#fff8e1'; const b=document.createElement('span'); b.textContent='💤'+stuckMin+'분'; b.title='접속 중인데 '+stuckMin+'분째 아무것도 안 고쳤어요'; b.style.cssText='margin-left:4px;font-size:11px;color:#8a6d00;background:#ffecb3;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); }
     { const tp = s.timePass; if(tp && (tp.startedAt ? tpEndT(tp) > Date.now() : +tp.until > Date.now())){ const b=document.createElement('span'); b.textContent = tp.startedAt ? '🎫'+Math.ceil((tpEndT(tp)-Date.now())/60000)+'분' : '🎫'; b.title = tp.startedAt ? '이용권 쓰는 중' : '이용권 미사용'; b.style.cssText='margin-left:4px;font-size:11px;color:#6d4c00;background:#fff8e1;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     { const po = s.personalOpen; if(po && +po.endAt > Date.now()){ const b=document.createElement('span'); const on = Date.now() >= po.startAt; b.textContent = (on?'🔓':'⏱')+schFmt(po.endAt).slice(-5); b.title = '학생별 따로 열기 '+schFmt(po.startAt)+'~'+schFmt(po.endAt); b.style.cssText='margin-left:4px;font-size:11px;color:#00695c;background:#e0f2f1;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     { const pt = +((s.data||{}).pasteTry)||0; if(pt){ const b=document.createElement('span'); b.textContent='✋'+pt; b.title='붙여넣기 시도 '+pt+'번(막혔음)'; b.style.cssText='margin-left:4px;font-size:11px;color:#c62828;background:#ffebee;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }

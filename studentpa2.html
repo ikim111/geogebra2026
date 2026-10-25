@@ -258,6 +258,11 @@
 
   .ai-req{margin-left:6px;background:#fff;color:#5e35b1;border:1.5px solid #5e35b1;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .ai-req-wait{margin-left:6px;color:#8a6d00;font-weight:bold;font-size:13px;}
+  .ssc{margin:8px 0 10px;padding:10px 12px;border:2px solid #80cbc4;border-radius:10px;background:#e0f2f1;font-size:14px;}
+  .ssc .hd{font-weight:bold;color:#00695c;margin-bottom:6px;}
+  .ssc .it{background:#fff;border-radius:8px;padding:7px 10px;margin-top:6px;}
+  .ssc .it a{font-weight:bold;color:#00695c;}
+  .ssc .it small{display:block;color:#555;margin-top:2px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -411,6 +416,7 @@
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step3</span>자료 찾기</h2><span class="badge pending" id="badge-s3">미완료</span></div>
     <p class="hint">step2에서 세운 계획에 필요한 자료를 공식 사이트에서 찾아요. <b>서로 다른 공식 자료 2개 이상</b>이 필요해요.</p>
+    <div id="srcShortcut"></div>
     <details class="guide" open>
       <summary>📚 자료 조사할 때 안내 자료 (추천 사이트)</summary>
       <div class="gbody">
@@ -1060,6 +1066,7 @@ const RT = {
       const existing = snap.val();
       if(existing && existing.progress) TASKS.forEach(t=>{ const p=existing.progress[t.key]; if(p && p.visited) this.visitedTasks.add(t.id); });
       if(existing && existing.data) restoreData(existing.data); // 저장된 내용을 먼저 되살린 뒤에 저장 시작
+      setTimeout(()=>{ if(typeof paintSrcShortcut==='function') paintSrcShortcut(); }, 0);
       if(existing && existing.submitted) applyFinalLock(true);
       this.restored = true;
       this.studentRef.update({ name, number: number||null,
@@ -1099,18 +1106,18 @@ const RT = {
   },
   pushProgress(){
     if(!this.connected || !this.restored) return;
-    const progress = {};
+    const progress = {}; const edited = this._edited; this._edited = false;
     TASKS.forEach(t=>{ progress[t.key] = { done: isDone(t.id), value: valueOf(t.id), visited: this.visitedTasks.has(t.id) }; });
-    this.studentRef.update({ progress, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length, currentTaskId: this.viewingTaskId,
-      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP })
+    this.studentRef.update(Object.assign({ progress, completed: TASKS.filter(t=>isDone(t.id)).length, total: TASKS.length, currentTaskId: this.viewingTaskId,
+      data: collectData(), lastActive: firebase.database.ServerValue.TIMESTAMP }, edited ? { editedAt: firebase.database.ServerValue.TIMESTAMP } : {}))
       .then(()=>{ $('saveStatus').textContent = '✔ 자동 저장됨'; }).catch(()=>{ $('saveStatus').textContent = '⚠️ 저장 실패 — 인터넷 연결을 확인하세요'; });
   },
-  pushProgressDebounced(){ if(!this.connected) return; clearTimeout(this._t); this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 700); },
+  pushProgressDebounced(){ if(!this.connected) return; this._edited = true; clearTimeout(this._t); this._t = setTimeout(()=>{ this._t=null; this.pushProgress(); }, 700); },
   setViewingTask(taskId){
     if(taskId!=null) this.visitedTasks.add(taskId);
     if(this.viewingTaskId===taskId) return;
     this.viewingTaskId = taskId;
-    if(this.connected){ this.studentRef.update({ currentTaskId: taskId, lastActive: firebase.database.ServerValue.TIMESTAMP }); this.pushProgress(); }
+    if(this.connected){ this.studentRef.update({ currentTaskId: taskId, taskSince: firebase.database.ServerValue.TIMESTAMP, lastActive: firebase.database.ServerValue.TIMESTAMP }); this.pushProgress(); }
   },
   flushPending(){ if(this._t){ clearTimeout(this._t); this._t=null; } this.pushProgress(); }
 };
@@ -1513,6 +1520,39 @@ function paintTimePass(baseEnded, now){
   };
   tick(); if(!__tpTick) __tpTick = setInterval(tick, 1000);
 }
+/* 🎯 내 질문에 맞는 자료 바로가기(2026-10-26): 최종 질문·주제의 낱말을 보고 알맞은 공식 사이트와 찾는 요령을 보여 준다.
+   챗봇 질문 1위가 "어디서 찾아?"였다. 아래 [추천 사이트] 안내 자료는 그대로 둔다. */
+const SRC_SHORTCUTS = [
+  [/야구|KBO|타율|홈런|안타|투수|타자|두산|기아|KIA|엘지|LG|삼성|한화|키움|SSG|롯데|NC|KT|가을\s*야구/i, 'KBO 공식 홈페이지', 'https://www.koreabaseball.com/', '위쪽 「기록실」에서 팀·선수 기록, 「일정·결과」에서 날짜별 경기 결과(홈·원정)를 봐요. 시즌과 팀을 먼저 고르세요.'],
+  [/농구|KBL|소노|3점슛|자유투|리바운드/i, 'KBL 공식 홈페이지', 'https://www.kbl.or.kr/', '「기록」 메뉴에서 팀·선수 기록과 경기 결과를 찾아요.'],
+  [/WKBL|여자\s*농구|강이슬/i, 'WKBL 공식 홈페이지', 'https://www.wkbl.or.kr/', '「기록」에서 선수별 슛 성공률을 찾아요.'],
+  [/배구|KOVO|공격\s*성공률|대한항공|KB손해보험|흥국생명/i, 'KOVO 공식 홈페이지', 'https://www.kovo.co.kr/', '「기록」 메뉴에서 팀·선수 기록을 찾아요.'],
+  [/K\s*리그|FC\s*서울|울산|전북|축구/i, 'K리그 데이터포털', 'https://data.kleague.com/', '팀·경기 기록을 시즌별로 볼 수 있어요. 국가대표 경기는 대한축구협회(kfa.or.kr) 기록을 봐요.'],
+  [/날씨|비가|비\s|눈이|눈\s|첫눈|폭염|기온|강수|더울|추울|장마|태풍|황사/i, '기상자료개방포털', 'https://data.kma.go.kr/', '「기후통계분석」에서 지역·기간을 골라 날짜별 기온·강수·적설을 볼 수 있어요. 지역(관측소)과 기간을 먼저 정해요.'],
+  [/미세먼지|대기|초미세/i, '에어코리아', 'https://www.airkorea.or.kr/', '「통계정보」에서 지역별·날짜별 농도를 찾아요.'],
+  [/지진/i, '기상청 날씨누리(지진·화산)', 'https://www.weather.go.kr/', '「지진·화산」에서 국내·국외 지진 목록(규모·날짜)을 찾아요.'],
+  [/로또|복권|당첨/i, '동행복권', 'https://www.dhlottery.co.kr/', '「당첨결과」에서 회차별 당첨 번호와 등위별 당첨자 수를 봐요.'],
+  [/영화|관객|개봉|박스\s*오피스/i, '영화관입장권통합전산망 KOBIS', 'https://www.kobis.or.kr/', '「박스오피스」에서 날짜·기간별 관객 수와 개봉일을 봐요.'],
+  [/교통\s*사고|자전거|이륜차|보행자|사고/i, 'TAAS 교통사고분석시스템', 'https://taas.koroad.or.kr/', '「교통사고 통계」에서 연도·지역·사고 유형별 건수와 사망·부상자 수를 봐요.'],
+  [/암|질병|병원|건강|검진|감염/i, '국가암정보센터·질병관리청', 'https://www.cancer.go.kr/', '암은 국가암정보센터 「암 통계」, 다른 질병은 질병관리청(kdca.go.kr)이나 KOSIS에서 찾아요.'],
+  [/출생|쌍둥이|인구|사망|혼인|이혼|고령|65세/i, '국가통계포털 KOSIS', 'https://kosis.kr/', '검색창에 질문 문장이 아니라 핵심 낱말(예: 다태아 출생, 교통사고 사망)로 검색해요.'],
+  [/학생|학교|진학|특목고|마이스터고|교원|중학생|고등학생/i, '교육통계서비스', 'https://kess.kedi.re.kr/', '「교육통계」에서 학교급·연도별 학생 수, 진학률을 찾아요.'],
+  [/직업|취업|연봉|임금|일자리|의사|변호사|경찰|군인/i, '국가통계포털 KOSIS', 'https://kosis.kr/', '「고용·노동·임금」 분야나 핵심 낱말(예: 직업별 취업자)로 검색해요.'],
+  [/화재|불이/i, '국가화재정보시스템', 'https://www.nfds.go.kr/', '「통계」에서 연도·원인·장소별 화재 건수를 봐요.'],
+  [/게임|뽑기|가챠|원신|롤|확률형\s*아이템|캐릭터/i, '게임사 공식 확률 정보', '', '게임사는 뽑기 확률을 공식 홈페이지나 게임 안 「확률 정보」에 꼭 공개해요. 블로그·커뮤니티 말고 그 공식 공지를 자료로 써요.']
+];
+function paintSrcShortcut(){
+  const box = $('srcShortcut'); if(!box) return;
+  const txt = [v('finalQ'), lastQ(), v('subject'), v('plan1')].join(' ');
+  const seen = new Set(), hits = SRC_SHORTCUTS.filter(([re, name])=> re.test(txt) && !seen.has(name) && seen.add(name)).slice(0, 3);
+  if(!txt.trim()){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="ssc"><div class="hd">🎯 내 질문에 맞는 자료 바로가기</div>`
+    + (hits.length ? hits.map(([, name, url, tip])=> `<div class="it">${url ? `<a href="${url}" target="_blank" rel="noopener">${esc(name)} ↗</a>` : `<b>${esc(name)}</b>`}<small>${esc(tip)}</small></div>`).join('')
+       : `<div class="it"><small>질문에 맞는 사이트를 아래 「추천 사이트」에서 골라 봐요. 잘 모르겠으면 AI 도우미에게 "내 질문에 필요한 자료는 어디서 찾아?"라고 물어봐요.</small></div>`)
+    + `<div class="it" style="background:transparent;padding:4px 2px 0;"><small>💡 검색은 질문 문장 그대로가 아니라 <b>핵심 낱말</b>로 해요. 자료 2개는 같은 사이트여도 <b>표나 기간이 다르면</b> 돼요.</small></div></div>`;
+}
+document.addEventListener('input', e=>{ if(e.target && e.target.dataset && /^(finalQ|subject|plan1|q[123])$/.test(e.target.dataset.k||'')){ clearTimeout(paintSrcShortcut._t); paintSrcShortcut._t = setTimeout(paintSrcShortcut, 500); } });
+setTimeout(paintSrcShortcut, 1500);
 function applyFinalLock(locked){
   finalLocked = locked;
   if(typeof AI!=='undefined') setTimeout(()=>AI.paint(), 0);
