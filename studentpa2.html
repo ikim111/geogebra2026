@@ -1026,7 +1026,14 @@ function changed(opts){
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null,
   connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0,
-  classEnded:false, _lastKnownClassEnded:null, viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
+  classEnded:false, _lastKnownClassEnded:null, _ctl:null, _tOff:0, _clsTimer:null,
+  applyClassState(){
+    if(!this._ctl) return;
+    const classEnded = effClassEnded(this._ctl, Date.now() + (this._tOff||0));
+    if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
+    else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
+    this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
+  }, viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
     const statusEl=$('syncStatus');
@@ -1066,11 +1073,10 @@ const RT = {
       this.minTaskId = (c.minTaskId!=null) ? c.minTaskId : null;
       this.maxTaskId = (c.maxTaskId!=null) ? c.maxTaskId : null;
       clampToPacing(); updateNavButtons();
-      const classEnded = !!c.classEnded;
-      if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
-      else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
-      this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
+      this._ctl = c; this.applyClassState();
     });
+    clearInterval(this._clsTimer); this._clsTimer = setInterval(()=> this.applyClassState(), 10000);   // ⏰ 예약 시각이 되면 자동으로
+    this.db.ref('.info/serverTimeOffset').on('value', so=>{ this._tOff = +so.val() || 0; this.applyClassState(); });
     // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
     this.studentRef.child('teacherFb').on('value', st=>{ setTeacherFb(st.val()); });
     this.studentRef.child('aiBonus').on('value', sb=>{ const b = sb.val() || {}; AI_BONUS = { day: b.day||'', fb: +b.fb||0, chat: +b.chat||0, ts: +b.ts||0 }; AI.paint(); });
@@ -1164,6 +1170,15 @@ const AI = {
   },
   paint(){ TASKS.forEach(t=> paintStepFb(t.id)); paintChat(); }
 };
+/* ⏰ 수업 시작·종료 예약(2026-10-25): control/schedule = {startAt, endAt, setAt}. 수동 버튼(classStartedTs/classEndedTs)과 예약 시각 중
+   이미 지난 것 가운데 가장 나중 것이 지금 상태를 정한다. (studentpa2.html·tpa2와 같게) */
+function effClassEnded(c, now){
+  const ev = [], sc = (c && c.schedule) || {};
+  if(c.classEndedTs) ev.push([+c.classEndedTs, true]); if(c.classStartedTs) ev.push([+c.classStartedTs, false]);
+  if(sc.startAt) ev.push([+sc.startAt, false]); if(sc.endAt) ev.push([+sc.endAt, true]);
+  const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0]);
+  return past.length ? past[past.length-1][1] : !!c.classEnded;
+}
 const dayKey = ts => { const d = new Date(ts||0); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
 /* step1: 1차·2차 질문 아래에 각각 AI 피드백(체크리스트 6항목 ○△✕ + 좋은 점·개선 아이디어). 횟수는 1차·2차 합쳐 하루 5번.
    기록: {type:'feedback', step:1, target:'1차'|'2차', q:평가한 질문, checks:'O△X…', good, fix} (target이 없는 예전 기록은 1차로 본다) */
