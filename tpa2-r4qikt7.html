@@ -1148,6 +1148,16 @@ function effClassEnded(c, now){
 }
 let __ctl = null;
 /* 🙋 학생별 따로 열기(2026-10-26): students/{key}/personalOpen = {startAt, endAt, setAt} — 결석생 등. 그 시간에는 반이 잠겨 있어도 그 학생만 열린다 */
+function tpListHTML(){
+  const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.timePass && (+s.timePass.until > now - 86400000 || s.timePass.startedAt && tpEndT(s.timePass) > now - 86400000));
+  if(!rows.length) return '<span style="color:#bbb;">이용권을 준 학생이 없어요.</span>';
+  const btn = (a,k,t,c) => `<button type="button" data-tp-${a}="${esc(k)}" style="border:1px solid ${c};background:#fff;color:${c};border-radius:6px;padding:1px 7px;cursor:pointer;font-size:12px;">${t}</button>`;
+  return rows.map(({k,s})=>{ const t = s.timePass, mins = (+t.minutes||45)+(+t.extra||0);
+    const st = t.startedAt ? (now < tpEndT(t) ? `<b style="color:#00897b;">쓰는 중 · 남은 ${Math.ceil((tpEndT(t)-now)/60000)}분</b>` : '<span style="color:#999;">사용 완료</span>')
+      : (now > +t.until ? '<span style="color:#999;">기간 지남(안 씀)</span>' : `미사용 · ${esc(schFmt(+t.from).split(' ')[0])}~${esc(schFmt(+t.until).split(' ')[0])}`);
+    return `<div style="padding:3px 0;">${st} · <b>${esc(displayName(k,s.name,s.number))}</b> ${mins}분 ${btn('add',k,'+10분','#00897b')} ${btn('del',k,'지우기','#c62828')}</div>`; }).join('');
+}
+const tpEndT = t => +t.startedAt + ((+t.minutes||45) + (+t.extra||0)) * 60000;
 function poListHTML(){
   const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.personalOpen && +s.personalOpen.endAt > now - 86400000)
     .sort((a,b)=> a.s.personalOpen.startAt - b.s.personalOpen.startAt);
@@ -1188,7 +1198,13 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
       <div id="stuPick" style="display:flex;flex-wrap:wrap;gap:4px 10px;max-height:150px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px 8px;">${Object.keys(allStudents||{}).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0)).map(k=>`<label style="font-size:13px;white-space:nowrap;"><input type="checkbox" data-po-k="${esc(k)}"> ${esc(displayName(k,(allStudents[k]||{}).name,(allStudents[k]||{}).number))}</label>`).join('') || '<span style="color:#999;">아직 이 반에 접속한 학생이 없어요.</span>'}</div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">시작 <input type="time" id="poS" style="font-size:14px;"> 종료 <input type="time" id="poE" style="font-size:14px;">
         <button type="button" id="poSave" style="padding:6px 12px;border-radius:8px;border:none;background:#00897b;color:#fff;font-weight:bold;cursor:pointer;">＋ 선택한 학생 열기 예약</button></div>
-      <div id="poList" style="margin-top:8px;font-size:13px;">${poListHTML()}</div>` : '<div style="color:#999;font-size:13px;margin-top:4px;">반에 접속한 뒤에 쓸 수 있어요.</div>'}
+      <div id="poList" style="margin-top:8px;font-size:13px;">${poListHTML()}</div>
+      <div style="margin-top:10px;padding:8px 10px;background:#fffde7;border:1px solid #ffe082;border-radius:8px;">
+        <b>🎫 이용권으로 주기</b> <span style="color:#666;font-size:12.5px;">— 시각을 정하지 않고, 기간 안에 학생이 원할 때 [▶ 시작]을 눌러 정한 분만큼 써요(위에서 고른 학생).</span>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">위 날짜부터 <input type="date" id="tpUntil" style="font-size:14px;"> 까지 · <input type="number" id="tpMin" value="45" min="5" max="180" style="width:60px;font-size:14px;">분
+          <button type="button" id="tpSave" style="padding:6px 12px;border-radius:8px;border:none;background:#f9a825;color:#3e2723;font-weight:bold;cursor:pointer;">🎫 선택한 학생에게 이용권 주기</button></div>
+        <div id="tpList" style="margin-top:6px;font-size:13px;">${tpListHTML()}</div>
+      </div>` : '<div style="color:#999;font-size:13px;margin-top:4px;">반에 접속한 뒤에 쓸 수 있어요.</div>'}
     </div>
     <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="schCancel" style="padding:7px 14px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;">닫기</button>
       <button type="button" id="schSave" style="padding:7px 16px;border-radius:8px;border:none;background:#5e35b1;color:#fff;font-weight:bold;cursor:pointer;">💾 예약 저장</button></div></div>`;
@@ -1197,6 +1213,25 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
     if(e.target===m || e.target.id==='schCancel'){ m.remove(); return; }
     const del = e.target.closest('[data-sch-del]');
     if(del){ const r = del.dataset.schDel; if(!confirm(`${r}반 예약을 지울까요?`)) return; await db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule').remove(); m.remove(); document.getElementById('schedBtn').click(); return; }
+    const tpb = e.target.closest('[data-tp-del],[data-tp-add]');
+    if(tpb){ const k = tpb.dataset.tpDel || tpb.dataset.tpAdd, ref = db.ref('rooms/'+currentRoomKey+'/students/'+k+'/timePass');
+      if(tpb.dataset.tpDel){ if(!confirm('이 학생의 이용권을 지울까요? (쓰는 중이면 바로 잠겨요)')) return; await ref.remove(); if(allStudents[k]) delete allStudents[k].timePass; }
+      else { const cur = (allStudents[k]||{}).timePass || {}; const extra = (+cur.extra||0) + 10; await ref.child('extra').set(extra); if(allStudents[k] && allStudents[k].timePass) allStudents[k].timePass.extra = extra; }
+      document.getElementById('tpList').innerHTML = tpListHTML(); renderGrid(); return; }
+    if(e.target.id==='tpSave'){
+      const d1 = document.getElementById('schDate').value, d2 = document.getElementById('tpUntil').value || d1, mins = Math.round(+document.getElementById('tpMin').value || 45);
+      const ks = Array.from(m.querySelectorAll('[data-po-k]:checked')).map(x=>x.dataset.poK);
+      if(!ks.length){ alert('학생을 골라 주세요.'); return; } if(!d1){ alert('날짜를 골라 주세요.'); return; }
+      if(mins < 5 || mins > 180){ alert('5~180분 사이로 넣어 주세요.'); return; }
+      const from = new Date(d1+'T00:00:00').getTime(), until = new Date(d2+'T23:59:59').getTime();
+      if(until <= from){ alert('끝 날짜가 시작 날짜보다 같거나 늦어야 해요.'); return; }
+      if(ks.some(k=> ((allStudents[k]||{}).timePass||{}).startedAt) && !confirm('이미 이용권을 쓴 학생이 있어요. 새 이용권으로 바꿀까요?')) return;
+      const v = { from, until, minutes: mins, extra: 0, setAt: Date.now() };
+      try{ await Promise.all(ks.map(k=> db.ref('rooms/'+currentRoomKey+'/students/'+k+'/timePass').set(v))); ks.forEach(k=>{ if(allStudents[k]) allStudents[k].timePass = Object.assign({}, v); });
+        document.getElementById('tpList').innerHTML = tpListHTML(); m.querySelectorAll('[data-po-k]:checked').forEach(x=>x.checked=false); renderGrid();
+        alert(`${ks.length}명에게 ${d1}${d2!==d1?'~'+d2:''} 동안 쓸 수 있는 ${mins}분 이용권을 줬어요.`); }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
+      return;
+    }
     const pod = e.target.closest('[data-po-del]');
     if(pod){ const k = pod.dataset.poDel; if(!confirm('이 학생의 따로 열기 예약을 지울까요?')) return; await db.ref('rooms/'+currentRoomKey+'/students/'+k+'/personalOpen').remove(); if(allStudents[k]) delete allStudents[k].personalOpen; document.getElementById('poList').innerHTML = poListHTML(); renderGrid(); return; }
     if(e.target.id==='poSave'){
@@ -1314,6 +1349,7 @@ function renderGrid(){
     nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
+    { const tp = s.timePass; if(tp && (tp.startedAt ? tpEndT(tp) > Date.now() : +tp.until > Date.now())){ const b=document.createElement('span'); b.textContent = tp.startedAt ? '🎫'+Math.ceil((tpEndT(tp)-Date.now())/60000)+'분' : '🎫'; b.title = tp.startedAt ? '이용권 쓰는 중' : '이용권 미사용'; b.style.cssText='margin-left:4px;font-size:11px;color:#6d4c00;background:#fff8e1;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     { const po = s.personalOpen; if(po && +po.endAt > Date.now()){ const b=document.createElement('span'); const on = Date.now() >= po.startAt; b.textContent = (on?'🔓':'⏱')+schFmt(po.endAt).slice(-5); b.title = '학생별 따로 열기 '+schFmt(po.startAt)+'~'+schFmt(po.endAt); b.style.cssText='margin-left:4px;font-size:11px;color:#00695c;background:#e0f2f1;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     { const pt = +((s.data||{}).pasteTry)||0; if(pt){ const b=document.createElement('span'); b.textContent='✋'+pt; b.title='붙여넣기 시도 '+pt+'번(막혔음)'; b.style.cssText='margin-left:4px;font-size:11px;color:#c62828;background:#ffebee;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     if(s.submitted){

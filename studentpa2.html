@@ -1026,12 +1026,15 @@ function changed(opts){
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null,
   connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0,
-  classEnded:false, _lastKnownClassEnded:null, _ctl:null, _po:null, _tOff:0, _clsTimer:null,
+  classEnded:false, _lastKnownClassEnded:null, _ctl:null, _po:null, _tp:null, _tOff:0, _clsTimer:null,
   applyClassState(){
     if(!this._ctl) return;
     const now = Date.now() + (this._tOff||0), po = this._po;
     let classEnded = effClassEnded(this._ctl, now);
     if(classEnded && po && now >= +po.startAt && now < +po.endAt) classEnded = false;   // 🙋 학생별 따로 열기(2026-10-26)
+    const tp = this._tp, baseEnded = classEnded;   // 🎫 45분 이용권(2026-10-26)
+    if(classEnded && tp && tp.startedAt && now < tpEnd(tp)) classEnded = false;
+    paintTimePass(baseEnded, now);
     if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
     else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
     this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
@@ -1082,6 +1085,7 @@ const RT = {
     // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
     this.studentRef.child('teacherFb').on('value', st=>{ setTeacherFb(st.val()); });
     this.studentRef.child('aiBonus').on('value', sb=>{ const b = sb.val() || {}; AI_BONUS = { day: b.day||'', fb: +b.fb||0, chat: +b.chat||0, ts: +b.ts||0 }; AI.paint(); });
+    this.studentRef.child('timePass').on('value', st=>{ this._tp = st.val() || null; this.applyClassState(); });   // 🎫 45분 이용권
     this.studentRef.child('personalOpen').on('value', sp=>{ this._po = sp.val() || null; this.applyClassState(); });   // 🙋 학생별 따로 열기
     this.studentRef.child('aiReq').on('value', sr=>{ AI_REQ = sr.val() || null; AI.paint(); });   // 🙋 기회 더 요청(2026-10-23)
     this.studentRef.child('aiLog').once('value').then(s3=>{ const v=s3.val()||{}; AI.logs = Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); AI.loaded = true; AI.paint(); }).catch(()=>{ AI.loaded = true; AI.paint(); });
@@ -1475,6 +1479,40 @@ $('switchUserBtn').addEventListener('click', (e)=>{ e.preventDefault(); clearIde
 
 /* ---------- 제출 / 백업 ---------- */
 let finalLocked = false;
+/* 🎫 45분 이용권(2026-10-26): students/{key}/timePass = {from, until, minutes, extra, startedAt?, setAt}
+   결석생 등 — 선생님이 정한 기간 안에 학생이 [▶ 시작]을 누르면 그때부터 minutes(+extra)분 동안 반이 잠겨 있어도 열린다.
+   시작 시각은 서버 시간으로 한 번만 기록(다른 기기·새로고침으로 다시 채워지지 않음). 끝나면 자동 저장 → 잠김·제출. */
+const tpEnd = tp => +tp.startedAt + ((+tp.minutes||45) + (+tp.extra||0)) * 60000;
+let __tpTick = null, __tpWarned = false;
+function paintTimePass(baseEnded, now){
+  let bar = document.getElementById('tpBar');
+  const tp = RT._tp;
+  const show = tp && baseEnded && (tp.startedAt ? now < tpEnd(tp) : (now >= +tp.from && now < +tp.until));
+  if(!show){ if(bar) bar.style.display = 'none'; clearInterval(__tpTick); __tpTick = null; return; }
+  if(!bar){ bar = document.createElement('div'); bar.id = 'tpBar';
+    bar.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:10002;background:#004d40;color:#fff;border-radius:12px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:15px;font-weight:bold;display:flex;align-items:center;gap:12px;max-width:94vw;';
+    document.body.appendChild(bar); }
+  bar.style.display = 'flex';
+  if(!tp.startedAt){
+    const mins = (+tp.minutes||45) + (+tp.extra||0);
+    bar.innerHTML = `🎫 선생님이 ${mins}분 이용권을 주셨어요 <button type="button" id="tpStart" style="border:none;background:#ffd54f;color:#3e2723;font-weight:bold;border-radius:8px;padding:7px 14px;font-size:15px;cursor:pointer;font-family:inherit;">▶ ${mins}분 시작</button>`;
+    document.getElementById('tpStart').onclick = ()=>{
+      if(!confirm(`지금 시작하면 ${mins}분 동안만 쓸 수 있어요. 중간에 멈출 수 없어요. 시작할까요?`)) return;
+      if(RT._tp && RT._tp.startedAt) return;
+      RT.studentRef.child('timePass/startedAt').set(firebase.database.ServerValue.TIMESTAMP).catch(()=> alert('시작하지 못했어요. 다시 눌러 보세요.'));
+    };
+    clearInterval(__tpTick); __tpTick = null; return;
+  }
+  const tick = ()=>{
+    const n = Date.now() + (RT._tOff||0), left = tpEnd(RT._tp||tp) - n;
+    if(left <= 0){ clearInterval(__tpTick); __tpTick = null; try{ RT.flushPending(); }catch(e){} RT.applyClassState(); return; }
+    const m = Math.floor(left/60000), s = Math.floor(left/1000)%60;
+    bar.style.background = left < 5*60000 ? '#c62828' : '#004d40';
+    bar.innerHTML = `⏱ 남은 시간 ${m}:${String(s).padStart(2,'0')}${left < 5*60000 ? ' — 곧 잠겨요! 마무리해요' : ''}`;
+    if(left < 5*60000 && !__tpWarned){ __tpWarned = true; try{ RT.flushPending(); }catch(e){} }
+  };
+  tick(); if(!__tpTick) __tpTick = setInterval(tick, 1000);
+}
 function applyFinalLock(locked){
   finalLocked = locked;
   if(typeof AI!=='undefined') setTimeout(()=>AI.paint(), 0);
