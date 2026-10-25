@@ -10,7 +10,7 @@
 // 1~8반 모두 쓸 수 있다(2026-10-19 1~4반 추가).
 //
 // 반 목록(bnmap/{반}.json)은 무작위 꼬리가 붙은 주소라 서버가 list()로만 찾는다(모두 읽어 합친다, loadMap 참고).
-const { list } = require('@vercel/blob');
+const { list, put } = require('@vercel/blob');
 const crypto = require('crypto');
 // 1~4반: 스캔본 표지에서 읽은 항목별 점수(선생님 화면 「표지 점수 채우기」용, 학생에게는 저장된 것만 보임). 공개 폴더가 아닌 함수 안에만 들어간다.
 let BN_PRESET = {}; try { BN_PRESET = require('./_bnpreset.json'); } catch (e) {}
@@ -53,10 +53,37 @@ async function fbPut(path, value) {
 // 저장소 목록 읽기(list)는 Blob '작업 횟수'로 세어져 무료 한도를 빨리 쓴다 → 같은 서버가 살아 있는 동안 반별로 2분 기억해 둔다.
 // 선생님 화면(admin)은 방금 올린 결과를 바로 봐야 하므로 기억을 쓰지 않는다(fresh=true).
 const MAP_CACHE = {}, MAP_TTL = 2 * 60 * 1000;
+/* 2026-10-25 Vercel 사용량 줄이기: 반 목록을 Blob 대신 Firebase rooms/__bnmap/{반} 에 암호화해서 둔다.
+   (Blob list()·파일 읽기가 Blob 작업 횟수 무료 한도를 많이 썼다.) 목록에는 답안 사진 주소가 들어 있으므로
+   AES-256-GCM으로 암호화한다 — 열쇠는 서버 코드(공개되지 않음)나 환경변수 BN_MAP_KEY에서만 만든다. 학생이 Firebase를 읽어도 내용을 알 수 없다.
+   처음 한 번은 예전 Blob 목록을 읽어 Firebase로 옮긴다. Firebase에 저장이 안 되면 예전처럼 Blob에 저장한다. */
+const MAP_KEY = crypto.createHash('sha256').update((process.env.BN_MAP_KEY || '').trim() || ('bnmap|' + BN_ADMIN_HASH + '|' + BN_ADMIN_SALT)).digest();
+function encMap(m) {
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', MAP_KEY, iv);
+  const ct = Buffer.concat([c.update(JSON.stringify(m), 'utf8'), c.final()]);
+  return { v: 1, iv: iv.toString('base64'), ct: ct.toString('base64'), tag: c.getAuthTag().toString('base64'), ts: m.ts || Date.now() };
+}
+function decMap(e) {
+  if (!e || e.v !== 1 || !e.ct) return null;
+  const d = crypto.createDecipheriv('aes-256-gcm', MAP_KEY, Buffer.from(e.iv, 'base64'));
+  d.setAuthTag(Buffer.from(e.tag, 'base64'));
+  return JSON.parse(Buffer.concat([d.update(Buffer.from(e.ct, 'base64')), d.final()]).toString('utf8'));
+}
+const FB_MAP = cls => `rooms/__bnmap/${sanitize(cls)}`;
+async function saveMapStore(cls, m) {
+  try { await fbPut(FB_MAP(cls), encMap(m)); }
+  catch (e) { await put(`bnmap/${cls}.json`, JSON.stringify(m), { access: 'public', contentType: 'application/json', addRandomSuffix: true }); }  // 예전 방식으로라도 저장
+  MAP_CACHE[cls] = { t: Date.now(), m };
+}
 async function loadMap(cls, fresh) {
   const c = MAP_CACHE[cls];
   if (!fresh && c && Date.now() - c.t < MAP_TTL) return c.m;
-  const m = await loadMapRaw(cls);
+  let m = null, fromFb = false;
+  try { const e = await fbGet(FB_MAP(cls)); if (e) { m = decMap(e); fromFb = !!m; } } catch (err) {}
+  if (!fromFb) {   // 아직 옮기지 않은 반: 예전 Blob 목록을 읽고 Firebase로 옮긴다(한 번만)
+    m = await loadMapRaw(cls);
+    if (m) { try { await fbPut(FB_MAP(cls), encMap(m)); } catch (err) {} }
+  }
   MAP_CACHE[cls] = { t: Date.now(), m };
   return m;
 }
@@ -99,6 +126,16 @@ module.exports = async (req, res) => {
     // ---- 선생님: 현재 상태 확인
     if (b.admin !== undefined) {
       if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
+      // 반 목록 저장(bna 관리 화면이 합친 전체 목록을 보낸다) — 2026-10-25 Blob 대신 여기로
+      if (b.saveMap) {
+        const m = b.saveMap;
+        if (!m || typeof m !== 'object' || !m.students || typeof m.students !== 'object') { res.status(400).json({ error: '반 목록 형식이 올바르지 않아요.' }); return; }
+        const clean = { cls, max: Number(m.max) || 20, ts: Date.now(), students: {} };
+        Object.keys(m.students).forEach(n => { if (/^\d{1,2}$/.test(n) && m.students[n] && typeof m.students[n] === 'object') clean.students[n] = m.students[n]; });
+        await saveMapStore(cls, clean);
+        res.status(200).json({ ok: true, count: Object.keys(clean.students).length });
+        return;
+      }
       const m = withPreset(cls, await loadMap(cls, true));
       // 비밀번호를 아직 만들지 않은 학생: rooms/{반}__pins 에 그 번호의 기록이 없는 학생
       let noPin = [];

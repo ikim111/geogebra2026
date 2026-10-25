@@ -111,9 +111,11 @@ async function getMap(){
   if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
   return j;
 }
-async function saveMap(map){
+async function saveMap(map){   // 2026-10-25: Blob 파일 대신 서버(api/bn-view)가 Firebase에 암호화해서 저장 — Vercel Blob 사용량 줄이기
   map.ts = Date.now();
-  await put(`bnmap/${map.cls}.json`, new Blob([JSON.stringify(map)], {type:'application/json'}), 'application/json');
+  const r = await fetch('/api/bn-view', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ admin: $('key').value.trim(), cls: map.cls, saveMap: map }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || ('반 목록 저장 실패 HTTP ' + r.status));
 }
 function renderCur(m, unitOpen){
   const st = `<p>학생에게 <span class="pill ${unitOpen?'on':'off'}">${unitOpen?'공개 중 (목차 잠금 열림)':'비공개 (목차에서 잠김)'}</span></p>`;
