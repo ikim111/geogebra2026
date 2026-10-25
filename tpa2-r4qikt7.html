@@ -1147,6 +1147,14 @@ function effClassEnded(c, now){
   return past.length ? past[past.length-1][1] : !!c.classEnded;
 }
 let __ctl = null;
+/* 🙋 학생별 따로 열기(2026-10-26): students/{key}/personalOpen = {startAt, endAt, setAt} — 결석생 등. 그 시간에는 반이 잠겨 있어도 그 학생만 열린다 */
+function poListHTML(){
+  const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.personalOpen && +s.personalOpen.endAt > now - 86400000)
+    .sort((a,b)=> a.s.personalOpen.startAt - b.s.personalOpen.startAt);
+  if(!rows.length) return '<span style="color:#bbb;">따로 열기 예약이 없어요.</span>';
+  return rows.map(({k,s})=>{ const p = s.personalOpen, st = now < p.startAt ? '예약' : now < p.endAt ? '<b style="color:#00897b;">열림</b>' : '<span style="color:#999;">끝남</span>';
+    return `<div style="padding:3px 0;">${st} · <b>${esc(displayName(k,s.name,s.number))}</b> ${esc(schFmt(p.startAt))}~${esc(schFmt(p.endAt).slice(-5))} <button type="button" data-po-del="${esc(k)}" style="border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:1px 7px;cursor:pointer;font-size:12px;">지우기</button></div>`; }).join('');
+}
 const schFmt = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 function schText(sc){ if(!sc || (!sc.startAt && !sc.endAt)) return ''; const now = Date.now(), up = [];
   if(sc.startAt) up.push(`${schFmt(sc.startAt)} 시작${sc.startAt<=now?'(지남)':''}`); if(sc.endAt) up.push(`${schFmt(sc.endAt)} 종료${sc.endAt<=now?'(지남)':''}`); return up.join(' · '); }
@@ -1174,6 +1182,14 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
       <td>${cur[r] && (cur[r].startAt||cur[r].endAt) ? `<button type="button" data-sch-del="${esc(r)}" style="border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:3px 8px;cursor:pointer;">예약 지우기</button>` : ''}</td></tr>`).join('')}
     </table>
     <div style="color:#888;font-size:12px;margin-top:6px;">시각을 넣은 반만 예약돼요(그 반의 예전 예약은 새것으로 바뀌어요). 시작이나 종료 하나만 넣어도 돼요.</div>
+    <div style="margin-top:16px;padding-top:12px;border-top:2px dashed #d1c4e9;">
+      <div style="font-size:15px;font-weight:bold;color:#311b92;">🙋 학생별 따로 열기 ${currentRoomName ? `<span style="font-weight:normal;color:#666;font-size:13px;">(${esc(currentRoomName)}반)</span>` : ''}</div>
+      ${currentRoomKey ? `<div style="color:#666;font-size:12.5px;margin:4px 0 8px;">결석생처럼 따로 시간을 줘야 하는 학생만, 정한 시간 동안 반 전체가 잠겨 있어도 열려요. 끝나면 다시 잠기고 제출 처리돼요. (위 날짜를 써요)</div>
+      <div id="stuPick" style="display:flex;flex-wrap:wrap;gap:4px 10px;max-height:150px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px 8px;">${Object.keys(allStudents||{}).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0)).map(k=>`<label style="font-size:13px;white-space:nowrap;"><input type="checkbox" data-po-k="${esc(k)}"> ${esc(displayName(k,(allStudents[k]||{}).name,(allStudents[k]||{}).number))}</label>`).join('') || '<span style="color:#999;">아직 이 반에 접속한 학생이 없어요.</span>'}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">시작 <input type="time" id="poS" style="font-size:14px;"> 종료 <input type="time" id="poE" style="font-size:14px;">
+        <button type="button" id="poSave" style="padding:6px 12px;border-radius:8px;border:none;background:#00897b;color:#fff;font-weight:bold;cursor:pointer;">＋ 선택한 학생 열기 예약</button></div>
+      <div id="poList" style="margin-top:8px;font-size:13px;">${poListHTML()}</div>` : '<div style="color:#999;font-size:13px;margin-top:4px;">반에 접속한 뒤에 쓸 수 있어요.</div>'}
+    </div>
     <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="schCancel" style="padding:7px 14px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;">닫기</button>
       <button type="button" id="schSave" style="padding:7px 16px;border-radius:8px;border:none;background:#5e35b1;color:#fff;font-weight:bold;cursor:pointer;">💾 예약 저장</button></div></div>`;
   document.body.appendChild(m);
@@ -1181,6 +1197,21 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
     if(e.target===m || e.target.id==='schCancel'){ m.remove(); return; }
     const del = e.target.closest('[data-sch-del]');
     if(del){ const r = del.dataset.schDel; if(!confirm(`${r}반 예약을 지울까요?`)) return; await db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule').remove(); m.remove(); document.getElementById('schedBtn').click(); return; }
+    const pod = e.target.closest('[data-po-del]');
+    if(pod){ const k = pod.dataset.poDel; if(!confirm('이 학생의 따로 열기 예약을 지울까요?')) return; await db.ref('rooms/'+currentRoomKey+'/students/'+k+'/personalOpen').remove(); if(allStudents[k]) delete allStudents[k].personalOpen; document.getElementById('poList').innerHTML = poListHTML(); renderGrid(); return; }
+    if(e.target.id==='poSave'){
+      const day = document.getElementById('schDate').value, s1 = document.getElementById('poS').value, e1 = document.getElementById('poE').value;
+      const ks = Array.from(m.querySelectorAll('[data-po-k]:checked')).map(x=>x.dataset.poK);
+      if(!ks.length){ alert('학생을 골라 주세요.'); return; } if(!day || !s1 || !e1){ alert('날짜·시작·종료 시각을 모두 넣어 주세요.'); return; }
+      const startAt = new Date(day+'T'+s1+':00').getTime(), endAt = new Date(day+'T'+e1+':00').getTime();
+      if(endAt <= startAt){ alert('종료 시각이 시작 시각보다 늦어야 해요.'); return; }
+      if(endAt < Date.now()){ alert('이미 지난 시간이에요.'); return; }
+      const v = { startAt, endAt, setAt: Date.now() };
+      try{ await Promise.all(ks.map(k=> db.ref('rooms/'+currentRoomKey+'/students/'+k+'/personalOpen').set(v))); ks.forEach(k=>{ if(allStudents[k]) allStudents[k].personalOpen = v; });
+        document.getElementById('poList').innerHTML = poListHTML(); m.querySelectorAll('[data-po-k]:checked').forEach(x=>x.checked=false); renderGrid();
+        alert(`${ks.length}명을 ${day} ${s1}~${e1}에 따로 열어요.`); }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
+      return;
+    }
     if(e.target.id!=='schSave') return;
     const day = document.getElementById('schDate').value; if(!day){ alert('날짜를 골라 주세요.'); return; }
     const at = t => t ? new Date(day+'T'+t+':00').getTime() : 0, jobs = [], msg = [];
@@ -1283,6 +1314,7 @@ function renderGrid(){
     nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
+    { const po = s.personalOpen; if(po && +po.endAt > Date.now()){ const b=document.createElement('span'); const on = Date.now() >= po.startAt; b.textContent = (on?'🔓':'⏱')+schFmt(po.endAt).slice(-5); b.title = '학생별 따로 열기 '+schFmt(po.startAt)+'~'+schFmt(po.endAt); b.style.cssText='margin-left:4px;font-size:11px;color:#00695c;background:#e0f2f1;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     { const pt = +((s.data||{}).pasteTry)||0; if(pt){ const b=document.createElement('span'); b.textContent='✋'+pt; b.title='붙여넣기 시도 '+pt+'번(막혔음)'; b.style.cssText='margin-left:4px;font-size:11px;color:#c62828;background:#ffebee;border-radius:8px;padding:0 5px;'; tdName.appendChild(b); } }
     if(s.submitted){
       const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';

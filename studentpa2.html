@@ -1026,10 +1026,12 @@ function changed(opts){
 const RT = {
   app:null, db:null, roomRef:null, studentRef:null, controlRef:null,
   connected:false, restored:false, studentKey:null, heartbeatTimer:null, paused:false, lastSeenAnnounceTs:0,
-  classEnded:false, _lastKnownClassEnded:null, _ctl:null, _tOff:0, _clsTimer:null,
+  classEnded:false, _lastKnownClassEnded:null, _ctl:null, _po:null, _tOff:0, _clsTimer:null,
   applyClassState(){
     if(!this._ctl) return;
-    const classEnded = effClassEnded(this._ctl, Date.now() + (this._tOff||0));
+    const now = Date.now() + (this._tOff||0), po = this._po;
+    let classEnded = effClassEnded(this._ctl, now);
+    if(classEnded && po && now >= +po.startAt && now < +po.endAt) classEnded = false;   // 🙋 학생별 따로 열기(2026-10-26)
     if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
     else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
     this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
@@ -1080,6 +1082,7 @@ const RT = {
     // 🤖 AI 사용 기록 불러오기(하루 사용 횟수 계산·대화 이어 보기용). 켜고 끄기는 위 control/aiOff를 따른다.
     this.studentRef.child('teacherFb').on('value', st=>{ setTeacherFb(st.val()); });
     this.studentRef.child('aiBonus').on('value', sb=>{ const b = sb.val() || {}; AI_BONUS = { day: b.day||'', fb: +b.fb||0, chat: +b.chat||0, ts: +b.ts||0 }; AI.paint(); });
+    this.studentRef.child('personalOpen').on('value', sp=>{ this._po = sp.val() || null; this.applyClassState(); });   // 🙋 학생별 따로 열기
     this.studentRef.child('aiReq').on('value', sr=>{ AI_REQ = sr.val() || null; AI.paint(); });   // 🙋 기회 더 요청(2026-10-23)
     this.studentRef.child('aiLog').once('value').then(s3=>{ const v=s3.val()||{}; AI.logs = Object.keys(v).map(k=>v[k]).filter(Boolean).sort((a,b)=>(a.ts||0)-(b.ts||0)); AI.loaded = true; AI.paint(); }).catch(()=>{ AI.loaded = true; AI.paint(); });
     statusEl.textContent = `🟢 실시간 연결됨 (${room}반)`; statusEl.className = 'on';
