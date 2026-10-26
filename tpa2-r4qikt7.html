@@ -1159,10 +1159,21 @@ document.getElementById('surveySubmitBtn').addEventListener('click', ()=>{
 /* ---------- 수업 시작/종료 (일시정지와는 별개) ---------- */
 /* ⏰ 수업 시작·종료 예약(2026-10-25): rooms/{반}__prob32/control/schedule = {startAt, endAt, setAt}
    학생 화면이 시각을 보고 스스로 잠기고 풀린다(선생님 화면을 켜 두지 않아도 됨). 날짜 하나 + 반별 시작·종료 시각. */
+/* 📅 평일 자동 열기(2026-10-26): control/weekly가 true인 반은 월수금 8:35~15:20, 화목 8:35~16:20 동안 열린다(쉬는 시간 포함).
+   직접 누른 시작·종료·예약도 같은 '시각순 이벤트'로 섞여, 가장 최근에 지난 것이 이긴다(예: 오늘 10시에 수업 종료를 누르면 다음 날 8:35까지 잠김). */
+const WEEKLY_OPEN = [8,35], WEEKLY_CLOSE = {1:[15,20],2:[16,20],3:[15,20],4:[16,20],5:[15,20]};
+function weeklyEvents(now){
+  const ev = [];
+  for(let i=0;i<5;i++){ const d = new Date(now - i*86400000), w = d.getDay(); if(!WEEKLY_CLOSE[w]) continue;
+    const at = (h,m)=>{ const x = new Date(d); x.setHours(h,m,0,0); return x.getTime(); };
+    ev.push([at(...WEEKLY_OPEN), false], [at(...WEEKLY_CLOSE[w]), true]); }
+  return ev;
+}
 function effClassEnded(c, now){
   const ev = [], sc = (c && c.schedule) || {};
   if(c.classEndedTs) ev.push([+c.classEndedTs, true]); if(c.classStartedTs) ev.push([+c.classStartedTs, false]);
   if(sc.startAt) ev.push([+sc.startAt, false]); if(sc.endAt) ev.push([+sc.endAt, true]);
+  if(c.weekly) ev.push(...weeklyEvents(now));
   const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0]);
   return past.length ? past[past.length-1][1] : !!c.classEnded;
 }
@@ -1294,6 +1305,7 @@ const SCH_CSS = `
 #schedModal .sm-note{color:#888;font-size:12px;margin-top:8px;}`;
 let SM = null;   // 창 상태
 function smRefRoom(r){ return db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule'); }
+function smRefWeekly(r){ return db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/weekly'); }
 function smRefStu(k, what){ return db.ref('rooms/'+currentRoomKey+'/students/'+k+'/'+what); }
 const smToday = () => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const smAt = (day, t) => new Date(day+'T'+t+':00').getTime();
@@ -1309,6 +1321,9 @@ function smStuChips(mark){
 function smBodyRoom(){
   const now = Date.now(), rows = SM.rooms.filter(r=> SM.cur[r] && (SM.cur[r].startAt||SM.cur[r].endAt));
   return `<p class="sm-desc">정한 시각이 되면 [▶ 수업 시작]·[⏹ 수업 종료]를 누른 것과 같아요(종료 = 잠금·제출). 학생 화면이 스스로 바뀌어서 이 화면을 켜 두지 않아도 돼요.</p>
+  <div class="sm-card"><div class="sm-lab">📅 평일 자동 열기 — 월·수·금 8:35~15:20 · 화·목 8:35~16:20 (쉬는 시간 포함)</div>
+    <div class="sm-chips">${SM.rooms.map(r=>`<button type="button" class="sm-chip${SM.weekly[r]?' on':''}" data-sm-weekly="${esc(r)}">${SM.weekly[r]?'✅':'⬜'} ${esc(r)}반</button>`).join('')}</div>
+    <div class="sm-note">누르면 바로 켜지고 꺼져요. 켠 반은 따로 예약하지 않아도 매일 열리고 닫혀요. 그날만 닫으려면 [⏹ 수업 종료]를 누르면 다음 날 8:35까지 잠겨요.</div></div>
   <div class="sm-card"><div class="sm-lab">반 (여러 반 가능)</div><div class="sm-chips">${SM.rooms.map(r=>`<button type="button" class="sm-chip${SM.rpick.has(r)?' on':''}" data-sm-room="${esc(r)}">${esc(r)}반</button>`).join('')}</div>
     <div class="sm-lab">날짜와 시간</div><div class="sm-row"><input type="date" id="smDay" value="${SM.day}"> <input type="time" id="smS" value="${SM.s}"> ~ <input type="time" id="smE" value="${SM.e}"></div>
     <div class="sm-note">시작만 넣으면 종료는 50분 뒤로 채워져요. 시작이나 종료 하나만 둬도 돼요.</div>
@@ -1356,7 +1371,8 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
   if(!document.getElementById('schStyle')){ const st = document.createElement('style'); st.id = 'schStyle'; st.textContent = SCH_CSS; document.head.appendChild(st); }
   const rooms = Array.from(document.querySelectorAll('#roomCode option')).map(o=>o.value).filter(Boolean);
   const cur = {}; await Promise.all(rooms.map(r=> smRefRoom(r).once('value').then(sn=>{ cur[r] = sn.val(); }).catch(()=>{})));
-  SM = { tab: SM ? SM.tab : 'room', rooms, cur, rpick: new Set(currentRoomName ? [currentRoomName] : []), pick: new Set(), day: smToday(), until: '', s: '', e: '', eAuto: true, min: 50 };
+  const weekly = {}; await Promise.all(rooms.map(r=> smRefWeekly(r).once('value').then(sn=>{ weekly[r] = !!sn.val(); }).catch(()=>{})));
+  SM = { tab: SM ? SM.tab : 'room', rooms, cur, weekly, rpick: new Set(currentRoomName ? [currentRoomName] : []), pick: new Set(), day: smToday(), until: '', s: '', e: '', eAuto: true, min: 50 };
   let m = document.getElementById('schedModal'); if(m) m.remove();
   m = document.createElement('div'); m.id = 'schedModal';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(20,16,40,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
@@ -1377,6 +1393,8 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
     if(!t) return;
     smSync();
     if(t.dataset.smTab){ SM.tab = t.dataset.smTab; SM.pick.clear(); smPaint(); return; }
+    if(t.dataset.smWeekly){ const r = t.dataset.smWeekly, on = !SM.weekly[r];
+      smRefWeekly(r).set(on ? true : null).then(()=>{ SM.weekly[r] = on; smPaint(); }).catch(err=> alert('바꾸지 못했어요: '+(err.message||err))); return; }
     if(t.dataset.smRoom){ const r = t.dataset.smRoom; SM.rpick.has(r) ? SM.rpick.delete(r) : SM.rpick.add(r); smPaint(); return; }
     if(t.dataset.smStu){ const k = t.dataset.smStu; SM.pick.has(k) ? SM.pick.delete(k) : SM.pick.add(k); smPaint(); return; }
     try{

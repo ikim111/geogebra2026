@@ -1189,10 +1189,21 @@ const AI = {
 };
 /* ⏰ 수업 시작·종료 예약(2026-10-25): control/schedule = {startAt, endAt, setAt}. 수동 버튼(classStartedTs/classEndedTs)과 예약 시각 중
    이미 지난 것 가운데 가장 나중 것이 지금 상태를 정한다. (studentpa2.html·tpa2와 같게) */
+/* 📅 평일 자동 열기(2026-10-26): control/weekly가 true인 반은 월수금 8:35~15:20, 화목 8:35~16:20 동안 열린다(쉬는 시간 포함).
+   직접 누른 시작·종료·예약도 같은 '시각순 이벤트'로 섞여, 가장 최근에 지난 것이 이긴다(예: 오늘 10시에 수업 종료를 누르면 다음 날 8:35까지 잠김). */
+const WEEKLY_OPEN = [8,35], WEEKLY_CLOSE = {1:[15,20],2:[16,20],3:[15,20],4:[16,20],5:[15,20]};
+function weeklyEvents(now){
+  const ev = [];
+  for(let i=0;i<5;i++){ const d = new Date(now - i*86400000), w = d.getDay(); if(!WEEKLY_CLOSE[w]) continue;
+    const at = (h,m)=>{ const x = new Date(d); x.setHours(h,m,0,0); return x.getTime(); };
+    ev.push([at(...WEEKLY_OPEN), false], [at(...WEEKLY_CLOSE[w]), true]); }
+  return ev;
+}
 function effClassEnded(c, now){
   const ev = [], sc = (c && c.schedule) || {};
   if(c.classEndedTs) ev.push([+c.classEndedTs, true]); if(c.classStartedTs) ev.push([+c.classStartedTs, false]);
   if(sc.startAt) ev.push([+sc.startAt, false]); if(sc.endAt) ev.push([+sc.endAt, true]);
+  if(c.weekly) ev.push(...weeklyEvents(now));
   const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0]);
   return past.length ? past[past.length-1][1] : !!c.classEnded;
 }
