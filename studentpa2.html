@@ -415,7 +415,7 @@
 <section class="task" id="task-s3" data-task-id="3">
   <div class="card">
     <div class="task-head"><h2><span class="step-tag">step3</span>자료 찾기</h2><span class="badge pending" id="badge-s3">미완료</span></div>
-    <p class="hint">step2에서 세운 계획에 필요한 자료를 공식 사이트에서 찾아요. <b>서로 다른 공식 자료 2개 이상</b>이 필요해요.</p>
+    <p class="hint">step2에서 세운 계획에 필요한 자료를 찾아요. <b>서로 다른 믿을 만한 자료 2개 이상</b>이 필요해요. 공식 사이트가 가장 좋고, 언론 기사·기록 정리 사이트·포털(네이버·다음)의 날씨·스포츠 정보·백과사전도 인정해요.</p>
     <div id="srcShortcut"></div>
     <details class="guide" open>
       <summary>📚 자료 조사할 때 안내 자료 (추천 사이트)</summary>
@@ -453,6 +453,7 @@
           ② <b>신뢰성</b>: 자료의 출처와 조사 기관을 신뢰할 수 있는가?<br>
           ③ <b>관련성</b>: 자료의 조사 대상과 조건이 나의 탐구 질문과 일치하는가?<br>
           ④ <b>필요성</b>: 탐구 글을 작성하는 데 실제로 필요한 자료인가?</div>
+        <p class="gnote" style="color:#2e7d32;font-weight:bold;">✅ 인정하는 자료: 정부·공공기관, 공식 기록 사이트, 언론 기사, 기록을 모아 정리한 사이트(스포츠·게임 기록 등), 네이버·다음의 날씨·스포츠 정보, 백과사전</p>
         <p class="gnote">※ 위 사이트는 추천 사이트이며, 반드시 위 사이트에서만 자료를 찾아야 하는 것은 아닙니다.</p>
         <p class="gnote" style="color:#c62828;font-weight:bold;">🚫 블로그, 카페, 커뮤니티, SNS(인스타그램·페이스북·X 등), 위키(나무위키·위키백과), 질문·답변 사이트(지식iN 등), 유튜브, 브런치 같은 개인 글, AI가 만든 글은 자료로 인정하지 않아요. 이런 자료를 쓰면 자료 조사를 하지 않은 것으로 봐요. 정부기관·공공기관·공식 통계·공식 기록 자료를 쓰세요.</p>
         <p class="gnote">※ 사용한 자료의 출처(링크)와 활용할 부분 스크린샷을 반드시 남기세요.</p>
@@ -612,7 +613,7 @@ const SELF_CHECKS = [
   '윤리적으로 올바른가? (편향적이거나, 특정 인물에 대한 비난 및 조롱의 의도가 담기면 안 됨 — 점수에는 넣지 않지만 ✕이면 다음 step으로 갈 수 없어요)'
 ];
 const DATA_CHECKS = [ // 2부 채점 기준 '신뢰성 있는 자료 수집'과 같은 3항목(각 1점)
-  ['자료 1이 탐구 질문에 맞는 자료인가?', '자료의 대상·기간·조건이 내 질문과 맞는지 확인하기 (공식 자료만 인정)'],
+  ['자료 1이 탐구 질문에 맞는 자료인가?', '자료의 대상·기간·조건이 내 질문과 맞는지 확인하기 (블로그·카페·위키·유튜브·AI 글 등은 인정 안 됨)'],
   ['자료 2가 탐구 질문에 맞고, 자료 1과 다른 정보를 주는가?', '같은 사이트여도 표나 기간이 다르면 다른 자료예요. 한 표를 둘로 나눠 적으면 1개로 봐요'],
   ['찾은 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가?', 'step2에서 세운 계산식의 분자·분모가 될 수치가 자료에 다 있는지 확인하기']
 ];
@@ -700,7 +701,7 @@ function missing(id){
   } else if(id===3){
     const good = goodSources();
     const bad = state.sources.filter(s=> bannedSourceKind(s.link, s.site)).length;
-    if(bad) m.push(`인정되지 않는 출처(블로그·카페·커뮤니티·위키·지식iN·유튜브·SNS·AI 글 등) ${bad}개 → 공식 자료로 바꾸기`);
+    if(bad) m.push(`인정되지 않는 출처(블로그·카페·커뮤니티·위키·지식iN·유튜브·SNS·AI 글 등) ${bad}개 → 다른 자료로 바꾸기`);
     if(good.length < 2) m.push(`자료 2개 이상(사용할 내용·출처·링크·스크린샷 모두) — 지금 ${good.length}개`);
     if(state.dataCheck.some(c=>!c)) m.push('자료 수집 점검 체크리스트');
   } else if(id===4){
@@ -887,7 +888,7 @@ function renderAnalysis(){
     const link = [isUrl(s.link) ? `<a href="${esc(s.link.trim())}" target="_blank" rel="noopener">${esc(s.link.trim())}</a>` : (s.link.trim() ? `<span style="color:#e65100;">${esc(s.link)}</span>` : ''),
       ...(s.files||[]).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">📎 ${esc(f.name||'파일')}</a>`)].filter(Boolean).join(' · ') || '<span style="color:#e65100;">(링크·파일 없음)</span>';
     return `<div class="ana-card"${bk?' style="border-color:#ef9a9a;background:#fff6f6;"':''}>
-      <div class="hd" style="font-weight:bold;">📎 자료 ${i+1}${bk?` <span style="color:#c62828;font-size:12.5px;">🚫 인정되지 않는 출처(${esc(bk)}) — step3에서 공식 자료로 바꿔요</span>`:''}</div>
+      <div class="hd" style="font-weight:bold;">📎 자료 ${i+1}${bk?` <span style="color:#c62828;font-size:12.5px;">🚫 인정되지 않는 출처(${esc(bk)}) — step3에서 다른 자료로 바꿔요</span>`:''}</div>
       <div class="src-info">${esc(s.what)||'(사용할 내용 없음)'} — ${esc(s.site)||'(출처 없음)'}<br>${link}</div>
       <div class="k" style="font-size:13px;font-weight:bold;color:var(--ink2);margin:6px 0 4px;">이 자료에서 알아낸 사실·수치</div>
       <textarea data-a="${i}" placeholder="① … ② …">${esc(s.analysis)}</textarea>

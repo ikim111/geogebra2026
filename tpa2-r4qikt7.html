@@ -1199,7 +1199,7 @@ function readiness(s){
   const miss = [];
   if(!str(d.finalQ)) miss.push('최종 질문');
   if(!str(d.plan2)) miss.push('계산식(step2)');
-  if(good.length < 2) miss.push(`공식 자료 ${good.length}/2`);
+  if(good.length < 2) miss.push(`인정 자료 ${good.length}/2`);
   filled.forEach((x,i)=>{ const f=[]; if(!okUrl(x.link)) f.push('링크'); if(!(Array.isArray(x.files)?x.files:Object.values(x.files||{})).length) f.push('스크린샷'); if(bannedSourceKind(x.link, x.site)) f.push('인정 안 되는 출처'); if(f.length) miss.push(`자료${i+1} ${f.join('·')}`); });
   if(!str(d.calc)) miss.push('확률 계산(step4)');
   if(!str(d.meaning)) miss.push('해석(step4)');
