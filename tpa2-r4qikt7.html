@@ -217,6 +217,20 @@
   .kv{font-size:13px;color:#444;margin:2px 0;}
   .kv b{color:#1a237e;}
   .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto 8px;}
+  .qscan-panel{background:#f8f5ff;border:2px solid #b39ddb;border-radius:12px;padding:12px 14px;margin:10px 0;}
+  .qscan-panel .qs-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .qscan-panel .qs-head b{color:#4527a0;font-size:15px;}
+  .qscan-panel .qs-st{color:#555;font-size:13px;}
+  .qscan-panel .qs-btn{border:1px solid #b39ddb;background:#fff;color:#4527a0;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12.5px;font-family:inherit;}
+  .qscan-panel .qs-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .qscan-panel .qs-item{display:flex;align-items:center;gap:6px;flex-wrap:wrap;text-align:left;border:1px solid #e1d5f5;background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;font-family:inherit;font-size:13.5px;}
+  .qscan-panel .qs-item:hover{background:#ede7f6;}
+  .qscan-panel .qs-tag{background:#ede7f6;color:#5e35b1;border-radius:999px;padding:1px 8px;font-size:12px;}
+  .qscan-panel .qs-why{color:#6a1b9a;flex-basis:100%;font-size:13px;}
+  .qscan-panel .qs-ok{color:#2e7d32;font-weight:bold;margin-top:8px;}
+  .qs-cardflag{background:#f3e5f5;color:#6a1b9a;border-radius:8px;padding:5px 9px;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .qfb-card.qs-flash{animation:qsflash 1.6s ease;}
+  @keyframes qsflash{0%{box-shadow:0 0 0 4px #b39ddb;}100%{box-shadow:0 0 0 0 transparent;}}
 </style>
 </head>
 <body>
@@ -371,6 +385,7 @@
       <div class="teacher-col">
         <div class="teacher-col-title">✏️ 선택한 step에서 학생들이 적은 내용 (● 지금 보는 중)</div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
+        <div id="qScanPanel" class="qscan-panel" style="display:none;"></div>
         <div id="qfbList" class="text-answer-list" style="display:none;"></div>
       </div>
     </div>
@@ -859,7 +874,7 @@ function renderQfbTab(){
         <div class="btns"><button type="button" class="ok" data-qfbsend="1">✅ 이 질문으로 진행</button><button type="button" class="no" data-qfbsend="0">🔁 다시 생각해 보기</button><button type="button" class="del" data-qfbdel title="보낸 피드백 지우기">취소</button></div></div>`;
       card.querySelector('.qc').addEventListener('input', e=>{ e.target.dataset.dirty = '1'; });
     }
-    const v = card.querySelector('.qv'), html = qfbViewHTML(k, s);
+    const v = card.querySelector('.qv'), html = qscanFlagHTML(k) + qfbViewHTML(k, s);
     if(v.__html !== html){ v.innerHTML = html; v.__html = html; }
     const t = qfbOf(s), ta = card.querySelector('.qc');
     if(document.activeElement !== ta && !ta.dataset.dirty) ta.value = t ? str(t.comment) : '';
@@ -1190,137 +1205,214 @@ document.getElementById('readyBtn').addEventListener('click', ()=>{
      ${rows.map(r=>`<tr style="border-bottom:1px solid #eee;${r.miss.length?'':'background:#f1f8e9;'}"><td style="padding:5px;white-space:nowrap;"><a href="#" data-goto="${esc(r.k)}">${esc(displayName(r.k,r.s.name,r.s.number))}</a></td>
        <td style="text-align:center;">${r.good}/2</td><td style="color:${r.miss.length?'#c62828':'#2e7d32'};">${r.miss.length ? esc(r.miss.join(', ')) : '✅ 준비 끝'}</td></tr>`).join('')}</table>`);
 });
-document.getElementById('qScanBtn').addEventListener('click', async ()=>{
+/* 🔍 질문 한눈에 점검(2026-10-26 수정): 결과를 창이 아니라 ② 교사용 뷰 step1 위 패널에 보여 준다. 점검하는 동안에도 다른 작업 가능.
+   걸린 학생은 아래 질문 카드에도 표시된다. */
+let QSCAN = { state:'idle', flagged:{}, n:0, ts:0, err:'' };
+function paintQScan(){
+  const el = document.getElementById('qScanPanel'); if(!el) return;
+  const show = QSCAN.state !== 'idle' && selectedTaskId===1;
+  el.style.display = show ? '' : 'none'; if(!show) return;
+  const head = st => `<div class="qs-head"><b>🔍 질문 한눈에 점검</b><span class="qs-st">${st}</span><span style="flex:1"></span>${QSCAN.state!=='run'?'<button type="button" class="qs-btn" data-qs="again">다시 점검</button>':''}<button type="button" class="qs-btn" data-qs="close">닫기</button></div>`;
+  if(QSCAN.state==='run'){ el.innerHTML = head(`🤖 ${QSCAN.n}명의 질문을 살펴보는 중… (20~40초) 다른 작업을 계속하셔도 돼요.`); return; }
+  if(QSCAN.state==='err'){ el.innerHTML = head(`<span style="color:#c62828;">점검하지 못했어요: ${esc(QSCAN.err)}</span>`); return; }
+  const ks = Object.keys(QSCAN.flagged);
+  el.innerHTML = head(`${QSCAN.n}명 중 <b>${ks.length}명</b> 확인 필요 · ${esc(fmtTime(QSCAN.ts))} · AI 판단이라 틀릴 수 있어요`)
+    + (ks.length ? `<div class="qs-list">${ks.map(k=>{ const s = allStudents[k]||{}, f = QSCAN.flagged[k];
+        return `<button type="button" class="qs-item" data-qs-go="${esc(k)}"><b>${esc(displayName(k,s.name,s.number))}</b>${f.issues.map(i=>`<span class="qs-tag">${esc(i)}</span>`).join('')}<span class="qs-why">${esc(f.why)}</span></button>`; }).join('')}</div>`
+      : '<div class="qs-ok">✅ 따로 확인할 질문이 없어요.</div>');
+}
+function qscanFlagHTML(k){ const f = QSCAN.state==='done' && QSCAN.flagged[k]; return f ? `<div class="qs-cardflag">🔍 ${f.issues.map(esc).join(' · ')} — ${esc(f.why)}</div>` : ''; }
+document.getElementById('qScanBtn').addEventListener('click', ()=> runQScan());
+async function runQScan(){
   if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  if(QSCAN.state==='run') { gotoTeacherTab(1); return; }
   const items = Object.keys(allStudents).map(k=>{ const d = (allStudents[k]||{}).data || {}; return { id:k, q: str(d.finalQ) || str(d.q3) || str(d.q2) || str(d.q1), qtype: str(d.qtype) }; }).filter(x=>x.q);
   if(!items.length){ alert('아직 질문을 쓴 학생이 없어요.'); return; }
-  const m = bigModal(`🔍 질문 한눈에 점검 — ${esc(currentRoomName)}반`, `<div style="padding:20px;color:#666;">🤖 ${items.length}명의 질문을 살펴보는 중… (20~40초)</div>`);
+  QSCAN = { state:'run', flagged:{}, n: Math.min(items.length, 40), ts:0, err:'' };
+  gotoTeacherTab(1); paintQScan();
   try{
     const r = await fetch('/api/question-scan', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ items: items.slice(0,40) }) });
     const j = await r.json().catch(()=>({})); if(!r.ok || !Array.isArray(j.flagged)) throw new Error(j.error || ('HTTP '+r.status));
-    const byId = Object.fromEntries(items.map(x=>[x.id, x]));
-    const body = document.getElementById('bigBody'); if(!body) return;
-    body.innerHTML = `<div style="color:#666;margin-bottom:6px;">${items.length}명 중 <b>${j.flagged.length}명</b>의 질문을 직접 확인해 보세요. (AI 판단이라 틀릴 수 있어요 · 학생에게는 보이지 않아요 · 이름을 누르면 그 학생으로 가요)</div>`
-      + (j.flagged.length ? j.flagged.map(f=>{ const s = allStudents[f.id]||{}, it = byId[f.id]||{};
-          return `<div style="border:1px solid #e1bee7;border-radius:8px;padding:7px 10px;margin:5px 0;"><a href="#" data-goto="${esc(f.id)}"><b>${esc(displayName(f.id,s.name,s.number))}</b></a> ${f.issues.map(i=>`<span style="background:#f3e5f5;color:#6a1b9a;border-radius:8px;padding:0 6px;font-size:12px;margin-left:3px;">${esc(i)}</span>`).join('')}
-            <div style="margin-top:3px;">“${esc(it.q)}” <span style="color:#999;">(${esc(it.qtype||'유형 없음')})</span></div><div style="color:#6a1b9a;margin-top:2px;">→ ${esc(f.why)}</div></div>`; }).join('')
-        : '<div style="color:#2e7d32;font-weight:bold;">✅ 따로 확인할 질문이 없어요.</div>');
-  }catch(err){ const body = document.getElementById('bigBody'); if(body) body.innerHTML = `<div style="color:#c62828;">점검하지 못했어요: ${esc(err.message||err)}</div>`; }
+    const fl = {}; j.flagged.forEach(f=>{ fl[f.id] = f; });
+    QSCAN = { state:'done', flagged: fl, n: QSCAN.n, ts: Date.now(), err:'' };
+  }catch(err){ QSCAN = { state:'err', flagged:{}, n: QSCAN.n, ts: Date.now(), err: String(err.message||err) }; }
+  paintQScan(); renderQfbTab();
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('[data-qs],[data-qs-go]'); if(!b) return;
+  if(b.dataset.qs==='close'){ QSCAN.state = 'idle'; paintQScan(); renderQfbTab(); return; }
+  if(b.dataset.qs==='again'){ QSCAN.state = 'idle'; runQScan(); return; }
+  const card = document.querySelector(`.qfb-card[data-k="${CSS.escape(b.dataset.qsGo)}"]`);
+  if(!card){ qfbFilter = 'all'; document.querySelectorAll('[data-qfbf]').forEach(x=>x.classList.toggle('on', x.dataset.qfbf==='all')); renderQfbTab(); }
+  const c2 = document.querySelector(`.qfb-card[data-k="${CSS.escape(b.dataset.qsGo)}"]`);
+  if(c2){ c2.scrollIntoView({behavior:'smooth', block:'center'}); c2.classList.remove('qs-flash'); void c2.offsetWidth; c2.classList.add('qs-flash'); }
 });
-/* 🙋 학생별 따로 열기(2026-10-26): students/{key}/personalOpen = {startAt, endAt, setAt} — 결석생 등. 그 시간에는 반이 잠겨 있어도 그 학생만 열린다 */
-function tpListHTML(){
-  const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.timePass && (+s.timePass.until > now - 86400000 || s.timePass.startedAt && tpEndT(s.timePass) > now - 86400000));
-  if(!rows.length) return '<span style="color:#bbb;">이용권을 준 학생이 없어요.</span>';
-  const btn = (a,k,t,c) => `<button type="button" data-tp-${a}="${esc(k)}" style="border:1px solid ${c};background:#fff;color:${c};border-radius:6px;padding:1px 7px;cursor:pointer;font-size:12px;">${t}</button>`;
-  return rows.map(({k,s})=>{ const t = s.timePass, mins = (+t.minutes||45)+(+t.extra||0);
-    const st = t.startedAt ? (now < tpEndT(t) ? `<b style="color:#00897b;">쓰는 중 · 남은 ${Math.ceil((tpEndT(t)-now)/60000)}분</b>` : '<span style="color:#999;">사용 완료</span>')
-      : (now > +t.until ? '<span style="color:#999;">기간 지남(안 씀)</span>' : `미사용 · ${esc(schFmt(+t.from).split(' ')[0])}~${esc(schFmt(+t.until).split(' ')[0])}`);
-    return `<div style="padding:3px 0;">${st} · <b>${esc(displayName(k,s.name,s.number))}</b> ${mins}분 ${btn('add',k,'+10분','#00897b')} ${btn('del',k,'지우기','#c62828')}</div>`; }).join('');
-}
-const tpEndT = t => +t.startedAt + ((+t.minutes||45) + (+t.extra||0)) * 60000;
-function poListHTML(){
-  const now = Date.now(), rows = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=> s.personalOpen && +s.personalOpen.endAt > now - 86400000)
-    .sort((a,b)=> a.s.personalOpen.startAt - b.s.personalOpen.startAt);
-  if(!rows.length) return '<span style="color:#bbb;">따로 열기 예약이 없어요.</span>';
-  return rows.map(({k,s})=>{ const p = s.personalOpen, st = now < p.startAt ? '예약' : now < p.endAt ? '<b style="color:#00897b;">열림</b>' : '<span style="color:#999;">끝남</span>';
-    return `<div style="padding:3px 0;">${st} · <b>${esc(displayName(k,s.name,s.number))}</b> ${esc(schFmt(p.startAt))}~${esc(schFmt(p.endAt).slice(-5))} <button type="button" data-po-del="${esc(k)}" style="border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:1px 7px;cursor:pointer;font-size:12px;">지우기</button></div>`; }).join('');
-}
 const schFmt = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 function schText(sc){ if(!sc || (!sc.startAt && !sc.endAt)) return ''; const now = Date.now(), up = [];
   if(sc.startAt) up.push(`${schFmt(sc.startAt)} 시작${sc.startAt<=now?'(지남)':''}`); if(sc.endAt) up.push(`${schFmt(sc.endAt)} 종료${sc.endAt<=now?'(지남)':''}`); return up.join(' · '); }
 function paintSchedNow(){ const el = document.getElementById('schedNow'); if(!el) return; const t = schText(__ctl && __ctl.schedule); el.textContent = t ? '⏰ 예약: ' + t : ''; }
 setInterval(()=>{ if(!__ctl) return; const e = effClassEnded(__ctl, Date.now()); paintSchedNow(); if(e !== classEnded){ classEnded = e; updateClassButtons(); } }, 10000);
+/* ⏰ 예약·따로 열기 창 (2026-10-26 디자인 정리): 탭 3개 — 반 예약 / 🎫 45분 이용권 / 🙋 따로 열기
+   데이터: rooms/{반}__prob32/control/schedule = {startAt, endAt, setAt}
+           students/{key}/timePass = {from, until, minutes, extra, startedAt?, setAt}
+           students/{key}/personalOpen = {startAt, endAt, setAt} */
+const tpEndT = t => +t.startedAt + ((+t.minutes||45) + (+t.extra||0)) * 60000;
+const WK = '일월화수목금토';
+const schDay = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()}(${WK[d.getDay()]})`; };
+const schHM = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const SCH_CSS = `
+#schedModal .sm-box{background:#fff;border-radius:16px;max-width:680px;width:94vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25);font-size:14px;}
+#schedModal .sm-head{display:flex;align-items:center;gap:10px;padding:16px 20px 8px;}
+#schedModal .sm-head b{font-size:18px;color:#311b92;}
+#schedModal .sm-x{margin-left:auto;border:none;background:#f1f1f5;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;}
+#schedModal .sm-tabs{display:flex;gap:6px;padding:0 20px 12px;border-bottom:1px solid #eee;}
+#schedModal .sm-tab{border:1px solid #d1c4e9;background:#fff;color:#4527a0;border-radius:999px;padding:7px 14px;font-weight:bold;cursor:pointer;font-family:inherit;font-size:14px;}
+#schedModal .sm-tab.on{background:#5e35b1;color:#fff;border-color:#5e35b1;}
+#schedModal .sm-body{padding:16px 20px 20px;overflow:auto;}
+#schedModal .sm-desc{color:#666;font-size:13px;margin:0 0 12px;line-height:1.5;}
+#schedModal .sm-card{border:1px solid #e6e1f5;border-radius:12px;padding:14px;background:#faf9ff;}
+#schedModal .sm-lab{font-size:12.5px;color:#666;font-weight:bold;margin:10px 0 6px;}
+#schedModal .sm-lab:first-child{margin-top:0;}
+#schedModal .sm-chips{display:flex;flex-wrap:wrap;gap:6px;}
+#schedModal .sm-chip{border:1.5px solid #d6d6e0;background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:13.5px;color:#333;}
+#schedModal .sm-chip.on{border-color:#5e35b1;background:#ede7f6;color:#311b92;font-weight:bold;}
+#schedModal .sm-chip small{color:#00897b;margin-left:3px;}
+#schedModal .sm-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+#schedModal .sm-row input{font-size:15px;padding:6px 8px;border:1px solid #ccc;border-radius:8px;font-family:inherit;}
+#schedModal .sm-go{margin-top:14px;width:100%;border:none;border-radius:10px;padding:11px;font-size:15px;font-weight:bold;color:#fff;background:#5e35b1;cursor:pointer;font-family:inherit;}
+#schedModal .sm-go:disabled{background:#c5bce0;cursor:not-allowed;}
+#schedModal .sm-list{margin-top:18px;}
+#schedModal .sm-list h4{margin:0 0 8px;font-size:14px;color:#333;}
+#schedModal .sm-item{display:flex;align-items:center;gap:10px;border:1px solid #eee;border-radius:10px;padding:10px 12px;margin-top:6px;}
+#schedModal .sm-item .who{font-weight:bold;min-width:64px;}
+#schedModal .sm-item .when{color:#444;flex:1;}
+#schedModal .sm-badge{font-size:12px;border-radius:999px;padding:2px 9px;font-weight:bold;white-space:nowrap;}
+#schedModal .b-wait{background:#ede7f6;color:#4527a0;} #schedModal .b-on{background:#e0f2f1;color:#00695c;} #schedModal .b-done{background:#f1f1f1;color:#888;}
+#schedModal .sm-mini{border:1px solid #ccc;background:#fff;border-radius:8px;padding:4px 9px;cursor:pointer;font-size:12.5px;font-family:inherit;}
+#schedModal .sm-mini.del{color:#c62828;border-color:#ef9a9a;}
+#schedModal .sm-empty{color:#aaa;font-size:13px;padding:6px 2px;}
+#schedModal .sm-note{color:#888;font-size:12px;margin-top:8px;}`;
+let SM = null;   // 창 상태
+function smRefRoom(r){ return db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule'); }
+function smRefStu(k, what){ return db.ref('rooms/'+currentRoomKey+'/students/'+k+'/'+what); }
+const smToday = () => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+const smAt = (day, t) => new Date(day+'T'+t+':00').getTime();
+const smPlus45 = t => { if(!t) return ''; const [h,m] = t.split(':').map(Number), x = h*60+m+45; return `${String(Math.floor(x/60)%24).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`; };
+function smStudents(){ return Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s)); }
+function smBadge(now, a, b, labels){ return now < a ? `<span class="sm-badge b-wait">${labels[0]}</span>` : now < b ? `<span class="sm-badge b-on">${labels[1]}</span>` : `<span class="sm-badge b-done">${labels[2]}</span>`; }
+function smStuChips(mark){
+  const list = smStudents();
+  if(!currentRoomKey) return '<div class="sm-empty">반에 접속한 뒤에 쓸 수 있어요.</div>';
+  if(!list.length) return '<div class="sm-empty">아직 이 반에 접속한 학생이 없어요.</div>';
+  return `<div class="sm-chips">${list.map(({k,s})=>`<button type="button" class="sm-chip${SM.pick.has(k)?' on':''}" data-sm-stu="${esc(k)}">${esc(String(s.number||parseInt(k)||''))} ${esc(s.name||'')}${mark(s)}</button>`).join('')}</div>`;
+}
+function smBodyRoom(){
+  const now = Date.now(), rows = SM.rooms.filter(r=> SM.cur[r] && (SM.cur[r].startAt||SM.cur[r].endAt));
+  return `<p class="sm-desc">정한 시각이 되면 [▶ 수업 시작]·[⏹ 수업 종료]를 누른 것과 같아요(종료 = 잠금·제출). 학생 화면이 스스로 바뀌어서 이 화면을 켜 두지 않아도 돼요.</p>
+  <div class="sm-card"><div class="sm-lab">반 (여러 반 가능)</div><div class="sm-chips">${SM.rooms.map(r=>`<button type="button" class="sm-chip${SM.rpick.has(r)?' on':''}" data-sm-room="${esc(r)}">${esc(r)}반</button>`).join('')}</div>
+    <div class="sm-lab">날짜와 시간</div><div class="sm-row"><input type="date" id="smDay" value="${SM.day}"> <input type="time" id="smS" value="${SM.s}"> ~ <input type="time" id="smE" value="${SM.e}"></div>
+    <div class="sm-note">시작만 넣으면 종료는 45분 뒤로 채워져요. 시작이나 종료 하나만 둬도 돼요.</div>
+    <button type="button" class="sm-go" id="smRoomGo" ${SM.rpick.size?'':'disabled'}>⏰ ${SM.rpick.size ? [...SM.rpick].map(r=>r+'반').join(', ')+' 예약하기' : '반을 골라 주세요'}</button></div>
+  <div class="sm-list"><h4>예약된 반</h4>${rows.length ? rows.map(r=>{ const c = SM.cur[r], a = +c.startAt||0, b = +c.endAt||Infinity;
+      return `<div class="sm-item"><span class="who">${esc(r)}반</span><span class="when">${schDay(a||b)} ${a?schHM(a):'—'} ~ ${isFinite(b)?schHM(b):'—'}</span>${smBadge(now, a||0, b, ['예정','수업 중','끝남'])}<button type="button" class="sm-mini del" data-sm-del-room="${esc(r)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">예약된 반이 없어요.</div>'}</div>`;
+}
+function smBodyPass(){
+  const now = Date.now(), rows = smStudents().filter(({s})=> s.timePass && (+s.timePass.until > now - 86400000 || (s.timePass.startedAt && tpEndT(s.timePass) > now - 86400000)));
+  return `<p class="sm-desc">결석생에게 주는 이용권이에요. 기간 안에 학생이 원할 때 [▶ 시작]을 누르면 정한 시간만큼 열리고, 끝나면 저장·제출돼요. ${currentRoomName?`(${esc(currentRoomName)}반)`:''}</p>
+  <div class="sm-card"><div class="sm-lab">학생 (여러 명 가능)</div>${smStuChips(s=> s.timePass && !(s.timePass.startedAt && tpEndT(s.timePass) < now) ? '<small>🎫</small>' : '')}
+    <div class="sm-lab">쓸 수 있는 기간과 시간</div><div class="sm-row"><input type="date" id="tpFrom" value="${SM.day}"> ~ <input type="date" id="tpUntil" value="${SM.until||SM.day}"> · <input type="number" id="tpMin" value="${SM.min}" min="5" max="180" style="width:70px;">분</div>
+    <button type="button" class="sm-go" id="smPassGo" style="background:#f9a825;color:#3e2723;" ${SM.pick.size?'':'disabled'}>🎫 ${SM.pick.size ? SM.pick.size+'명에게 '+SM.min+'분 이용권 주기' : '학생을 골라 주세요'}</button></div>
+  <div class="sm-list"><h4>이용권</h4>${rows.length ? rows.map(({k,s})=>{ const t = s.timePass, mins = (+t.minutes||45)+(+t.extra||0);
+      const st = t.startedAt ? (now < tpEndT(t) ? `<span class="sm-badge b-on">쓰는 중 · ${Math.ceil((tpEndT(t)-now)/60000)}분 남음</span>` : '<span class="sm-badge b-done">사용 완료</span>') : (now > +t.until ? '<span class="sm-badge b-done">기간 지남</span>' : '<span class="sm-badge b-wait">아직 안 씀</span>');
+      return `<div class="sm-item"><span class="who">${esc(displayName(k,s.name,s.number))}</span><span class="when">${schDay(+t.from)}~${schDay(+t.until)} · ${mins}분</span>${st}<button type="button" class="sm-mini" data-sm-add="${esc(k)}">+10분</button><button type="button" class="sm-mini del" data-sm-del-pass="${esc(k)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">준 이용권이 없어요.</div>'}</div>`;
+}
+function smBodyOpen(){
+  const now = Date.now(), rows = smStudents().filter(({s})=> s.personalOpen && +s.personalOpen.endAt > now - 86400000);
+  return `<p class="sm-desc">정한 시간에 고른 학생만 열어요(반 전체가 잠겨 있어도). 보충 시간에 교실에서 할 때 써요. ${currentRoomName?`(${esc(currentRoomName)}반)`:''}</p>
+  <div class="sm-card"><div class="sm-lab">학생 (여러 명 가능)</div>${smStuChips(s=> s.personalOpen && +s.personalOpen.endAt > now ? '<small>🔓</small>' : '')}
+    <div class="sm-lab">날짜와 시간</div><div class="sm-row"><input type="date" id="poDay" value="${SM.day}"> <input type="time" id="poS" value="${SM.s}"> ~ <input type="time" id="poE" value="${SM.e}"></div>
+    <div class="sm-note">시작만 넣으면 종료는 45분 뒤로 채워져요.</div>
+    <button type="button" class="sm-go" id="smOpenGo" style="background:#00897b;" ${SM.pick.size?'':'disabled'}>🙋 ${SM.pick.size ? SM.pick.size+'명 따로 열기 예약' : '학생을 골라 주세요'}</button></div>
+  <div class="sm-list"><h4>따로 열기</h4>${rows.length ? rows.map(({k,s})=>{ const p = s.personalOpen;
+      return `<div class="sm-item"><span class="who">${esc(displayName(k,s.name,s.number))}</span><span class="when">${schDay(p.startAt)} ${schHM(p.startAt)} ~ ${schHM(p.endAt)}</span>${smBadge(now, p.startAt, p.endAt, ['예정','열림','끝남'])}<button type="button" class="sm-mini del" data-sm-del-open="${esc(k)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">따로 열기 예약이 없어요.</div>'}</div>`;
+}
+function smPaint(){
+  const m = document.getElementById('schedModal'); if(!m) return;
+  const body = m.querySelector('.sm-body');
+  m.querySelectorAll('.sm-tab').forEach(t=> t.classList.toggle('on', t.dataset.smTab===SM.tab));
+  body.innerHTML = SM.tab==='room' ? smBodyRoom() : SM.tab==='pass' ? smBodyPass() : smBodyOpen();
+}
+function smSync(){   // 입력칸 값을 상태로
+  const g = id => { const e = document.getElementById(id); return e ? e.value : null; };
+  if(SM.tab==='room'){ SM.day = g('smDay')||SM.day; SM.s = g('smS')??SM.s; SM.e = g('smE')??SM.e; }
+  if(SM.tab==='pass'){ SM.day = g('tpFrom')||SM.day; SM.until = g('tpUntil')||SM.until; SM.min = Math.round(+g('tpMin')||45); }
+  if(SM.tab==='open'){ SM.day = g('poDay')||SM.day; SM.s = g('poS')??SM.s; SM.e = g('poE')??SM.e; }
+}
 document.getElementById('schedBtn').addEventListener('click', async ()=>{
   try{
     if(!app){ app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); }
     await firebase.auth().signInAnonymously();
   }catch(e){ alert('연결하지 못했어요: ' + (e.message||e)); return; }
+  if(!document.getElementById('schStyle')){ const st = document.createElement('style'); st.id = 'schStyle'; st.textContent = SCH_CSS; document.head.appendChild(st); }
   const rooms = Array.from(document.querySelectorAll('#roomCode option')).map(o=>o.value).filter(Boolean);
-  const cur = {}; await Promise.all(rooms.map(r=> db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule').once('value').then(sn=>{ cur[r] = sn.val(); }).catch(()=>{})));
-  const pad = n => String(n).padStart(2,'0'), d0 = new Date(), today = `${d0.getFullYear()}-${pad(d0.getMonth()+1)}-${pad(d0.getDate())}`;
+  const cur = {}; await Promise.all(rooms.map(r=> smRefRoom(r).once('value').then(sn=>{ cur[r] = sn.val(); }).catch(()=>{})));
+  SM = { tab: SM ? SM.tab : 'room', rooms, cur, rpick: new Set(currentRoomName ? [currentRoomName] : []), pick: new Set(), day: smToday(), until: '', s: '', e: '', eAuto: true, min: 45 };
   let m = document.getElementById('schedModal'); if(m) m.remove();
   m = document.createElement('div'); m.id = 'schedModal';
-  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
-  m.innerHTML = `<div style="background:#fff;border-radius:12px;padding:18px 20px;max-width:640px;width:94vw;max-height:88vh;overflow:auto;font-size:14px;">
-    <div style="font-size:17px;font-weight:bold;color:#311b92;margin-bottom:6px;">⏰ 수업 시작·종료 예약</div>
-    <div style="color:#666;font-size:12.5px;margin-bottom:10px;">시작 시각이 되면 [▶ 수업 시작], 종료 시각이 되면 [⏹ 수업 종료]를 누른 것과 같아요(종료 = 화면 잠금·제출 처리). 학생 화면이 스스로 바뀌므로 이 창을 켜 두지 않아도 돼요. 예약 뒤에 버튼을 직접 눌러도 돼요.</div>
-    <div style="margin-bottom:10px;"><b>날짜</b> <input type="date" id="schDate" value="${today}" style="font-size:14px;padding:3px 6px;"></div>
-    <table style="width:100%;border-collapse:collapse;"><tr style="background:#ede7f6;"><th style="padding:5px;">반</th><th>시작</th><th>종료</th><th style="text-align:left;">지금 예약</th><th></th></tr>
-    ${rooms.map(r=>`<tr style="border-bottom:1px solid #eee;"><td style="padding:5px;text-align:center;font-weight:bold;">${esc(r)}반</td>
-      <td style="text-align:center;"><input type="time" data-sch-s="${esc(r)}" style="font-size:14px;"></td><td style="text-align:center;"><input type="time" data-sch-e="${esc(r)}" style="font-size:14px;"></td>
-      <td style="font-size:12.5px;color:#5e35b1;">${esc(schText(cur[r])) || '<span style="color:#bbb;">없음</span>'}</td>
-      <td>${cur[r] && (cur[r].startAt||cur[r].endAt) ? `<button type="button" data-sch-del="${esc(r)}" style="border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:6px;padding:3px 8px;cursor:pointer;">예약 지우기</button>` : ''}</td></tr>`).join('')}
-    </table>
-    <div style="color:#888;font-size:12px;margin-top:6px;">시각을 넣은 반만 예약돼요(그 반의 예전 예약은 새것으로 바뀌어요). 시작이나 종료 하나만 넣어도 돼요.</div>
-    <div style="margin-top:16px;padding-top:12px;border-top:2px dashed #d1c4e9;">
-      <div style="font-size:15px;font-weight:bold;color:#311b92;">🙋 학생별 따로 열기 ${currentRoomName ? `<span style="font-weight:normal;color:#666;font-size:13px;">(${esc(currentRoomName)}반)</span>` : ''}</div>
-      ${currentRoomKey ? `<div style="color:#666;font-size:12.5px;margin:4px 0 8px;">결석생처럼 따로 시간을 줘야 하는 학생만, 정한 시간 동안 반 전체가 잠겨 있어도 열려요. 끝나면 다시 잠기고 제출 처리돼요. (위 날짜를 써요)</div>
-      <div id="stuPick" style="display:flex;flex-wrap:wrap;gap:4px 10px;max-height:150px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px 8px;">${Object.keys(allStudents||{}).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0)).map(k=>`<label style="font-size:13px;white-space:nowrap;"><input type="checkbox" data-po-k="${esc(k)}"> ${esc(displayName(k,(allStudents[k]||{}).name,(allStudents[k]||{}).number))}</label>`).join('') || '<span style="color:#999;">아직 이 반에 접속한 학생이 없어요.</span>'}</div>
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">시작 <input type="time" id="poS" style="font-size:14px;"> 종료 <input type="time" id="poE" style="font-size:14px;">
-        <button type="button" id="poSave" style="padding:6px 12px;border-radius:8px;border:none;background:#00897b;color:#fff;font-weight:bold;cursor:pointer;">＋ 선택한 학생 열기 예약</button></div>
-      <div id="poList" style="margin-top:8px;font-size:13px;">${poListHTML()}</div>
-      <div style="margin-top:10px;padding:8px 10px;background:#fffde7;border:1px solid #ffe082;border-radius:8px;">
-        <b>🎫 이용권으로 주기</b> <span style="color:#666;font-size:12.5px;">— 시각을 정하지 않고, 기간 안에 학생이 원할 때 [▶ 시작]을 눌러 정한 분만큼 써요(위에서 고른 학생).</span>
-        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">위 날짜부터 <input type="date" id="tpUntil" style="font-size:14px;"> 까지 · <input type="number" id="tpMin" value="45" min="5" max="180" style="width:60px;font-size:14px;">분
-          <button type="button" id="tpSave" style="padding:6px 12px;border-radius:8px;border:none;background:#f9a825;color:#3e2723;font-weight:bold;cursor:pointer;">🎫 선택한 학생에게 이용권 주기</button></div>
-        <div id="tpList" style="margin-top:6px;font-size:13px;">${tpListHTML()}</div>
-      </div>` : '<div style="color:#999;font-size:13px;margin-top:4px;">반에 접속한 뒤에 쓸 수 있어요.</div>'}
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="schCancel" style="padding:7px 14px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;">닫기</button>
-      <button type="button" id="schSave" style="padding:7px 16px;border-radius:8px;border:none;background:#5e35b1;color:#fff;font-weight:bold;cursor:pointer;">💾 예약 저장</button></div></div>`;
-  document.body.appendChild(m);
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(20,16,40,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML = `<div class="sm-box"><div class="sm-head"><b>⏰ 예약·따로 열기</b><button type="button" class="sm-x" data-sm-close="1" title="닫기">✕</button></div>
+    <div class="sm-tabs"><button type="button" class="sm-tab" data-sm-tab="room">반 시작·종료 예약</button><button type="button" class="sm-tab" data-sm-tab="pass">🎫 45분 이용권</button><button type="button" class="sm-tab" data-sm-tab="open">🙋 따로 열기</button></div>
+    <div class="sm-body"></div></div>`;
+  document.body.appendChild(m); smPaint();
+  m.addEventListener('input', e=>{
+    const id = e.target.id;
+    if(id==='smS' || id==='poS'){ const eId = id==='smS' ? 'smE' : 'poE', ee = document.getElementById(eId); if(ee && (SM.eAuto || !ee.value)){ ee.value = smPlus45(e.target.value); SM.eAuto = true; } }
+    if(id==='smE' || id==='poE') SM.eAuto = false;
+    if(id==='tpMin'){ const n = Math.round(+e.target.value||45), go = document.getElementById('smPassGo'); SM.min = n; if(go && SM.pick.size) go.textContent = `🎫 ${SM.pick.size}명에게 ${n}분 이용권 주기`; }
+    smSync();
+  });
   m.addEventListener('click', async e=>{
-    if(e.target===m || e.target.id==='schCancel'){ m.remove(); return; }
-    const del = e.target.closest('[data-sch-del]');
-    if(del){ const r = del.dataset.schDel; if(!confirm(`${r}반 예약을 지울까요?`)) return; await db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule').remove(); m.remove(); document.getElementById('schedBtn').click(); return; }
-    const tpb = e.target.closest('[data-tp-del],[data-tp-add]');
-    if(tpb){ const k = tpb.dataset.tpDel || tpb.dataset.tpAdd, ref = db.ref('rooms/'+currentRoomKey+'/students/'+k+'/timePass');
-      if(tpb.dataset.tpDel){ if(!confirm('이 학생의 이용권을 지울까요? (쓰는 중이면 바로 잠겨요)')) return; await ref.remove(); if(allStudents[k]) delete allStudents[k].timePass; }
-      else { const cur = (allStudents[k]||{}).timePass || {}; const extra = (+cur.extra||0) + 10; await ref.child('extra').set(extra); if(allStudents[k] && allStudents[k].timePass) allStudents[k].timePass.extra = extra; }
-      document.getElementById('tpList').innerHTML = tpListHTML(); renderGrid(); return; }
-    if(e.target.id==='tpSave'){
-      const d1 = document.getElementById('schDate').value, d2 = document.getElementById('tpUntil').value || d1, mins = Math.round(+document.getElementById('tpMin').value || 45);
-      const ks = Array.from(m.querySelectorAll('[data-po-k]:checked')).map(x=>x.dataset.poK);
-      if(!ks.length){ alert('학생을 골라 주세요.'); return; } if(!d1){ alert('날짜를 골라 주세요.'); return; }
-      if(mins < 5 || mins > 180){ alert('5~180분 사이로 넣어 주세요.'); return; }
-      const from = new Date(d1+'T00:00:00').getTime(), until = new Date(d2+'T23:59:59').getTime();
-      if(until <= from){ alert('끝 날짜가 시작 날짜보다 같거나 늦어야 해요.'); return; }
-      if(ks.some(k=> ((allStudents[k]||{}).timePass||{}).startedAt) && !confirm('이미 이용권을 쓴 학생이 있어요. 새 이용권으로 바꿀까요?')) return;
-      const v = { from, until, minutes: mins, extra: 0, setAt: Date.now() };
-      try{ await Promise.all(ks.map(k=> db.ref('rooms/'+currentRoomKey+'/students/'+k+'/timePass').set(v))); ks.forEach(k=>{ if(allStudents[k]) allStudents[k].timePass = Object.assign({}, v); });
-        document.getElementById('tpList').innerHTML = tpListHTML(); m.querySelectorAll('[data-po-k]:checked').forEach(x=>x.checked=false); renderGrid();
-        alert(`${ks.length}명에게 ${d1}${d2!==d1?'~'+d2:''} 동안 쓸 수 있는 ${mins}분 이용권을 줬어요.`); }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
-      return;
-    }
-    const pod = e.target.closest('[data-po-del]');
-    if(pod){ const k = pod.dataset.poDel; if(!confirm('이 학생의 따로 열기 예약을 지울까요?')) return; await db.ref('rooms/'+currentRoomKey+'/students/'+k+'/personalOpen').remove(); if(allStudents[k]) delete allStudents[k].personalOpen; document.getElementById('poList').innerHTML = poListHTML(); renderGrid(); return; }
-    if(e.target.id==='poSave'){
-      const day = document.getElementById('schDate').value, s1 = document.getElementById('poS').value, e1 = document.getElementById('poE').value;
-      const ks = Array.from(m.querySelectorAll('[data-po-k]:checked')).map(x=>x.dataset.poK);
-      if(!ks.length){ alert('학생을 골라 주세요.'); return; } if(!day || !s1 || !e1){ alert('날짜·시작·종료 시각을 모두 넣어 주세요.'); return; }
-      const startAt = new Date(day+'T'+s1+':00').getTime(), endAt = new Date(day+'T'+e1+':00').getTime();
-      if(endAt <= startAt){ alert('종료 시각이 시작 시각보다 늦어야 해요.'); return; }
-      if(endAt < Date.now()){ alert('이미 지난 시간이에요.'); return; }
-      const v = { startAt, endAt, setAt: Date.now() };
-      try{ await Promise.all(ks.map(k=> db.ref('rooms/'+currentRoomKey+'/students/'+k+'/personalOpen').set(v))); ks.forEach(k=>{ if(allStudents[k]) allStudents[k].personalOpen = v; });
-        document.getElementById('poList').innerHTML = poListHTML(); m.querySelectorAll('[data-po-k]:checked').forEach(x=>x.checked=false); renderGrid();
-        alert(`${ks.length}명을 ${day} ${s1}~${e1}에 따로 열어요.`); }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
-      return;
-    }
-    if(e.target.id!=='schSave') return;
-    const day = document.getElementById('schDate').value; if(!day){ alert('날짜를 골라 주세요.'); return; }
-    const at = t => t ? new Date(day+'T'+t+':00').getTime() : 0, jobs = [], msg = [];
-    for(const r of rooms){
-      const s1 = m.querySelector(`[data-sch-s="${r}"]`).value, e1 = m.querySelector(`[data-sch-e="${r}"]`).value;
-      if(!s1 && !e1) continue;
-      const startAt = at(s1), endAt = at(e1);
-      if(startAt && endAt && endAt <= startAt){ alert(`${r}반: 종료 시각이 시작 시각보다 늦어야 해요.`); return; }
-      if((startAt||endAt) < Date.now() - 60000 && !confirm(`${r}반: 이미 지난 시각이 있어요. 그래도 저장할까요?`)) return;
-      jobs.push(db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/control/schedule').set(Object.assign({ setAt: Date.now() }, startAt?{startAt}:{}, endAt?{endAt}:{})));
-      msg.push(`${r}반 ${s1||'-'}~${e1||'-'}`);
-    }
-    if(!jobs.length){ alert('시각을 넣은 반이 없어요.'); return; }
-    try{ await Promise.all(jobs); alert('예약했어요: ' + day + '\n' + msg.join('\n')); m.remove(); }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
+    const t = e.target.closest ? e.target.closest('button') : null;
+    if(e.target===m || (t && t.dataset.smClose)){ m.remove(); return; }
+    if(!t) return;
+    smSync();
+    if(t.dataset.smTab){ SM.tab = t.dataset.smTab; SM.pick.clear(); smPaint(); return; }
+    if(t.dataset.smRoom){ const r = t.dataset.smRoom; SM.rpick.has(r) ? SM.rpick.delete(r) : SM.rpick.add(r); smPaint(); return; }
+    if(t.dataset.smStu){ const k = t.dataset.smStu; SM.pick.has(k) ? SM.pick.delete(k) : SM.pick.add(k); smPaint(); return; }
+    try{
+      if(t.id==='smRoomGo'){
+        if(!SM.day || (!SM.s && !SM.e)){ alert('날짜와 시작 또는 종료 시각을 넣어 주세요.'); return; }
+        const startAt = SM.s ? smAt(SM.day, SM.s) : 0, endAt = SM.e ? smAt(SM.day, SM.e) : 0;
+        if(startAt && endAt && endAt <= startAt){ alert('종료 시각이 시작 시각보다 늦어야 해요.'); return; }
+        if((startAt||endAt) < Date.now() - 60000 && !confirm('이미 지난 시각이 있어요. 그래도 저장할까요?')) return;
+        const v = Object.assign({ setAt: Date.now() }, startAt?{startAt}:{}, endAt?{endAt}:{});
+        await Promise.all([...SM.rpick].map(r=> smRefRoom(r).set(v).then(()=>{ SM.cur[r] = v; })));
+        SM.s = ''; SM.e = ''; SM.eAuto = true; smPaint(); return;
+      }
+      if(t.dataset.smDelRoom){ const r = t.dataset.smDelRoom; if(!confirm(`${r}반 예약을 지울까요?`)) return; await smRefRoom(r).remove(); SM.cur[r] = null; smPaint(); return; }
+      if(t.id==='smPassGo'){
+        const from = smAt(SM.day, '00:00'), until = new Date((SM.until||SM.day)+'T23:59:59').getTime();
+        if(until <= from){ alert('끝 날짜가 시작 날짜와 같거나 늦어야 해요.'); return; }
+        if(SM.min < 5 || SM.min > 180){ alert('5~180분 사이로 넣어 주세요.'); return; }
+        const ks = [...SM.pick];
+        if(ks.some(k=> ((allStudents[k]||{}).timePass||{}).startedAt) && !confirm('이미 이용권을 쓴 학생이 있어요. 새 이용권으로 바꿀까요?')) return;
+        const v = { from, until, minutes: SM.min, extra: 0, setAt: Date.now() };
+        await Promise.all(ks.map(k=> smRefStu(k,'timePass').set(v).then(()=>{ if(allStudents[k]) allStudents[k].timePass = Object.assign({}, v); })));
+        SM.pick.clear(); smPaint(); renderGrid(); return;
+      }
+      if(t.dataset.smAdd){ const k = t.dataset.smAdd, cur = (allStudents[k]||{}).timePass || {}, extra = (+cur.extra||0) + 10; await smRefStu(k,'timePass/extra').set(extra); if(allStudents[k] && allStudents[k].timePass) allStudents[k].timePass.extra = extra; smPaint(); renderGrid(); return; }
+      if(t.dataset.smDelPass){ const k = t.dataset.smDelPass; if(!confirm('이 학생의 이용권을 지울까요? (쓰는 중이면 바로 잠겨요)')) return; await smRefStu(k,'timePass').remove(); if(allStudents[k]) delete allStudents[k].timePass; smPaint(); renderGrid(); return; }
+      if(t.id==='smOpenGo'){
+        if(!SM.day || !SM.s || !SM.e){ alert('날짜·시작·종료 시각을 모두 넣어 주세요.'); return; }
+        const startAt = smAt(SM.day, SM.s), endAt = smAt(SM.day, SM.e);
+        if(endAt <= startAt){ alert('종료 시각이 시작 시각보다 늦어야 해요.'); return; }
+        if(endAt < Date.now()){ alert('이미 지난 시간이에요.'); return; }
+        const v = { startAt, endAt, setAt: Date.now() }, ks = [...SM.pick];
+        await Promise.all(ks.map(k=> smRefStu(k,'personalOpen').set(v).then(()=>{ if(allStudents[k]) allStudents[k].personalOpen = v; })));
+        SM.pick.clear(); SM.s = ''; SM.e = ''; SM.eAuto = true; smPaint(); renderGrid(); return;
+      }
+      if(t.dataset.smDelOpen){ const k = t.dataset.smDelOpen; if(!confirm('이 학생의 따로 열기 예약을 지울까요?')) return; await smRefStu(k,'personalOpen').remove(); if(allStudents[k]) delete allStudents[k].personalOpen; smPaint(); renderGrid(); return; }
+    }catch(err){ alert('저장하지 못했어요: ' + (err.message||err)); }
   });
 });
 document.getElementById('classEndBtn').addEventListener('click', ()=>{
@@ -1657,6 +1749,7 @@ function renderTeacherView(){
   document.getElementById('qfbBar').style.display = isQ ? '' : 'none';
   document.getElementById('qfbList').style.display = isQ ? '' : 'none';
   textWrap.style.display = isQ ? 'none' : '';
+  paintQScan();
   if(isQ){ textWrap.textContent=''; renderQfbTab(); return; }
   textWrap.textContent='';
   const keys = Object.keys(allStudents);
