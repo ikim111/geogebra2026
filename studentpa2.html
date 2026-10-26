@@ -1492,7 +1492,7 @@ let finalLocked = false;
 /* 🎫 45분 이용권(2026-10-26): students/{key}/timePass = {from, until, minutes, extra, startedAt?, setAt}
    결석생 등 — 선생님이 정한 기간 안에 학생이 [▶ 시작]을 누르면 그때부터 minutes(+extra)분 동안 반이 잠겨 있어도 열린다.
    시작 시각은 서버 시간으로 한 번만 기록(다른 기기·새로고침으로 다시 채워지지 않음). 끝나면 자동 저장 → 잠김·제출. */
-const tpEnd = tp => +tp.startedAt + ((+tp.minutes||45) + (+tp.extra||0)) * 60000;
+const tpEnd = tp => +tp.startedAt + ((+tp.minutes||50) + (+tp.extra||0)) * 60000;
 let __tpTick = null, __tpWarned = false;
 function paintTimePass(baseEnded, now){
   let bar = document.getElementById('tpBar');
@@ -1504,7 +1504,7 @@ function paintTimePass(baseEnded, now){
     document.body.appendChild(bar); }
   bar.style.display = 'flex';
   if(!tp.startedAt){
-    const mins = (+tp.minutes||45) + (+tp.extra||0);
+    const mins = (+tp.minutes||50) + (+tp.extra||0);
     bar.innerHTML = `🎫 선생님이 ${mins}분 이용권을 주셨어요 <button type="button" id="tpStart" style="border:none;background:#ffd54f;color:#3e2723;font-weight:bold;border-radius:8px;padding:7px 14px;font-size:15px;cursor:pointer;font-family:inherit;">▶ ${mins}분 시작</button>`;
     document.getElementById('tpStart').onclick = ()=>{
       if(!confirm(`지금 시작하면 ${mins}분 동안만 쓸 수 있어요. 중간에 멈출 수 없어요. 시작할까요?`)) return;

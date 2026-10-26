@@ -1252,11 +1252,11 @@ function schText(sc){ if(!sc || (!sc.startAt && !sc.endAt)) return ''; const now
   if(sc.startAt) up.push(`${schFmt(sc.startAt)} 시작${sc.startAt<=now?'(지남)':''}`); if(sc.endAt) up.push(`${schFmt(sc.endAt)} 종료${sc.endAt<=now?'(지남)':''}`); return up.join(' · '); }
 function paintSchedNow(){ const el = document.getElementById('schedNow'); if(!el) return; const t = schText(__ctl && __ctl.schedule); el.textContent = t ? '⏰ 예약: ' + t : ''; }
 setInterval(()=>{ if(!__ctl) return; const e = effClassEnded(__ctl, Date.now()); paintSchedNow(); if(e !== classEnded){ classEnded = e; updateClassButtons(); } }, 10000);
-/* ⏰ 예약·따로 열기 창 (2026-10-26 디자인 정리): 탭 3개 — 반 예약 / 🎫 45분 이용권 / 🙋 따로 열기
+/* ⏰ 예약·따로 열기 창 (2026-10-26 디자인 정리): 탭 3개 — 반 예약 / 🎫 50분 이용권 / 🙋 따로 열기
    데이터: rooms/{반}__prob32/control/schedule = {startAt, endAt, setAt}
            students/{key}/timePass = {from, until, minutes, extra, startedAt?, setAt}
            students/{key}/personalOpen = {startAt, endAt, setAt} */
-const tpEndT = t => +t.startedAt + ((+t.minutes||45) + (+t.extra||0)) * 60000;
+const tpEndT = t => +t.startedAt + ((+t.minutes||50) + (+t.extra||0)) * 60000;
 const WK = '일월화수목금토';
 const schDay = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()}(${WK[d.getDay()]})`; };
 const schHM = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
@@ -1297,7 +1297,7 @@ function smRefRoom(r){ return db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX+'/cont
 function smRefStu(k, what){ return db.ref('rooms/'+currentRoomKey+'/students/'+k+'/'+what); }
 const smToday = () => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const smAt = (day, t) => new Date(day+'T'+t+':00').getTime();
-const smPlus45 = t => { if(!t) return ''; const [h,m] = t.split(':').map(Number), x = h*60+m+45; return `${String(Math.floor(x/60)%24).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`; };
+const smPlus45 = t => { if(!t) return ''; const [h,m] = t.split(':').map(Number), x = h*60+m+50; return `${String(Math.floor(x/60)%24).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`; };
 function smStudents(){ return Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).sort((a,b)=>byNumber(a.s,b.s)); }
 function smBadge(now, a, b, labels){ return now < a ? `<span class="sm-badge b-wait">${labels[0]}</span>` : now < b ? `<span class="sm-badge b-on">${labels[1]}</span>` : `<span class="sm-badge b-done">${labels[2]}</span>`; }
 function smStuChips(mark){
@@ -1311,7 +1311,7 @@ function smBodyRoom(){
   return `<p class="sm-desc">정한 시각이 되면 [▶ 수업 시작]·[⏹ 수업 종료]를 누른 것과 같아요(종료 = 잠금·제출). 학생 화면이 스스로 바뀌어서 이 화면을 켜 두지 않아도 돼요.</p>
   <div class="sm-card"><div class="sm-lab">반 (여러 반 가능)</div><div class="sm-chips">${SM.rooms.map(r=>`<button type="button" class="sm-chip${SM.rpick.has(r)?' on':''}" data-sm-room="${esc(r)}">${esc(r)}반</button>`).join('')}</div>
     <div class="sm-lab">날짜와 시간</div><div class="sm-row"><input type="date" id="smDay" value="${SM.day}"> <input type="time" id="smS" value="${SM.s}"> ~ <input type="time" id="smE" value="${SM.e}"></div>
-    <div class="sm-note">시작만 넣으면 종료는 45분 뒤로 채워져요. 시작이나 종료 하나만 둬도 돼요.</div>
+    <div class="sm-note">시작만 넣으면 종료는 50분 뒤로 채워져요. 시작이나 종료 하나만 둬도 돼요.</div>
     <button type="button" class="sm-go" id="smRoomGo" ${SM.rpick.size?'':'disabled'}>⏰ ${SM.rpick.size ? [...SM.rpick].map(r=>r+'반').join(', ')+' 예약하기' : '반을 골라 주세요'}</button></div>
   <div class="sm-list"><h4>예약된 반</h4>${rows.length ? rows.map(r=>{ const c = SM.cur[r], a = +c.startAt||0, b = +c.endAt||Infinity;
       return `<div class="sm-item"><span class="who">${esc(r)}반</span><span class="when">${schDay(a||b)} ${a?schHM(a):'—'} ~ ${isFinite(b)?schHM(b):'—'}</span>${smBadge(now, a||0, b, ['예정','수업 중','끝남'])}<button type="button" class="sm-mini del" data-sm-del-room="${esc(r)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">예약된 반이 없어요.</div>'}</div>`;
@@ -1322,7 +1322,7 @@ function smBodyPass(){
   <div class="sm-card"><div class="sm-lab">학생 (여러 명 가능)</div>${smStuChips(s=> s.timePass && !(s.timePass.startedAt && tpEndT(s.timePass) < now) ? '<small>🎫</small>' : '')}
     <div class="sm-lab">쓸 수 있는 기간과 시간</div><div class="sm-row"><input type="date" id="tpFrom" value="${SM.day}"> ~ <input type="date" id="tpUntil" value="${SM.until||SM.day}"> · <input type="number" id="tpMin" value="${SM.min}" min="5" max="180" style="width:70px;">분</div>
     <button type="button" class="sm-go" id="smPassGo" style="background:#f9a825;color:#3e2723;" ${SM.pick.size?'':'disabled'}>🎫 ${SM.pick.size ? SM.pick.size+'명에게 '+SM.min+'분 이용권 주기' : '학생을 골라 주세요'}</button></div>
-  <div class="sm-list"><h4>이용권</h4>${rows.length ? rows.map(({k,s})=>{ const t = s.timePass, mins = (+t.minutes||45)+(+t.extra||0);
+  <div class="sm-list"><h4>이용권</h4>${rows.length ? rows.map(({k,s})=>{ const t = s.timePass, mins = (+t.minutes||50)+(+t.extra||0);
       const st = t.startedAt ? (now < tpEndT(t) ? `<span class="sm-badge b-on">쓰는 중 · ${Math.ceil((tpEndT(t)-now)/60000)}분 남음</span>` : '<span class="sm-badge b-done">사용 완료</span>') : (now > +t.until ? '<span class="sm-badge b-done">기간 지남</span>' : '<span class="sm-badge b-wait">아직 안 씀</span>');
       return `<div class="sm-item"><span class="who">${esc(displayName(k,s.name,s.number))}</span><span class="when">${schDay(+t.from)}~${schDay(+t.until)} · ${mins}분</span>${st}<button type="button" class="sm-mini" data-sm-add="${esc(k)}">+10분</button><button type="button" class="sm-mini del" data-sm-del-pass="${esc(k)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">준 이용권이 없어요.</div>'}</div>`;
 }
@@ -1331,7 +1331,7 @@ function smBodyOpen(){
   return `<p class="sm-desc">정한 시간에 고른 학생만 열어요(반 전체가 잠겨 있어도). 보충 시간에 교실에서 할 때 써요. ${currentRoomName?`(${esc(currentRoomName)}반)`:''}</p>
   <div class="sm-card"><div class="sm-lab">학생 (여러 명 가능)</div>${smStuChips(s=> s.personalOpen && +s.personalOpen.endAt > now ? '<small>🔓</small>' : '')}
     <div class="sm-lab">날짜와 시간</div><div class="sm-row"><input type="date" id="poDay" value="${SM.day}"> <input type="time" id="poS" value="${SM.s}"> ~ <input type="time" id="poE" value="${SM.e}"></div>
-    <div class="sm-note">시작만 넣으면 종료는 45분 뒤로 채워져요.</div>
+    <div class="sm-note">시작만 넣으면 종료는 50분 뒤로 채워져요.</div>
     <button type="button" class="sm-go" id="smOpenGo" style="background:#00897b;" ${SM.pick.size?'':'disabled'}>🙋 ${SM.pick.size ? SM.pick.size+'명 따로 열기 예약' : '학생을 골라 주세요'}</button></div>
   <div class="sm-list"><h4>따로 열기</h4>${rows.length ? rows.map(({k,s})=>{ const p = s.personalOpen;
       return `<div class="sm-item"><span class="who">${esc(displayName(k,s.name,s.number))}</span><span class="when">${schDay(p.startAt)} ${schHM(p.startAt)} ~ ${schHM(p.endAt)}</span>${smBadge(now, p.startAt, p.endAt, ['예정','열림','끝남'])}<button type="button" class="sm-mini del" data-sm-del-open="${esc(k)}">지우기</button></div>`; }).join('') : '<div class="sm-empty">따로 열기 예약이 없어요.</div>'}</div>`;
@@ -1345,7 +1345,7 @@ function smPaint(){
 function smSync(){   // 입력칸 값을 상태로
   const g = id => { const e = document.getElementById(id); return e ? e.value : null; };
   if(SM.tab==='room'){ SM.day = g('smDay')||SM.day; SM.s = g('smS')??SM.s; SM.e = g('smE')??SM.e; }
-  if(SM.tab==='pass'){ SM.day = g('tpFrom')||SM.day; SM.until = g('tpUntil')||SM.until; SM.min = Math.round(+g('tpMin')||45); }
+  if(SM.tab==='pass'){ SM.day = g('tpFrom')||SM.day; SM.until = g('tpUntil')||SM.until; SM.min = Math.round(+g('tpMin')||50); }
   if(SM.tab==='open'){ SM.day = g('poDay')||SM.day; SM.s = g('poS')??SM.s; SM.e = g('poE')??SM.e; }
 }
 document.getElementById('schedBtn').addEventListener('click', async ()=>{
@@ -1356,19 +1356,19 @@ document.getElementById('schedBtn').addEventListener('click', async ()=>{
   if(!document.getElementById('schStyle')){ const st = document.createElement('style'); st.id = 'schStyle'; st.textContent = SCH_CSS; document.head.appendChild(st); }
   const rooms = Array.from(document.querySelectorAll('#roomCode option')).map(o=>o.value).filter(Boolean);
   const cur = {}; await Promise.all(rooms.map(r=> smRefRoom(r).once('value').then(sn=>{ cur[r] = sn.val(); }).catch(()=>{})));
-  SM = { tab: SM ? SM.tab : 'room', rooms, cur, rpick: new Set(currentRoomName ? [currentRoomName] : []), pick: new Set(), day: smToday(), until: '', s: '', e: '', eAuto: true, min: 45 };
+  SM = { tab: SM ? SM.tab : 'room', rooms, cur, rpick: new Set(currentRoomName ? [currentRoomName] : []), pick: new Set(), day: smToday(), until: '', s: '', e: '', eAuto: true, min: 50 };
   let m = document.getElementById('schedModal'); if(m) m.remove();
   m = document.createElement('div'); m.id = 'schedModal';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(20,16,40,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
   m.innerHTML = `<div class="sm-box"><div class="sm-head"><b>⏰ 예약·따로 열기</b><button type="button" class="sm-x" data-sm-close="1" title="닫기">✕</button></div>
-    <div class="sm-tabs"><button type="button" class="sm-tab" data-sm-tab="room">반 시작·종료 예약</button><button type="button" class="sm-tab" data-sm-tab="pass">🎫 45분 이용권</button><button type="button" class="sm-tab" data-sm-tab="open">🙋 따로 열기</button></div>
+    <div class="sm-tabs"><button type="button" class="sm-tab" data-sm-tab="room">반 시작·종료 예약</button><button type="button" class="sm-tab" data-sm-tab="pass">🎫 50분 이용권</button><button type="button" class="sm-tab" data-sm-tab="open">🙋 따로 열기</button></div>
     <div class="sm-body"></div></div>`;
   document.body.appendChild(m); smPaint();
   m.addEventListener('input', e=>{
     const id = e.target.id;
     if(id==='smS' || id==='poS'){ const eId = id==='smS' ? 'smE' : 'poE', ee = document.getElementById(eId); if(ee && (SM.eAuto || !ee.value)){ ee.value = smPlus45(e.target.value); SM.eAuto = true; } }
     if(id==='smE' || id==='poE') SM.eAuto = false;
-    if(id==='tpMin'){ const n = Math.round(+e.target.value||45), go = document.getElementById('smPassGo'); SM.min = n; if(go && SM.pick.size) go.textContent = `🎫 ${SM.pick.size}명에게 ${n}분 이용권 주기`; }
+    if(id==='tpMin'){ const n = Math.round(+e.target.value||50), go = document.getElementById('smPassGo'); SM.min = n; if(go && SM.pick.size) go.textContent = `🎫 ${SM.pick.size}명에게 ${n}분 이용권 주기`; }
     smSync();
   });
   m.addEventListener('click', async e=>{
