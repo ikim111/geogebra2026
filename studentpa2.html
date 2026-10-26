@@ -1040,6 +1040,9 @@ const RT = {
     if(classEnded && po && now >= +po.startAt && now < +po.endAt) classEnded = false;   // 🙋 학생별 따로 열기(2026-10-26)
     const tp = this._tp, baseEnded = classEnded;   // 🎫 45분 이용권(2026-10-26)
     if(classEnded && tp && tp.startedAt && now < tpEnd(tp)) classEnded = false;
+    // 🤖 2026-10-26: 2부가 열려 반 전체 AI가 꺼져도, 따로 열기·이용권을 받은 학생은 그 시간 동안 1부 AI를 쓸 수 있다
+    const personalOn = !!((po && now >= +po.startAt && now < +po.endAt) || (tp && tp.startedAt && now < tpEnd(tp)));
+    if(personalOn !== !!this.personalOn){ this.personalOn = personalOn; try{ AI.paint(); }catch(e){} }
     paintTimePass(baseEnded, now);
     if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
     else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
@@ -1170,7 +1173,7 @@ const AI = {
   offReason(){
     if(PREVIEW_MODE) return '';   // 2026-10-23: 선생님이 미리보기에서 AI 답을 시험해 볼 수 있게(기록은 저장되지 않음)
     if(!RT.connected) return '실시간 연결이 되어야 AI를 쓸 수 있어요.';
-    if(this.teacherOff) return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)';
+    if(this.teacherOff && !RT.personalOn) return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)';
     if(finalLocked) return '제출한 뒤에는 AI를 쓸 수 없어요. 고치려면 "제출 취소"를 누르세요.';
     if(!this.loaded) return 'AI 사용 기록을 불러오는 중이에요…';
     return '';

@@ -597,7 +597,7 @@ function renderAiAgg(){
   const btn = document.getElementById('aiToggleBtn');
   btn.textContent = aiOff ? '🤖 학생 AI 켜기' : '🤖 학생 AI 끄기';
   btn.classList.toggle('off', aiOff);
-  document.getElementById('aiState').textContent = aiOff ? '🔒 지금 학생 AI가 꺼져 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)' : '🟢 학생이 AI 피드백·도우미를 쓸 수 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)';
+  document.getElementById('aiState').textContent = aiOff ? '🔒 지금 학생 AI가 꺼져 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요 · 🙋따로 열기·🎫이용권 받은 학생은 그 시간 동안 AI 사용 가능)' : '🟢 학생이 AI 피드백·도우미를 쓸 수 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)';
 }
 document.getElementById('aiToggleBtn').addEventListener('click', ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
