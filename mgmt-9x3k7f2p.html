@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>교사용 — 반/단원 선택</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
+<!-- ⚡ 2026-10-27 접속 속도: Firebase 서버에 미리 연결 -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -259,6 +264,17 @@ const FIREBASE_CONFIG = {
   appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
 };
 
+/* ⚡ 2026-10-27 접속 속도: 페이지가 열리자마자 익명 로그인과 DB 연결을 시작해 둔다(반을 고르는 동안 끝나도록).
+   authReady()는 같은 로그인을 함께 쓰므로 여러 번 불러도 한 번만 로그인한다. */
+let __authP = null;
+function authReady(){
+  if(!FIREBASE_CONFIG.apiKey) return Promise.reject(new Error('no config'));
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  if(!__authP) __authP = firebase.auth().signInAnonymously().catch(e=>{ __authP = null; throw e; });
+  return __authP;
+}
+try{ authReady().then(()=> firebase.database().ref('.info/serverTimeOffset').once('value')).catch(()=>{}); }catch(e){}
+
 // 반 선택 버튼 채우기 (1~12반, 4개씩 3줄)
 (function(){
   const grid=document.getElementById('classGrid');
@@ -439,9 +455,11 @@ function goToUnitPage(room){
     renderUnitList();
     return;
   }
+  // ⚡ 2026-10-27: 이 기기에 저장해 둔 지난 상태로 단원 목록을 먼저 그린다(서버 값이 오면 다시 그림).
+  try{ const c = JSON.parse(localStorage.getItem('mgmt_access_'+sanitize(room)) || 'null'); if(c){ accessData = c; renderUnitList(); } }catch(e){}
   try{
     ensureFirebaseApp();
-    firebase.auth().signInAnonymously().then(()=>{
+    authReady().then(()=>{
       const roomKey = sanitize(room) + '__access';
       accessRef = firebase.database().ref('rooms/'+roomKey);
       // 이 반의 목차 접기/펼치기 상태를 실시간으로 받는다(다른 기기에서 바꿔도 맞춰진다).
@@ -452,6 +470,7 @@ function goToUnitPage(room){
       watchReports(); watchPinReq(room);
       accessRef.child('units').once('value').then(snap=>{
         accessData = snap.val() || {};
+        try{ localStorage.setItem('mgmt_access_'+sanitize(room), JSON.stringify(accessData)); }catch(e){}
         renderUnitList();
       }).catch(()=>{ accessData = {}; renderUnitList(); });
     }).catch(()=>{ accessData = {}; renderUnitList(); });
