@@ -10,6 +10,7 @@ module.exports = async (req, res) => {
   if (!process.env.BLOB_READ_WRITE_TOKEN) { res.status(500).json({ error: '파일 저장소(Vercel Blob)가 아직 연결되지 않았어요. 선생님께 알려 주세요.' }); return; }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    if (body && body.type === 'blob.generate-client-token' && require('./_guard').blockForeign(req, res)) return;   // 업로드 토큰은 우리 사이트에서만
     const result = await handleUpload({
       body, request: req,
       onBeforeGenerateToken: async (pathname) => {

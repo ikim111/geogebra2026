@@ -10,6 +10,7 @@ const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'question_sc
     properties: { id: { type: 'string' }, issues: { type: 'array', items: { type: 'string', enum: ISSUES } }, why: { type: 'string' } } } } } } } };
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
   const items = (Array.isArray(b.items) ? b.items : []).slice(0, 40)

@@ -75,6 +75,7 @@ const qScore = q => q[0] === 'X' ? 0 : q.filter(x => x === 'O').length;
 const clean = (a, n) => (Array.isArray(a) ? a : []).map(x => String(x || '').replace(/\*\*/g, '').trim()).filter(Boolean).slice(0, n).map(x => x.slice(0, 300));
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const rep = parseReport(req.body);
   if (rep.empty) { res.status(400).json({ error: '채점할 보고서 내용이 비어 있습니다.' }); return; }

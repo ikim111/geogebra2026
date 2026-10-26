@@ -198,6 +198,7 @@ async function callGemini(prompt) {
 }
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
   const u = UNITS[String(b.unit || '').trim()];

@@ -12,6 +12,7 @@ const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'spell_check
     properties: { sec: { type: 'string', enum: SECS }, wrong: { type: 'string' }, right: { type: 'string' } } } } } } } };
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
   const t = {}; SECS.forEach(k => { t[k] = S(b[k]); });

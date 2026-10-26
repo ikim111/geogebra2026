@@ -20,6 +20,7 @@
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'POST 요청만 지원합니다.' });
     return;

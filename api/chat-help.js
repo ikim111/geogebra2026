@@ -11,6 +11,7 @@ const { bodyOf, callOpenAI, STUDENT_AI_RULES, RECOMMENDED_SITES } = require('./_
 const S = (x, n) => String(x == null ? '' : x).slice(0, n || 600).trim();
 
 module.exports = async (req, res) => {
+  if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
   const message = S(b.message, 500);
