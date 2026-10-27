@@ -285,6 +285,14 @@
         <div style="font-size:12px;color:#888;margin:4px 0 6px;">교시를 누르면 예약/취소돼요. 시작 5분 전 열림 · 끝난 뒤 5분 닫힘. <b style="color:#00897b;">초록 테두리</b> = 이 반 수학 시간, <b style="color:#fff;background:#3949ab;padding:0 4px;border-radius:4px;">파란 칸</b> = 예약됨.</div>
         <div id="slotGrid">반에 접속하면 보여요.</div>
       </details>
+      <details id="passBox" style="margin-top:6px;font-size:13px;">
+        <summary style="cursor:pointer;display:inline-block;background:#fff8e1;border:2px solid #f9a825;color:#5d4037;border-radius:8px;padding:5px 12px;font-size:14px;"><b>🎫 결석생 이용권</b> <span id="passNow"></span> <span style="color:#8d6e63;font-size:12px;">▼ 눌러서 열기</span></summary>
+        <div style="font-size:12px;color:#888;margin:4px 0 6px;">학생을 고르고 55분/110분을 주면, 그 학생만 <b>오늘 16:30까지</b> 목차에서 2부에 들어가 [▶ 시작]을 눌러 쓸 수 있어요. 시작한 순간부터 시간이 흐르고, 학생이 [작성 끝내기]를 누르거나 시간이 다 되면 닫혀요. 선생님 앞에서 시작하게 해 주세요.</div>
+        <div id="passPick" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
+        <button type="button" class="gr-ai" data-pass-give="55" style="background:#f9a825;color:#3e2723;">🎫 55분 주기</button>
+        <button type="button" class="gr-ai" data-pass-give="110" style="background:#f57f17;">🎫 110분 주기</button>
+        <div id="passList" style="margin-top:8px;"></div>
+      </details>
       <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
         <div id="paceTrack" class="pace-track"></div>
@@ -820,7 +828,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       setPaceRange(null, null, /*fromRemote*/true);
       // 1초에 한 번만 다시 그리되, 그 사이 들어온 마지막 변경은 버리지 않고 1초 뒤에 반영한다.
       let __ggbThrottleTs = 0, __ggbPendingSnap = null, __ggbTimer = null;
-      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); renderGradePanel(); onStudentsUpdated(); };
+      const __ggbApply = snap=>{ __ggbThrottleTs=Date.now(); allStudents = snap.val() || {}; renderGrid(); renderAggregate(); renderGradePanel(); onStudentsUpdated(); paintPass(); };
       studentsRef.on('value', snap=>{
         const wait = 1000 - (Date.now()-__ggbThrottleTs);
         if(wait<=0){ __ggbApply(snap); return; }
@@ -989,6 +997,62 @@ document.getElementById('slotGrid').addEventListener('click', e=>{
   controlRef.child('slots/'+id).set(slotsCur[id] ? null : slotTimes(k, +p)).catch(err=> alert('저장하지 못했어요: '+(err.message||err)));
 });
 setInterval(()=>{ if(controlRef){ const e = effEnded2(ctlCur, Date.now()); if(e!==classEnded){ classEnded = e; updateClassButtons(); } paintSlots(); } }, 20000);
+/* 🎫 2026-10-27 결석생 이용권(2부): students/{key}/pass2 = {minutes, until, setAt, startedAt?}, 다 쓰면 passLog/{startedAt} = {minutes, startedAt, endedAt}
+   students/{key}/fbShowMe = true 이면 반 설정과 상관없이 그 학생에게 AI 피드백을 보여 준다 */
+let passPick = new Set(), prepKeys = {};
+function p2EndT(p){ return p && p.startedAt ? +p.startedAt + (+p.minutes||55)*60000 : 0; }
+function p2Used(s){ let m = 0; Object.values((s&&s.passLog)||{}).forEach(l=>{ m += Math.max(0, (+l.endedAt - +l.startedAt))/60000; }); const p = s && s.pass2, e = p2EndT(p); if(e) m += (Math.min(Date.now(), e) - +p.startedAt)/60000; return Math.round(m); }
+async function loadPrepKeys(){ prepKeys = {}; try{ const v = (await db.ref('rooms/'+sanitize(currentRoomName)+'__prob32/students').once('value')).val() || {}; Object.keys(v).forEach(k=>{ prepKeys[k] = { name: v[k].name, number: v[k].number }; }); }catch(e){} paintPass(); }
+function paintPass(){
+  const pk = document.getElementById('passPick'), pl = document.getElementById('passList'), pn = document.getElementById('passNow'); if(!pk) return;
+  if(!controlRef){ pk.textContent = '반에 접속하면 보여요.'; pl.innerHTML = ''; pn.textContent=''; return; }
+  const all = Object.assign({}, prepKeys); Object.keys(allStudents||{}).forEach(k=>{ all[k] = { name: allStudents[k].name, number: allStudents[k].number }; });
+  const keys = Object.keys(all).sort((a,b)=> (parseInt(all[a].number)||999) - (parseInt(all[b].number)||999));
+  pk.innerHTML = keys.map(k=>`<button type="button" data-pass-pick="${esc(k)}" style="border:1px solid ${passPick.has(k)?'#f57f17':'#ddd'};background:${passPick.has(k)?'#fff3e0':'#fff'};border-radius:14px;padding:2px 10px;font-size:12.5px;cursor:pointer;">${passPick.has(k)?'✅ ':''}${esc(all[k].number||'')} ${esc(all[k].name||k)}</button>`).join('') || '학생 기록이 없어요.';
+  const now = Date.now(), rows = Object.keys(allStudents||{}).filter(k=> allStudents[k].pass2 || allStudents[k].passLog);
+  let act = 0;
+  pl.innerHTML = rows.length ? rows.map(k=>{ const s = allStudents[k], p = s.pass2, e = p2EndT(p);
+      let st = '';
+      if(p && e && now < e){ st = `<b style="color:#2e7d32;">쓰는 중 · 남은 ${Math.ceil((e-now)/60000)}분</b>`; act++; }
+      else if(p && !p.startedAt && now < +p.until) st = `<span style="color:#f57f17;">${+p.minutes}분 · 시작 전</span>`;
+      else if(p && !p.startedAt) st = '<span style="color:#999;">기한 지남(시작 안 함)</span>';
+      else st = '<span style="color:#666;">끝남</span>';
+      return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;border-top:1px solid #eee;"><b style="min-width:90px;">${esc(displayName(k,s.name,s.number))}</b>${st}<span style="color:#555;">누적 ${p2Used(s)}분 / 110분</span>
+        ${p?`<button type="button" class="pause" data-pass-del="${esc(k)}" style="padding:2px 8px;font-size:12px;">${p.startedAt?'⏹ 지금 닫기':'지우기'}</button>`:''}
+        <button type="button" class="pause" data-pass-fb="${esc(k)}" style="padding:2px 8px;font-size:12px;">${s.fbShowMe?'🙈 피드백 숨기기':'👀 이 학생 AI 피드백 보여 주기'}</button></div>`; }).join('') : '<div style="color:#999;">준 이용권이 없어요.</div>';
+  pn.textContent = rows.length ? `— ${rows.length}명${act?` (쓰는 중 ${act}명)`:''}` : '';
+}
+document.getElementById('passBox').addEventListener('toggle', e=>{ if(e.target.open && controlRef) loadPrepKeys(); });
+document.getElementById('passBox').addEventListener('click', async e=>{
+  const t = e.target.closest('button'); if(!t || !controlRef) return;
+  const ref = k => db.ref('rooms/'+currentRoomKey+'/students/'+k);
+  if(t.dataset.passPick){ const k = t.dataset.passPick; passPick.has(k) ? passPick.delete(k) : passPick.add(k); paintPass(); return; }
+  if(t.dataset.passGive){
+    const m = +t.dataset.passGive, ks = [...passPick]; if(!ks.length){ alert('학생을 먼저 골라 주세요.'); return; }
+    const until = new Date(); until.setHours(16,30,0,0);
+    if(Date.now() > until.getTime()){ until.setTime(Date.now() + 60*60000); }
+    const names = ks.map(k=> (allStudents[k]||prepKeys[k]||{}).name || k).join(', ');
+    if(!confirm(`${names}에게 ${m}분 이용권을 줄까요?\n${until.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}까지 [시작]을 눌러야 해요.`)) return;
+    for(const k of ks){
+      const s = allStudents[k] || {}, p = s.pass2;
+      if(p && p.startedAt){ const e2 = Math.min(Date.now(), p2EndT(p)); await ref(k).child('passLog/'+p.startedAt).set({ minutes:+p.minutes||55, startedAt:+p.startedAt, endedAt:e2 }); }
+      const up = { pass2: { minutes:m, until: until.getTime(), setAt: Date.now() } };
+      if(!allStudents[k] && prepKeys[k]){ up.name = prepKeys[k].name || null; up.number = prepKeys[k].number || null; }
+      await ref(k).update(up);
+    }
+    passPick.clear(); paintPass(); return;
+  }
+  if(t.dataset.passDel){ const k = t.dataset.passDel, p = (allStudents[k]||{}).pass2; if(!p) return;
+    if(!confirm(p.startedAt ? '지금 바로 닫을까요? (쓴 시간은 기록돼요)' : '이 이용권을 지울까요?')) return;
+    if(p.startedAt){ await ref(k).child('passLog/'+p.startedAt).set({ minutes:+p.minutes||55, startedAt:+p.startedAt, endedAt: Math.min(Date.now(), p2EndT(p)) }); }
+    await ref(k).child('pass2').remove(); return; }
+  if(t.dataset.passFb){ const k = t.dataset.passFb, s = allStudents[k] || {};
+    if(s.fbShowMe){ await ref(k).child('fbShowMe').remove(); return; }
+    const g = gradeOf(s);
+    if(hasReport(s) && (!g.ai || g.stale || !g.ai.fb)){ t.disabled = true; t.textContent = '🤖 피드백 받는 중…'; try{ await requestGrade(k); }catch(err){ alert('피드백을 받지 못했어요: '+err.message); t.disabled = false; paintPass(); return; } }
+    await ref(k).child('fbShowMe').set(true); return; }
+});
+setInterval(()=>{ if(controlRef && document.getElementById('passBox').open) paintPass(); }, 30000);
 function updateClassButtons(){
   const endBtn=document.getElementById('classEndBtn');
   const startBtn=document.getElementById('classStartBtn');

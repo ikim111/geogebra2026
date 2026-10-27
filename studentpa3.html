@@ -730,6 +730,8 @@ const RT = {
     this.db.ref('rooms/' + this.sanitize(room) + PREP_SUFFIX + '/students/' + this.studentKey + '/data').once('value')
       .then(snap=> renderPrep(snap.val())).catch(()=> renderPrep(null));
     this.studentRef.child('aiGrade').on('value', sg=>{ FBV.g = sg.val() || null; paintAiFb(); });   // 👀 AI 1차 피드백
+    this.studentRef.child('fbShowMe').on('value', sn=>{ FBV.me = !!sn.val(); paintAiFb(); });   // 👀 결석생에게만 피드백 보여 주기
+    this.studentRef.child('pass2').on('value', sn=>{ this._p2 = sn.val() || null; this._p2Done = false; this.applyClassState(); });   // 🎫 결석생 이용권
     this.studentRef.child('spell').on('value', sp=>{ const v = sp.val() || {}; SPELL.day = v.day||''; SPELL.n = +v.n||0; SPELL.total = +v.total||0; paintSpell(); });
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
@@ -752,7 +754,12 @@ const RT = {
   },
   applyClassState(){
     if(!this._ctlRaw) return;
-    const classEnded = effEnded2(this._ctlRaw, Date.now() + (this._tOff||0));
+    const now = Date.now() + (this._tOff||0), p2 = this._p2;
+    const p2End = p2 && p2.startedAt ? +p2.startedAt + (+p2.minutes||55)*60000 : 0;
+    if(p2End && now >= p2End) this.finishPass2(p2End);   // 시간이 다 되면 기록 남기고 이용권 정리
+    const p2Active = !!(p2End && now < p2End), p2Ready = !!(p2 && !p2.startedAt && now < +p2.until);
+    const classEnded = effEnded2(this._ctlRaw, now) && !p2Active;
+    paintPass2(p2Active ? p2End : 0);
     if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true, true); } }
     else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded, true); }
     this._lastKnownClassEnded = classEnded; this.classEnded = classEnded; this.maybeAutoUnlock();
@@ -761,7 +768,23 @@ const RT = {
     if(!ov){ ov = document.createElement('div'); ov.id = 'offTimeCover'; ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:9000;background:#f5f5f5;align-items:center;justify-content:center;text-align:center;padding:20px;';
       ov.innerHTML = '<div style="background:#fff;border:2px solid #c5cae9;border-radius:14px;padding:24px 28px;max-width:420px;font-size:16px;line-height:1.7;"><div style="font-size:40px;">🔒</div><b>지금은 2부 작성 시간이 아니에요.</b><br>쓴 내용은 저장되어 있어요.<br>수업 시간(시작 5분 전부터)에 다시 들어와요.<br><a href="student.html" style="display:inline-block;margin-top:12px;color:#3949ab;">← 과제 목록으로</a></div>';
       document.body.appendChild(ov); }
+    const box = ov.firstElementChild;
+    if(classEnded && p2Ready){
+      box.innerHTML = `<div style="font-size:40px;">🎫</div><b>결석생 작성 시간 ${+p2.minutes||55}분이 준비됐어요.</b><br>[시작]을 누르면 바로 시간이 흘러요.<br><span style="color:#c62828;">선생님 앞에서 시작하세요.</span><br><button type="button" id="p2Start" style="margin-top:12px;background:#3949ab;color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:16px;font-weight:bold;cursor:pointer;">▶ 시작</button><br><a href="student.html" style="display:inline-block;margin-top:10px;color:#3949ab;">← 과제 목록으로</a>`;
+      box.querySelector('#p2Start').onclick = ()=>{ if(!confirm(`지금 시작할까요? ${+p2.minutes||55}분 뒤에 자동으로 닫혀요.`)) return; this.studentRef.child('pass2/startedAt').set(firebase.database.ServerValue.TIMESTAMP); };
+    } else if(classEnded && box.dataset.mode !== 'lock'){
+      box.innerHTML = '<div style="font-size:40px;">🔒</div><b>지금은 2부 작성 시간이 아니에요.</b><br>쓴 내용은 저장되어 있어요.<br>수업 시간(시작 5분 전부터)에 다시 들어와요.<br><a href="student.html" style="display:inline-block;margin-top:12px;color:#3949ab;">← 과제 목록으로</a>';
+    }
+    box.dataset.mode = (classEnded && p2Ready) ? 'pass' : 'lock';
     ov.style.display = classEnded ? 'flex' : 'none';
+  },
+  /* 🎫 이용권을 다 썼거나 학생이 [작성 끝내기]를 누르면: 쓴 시간을 passLog에 남기고 pass2를 지운다 */
+  finishPass2(endAt){
+    const p2 = this._p2; if(!p2 || !p2.startedAt || this._p2Done || !this.connected) return;
+    this._p2Done = true;
+    const st = +p2.startedAt, en = Math.min(+endAt, st + (+p2.minutes||55)*60000);
+    this.studentRef.child('passLog/'+st).set({ minutes: +p2.minutes||55, startedAt: st, endedAt: en });
+    this.studentRef.child('pass2').remove();
   },
   markSubmitted(on, auto){
     if(!this.connected) return;
@@ -976,11 +999,25 @@ function effEnded2(c, now){
   const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0] || b[1]-a[1]);
   return past.length ? !!past[past.length-1][1] : !!c.classEnded;
 }
+/* 🎫 결석생 이용권 쓰는 중: 위쪽에 남은 시간과 [작성 끝내기] */
+let __p2Tick = null;
+function paintPass2(endAt){
+  let bar = document.getElementById('p2Bar');
+  if(!endAt){ if(bar) bar.style.display = 'none'; clearInterval(__p2Tick); __p2Tick = null; return; }
+  if(!bar){ bar = document.createElement('div'); bar.id = 'p2Bar'; bar.style.cssText = 'position:sticky;top:0;z-index:8000;display:flex;align-items:center;justify-content:center;gap:12px;background:#3949ab;color:#fff;padding:8px 12px;font-size:15px;';
+    bar.innerHTML = '<span>🎫 결석생 작성 시간 — 남은 시간 <b id="p2Left"></b></span><button type="button" id="p2End" style="background:#fff;color:#c62828;border:none;border-radius:8px;padding:4px 12px;font-weight:bold;cursor:pointer;">작성 끝내기</button>';
+    document.body.prepend(bar);
+    bar.querySelector('#p2End').onclick = ()=>{ if(!confirm('작성을 끝낼까요?\n끝내면 다시 쓸 수 없어요. (선생님이 새로 열어 줘야 해요)')) return; RT.finishPass2(Date.now() + (RT._tOff||0)); };
+  }
+  bar.style.display = 'flex'; bar.dataset.end = endAt;
+  const tick = ()=>{ const left = +bar.dataset.end - (Date.now() + (RT._tOff||0)); if(left <= 0){ RT.applyClassState(); return; } const m = Math.floor(left/60000), sec = Math.floor(left/1000)%60; document.getElementById('p2Left').textContent = m+'분 '+String(sec).padStart(2,'0')+'초'; };
+  tick(); if(!__p2Tick) __p2Tick = setInterval(tick, 1000);
+}
 const FB_ITEMS = [['question','탐구 질문'],['data','자료 수집'],['analysis','자료 분석'],['logic','글의 논리']];
 function paintAiFb(){
   const box = document.getElementById('aiFbPanel'); if(!box) return;
   const g = FBV.g, fb = g && g.fb;
-  if(!FBV.show || !fb){ box.style.display = 'none'; return; }
+  if(!(FBV.show || FBV.me) || !fb){ box.style.display = 'none'; return; }
   const e = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const when = g.ts ? new Date(g.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
   const rows = (arr, tag, col) => (arr||[]).map(t=>`<div style="display:flex;gap:8px;margin:4px 0;"><span style="flex:none;font-size:12px;font-weight:bold;color:#fff;background:${col};border-radius:10px;padding:1px 8px;height:fit-content;">${tag}</span><span>${e(t)}</span></div>`).join('');

@@ -350,7 +350,7 @@ function applyAccessAndCompletion(profile){
           const n = parseInt(el.dataset.n, 10);
           if(n === 0) return; // 0단원은 항상 열려 있음(이미 열린 상태로 만들어져 있음)
           // ⏰ 2026-10-27: 25(2부 보고서)는 선생님이 목차에서 열었거나, 교시 예약·수업 시작으로 지금 열린 시간이면 열린다
-          const isOpen = access[n] === true || (n === 25 && ctl25 && (ctl25.classStartedTs || ctl25.slots) && !effEnded2(ctl25, Date.now()));
+          const isOpen = access[n] === true || (n === 25 && ((ctl25 && (ctl25.classStartedTs || ctl25.slots) && !effEnded2(ctl25, Date.now())) || p2Open()));
           if(isOpen){
             unlockTaskLink(el);
             if(ACTIVITY_SUFFIX[n] && !el.dataset.badgeOn){ el.dataset.badgeOn = '1'; showCompletionBadge(el, n, uid, profile); }
@@ -360,6 +360,9 @@ function applyAccessAndCompletion(profile){
         });
       };
       firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__prob33/control').on('value', snap=>{ ctl25 = snap.val() || {}; paintAccess(); });
+      // 🎫 결석생 이용권(2부): 내 기록에 pass2가 있으면 시작 기한·쓰는 시간 동안 2부를 연다
+      let p2 = null; const p2Open = ()=>{ if(!p2) return false; const now = Date.now(); return p2.startedAt ? now < +p2.startedAt + (+p2.minutes||55)*60000 : now < +p2.until; };
+      if(profile.name) firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__prob33/students/'+sanitize(profile.number||'')+'_'+sanitize(profile.name)+'/pass2').on('value', snap=>{ p2 = snap.val(); paintAccess(); });
       setInterval(paintAccess, 20000);   // 예약 시각이 되면 (연결이 쉬고 있어도) 저절로 열고 닫힘
       firebase.database().ref('rooms/'+accessKey+'/units').on('value', snap=>{
         const access = snap.val() || {}; lastAccess = access; gotUnits = true;
