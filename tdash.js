@@ -47,6 +47,14 @@
   #aggPanel{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #f9c74f!important;color:#333!important;}
   #aggAnnounceBtn{background:#3949ab!important;color:#fff!important;border:none!important;border-radius:8px!important;}
   #aiReqBox{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #9575cd!important;}
+
+  .td-pace .td-sched{margin-left:auto;background:#fff!important;color:#5e35b1!important;border:2px solid #9575cd!important;border-radius:8px!important;height:34px;padding:0 12px!important;font-size:13px!important;font-weight:bold;}
+  .td-pace #schedNow{font-size:12.5px!important;color:#5e35b1!important;}
+  #aiAgg{background:#fff!important;border:1px solid #d5d8e0!important;color:#333!important;}
+  .td-aion,.td-aioff{height:38px;padding:0 14px;border-radius:8px;font-weight:bold;font-size:13.5px;cursor:pointer;background:#fff;}
+  .td-aion{color:#2e7d32;border:2px solid #66bb6a;} .td-aion.active{background:#2e7d32;color:#fff;border-color:#2e7d32;}
+  .td-aioff{color:#c62828;border:2px solid #e57373;} .td-aioff.active{background:#c62828;color:#fff;border-color:#c62828;}
+  #qScanBtn,#readyBtn{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:38px;padding:0 14px!important;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -64,7 +72,7 @@
 
   // 0) 반 선택: 드롭다운 + [시작하기] → 반 버튼 한 번에 바로 들어가기
   (function build(tries){
-    const sel = $('roomCode'), go = $('connectBtn'); if(!sel || !go) return;
+    const sel = $('roomCode'), go = $('connectBtn'); if(!sel || !go || sel.tagName !== 'SELECT') return;
     const opts = [...sel.options].filter(o=> o.value); if(!opts.length){ if((tries||0) < 40) setTimeout(()=> build((tries||0)+1), 150); return; }
     let last = ''; try{ last = localStorage.getItem('td_lastRoom') || ''; }catch(e){}
     const grid = document.createElement('div'); grid.className = 'td-rooms';
@@ -136,6 +144,27 @@
     pace.innerHTML = '<span class="td-pl">⏩ 속도조절</span><span class="td-ps">학생이 볼 수 있는 화면</span>';
     pace.appendChild(track); if(badge) pace.appendChild(badge); if(clear) pace.appendChild(clear);
     card.appendChild(pace); paceRow.style.display = 'none';
+  }
+
+  // ⏰ 1부: 시작·종료 예약 버튼은 운영 카드 안으로
+  const sched = $('schedBtn');
+  if(sched){
+    const r = document.createElement('div'); r.className = 'td-pace'; r.innerHTML = '<span class="td-pl">⏰ 시작·종료 예약</span>';
+    sched.textContent = '예약·학생별 열기'; sched.classList.add('td-sched');
+    const now = $('schedNow'); if(now) r.appendChild(now);
+    r.appendChild(sched); card.appendChild(r);
+  }
+  // 🤖 학생 AI: [AI 켜기]/[AI 끄기] 두 버튼 (지금 상태만 색이 꽉 참)
+  const aiT = $('aiToggleBtn');
+  if(aiT){
+    const on = document.createElement('button'), off = document.createElement('button'); on.type = off.type = 'button';
+    on.className = 'td-aion'; off.className = 'td-aioff'; on.textContent = '🤖 AI 켜기'; off.textContent = '🚫 AI 끄기';
+    const isOff = ()=> aiT.classList.contains('off');
+    on.onclick = ()=>{ if(isOff()) aiT.click(); }; off.onclick = ()=>{ if(!isOff()) aiT.click(); };
+    const wrap = document.createElement('span'); wrap.style.cssText = 'display:inline-flex;gap:6px;margin-left:auto;'; wrap.appendChild(on); wrap.appendChild(off);
+    aiT.after(wrap); aiT.style.display = 'none';
+    const paintAi = ()=>{ on.classList.toggle('active', !isOff()); off.classList.toggle('active', isOff()); };
+    new MutationObserver(paintAi).observe(aiT, { attributes:true, attributeFilter:['class'] }); paintAi();
   }
   // 수업 진행 도우미: 속도조절 바로 아래(운영 카드 안)로, 단계 카드 아래 자리 통일
   const sp = $('stagePanel');
