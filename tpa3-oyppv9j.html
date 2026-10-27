@@ -318,6 +318,7 @@
           <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
           <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 AI 피드백 학생에게 보여 주기</button>
           <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
+          <button class="pause" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 보고서 인쇄</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
         </div>
       </div>
@@ -1051,6 +1052,37 @@ document.getElementById('passBox').addEventListener('click', async e=>{
     await ref(k).child('fbShowMe').set(true); return; }
 });
 setInterval(()=>{ if(controlRef && document.getElementById('passBox').open) paintPass(); }, 30000);
+/* 🖨 2026-10-27 보고서 인쇄: 1명당 A4 1쪽 — 보고서·자료·점수(선생님이 고친 점수 우선)·AI 피드백 */
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
+  let keys = [...(checkedKeys||[])].filter(k=> allStudents[k]);
+  if(!keys.length) keys = Object.keys(allStudents).filter(k=> hasReport(allStudents[k]));
+  if(!keys.length){ alert('인쇄할 보고서가 없어요.'); return; }
+  keys.sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999));
+  const nl = t => esc(t).replace(/\n/g,'<br>');
+  const pages = keys.map(k=>{
+    const st = allStudents[k], r = repOf(st), g = gradeOf(st), fb = (g.ai && g.ai.fb) || {};
+    const sec = (name, t, min) => `<div class="sec"><div class="h">${name} <small>${countChars(t)}자${min?' / '+min+'자':''}</small></div><div class="t">${nl(t)||'<span class="no">(비어 있음)</span>'}</div></div>`;
+    const srcs = r.sources.map((x,i)=>`<li><b>자료 ${i+1}</b> ${esc(x.name)}${x.link?` <span class="lk">${esc(x.link.length>70?x.link.slice(0,70)+'…':x.link)}</span>`:''}${x.files.length?` <small>(첨부 ${x.files.length}개)</small>`:''}${x.ana.length?'<br>'+x.ana.map(esc).join(' / '):''}</li>`).join('');
+    const rows = g.items.map(c=>{ const f = fb[c.k] || {};
+      return `<tr><td class="c">${c.name}</td><td class="sc">${c.final!=null?c.final:'-'} / ${c.max}${c.teacher!=null?`<br><small>(AI ${c.ai!=null?c.ai:'-'} → 교사)</small>`:''}</td><td>${c.reason?`<div class="rs">${esc(c.reason)}</div>`:''}${(f.good||[]).map(t=>`<div>👍 ${esc(t)}</div>`).join('')}${(f.fix||[]).map(t=>`<div>🔧 ${esc(t)}</div>`).join('')}</td></tr>`; }).join('');
+    return `<section class="pg"><div class="top"><b>${esc(currentRoomName)}반 ${esc(st.number||'')}번 ${esc(st.name||'')}</b><span>${UNIT_LABEL} · 글자 수 ${totalOf(st)}자 · ${st.submitted?'제출':'미제출'} · 합계 <b>${g.any?g.total:'-'}</b> / 15${g.stale?' · ⚠ 채점 뒤 글 수정됨':''}</span></div>
+      <h2>${esc(r.title)||'(제목 없음)'}</h2>${sec('서론', r.intro, 150)}${sec('본론', r.body, 500)}${sec('결론', r.concl, 150)}
+      ${srcs?`<div class="sec"><div class="h">자료</div><ul>${srcs}</ul></div>`:''}
+      <table><tr><th>항목</th><th>점수</th><th>채점 근거 · AI 피드백</th></tr>${rows}</table>
+      ${g.ai && g.ai.first?`<div class="first"><b>가장 먼저 고치면 좋은 점</b> ${esc(g.ai.first)}</div>`:''}</section>`; }).join('');
+  const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요. 이 사이트의 팝업을 허용해 주세요.'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>
+    @page{size:A4;margin:12mm;} body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.5;color:#111;margin:0;}
+    .pg{page-break-after:always;} .pg:last-child{page-break-after:auto;}
+    .top{display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid #333;padding-bottom:3px;font-size:9.5pt;} .top b{font-size:11pt;}
+    h2{font-size:12.5pt;margin:6px 0 4px;} .sec{margin:4px 0;} .h{font-weight:bold;font-size:9.5pt;color:#333;border-left:3px solid #3949ab;padding-left:5px;} .h small{font-weight:normal;color:#777;}
+    .t{white-space:normal;margin:2px 0 0 8px;} .no{color:#999;} ul{margin:2px 0;padding-left:18px;font-size:9pt;} .lk{color:#555;font-size:8pt;word-break:break-all;}
+    table{width:100%;border-collapse:collapse;margin-top:6px;font-size:8.8pt;} th,td{border:1px solid #999;padding:3px 5px;vertical-align:top;} th{background:#eee;} td.c{width:58px;font-weight:bold;} td.sc{width:62px;text-align:center;} .rs{color:#444;margin-bottom:2px;}
+    .first{margin-top:5px;font-size:9pt;background:#fff8e1;padding:4px 6px;border-radius:4px;}
+  </style></head><body>${pages}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
+  w.document.close();
+});
 function updateClassButtons(){
   const endBtn=document.getElementById('classEndBtn');
   const startBtn=document.getElementById('classStartBtn');
