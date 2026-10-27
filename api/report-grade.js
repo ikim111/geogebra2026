@@ -119,7 +119,8 @@ module.exports = async (req, res) => {
   // ✕ 근거 문장: {question:['','',''], data:[...], analysis:[4], logic:[5]} (O이거나 근거 없으면 '')
   const XQ = { q: ['question', 0], d: ['data', 0], a: ['analysis', 0], l: ['logic', -1] }, xq = { question: ['', '', ''], data: ['', '', ''], analysis: ['', '', '', ''], logic: ['', '', '', '', ''] };
   (Array.isArray(j.xquotes) ? j.xquotes : []).forEach(x => { const m = /^([qdal])(\d)$/.exec(String(x && x.id || '')); if (!m) return; const [k] = XQ[m[1]], i = +m[2] - 1; if (xq[k][i] !== undefined) xq[k][i] = String(x.quote || '').replace(/\*\*/g, '').trim().slice(0, 80); });
+  if (!goodSrc) { xq.data = ['(인정되는 자료 없음 — 출처 이름·링크·첨부가 모두 있어야 해요)', '', '']; }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model });
 };

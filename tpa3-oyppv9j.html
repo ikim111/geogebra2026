@@ -577,7 +577,7 @@ function gradeBoxHTML(key, s){
   const g = gradeOf(s), pending = gradePending.has(key);
   const can = hasReport(s) && !pending;
   const when = g.ai && g.ai.ts ? new Date(g.ai.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → ○✕(또는 숫자)를 눌러 선생님이 고쳐요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
+  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → ○✕를 누르면 점수가 함께 바뀌어요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
     <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점·피드백 받는 중… (10~40초)' : (g.ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button></div>`;
   if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
@@ -600,7 +600,7 @@ function gradeBoxHTML(key, s){
     const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
-    h += `<div class="gr-item gr-card"><div class="gr-row"><span class="nm">${ii+1}. ${it.name}<small>${it.final!=null?`<b class="pt">${it.final}</b>`:'-'} / ${it.max}점</small></span><span class="gr-chips">${chips}</span></div><div class="why">${why}</div>${ckEditHTML(key, s, it) || (qch+dch+binChips(it.k, g.ai, it.ai))}${fbh?`<div class="gr-fb">${fbh}</div>`:''}</div>`;
+    h += `<div class="gr-item gr-card"><div class="gr-row"><span class="nm">${ii+1}. ${it.name}<small>${it.final!=null?`<b class="pt">${it.final}</b>`:'-'} / ${it.max}점</small></span>${ckEditHTML(key, s, it) ? '' : `<span class="gr-chips">${chips}</span>`}</div><div class="why">${why}</div>${ckEditHTML(key, s, it) || (qch+dch+binChips(it.k, g.ai, it.ai))}${fbh?`<div class="gr-fb">${fbh}</div>`:''}</div>`;
   });
   h += '</div>';
   if(g.ai && (g.ai.first || g.ai.status)){
@@ -631,14 +631,16 @@ async function requestGrade(key){
   }
 }
 /* ✅ 2026-10-27 교사가 채점 체크리스트(○✕)를 직접 고친다: students/{key}/teacherChecks/{항목} = 'OOX'… → 점수도 그 개수로 teacherGrade에 */
-function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return ''; return c; }
+function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return '';
+  if(k==='data' && ai.scores && ai.scores.data===0) return 'XXX';   // 인정되는 자료가 없어 0점이면 ○✕도 모두 ✕로(점수와 맞게)
+  return c; }
 function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; return (typeof t==='string' && t.length===CHECK_LABELS[k].length) ? t : aiChecksOf(s, k); }
 function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
 function ckEditHTML(key, s, it){
   const c = checksOf(s, it.k), a = aiChecksOf(s, it.k); if(!c) return '';
   const ai = s.aiGrade || {}, xq = (ai.xq && ai.xq[it.k]) || [];
-  const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && a.includes('O') && !(s.teacherChecks && s.teacherChecks.data);
-  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${c[i]==='X' && a[i]==='X' && xq[i]?`<div class="xq">↳ AI 근거: ${esc(xq[i])}</div>`:''}`).join('')}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 0점이에요(출처 이름·링크·첨부 모두 있어야 인정). 학생 자료가 맞으면 ○✕를 한 번 눌러 점수를 고쳐 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
+  const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && String(ai.dchecks||'').includes('O') && !(s.teacherChecks && s.teacherChecks.data);
+  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${c[i]==='X' && a[i]==='X' && xq[i]?`<div class="xq">↳ AI 근거: ${esc(xq[i])}</div>`:''}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
 }
 async function toggleCheck(key, k, i){
   const s = allStudents[key]; if(!s) return;
