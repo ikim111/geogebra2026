@@ -240,6 +240,9 @@
   #gradePanel button, #ai22Panel button{height:38px!important;min-height:38px!important;max-height:38px;padding:0 14px!important;display:inline-flex!important;align-items:center;gap:4px;border-radius:8px;box-sizing:border-box;line-height:1!important;}
   .ai-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-weight:bold;font-size:14px;}
   .ai-pill.on{background:#2e7d32;color:#fff;} .ai-pill.off{background:#c62828;color:#fff;} .ai-pill small{font-weight:normal;font-size:12px;opacity:.9;}
+  #ai22Panel.ai-on{background:#e8f5e9!important;border:2px solid #66bb6a!important;color:#1b5e20!important;}
+  #ai22Panel.ai-off{background:#ffebee!important;border:2px solid #e57373!important;color:#b71c1c!important;}
+  .ai-pill{background:none!important;padding:0!important;font-size:15px;} .ai-pill.on{color:#1b5e20!important;} .ai-pill.off{color:#b71c1c!important;} .ai-pill small{color:#555;}
 </style>
 </head>
 <body>
@@ -809,7 +812,8 @@ function renderAi22(){
   btn.textContent = ai22Off ? '🤖 1부 학생 AI 켜기' : '🤖 1부 학생 AI 끄기';
   btn.classList.toggle('off', ai22Off);
   const st = document.getElementById('ai22State'); st.className = 'st ai-pill ' + (ai22Off ? 'off' : 'on');
-  st.innerHTML = ai22Off ? '● 꺼짐 <small>학생이 1부 AI를 쓸 수 없어요</small>' : '● 켜짐 <small>학생이 1부 화면에서 AI를 쓸 수 있어요</small>';
+  st.innerHTML = ai22Off ? '꺼짐 <small>— 학생이 1부 AI를 쓸 수 없어요</small>' : '켜짐 <small>— 학생이 1부 화면에서 AI를 쓸 수 있어요</small>';
+  box.classList.toggle('ai-on', !ai22Off); box.classList.toggle('ai-off', ai22Off);
 }
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
