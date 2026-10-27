@@ -694,7 +694,7 @@ async function fxDelete(cls, key){
 </script>
 <script>/* 학생 관리·발표·자리·QR코드를 위 카드 안([반 변경] 왼쪽)으로 — 반 선택 화면에서는 원래 자리 */
 (function(){ const box = document.getElementById('tcBtns'), p2 = document.getElementById('page2'); if(!box || !p2) return;
-  const ids = ['smFabBtn','seatFabBtn','qrFabBtn'], home = {}; ids.forEach(id=>{ const el = document.getElementById(id); if(el) home[id] = { el, parent: el.parentNode, next: el.nextSibling }; });
+  const ids = ['seatFabBtn','smFabBtn','qrFabBtn'], home = {}; ids.forEach(id=>{ const el = document.getElementById(id); if(el) home[id] = { el, parent: el.parentNode, next: el.nextSibling }; });
   const place = ()=>{ const on = getComputedStyle(p2).display !== 'none'; ids.forEach(id=>{ const h = home[id]; if(!h) return;
       if(on && h.el.parentNode !== box) box.insertBefore(h.el, document.getElementById('editBtn'));
       if(!on && h.el.parentNode === box) h.parent.insertBefore(h.el, h.next); }); };
