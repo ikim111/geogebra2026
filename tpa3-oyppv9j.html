@@ -280,6 +280,11 @@
         <button class="pause" id="classStartBtn">▶ 수업 시작</button>
         <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
       </div>
+      <div class="row" style="margin-top:10px;display:block;" id="slotBox">
+        <div style="font-size:13px;font-weight:bold;color:#333;">⏰ 2부 교시 예약 <span id="slotNow" style="font-weight:normal;color:#555;"></span></div>
+        <div style="font-size:12px;color:#888;margin:2px 0 6px;">교시를 누르면 예약/취소돼요. 수업 시작 5분 전에 열리고 끝난 뒤 5분에 닫혀요. <b style="color:#00897b;">초록 테두리</b> = 이 반 수학 시간, <b style="color:#fff;background:#3949ab;padding:0 4px;border-radius:4px;">파란 칸</b> = 예약됨. 위의 수업 시작·종료 버튼을 누르면 다음 예약 시각 전까지는 그 버튼이 우선해요.</div>
+        <div id="slotGrid" style="font-size:13px;">반에 접속하면 보여요.</div>
+      </div>
       <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
         <div id="paceTrack" class="pace-track"></div>
@@ -827,7 +832,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
         paused = !!c.paused;
         updatePauseBtn();
         fbShow = !!c.fbShow; paintFbShowBtn();
-        classEnded = !!c.classEnded;
+        ctlCur = c; slotsCur = c.slots || {}; classEnded = effEnded2(c, Date.now()); paintSlots();
         updateClassButtons();
         if(c.minTaskId!=null || c.maxTaskId!=null){
           const mn = c.minTaskId!=null ? c.minTaskId : TASK_IDS[0];
@@ -943,6 +948,47 @@ function updateSurveyBtn(){
   btn.disabled = checkedKeys.size===0;
   btn.textContent = `📨 설문 제출 (${checkedKeys.size})`;
 }
+
+/* ⏰ 2026-10-27 2부 교시 예약: rooms/{반}__prob33/control/slots/{YYYYMMDD-교시} = {s, e}
+   교시 시작 5분 전에 열리고 끝난 5분 뒤에 닫힌다. 직접 누른 수업 시작·종료와 섞어 '이미 지난 것 중 가장 나중 것'이 지금 상태(같은 시각이면 열기가 이김 → 붙은 교시는 이어짐). (studentpa3·tpa3 같게) */
+const PERIODS = [[9,0],[9,55],[10,50],[11,45],[13,30],[14,25],[15,20]];   // 1~7교시 시작, 45분 수업
+function slotTimes(dayStr, p){ const [y,m,d] = [dayStr.slice(0,4),dayStr.slice(4,6),dayStr.slice(6,8)].map(Number); const [h,mi] = PERIODS[p-1]; const st = new Date(y,m-1,d,h,mi,0,0).getTime(); return { s: st - 5*60000, e: st + 50*60000 }; }
+function effEnded2(c, now){
+  c = c || {}; const ev = [];
+  if(c.classEndedTs) ev.push([+c.classEndedTs, 1]); if(c.classStartedTs) ev.push([+c.classStartedTs, 0]);
+  Object.values(c.slots || {}).forEach(x=>{ if(x && x.s && x.e){ ev.push([+x.s, 0], [+x.e, 1]); } });
+  const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0] || b[1]-a[1]);
+  return past.length ? !!past[past.length-1][1] : !!c.classEnded;
+}
+/* 반별 수학 시간표(2026-10-27 선생님 제공). [요일(1=월), 교시, 반] — 창체 제외. 다음 주부터 9~12반은 TT_NEXT 사용 */
+const TT_THIS = [[1,3,8],[1,5,5],[2,1,5],[2,2,8],[2,3,7],[2,4,6],[3,3,6],[3,6,7],[4,2,5],[4,3,7],[4,5,8],[4,7,6],[5,1,6],[5,3,5],[5,6,7],
+  [1,1,3],[1,3,2],[1,5,1],[2,1,3],[2,5,1],[2,7,4],[3,1,2],[3,4,3],[3,6,4],[4,1,4],[4,4,1],[4,6,2],[5,1,1],[5,2,2],[5,4,4],[5,5,3],
+  [1,1,12],[1,2,9],[2,2,12],[2,4,10],[2,5,11],[3,1,11],[3,2,10],[3,4,12],[3,6,9],[4,3,9],[4,4,11],[4,6,12],[4,7,10],[5,1,11],[5,3,9],[5,4,10]];
+const TT_NEXT = TT_THIS.filter(x=> !(x[2]>=9 && x[0]===1)).concat([[1,1,12],[1,6,9]]);
+let slotsCur = {}, ctlCur = {};
+const ymd = d => d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+function isMath(d, p, room){ const tt = (d.getTime() >= new Date(2026,10,2).getTime()) ? TT_NEXT : TT_THIS; return tt.some(x=> x[0]===d.getDay() && x[1]===p && x[2]===+room); }
+function paintSlots(){
+  const g = document.getElementById('slotGrid'); if(!g) return;
+  if(!controlRef){ g.textContent = '반에 접속하면 보여요.'; return; }
+  const now = Date.now(), days = []; const d0 = new Date(); d0.setHours(0,0,0,0);
+  for(let i=0; days.length<10 && i<16; i++){ const d = new Date(d0.getTime() + i*86400000); if(d.getDay()>=1 && d.getDay()<=5) days.push(d); }
+  const W = '일월화수목금토';
+  g.innerHTML = days.map(d=>{ const k = ymd(d);
+    return `<div style="display:flex;align-items:center;gap:4px;margin:3px 0;flex-wrap:wrap;"><span style="width:72px;font-weight:bold;">${d.getMonth()+1}/${d.getDate()}(${W[d.getDay()]})</span>` +
+      [1,2,3,4,5,6,7].map(p=>{ const id = k+'-'+p, on = !!slotsCur[id], m = isMath(d,p,currentRoomName), t = slotTimes(k,p), past = t.e < now;
+        return `<button type="button" data-slot="${id}" ${past?'disabled':''} title="${p}교시 ${new Date(t.s).toTimeString().slice(0,5)}~${new Date(t.e).toTimeString().slice(0,5)}" style="min-width:52px;padding:3px 6px;border-radius:6px;font-size:12px;cursor:${past?'default':'pointer'};opacity:${past?.4:1};border:2px solid ${m?'#00897b':'#ddd'};background:${on?'#3949ab':'#fff'};color:${on?'#fff':'#333'};">${p}교시${m?'<br><small>수학</small>':''}</button>`; }).join('') + '</div>'; }).join('');
+  const ended = effEnded2(ctlCur, now);
+  const fut = Object.values(slotsCur).flatMap(x=>[x.s,x.e]).filter(t=> t>now).sort((a,b)=>a-b)[0];
+  const inSlot = Object.values(slotsCur).some(x=> x.s<=now && now<x.e);
+  document.getElementById('slotNow').textContent = `— 지금 ${ended?'🔒 닫힘':'🟢 열림'}${(!ended && !inSlot)?' (예약 시간 밖인데 직접 열어 둔 상태예요 — 필요 없으면 [⏹ 수업 종료]를 눌러 주세요)':''}` + (fut ? ` · 다음 바뀌는 시각 ${new Date(fut).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}` : '');
+}
+document.getElementById('slotGrid').addEventListener('click', e=>{
+  const b = e.target.closest('[data-slot]'); if(!b || b.disabled || !controlRef) return;
+  const id = b.dataset.slot, [k,p] = id.split('-');
+  controlRef.child('slots/'+id).set(slotsCur[id] ? null : slotTimes(k, +p)).catch(err=> alert('저장하지 못했어요: '+(err.message||err)));
+});
+setInterval(()=>{ if(controlRef){ const e = effEnded2(ctlCur, Date.now()); if(e!==classEnded){ classEnded = e; updateClassButtons(); } paintSlots(); } }, 20000);
 function updateClassButtons(){
   const endBtn=document.getElementById('classEndBtn');
   const startBtn=document.getElementById('classStartBtn');
