@@ -144,7 +144,7 @@
   .gr-box{margin-top:12px;border:1px solid #b2dfdb;background:#f3fbfa;border-radius:8px;padding:10px 12px;}
   .gr-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#00695c;font-size:13.5px;}
   .gr-hd .note{font-weight:normal;font-size:12px;color:#777;}
-  button.gr-ai{background:#00897b;color:#fff;font-weight:bold;padding:6px 12px;font-size:12.5px;}
+  button.gr-ai{background:#6a1b9a;color:#fff;font-weight:bold;padding:6px 12px;font-size:12.5px;}
   button.gr-ai:disabled{background:#a7d3cd;cursor:not-allowed;}
   .gr-warn{font-size:12.5px;color:#e65100;margin-top:6px;}
   .gr-row{display:grid;grid-template-columns:110px 1fr auto;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid #dbeeeb;}
@@ -252,7 +252,7 @@
   .gr-acts{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;} #gradePanel button.mini{height:34px!important;min-height:34px!important;background:#fff!important;color:#444!important;border:1px solid #d5d8e0!important;}
   .legend{display:inline-flex;gap:10px;margin-left:auto;font-size:12px;color:#555;font-weight:normal;} .legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:3px;}
   #slotBox .op-hint{margin-left:10px;}
-  .pass-btn{background:#fff;color:#3949ab;border:2px solid #3949ab;height:38px;padding:0 16px;border-radius:8px;font-weight:bold;font-size:13.5px;cursor:pointer;} .pass-btn:hover{background:#e8eaf6;}
+  .pass-btn{background:#fff;color:#1565c0;border:2px solid #1565c0;height:38px;padding:0 16px;border-radius:8px;font-weight:bold;font-size:13.5px;cursor:pointer;} .pass-btn:hover{background:#e8eaf6;}
   .sb2{display:flex;flex-direction:column;gap:2px;} .sb2 .big{font-size:17px;} .sb2 .big small{font-size:13px;font-weight:normal;margin-left:4px;} .sb2 .nx{font-size:13px;font-weight:normal;color:#555;}
 </style>
 </head>
@@ -318,7 +318,7 @@
     <div class="panel">
       <div class="row">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">현재 반: <b id="currentRoomLabel">-</b></span>
-        <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
+        <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #bbdefb;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
         <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
         <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
         <span style="flex:1"></span>
@@ -338,7 +338,7 @@
         </div>
         <div class="op-sub">
           <details id="slotBox" style="font-size:13px;">
-        <summary class="op-sum"><b>⏰ 2부 교시 예약</b> <span id="slotNow"></span> <span class="legend"><span><i style="background:#3949ab"></i>예약됨</span><span><i style="border:2px solid #00897b;box-sizing:border-box"></i>이 반 수학 시간</span></span> <span class="op-hint">▼ 눌러서 예약하기</span></summary>
+        <summary class="op-sum"><b>⏰ 2부 교시 예약</b> <span id="slotNow"></span> <span class="legend"><span><i style="background:#1565c0"></i>예약됨</span><span><i style="border:2px solid #00897b;box-sizing:border-box"></i>이 반 수학 시간</span></span> <span class="op-hint">▼ 눌러서 예약하기</span></summary>
         <div style="font-size:13.5px;color:#444;line-height:1.65;margin:6px 0 8px;">교시를 누르면 예약/취소돼요. 수업 시작 5분 전에 열리고, 끝난 뒤 5분에 닫혀요.</div>
         <div id="slotGrid">반에 접속하면 보여요.</div>
       </details>
@@ -381,7 +381,7 @@
         <div class="gr-head"><b>📊 AI 채점</b><span><b id="grAi" class="big">0</b> / <span id="grTot">0</span>명 완료 · 교사 수정 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span></div>
         <div class="gr-acts">
           <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점</button>
-          <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
+          <button class="gr-ai" id="fbShowBtn" style="background:#1565c0;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
           <span style="flex:1"></span>
           <button class="mini" id="exportExcelBtn">📥 엑셀</button>
@@ -551,7 +551,7 @@ const SEC_KO = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
 function igOf(s){ const g=(s&&s.data&&s.data.integrity)||{}; return { paste:+g.paste||0, big: arrOf(g.big).filter(Boolean), away:+g.away||0, awayMs:+g.awayMs||0 }; }
 const igFlag = s => { const g=igOf(s); return g.paste>0 || g.big.length>0; };
 function spellHTML(s){ const sp = (s && s.spell) || {}; if(!+sp.total) return '';
-  return `<div style="background:#f5f6ff;border:1px solid #c5cae9;border-radius:8px;padding:5px 10px;margin:6px 0;font-size:13px;color:#283593;">🔤 맞춤법 확인 <b>${+sp.total}번</b> 사용${sp.lastTs?` · 마지막 ${fmtTime(sp.lastTs)} (고칠 곳 ${+sp.lastN||0}개 안내)`:''}</div>`; }
+  return `<div style="background:#f5f6ff;border:1px solid #bbdefb;border-radius:8px;padding:5px 10px;margin:6px 0;font-size:13px;color:#283593;">🔤 맞춤법 확인 <b>${+sp.total}번</b> 사용${sp.lastTs?` · 마지막 ${fmtTime(sp.lastTs)} (고칠 곳 ${+sp.lastN||0}개 안내)`:''}</div>`; }
 function igHTML(s){
   const g = igOf(s);
   if(!g.paste && !g.big.length && !g.away) return spellHTML(s);
@@ -974,7 +974,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
 
 /* 👀 2026-10-27: AI 1차 피드백(잘된 점·보완할 점·생각해 볼 질문, 점수 제외)을 학생 화면에 보여 줄지 — rooms/{반}__prob33/control/fbShow */
 let fbShow = false;
-function paintFbShowBtn(){ const b = document.getElementById('fbShowBtn'); if(!b) return; b.textContent = fbShow ? '🙈 학생에게서 피드백 숨기기' : '👀 학생에게 피드백 공개'; b.style.background = fbShow ? '#2e7d32' : '#3949ab'; }
+function paintFbShowBtn(){ const b = document.getElementById('fbShowBtn'); if(!b) return; b.textContent = fbShow ? '🙈 학생에게서 피드백 숨기기' : '👀 학생에게 피드백 공개'; b.style.background = fbShow ? '#2e7d32' : '#1565c0'; }
 document.getElementById('fbShowBtn').addEventListener('click', async ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
   if(fbShow){ controlRef.update({ fbShow:false }); return; }
@@ -1085,7 +1085,7 @@ function paintSlots(){
   g.innerHTML = days.map(d=>{ const k = ymd(d);
     return `<div style="display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap;"><span style="width:72px;font-weight:bold;">${d.getMonth()+1}/${d.getDate()}(${W[d.getDay()]})</span>` +
       [1,2,3,4,5,6,7].map(p=>{ const id = k+'-'+p, on = !!slotsCur[id], m = isMath(d,p,currentRoomName), t = slotTimes(k,p), past = t.e < now;
-        return `<button type="button" data-slot="${id}" ${past?'disabled':''} title="${p}교시 ${new Date(t.s).toTimeString().slice(0,5)}~${new Date(t.e).toTimeString().slice(0,5)}" style="min-width:66px;height:38px;padding:0 8px;border-radius:7px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:3px;cursor:${past?'default':'pointer'};opacity:${past?.4:1};border:2px solid ${m?'#00897b':'#ddd'};background:${on?'#3949ab':'#fff'};color:${on?'#fff':'#333'};">${p}교시${m?'<small style="font-size:10.5px;opacity:.85;">수학</small>':''}</button>`; }).join('') + '</div>'; }).join('');
+        return `<button type="button" data-slot="${id}" ${past?'disabled':''} title="${p}교시 ${new Date(t.s).toTimeString().slice(0,5)}~${new Date(t.e).toTimeString().slice(0,5)}" style="min-width:66px;height:38px;padding:0 8px;border-radius:7px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:3px;cursor:${past?'default':'pointer'};opacity:${past?.4:1};border:2px solid ${m?'#00897b':'#ddd'};background:${on?'#1565c0':'#fff'};color:${on?'#fff':'#333'};">${p}교시${m?'<small style="font-size:10.5px;opacity:.85;">수학</small>':''}</button>`; }).join('') + '</div>'; }).join('');
   const ended = effEnded2(ctlCur, now);
   const fut = Object.values(slotsCur).flatMap(x=>[x.s,x.e]).filter(t=> t>now).sort((a,b)=>a-b)[0];
   const inSlot = Object.values(slotsCur).some(x=> x.s<=now && now<x.e);

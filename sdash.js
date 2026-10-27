@@ -45,6 +45,16 @@
     .observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['data-why'] });
 
 
+
+  /* 🎨 색 역할 통일(2026-10-27): 남색=틀, 파랑=누르는 주요 버튼, 초록=완료·확인, 보라=AI, 주황=미완료·주의, 회색=못 누름 */
+  const roleCss = document.createElement('style'); roleCss.textContent = `
+    #stickyBar{background:#1a237e!important;border-bottom-color:#0d1450!important;}
+    #unitTitleBar{background:rgba(255,255,255,.12)!important;}
+    #stickyBar #prevBtn:not(:disabled){background:#fff!important;color:#1a237e!important;border-color:#fff!important;}
+    .concept-btn:not(:disabled){background:#1565c0!important;border-color:#1565c0!important;color:#fff!important;}
+    .share-btn:not(:disabled){background:#fff!important;color:#1565c0!important;border:2px solid #1565c0!important;}
+    .badge.pending{background:#fff3e0!important;color:#e65100!important;}`;
+  document.head.appendChild(roleCss);
   /* ✔ 확인하기 버튼: 초록색 + 오른쪽 정렬 (개념 확인·맞춤법 확인은 제외) */
   const ckCss = document.createElement('style'); ckCss.textContent = `button.sd-check:not(:disabled){background:#2e7d32!important;border-color:#2e7d32!important;color:#fff!important;}
     button.sd-check:not(:disabled):hover{background:#256b29!important;}`;

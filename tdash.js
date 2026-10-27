@@ -29,23 +29,23 @@
   .td-pace{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;border:1px solid #d5d8e0;border-radius:10px;padding:8px 12px;}
   .td-pace .td-pl{font-size:13.5px;font-weight:bold;white-space:nowrap;} .td-pace .td-ps{font-size:12.5px;color:#666;}
   .td-pace #paceTrack .pace-chip{width:38px;height:36px;border-radius:8px;font-size:14px;}
-  .td-pace #paceTrack .pace-chip.selected{background:#3949ab;border-color:#3949ab;}
+  .td-pace #paceTrack .pace-chip.selected{background:#1565c0;border-color:#1565c0;}
   .td-pace #paceClearBtn{margin-left:auto;background:#fff!important;color:#444!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:34px;padding:0 12px!important;font-size:13px!important;}
   .td-pace #paceBadge{margin:0!important;background:none!important;border:none!important;padding:0!important;color:#888!important;font-size:12.5px!important;}
-  #announceBtn{background:#3949ab!important;color:#fff!important;border:none!important;border-radius:8px!important;height:38px;padding:0 14px!important;font-size:13.5px!important;}
+  #announceBtn{background:#1565c0!important;color:#fff!important;border:none!important;border-radius:8px!important;height:38px;padding:0 14px!important;font-size:13.5px!important;}
   #announceClearBtn{background:#fff!important;color:#444!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:38px;padding:0 14px!important;font-size:13.5px!important;}
   .td-cards{gap:10px;margin-top:10px;flex-wrap:wrap;}
   .td-cards .sc{flex:1;min-width:140px;background:#fff;border:1px solid #d5d8e0;border-radius:12px;padding:8px 14px;}
   .td-cards .l{font-size:12px;color:#777;} .td-cards .v{font-size:32px;font-weight:bold;color:#1a237e;line-height:1.15;} .td-cards .v b{font-size:inherit!important;color:inherit!important;} .td-cards .v small{font-size:14px;color:#666;font-weight:normal;margin-left:3px;}
 
   #stagePanel{background:#fff!important;border:1px solid #d5d8e0!important;border-radius:10px!important;margin-top:8px!important;}
-  #conceptReveal{background:#fff!important;color:#3949ab!important;border:2px solid #3949ab!important;border-radius:8px!important;font-weight:bold;}
-  #conceptReveal.active{background:#3949ab!important;color:#fff!important;}
+  #conceptReveal{background:#fff!important;color:#1565c0!important;border:2px solid #1565c0!important;border-radius:8px!important;font-weight:bold;}
+  #conceptReveal.active{background:#1565c0!important;color:#fff!important;}
   #stageFree{background:#fff!important;color:#e65100!important;border:2px solid #fb8c00!important;border-radius:8px!important;font-weight:bold;}
   .stg-wait{margin-top:8px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;background:#f3f4f7;color:#999;}
   .stg-wait.now{background:#e8f5e9;color:#2e7d32;font-weight:bold;}
   #aggPanel{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #f9c74f!important;color:#333!important;}
-  #aggAnnounceBtn{background:#3949ab!important;color:#fff!important;border:none!important;border-radius:8px!important;}
+  #aggAnnounceBtn{background:#1565c0!important;color:#fff!important;border:none!important;border-radius:8px!important;}
   #aiReqBox{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #9575cd!important;}
 
   .td-pace .td-sched{margin-left:auto;background:#fff!important;color:#5e35b1!important;border:2px solid #9575cd!important;border-radius:8px!important;height:34px;padding:0 12px!important;font-size:13px!important;font-weight:bold;}
@@ -56,7 +56,7 @@
   .td-aioff{color:#c62828;border:2px solid #e57373;} .td-aioff.active{background:#c62828;color:#fff;border-color:#c62828;}
   #qScanBtn,#readyBtn{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:38px;padding:0 14px!important;}
   .td-plainset button.pause, .td-plainset button.send{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;}
-  .td-plainset button.active{background:#3949ab!important;color:#fff!important;border-color:#3949ab!important;}
+  .td-plainset button.active{background:#1565c0!important;color:#fff!important;border-color:#1565c0!important;}
   /* 누를 수 있는 버튼 / 못 누르는 버튼 구분 */
   #teacherAppScreen button:not(:disabled){box-shadow:0 1px 2px rgba(0,0,0,.08);}
   #teacherAppScreen button:not(:disabled):hover{filter:brightness(.96);}
@@ -89,7 +89,7 @@
     const h = row.parentElement && row.parentElement.querySelector('h2, h3, .title'); if(h && /반을 선택/.test(h.textContent)) h.textContent = '들어갈 반을 누르세요';
     const cs = $('connStatus'); if(cs && /시작하기/.test(cs.textContent)) cs.textContent = '';
     const st2 = document.createElement('style'); st2.textContent = `.td-rooms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 4px;}
-      .td-rooms button{height:46px;border-radius:10px;border:1px solid #c5cae9;background:#fff;color:#1a237e;font-size:16px;font-weight:bold;cursor:pointer;}
+      .td-rooms button{height:46px;border-radius:10px;border:1px solid #bbdefb;background:#fff;color:#1a237e;font-size:16px;font-weight:bold;cursor:pointer;}
       .td-rooms button:hover{background:#e8eaf6;} .td-rooms button.last{background:#1a237e;color:#fff;border-color:#1a237e;}
       @media (max-width:520px){ .td-rooms{grid-template-columns:repeat(4,minmax(0,1fr));} }`;
     document.head.appendChild(st2);
