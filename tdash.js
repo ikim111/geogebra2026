@@ -104,6 +104,10 @@
     const tools = topRow.querySelector('.tools');
     if(tools){ tools.classList.add('td-mgmt'); const bar = tools.querySelector('.bar'); if(bar) bar.remove(); tools.insertAdjacentHTML('afterbegin','<span class="td-lab">관리</span>'); }
   }
+  // 공지는 맨 위(반·관리 줄 바로 아래)
+  const annRow = $('announceInput') && $('announceInput').parentElement;
+  if(annRow && topRow){ topRow.after(annRow); annRow.style.marginTop = '10px'; }
+  if(custom){ const oc = document.querySelector('.op-card'); if(oc && annRow) annRow.after(oc); }
   if(custom || !start || !end) return;
 
   // 3) 수업 운영 카드: 상태 + 시작/종료 + 속도조절
@@ -114,7 +118,7 @@
   const btns = document.createElement('div'); btns.className = 'td-btns';
   btns.appendChild(start); btns.appendChild(end);
   row.appendChild(state); row.appendChild(btns); card.appendChild(row);
-  if(topRow) topRow.after(card); else oldRow.before(card); oldRow.style.display = 'none';
+  if(annRow && topRow) annRow.after(card); else if(topRow) topRow.after(card); else oldRow.before(card); oldRow.style.display = 'none';
   start.textContent = '▶ 수업 시작'; end.textContent = '⏹ 수업 종료';
   const paint = ()=>{
     const ended = end.classList.contains('active');
