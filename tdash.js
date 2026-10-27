@@ -55,6 +55,8 @@
   .td-aion{color:#2e7d32;border:2px solid #66bb6a;} .td-aion.active{background:#2e7d32;color:#fff;border-color:#2e7d32;}
   .td-aioff{color:#c62828;border:2px solid #e57373;} .td-aioff.active{background:#c62828;color:#fff;border-color:#c62828;}
   #qScanBtn,#readyBtn{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:38px;padding:0 14px!important;}
+  .td-plainset button.pause, .td-plainset button.send{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;}
+  .td-plainset button.active{background:#3949ab!important;color:#fff!important;border-color:#3949ab!important;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -127,7 +129,8 @@
   btns.appendChild(start); btns.appendChild(end);
   row.appendChild(state); row.appendChild(btns); card.appendChild(row);
   if(annRow && topRow) annRow.after(card); else if(topRow) topRow.after(card); else oldRow.before(card); oldRow.style.display = 'none';
-  start.textContent = '▶ 수업 시작'; end.textContent = '⏹ 수업 종료';
+  if(!/\(/.test(start.textContent)) start.textContent = '▶ 수업 시작';
+  if(!/\(/.test(end.textContent)) end.textContent = '⏹ 수업 종료';
   const paint = ()=>{
     const ended = end.classList.contains('active');
     state.className = 'td-state ' + (ended ? 'closed' : 'open');
@@ -162,10 +165,12 @@
     const isOff = ()=> aiT.classList.contains('off');
     on.onclick = ()=>{ if(isOff()) aiT.click(); }; off.onclick = ()=>{ if(!isOff()) aiT.click(); };
     const wrap = document.createElement('span'); wrap.style.cssText = 'display:inline-flex;gap:6px;margin-left:auto;'; wrap.appendChild(on); wrap.appendChild(off);
-    aiT.after(wrap); aiT.style.display = 'none';
+    aiT.after(wrap); aiT.style.display = 'none'; const ast = $('aiState'); if(ast) ast.style.display = 'none';
     const paintAi = ()=>{ on.classList.toggle('active', !isOff()); off.classList.toggle('active', isOff()); };
     new MutationObserver(paintAi).observe(aiT, { attributes:true, attributeFilter:['class'] }); paintAi();
   }
+  // 채점 화면(tpa1) 버튼들은 흰 버튼으로
+  { const g = $('aiGradeAllBtn'); const pnl = g && g.closest('.panel'); if(pnl) pnl.classList.add('td-plainset'); }
   // 수업 진행 도우미: 속도조절 바로 아래(운영 카드 안)로, 단계 카드 아래 자리 통일
   const sp = $('stagePanel');
   if(sp){
