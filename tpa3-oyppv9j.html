@@ -547,7 +547,7 @@ const A4N = ['자료1 활용','자료2 활용','분자·분모 선택','분수·
 function binChips(k, ai, sc){
   if(!ai) return '';
   let names = null, c = '';
-  if((k==='analysis' || k==='logic') && ai.rv!==3) return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(분자·분모 선택, 분수·소수 계산, 확률값 해석, 결론의 답)으로 채점해요.</small></div>`;
+  if((k==='analysis' || k==='logic') && ai.rv!==3 && !(typeof ai.achecks==='string' && ai.achecks.length===4)) return `<div class="gr-q"><small>예전 기준으로 채점된 결과예요. "다시 받기"를 누르면 새 기준(분자·분모 선택, 분수·소수 계산, 확률값 해석, 결론의 답)으로 채점해요.</small></div>`;
   if(k==='analysis' && typeof ai.achecks==='string' && ai.achecks.length===4){ names = A4N; c = ai.achecks; }
   if(k==='logic' && typeof ai.lchecks==='string' && ai.lchecks){ names = L5S; c = ai.lchecks; }
   if(!names) return '';
@@ -620,7 +620,7 @@ async function requestGrade(key){
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
     const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
-      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '' };
+      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0 };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
     return true;
@@ -631,7 +631,7 @@ async function requestGrade(key){
   }
 }
 /* ✅ 2026-10-27 교사가 채점 체크리스트(○✕)를 직접 고친다: students/{key}/teacherChecks/{항목} = 'OOX'… → 점수도 그 개수로 teacherGrade에 */
-function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return ''; if((k==='analysis'||k==='logic') && ai.rv!==3) return ''; return c; }
+function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return ''; return c; }
 function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; return (typeof t==='string' && t.length===CHECK_LABELS[k].length) ? t : aiChecksOf(s, k); }
 function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
 function ckEditHTML(key, s, it){
@@ -1110,7 +1110,8 @@ function printPageHTML(st, roomName){
     ${ai.first?`<div class="first"><b>가장 먼저 고치면 좋은 점</b>${esc(ai.first)}</div>`:''}
   </section>`;
 }
-const PRINT_CSS = `@page{size:A4;margin:11mm 12mm;}
+const PRINT_CSS = `@page{size:A4;margin:0;}
+  .pg{padding:10mm 12mm;width:210mm;}
   *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.6;color:#1a1a1a;margin:0;word-break:keep-all;}
   .pg{page-break-after:always;} .pg:last-child{page-break-after:auto;}
   header{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #1a237e;padding-bottom:5px;margin-bottom:8px;}
@@ -1135,7 +1136,9 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   keys.sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999));
   const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요. 이 사이트의 팝업을 허용해 주세요.'); return; }
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>${PRINT_CSS}  @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
-</style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
+</style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>/* 한 장에 안 들어가면 글자를 줄여 A4 한 장에 맞춘다(최소 70%) */
+  document.querySelectorAll('.pg').forEach(pg=>{ const max = 297*96/25.4 - 6, h = pg.scrollHeight; if(h > max) pg.style.zoom = Math.max(0.7, max/h).toFixed(3); });
+  setTimeout(()=>print(),400)<\/script></body></html>`);
   w.document.close();
 });
 function updateClassButtons(){
