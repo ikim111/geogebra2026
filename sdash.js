@@ -30,4 +30,15 @@
   const later = recs=>{ recs.forEach(r=> r.addedNodes.forEach(n=>{ if(n.nodeType === 1) pend.add(n); else if(n.parentElement) pend.add(n.parentElement); }));
     clearTimeout(t); t = setTimeout(()=>{ const list = [...pend]; pend.clear(); list.forEach(n=>{ if(n.isConnected){ fix(n); if(!n.dataset.sdFs) fix(n.parentElement || n); } }); }, 400); };
   if(document.body){ fix(); new MutationObserver(later).observe(document.body, { childList:true, subtree:true }); }
+
+  /* 못 누르는 이유: 버튼에 data-why="…"가 있으면, 못 누를 때만 버튼 바로 아래에 이유를 보여 준다 */
+  const whyCss = document.createElement('style'); whyCss.textContent = `.sd-why{display:block;margin-top:6px;font-size:13.5px;color:#e65100;font-weight:bold;} .sd-why::before{content:'👉 ';}
+    #progressText{font-size:15px!important;font-weight:bold!important;color:#fff!important;}`;
+  document.head.appendChild(whyCss);
+  const paintWhy = b=>{ let w = b.nextElementSibling && b.nextElementSibling.classList && b.nextElementSibling.classList.contains('sd-why') ? b.nextElementSibling : null;
+    if(b.disabled && b.dataset.why){ if(!w){ w = document.createElement('span'); w.className = 'sd-why'; b.after(w); } w.textContent = b.dataset.why; w.style.display = ''; }
+    else if(w) w.style.display = 'none'; };
+  const watchWhy = ()=> document.querySelectorAll('button[data-why]').forEach(b=>{ if(b.dataset.sdWhy) return; b.dataset.sdWhy = '1'; paintWhy(b);
+    new MutationObserver(()=> paintWhy(b)).observe(b, { attributes:true, attributeFilter:['disabled','data-why'] }); });
+  watchWhy(); new MutationObserver(()=> watchWhy()).observe(document.body, { childList:true, subtree:true });
 })();
