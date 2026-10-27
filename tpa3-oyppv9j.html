@@ -197,6 +197,13 @@
   .ai-agg button.ai-toggle.off{background:#9e9e9e;}
   .ai-agg .st{font-size:12.5px;}
   .ck-edit span{cursor:pointer;user-select:none;} .ck-edit span:hover{filter:brightness(.93);} .ck-edit span.tc{outline:2px solid #ff9800;outline-offset:1px;}
+  .gr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px;}
+  .gr-card{border:1px solid #d5d8e8;border-radius:10px;padding:8px 10px;background:#fff;margin:0;}
+  .gr-card .gr-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .gr-card .nm{font-weight:bold;font-size:14px;color:#1a237e;} .gr-card .nm small{margin-left:8px;font-weight:normal;color:#666;font-size:12px;} .gr-card .nm .pt{font-size:17px;color:#1a237e;}
+  .gr-card .gr-chips{margin-left:auto;} .gr-card .why{font-size:12px;color:#666;margin:4px 0;}
+  .ck-edit{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:4px 0;} .ck-edit span{font-size:13px;}
+  .gr-card .gr-fb{border-top:1px dashed #ccc;margin-top:6px;padding-top:5px;background:none;}
+  @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -575,7 +582,8 @@ function gradeBoxHTML(key, s){
   if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
   if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
-  g.items.forEach(it=>{
+  h += '<div class="gr-grid">';
+  g.items.forEach((it, ii)=>{
     let chips = '';
     for(let v=0; v<=it.max; v++){
       const on = it.final===v, aiMark = it.ai===v;
@@ -592,8 +600,9 @@ function gradeBoxHTML(key, s){
     const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
-    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${ckEditHTML(key, s, it) || (qch+dch+binChips(it.k, g.ai, it.ai))}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
+    h += `<div class="gr-item gr-card"><div class="gr-row"><span class="nm">${ii+1}. ${it.name}<small>${it.final!=null?`<b class="pt">${it.final}</b>`:'-'} / ${it.max}점</small></span><span class="gr-chips">${chips}</span></div><div class="why">${why}</div>${ckEditHTML(key, s, it) || (qch+dch+binChips(it.k, g.ai, it.ai))}${fbh?`<div class="gr-fb">${fbh}</div>`:''}</div>`;
   });
+  h += '</div>';
   if(g.ai && (g.ai.first || g.ai.status)){
     const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
     h += `<div class="gr-sum">${g.ai.first?`<div class="fb-sec first"><div class="fb-hd"><span>가장 먼저 고치면 좋은 점</span></div><p>${esc(g.ai.first)}</p></div>`:''}`
@@ -1125,7 +1134,8 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   if(!keys.length){ alert('인쇄할 보고서가 없어요.'); return; }
   keys.sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999));
   const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요. 이 사이트의 팝업을 허용해 주세요.'); return; }
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>${PRINT_CSS}</style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>${PRINT_CSS}  @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
+</style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
   w.document.close();
 });
 function updateClassButtons(){
