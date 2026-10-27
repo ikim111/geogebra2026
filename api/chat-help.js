@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
   if (require('./_guard').blockForeign(req, res)) return;
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST 요청만 지원합니다.' }); return; }
   const b = bodyOf(req);
-  const message = S(b.message, 500);
+  const message = S(b.message, 2000);
   if (!message) { res.status(400).json({ error: '질문이 비어 있습니다.' }); return; }
   // 📷 사진 첨부(2026-10-23): 학생 화면이 Vercel Blob에 올린 사진 주소만 받는다
   const image = (typeof b.image === 'string' && /^https:\/\/[\w.-]+\.public\.blob\.vercel-storage\.com\//.test(b.image)) ? b.image.slice(0, 500) : '';
@@ -92,7 +92,7 @@ flag는 학생의 "이번 질문"만 보고 하나를 고른다(애매하면 non
 - none: 위에 해당하지 않음`;
   const history = (Array.isArray(b.history) ? b.history : []).slice(-10)
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && m.content)
-    .map(m => ({ role: m.role, content: S(m.content, 800) }));
+    .map(m => ({ role: m.role, content: S(m.content, 2000) }));
   const FLAGS = ['none', 'ghost', 'offtopic', 'abuse', 'jailbreak', 'spam'];
   const responseFormat = { type: 'json_schema', json_schema: { name: 'chat_reply', strict: true, schema: {
     type: 'object', additionalProperties: false, required: ['reply', 'flag', 'why'],
