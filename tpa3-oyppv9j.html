@@ -213,7 +213,7 @@
   .more-pop{position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:#fff;border:1px solid #ccc;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.15);padding:8px;display:flex;flex-direction:column;gap:6px;min-width:190px;}
   .more-pop button{width:100%;text-align:left;} .danger-zone{border-top:1px dashed #ef9a9a;padding-top:6px;display:flex;flex-direction:column;gap:6px;} .danger-zone small{color:#c62828;font-size:11.5px;}
   .stat-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;} .stat-row .agg{margin-top:4px;}
-  button.gr-ai.done:disabled{background:#e8f5e9;color:#2e7d32;cursor:default;}
+  button.gr-ai.done:disabled{background:#e8f5e9!important;color:#2e7d32!important;cursor:default;opacity:1;}
   .tools{display:flex;gap:4px;align-items:center;flex-wrap:wrap;} .tools .bar{width:1px;height:18px;background:#ddd;margin:0 4px;}
   button.mini{padding:5px 9px;font-size:12px;border-radius:6px;background:#fff;border:1px solid #ddd;color:#555;cursor:pointer;} button.mini:disabled{opacity:.45;cursor:default;} button.mini.danger{color:#c62828;border-color:#f3c0c0;}
   .op-card{margin-top:10px;border:1px solid #e0e3f0;border-radius:12px;padding:10px;background:#fafbff;}
@@ -237,6 +237,9 @@
   .state-banner{font-size:15px!important;}
   #gradePanel button{height:38px;padding:0 14px!important;display:inline-flex;align-items:center;gap:4px;border-radius:8px;box-sizing:border-box;}
   .op-btns button, .row > button, .row > .unitListLink{min-height:38px;box-sizing:border-box;}
+  #gradePanel button, #ai22Panel button{height:38px!important;min-height:38px!important;max-height:38px;padding:0 14px!important;display:inline-flex!important;align-items:center;gap:4px;border-radius:8px;box-sizing:border-box;line-height:1!important;}
+  .ai-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-weight:bold;font-size:14px;}
+  .ai-pill.on{background:#2e7d32;color:#fff;} .ai-pill.off{background:#c62828;color:#fff;} .ai-pill small{font-weight:normal;font-size:12px;opacity:.9;}
 </style>
 </head>
 <body>
@@ -359,8 +362,8 @@
       </div>
       <div class="ai-agg" id="ai22Panel" style="display:none;">
         <span>🤖 <b>1부 학생 AI</b></span>
-        <button class="ai-toggle" id="ai22ToggleBtn">🤖 1부 학생 AI 끄기</button>
         <span class="st" id="ai22State"></span>
+        <button class="ai-toggle" id="ai22ToggleBtn" style="margin-left:auto;">🤖 1부 학생 AI 끄기</button>
       </div>
       <div class="agg" id="gradePanel" style="display:none;">
         <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
@@ -805,7 +808,8 @@ function renderAi22(){
   const btn = document.getElementById('ai22ToggleBtn');
   btn.textContent = ai22Off ? '🤖 1부 학생 AI 켜기' : '🤖 1부 학생 AI 끄기';
   btn.classList.toggle('off', ai22Off);
-  document.getElementById('ai22State').textContent = ai22Off ? '🔒 꺼져 있어요. (mgmt에서 25번을 열면 자동으로 꺼져요)' : '🟢 켜져 있어요 — 학생이 1부 화면에서 AI를 쓸 수 있어요.';
+  const st = document.getElementById('ai22State'); st.className = 'st ai-pill ' + (ai22Off ? 'off' : 'on');
+  st.innerHTML = ai22Off ? '● 꺼짐 <small>학생이 1부 AI를 쓸 수 없어요</small>' : '● 켜짐 <small>학생이 1부 화면에서 AI를 쓸 수 있어요</small>';
 }
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
