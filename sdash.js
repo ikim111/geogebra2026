@@ -44,6 +44,19 @@
   new MutationObserver(recs=>{ let need = false; recs.forEach(r=>{ if(r.type === 'attributes' && r.target.dataset && !r.target.dataset.sdWhy) need = true; else if(r.type === 'childList' && r.addedNodes.length) need = true; }); if(need) watchWhy(); })
     .observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['data-why'] });
 
+
+  /* ✔ 확인하기 버튼: 초록색 + 오른쪽 정렬 (개념 확인·맞춤법 확인은 제외) */
+  const ckCss = document.createElement('style'); ckCss.textContent = `button.sd-check:not(:disabled){background:#2e7d32!important;border-color:#2e7d32!important;color:#fff!important;}
+    button.sd-check:not(:disabled):hover{background:#256b29!important;}`;
+  document.head.appendChild(ckCss);
+  const CK = /^\s*(✔\s*)?(확인|확인하기|닮음 확인)\s*$/;
+  const markCheck = root=> (root.querySelectorAll ? root.querySelectorAll('button:not(.sd-check)') : []).forEach(b=>{
+    if(!CK.test(b.textContent)) return; b.classList.add('sd-check');
+    const p = b.parentElement; if(!p || p.dataset.sdRight) return; p.dataset.sdRight = '1';
+    const d = getComputedStyle(p).display; if(d.includes('flex')) p.style.justifyContent = 'flex-end'; else p.style.textAlign = 'right'; });
+  markCheck(document);
+  new MutationObserver(recs=> recs.forEach(r=> r.addedNodes.forEach(n=>{ if(n.nodeType === 1){ markCheck(n.parentElement || n); } })))
+    .observe(document.body, { childList:true, subtree:true });
   /* 👀 교사용 미리보기(?preview=1)에서는 막힌 버튼을 모두 풀어서 선생님이 어느 단계든 눌러 볼 수 있게 한다(기록은 저장되지 않음) */
   if(/[?&]preview=1/.test(location.search)){
     const un = root=> (root.querySelectorAll ? root.querySelectorAll('button[disabled], input[disabled], textarea[disabled], select[disabled]') : []).forEach(el=>{ el.disabled = false; });
