@@ -44,13 +44,33 @@
   const h1 = document.querySelector('header h1');
   if(h1 && !$('hdrRoom')){
     h1.textContent = h1.textContent.replace(/교사용 실시간 대시보드\s*[—-]\s*/, '');
-    const sub = document.createElement('span'); sub.style.cssText = 'font-weight:normal;opacity:.85;font-size:.8em;margin-left:6px;'; h1.appendChild(sub);
+    const sub = document.createElement('span'); sub.className = 'td-sub'; sub.style.cssText = 'font-weight:normal;opacity:.85;font-size:.8em;margin-left:6px;'; h1.appendChild(sub);
     const p = document.querySelector('header p'); if(p) p.style.display = 'none';
     const lab = $('currentRoomLabel');
     const sync = ()=>{ const t = (lab && lab.textContent || '').trim(); sub.textContent = (t && t !== '-') ? '· ' + t : ''; };
     if(lab){ new MutationObserver(sync).observe(lab, { childList:true, characterData:true, subtree:true }); sync(); }
   }
 
+
+  // 0) 반 선택: 드롭다운 + [시작하기] → 반 버튼 한 번에 바로 들어가기
+  (function build(tries){
+    const sel = $('roomCode'), go = $('connectBtn'); if(!sel || !go) return;
+    const opts = [...sel.options].filter(o=> o.value); if(!opts.length){ if((tries||0) < 40) setTimeout(()=> build((tries||0)+1), 150); return; }
+    let last = ''; try{ last = localStorage.getItem('td_lastRoom') || ''; }catch(e){}
+    const grid = document.createElement('div'); grid.className = 'td-rooms';
+    opts.forEach(o=>{ const b = document.createElement('button'); b.type = 'button'; b.textContent = o.textContent; if(o.value === last) b.classList.add('last');
+      b.onclick = ()=>{ grid.querySelectorAll('button').forEach(x=> x.classList.toggle('last', x===b)); sel.value = o.value; try{ localStorage.setItem('td_lastRoom', o.value); }catch(e){} go.click(); }; grid.appendChild(b); });
+    const row = sel.parentElement; row.style.display = 'none'; row.after(grid);
+    const h = row.parentElement && row.parentElement.querySelector('h2, h3, .title'); if(h && /반을 선택/.test(h.textContent)) h.textContent = '들어갈 반을 누르세요';
+    const cs = $('connStatus'); if(cs && /시작하기/.test(cs.textContent)) cs.textContent = '';
+    const st2 = document.createElement('style'); st2.textContent = `.td-rooms{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:6px 0 4px;}
+      .td-rooms button{height:46px;border-radius:10px;border:1px solid #c5cae9;background:#fff;color:#1a237e;font-size:16px;font-weight:bold;cursor:pointer;}
+      .td-rooms button:hover{background:#e8eaf6;} .td-rooms button.last{background:#1a237e;color:#fff;border-color:#1a237e;}
+      @media (max-width:520px){ .td-rooms{grid-template-columns:repeat(4,minmax(0,1fr));} }`;
+    document.head.appendChild(st2);
+  })(0);
+  // 반 변경을 누르면 제목에 남은 반 이름 지우기
+  { const cb = $('changeRoomBtn'); if(cb) cb.addEventListener('click', ()=> setTimeout(()=>{ const app = $('teacherAppScreen'); if(app && getComputedStyle(app).display === 'none'){ const hr = $('hdrRoom'); if(hr) hr.textContent = ''; const s1 = document.querySelector('header h1 .td-sub'); if(s1) s1.textContent = ''; } }, 300)); }
   const start = $('classStartBtn'), end = $('classEndBtn');
   const topRow = $('changeRoomBtn') && $('changeRoomBtn').parentElement;
   const custom = !!document.querySelector('.op-card');   // 2부(tpa3)처럼 이미 운영 카드가 있는 화면은 윗줄·공지만 맞춘다
