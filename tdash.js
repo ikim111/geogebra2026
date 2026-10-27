@@ -37,6 +37,16 @@
   .td-cards{gap:10px;margin-top:10px;flex-wrap:wrap;}
   .td-cards .sc{flex:1;min-width:140px;background:#fff;border:1px solid #d5d8e0;border-radius:12px;padding:8px 14px;}
   .td-cards .l{font-size:12px;color:#777;} .td-cards .v{font-size:32px;font-weight:bold;color:#1a237e;line-height:1.15;} .td-cards .v b{font-size:inherit!important;color:inherit!important;} .td-cards .v small{font-size:14px;color:#666;font-weight:normal;margin-left:3px;}
+
+  #stagePanel{background:#fff!important;border:1px solid #d5d8e0!important;border-radius:10px!important;margin-top:8px!important;}
+  #conceptReveal{background:#fff!important;color:#3949ab!important;border:2px solid #3949ab!important;border-radius:8px!important;font-weight:bold;}
+  #conceptReveal.active{background:#3949ab!important;color:#fff!important;}
+  #stageFree{background:#fff!important;color:#e65100!important;border:2px solid #fb8c00!important;border-radius:8px!important;font-weight:bold;}
+  .stg-wait{margin-top:8px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;background:#f3f4f7;color:#999;}
+  .stg-wait.now{background:#e8f5e9;color:#2e7d32;font-weight:bold;}
+  #aggPanel{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #f9c74f!important;color:#333!important;}
+  #aggAnnounceBtn{background:#3949ab!important;color:#fff!important;border:none!important;border-radius:8px!important;}
+  #aiReqBox{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #9575cd!important;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -123,6 +133,19 @@
     pace.appendChild(track); if(badge) pace.appendChild(badge); if(clear) pace.appendChild(clear);
     card.appendChild(pace); paceRow.style.display = 'none';
   }
+  // 수업 진행 도우미: 속도조절 바로 아래(운영 카드 안)로, 단계 카드 아래 자리 통일
+  const sp = $('stagePanel');
+  if(sp){
+    card.appendChild(sp);
+    const list = $('stageList');
+    const fix = ()=>{ if(!list) return; list.querySelectorAll('.stg').forEach(box=>{
+        const btn = box.querySelector('.stg-go');
+        if(btn){ if(/수업 시작/.test(btn.textContent)) btn.textContent = '▶ 1단계 시작'; return; }
+        if(box.querySelector('.stg-wait')) return;
+        const w = document.createElement('div'); const now = box.classList.contains('now');
+        w.className = 'stg-wait' + (now ? ' now' : ''); w.textContent = now ? '● 지금 진행 중' : '다음 단계 대기'; box.appendChild(w); }); };
+    if(list){ new MutationObserver(fix).observe(list, { childList:true }); fix(); }
+  }
 
   // 4) 현황 숫자 카드: "학생 수: <b>26</b>" → 카드
   const sum = $('summary');
@@ -131,7 +154,7 @@
     [...sum.children].forEach(d=>{
       const b = d.querySelector('b'); if(!b) return;
       const label = d.textContent.replace(b.textContent, '').replace(/[:：]\s*$/, '').replace(/[:：]/, '').trim()
-        .replace(/^학생 수$/, '접속 학생');
+        .replace(/^학생 수$/, '접속 학생').replace(/^.*완료.*$/, '완료 학생');
       const unit = /진행률|%/.test(label) ? '' : '명';
       d.className = 'sc'; d.innerHTML = '';
       const l = document.createElement('div'); l.className = 'l'; l.textContent = label;
