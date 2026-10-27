@@ -62,6 +62,10 @@
   #teacherAppScreen button:not(:disabled):hover{filter:brightness(.96);}
   #teacherAppScreen button:disabled{background:#f1f2f4!important;color:#aaa!important;border:1px dashed #d5d8dd!important;box-shadow:none!important;cursor:not-allowed!important;opacity:1!important;}
   .td-mgmt button:disabled{border-style:dashed!important;}
+  /* 상자 종류별 왼쪽 줄: 수업 진행(파랑) · AI(보라) · 학급 합계(금색) */
+  .td-pace, #stagePanel{border-left:5px solid #1565c0!important;}
+  #aiReqBox, #ai22Panel, #aiAgg, #gradePanel{border-left:5px solid #7b1fa2!important;}
+  #aggPanel{border-left:5px solid #f9a825!important;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 

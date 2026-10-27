@@ -95,6 +95,7 @@
   .task-link.locked.lockok .lockwhy{display:block;}
   .task-link[data-n="0"]{padding-top:9px;padding-bottom:9px;background:#e8eaf6;}
   .task-link .extbadge{display:inline-block;margin-left:8px;font-size:12px;font-weight:normal;color:#5c6bc0;background:#eef0fa;border:1px solid #bbdefb;border-radius:10px;padding:1px 8px;vertical-align:middle;}
+  .type-legend{background:#fff;border-radius:10px;padding:8px 14px;margin:0 0 12px;font-size:13px;display:flex;gap:14px;flex-wrap:wrap;} .type-legend b{display:inline-block;width:5px;height:14px;vertical-align:-2px;margin-right:5px;}
 </style>
 </head>
 <body>
@@ -136,6 +137,7 @@
         <div id="fixMsg"></div>
       </div>
     </div>
+    <div class="type-legend"><span><b style="background:#1565c0"></b>💡 생각열기</span><span><b style="background:#00897b"></b>🔍 탐구하기</span><span><b style="background:#d81b60"></b>💬 의사소통</span><span><b style="background:#f9a825"></b>📝 수행평가</span></div>
     <div class="task-list" id="taskList"></div>
   </div>
 </div>
@@ -278,10 +280,15 @@ function saveProfile(p){
   try{ localStorage.setItem(PROFILE_KEY, JSON.stringify({...p, ts:Date.now()})); }catch(e){}
 }
 
+/* 🏷 활동 종류 색(2026-10-27 선생님 분류): 활동 칸 왼쪽 줄 — sdash.js의 활동 화면 색과 같게 */
+const TYPE_COLOR = { think:'#1565c0', explore:'#00897b', talk:'#d81b60', pa:'#f9a825' };
+const TYPE_BY_N = {1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',
+  2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa',8:'pa',24:'pa',25:'pa'};
 function buildTaskLink(t, profile, opts){
   const a=document.createElement('a');
   a.className='task-link';
   a.dataset.n = t.n;
+  if(TYPE_BY_N[t.n]) a.style.borderLeft = '6px solid ' + TYPE_COLOR[TYPE_BY_N[t.n]];
   const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
   const why=document.createElement('small'); why.className='lockwhy'; why.textContent = t.n===25 ? '🔒 수업 시간(시작 5분 전)에 열려요' : '🔒 선생님이 열어 주면 들어갈 수 있어요'; title.appendChild(why);

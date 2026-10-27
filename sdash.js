@@ -55,6 +55,24 @@
     .share-btn:not(:disabled){background:#fff!important;color:#1565c0!important;border:2px solid #1565c0!important;}
     .badge.pending{background:#fff3e0!important;color:#e65100!important;}`;
   document.head.appendChild(roleCss);
+
+  /* 🏷 활동 종류(2026-10-27 선생님 분류): 제목줄 배지 + 카드 위 띠 + 문제 제목·활동 태그 색. 버튼 색 규칙은 건드리지 않는다 */
+  const TYPES = { think:['💡 생각열기','#1565c0','#e3f0fc'], explore:['🔍 탐구하기','#00897b','#e0f2f1'], talk:['💬 의사소통','#d81b60','#fce4ec'], pa:['📝 수행평가','#f9a825','#fff8e1'] };
+  const TYPE_OF = { student1:'think', student5:'think', student11:'think', student13:'think', student15:'think', student21:'think', student31:'think', student32:'think', student34:'think', student35:'think', student36:'think',
+    student2:'explore', student3:'explore', student4:'explore', student16:'explore', student17:'explore',
+    student0:'talk', student6:'talk', student12:'talk', student14:'talk', student22:'talk', student23:'talk', student39:'talk', student40:'talk',
+    student7:'pa', studentpa1:'pa', studentpa2:'pa', studentpa3:'pa' };
+  const pg = (location.pathname.match(/(student[a-z]*\d+)\.html$/) || [])[1], ty = TYPES[TYPE_OF[pg]];
+  if(ty){
+    const [lab, c, soft] = ty, txt = c === '#f9a825' ? '#9a6700' : c;
+    const tc = document.createElement('style'); tc.textContent = `.card{border-top:5px solid ${c}!important;} .card h2{color:${txt}!important;} .act-tag{background:${c}!important;color:#fff!important;}
+      .sd-type{display:inline-block;background:${c};color:#fff;border-radius:10px;padding:1px 9px;margin-right:8px;font-size:12.5px;vertical-align:middle;}`;
+    document.head.appendChild(tc);
+    // 예전 단원(1~17번 등)은 .card가 없어 과제 머리(.task-head)를 감싼 상자에 띠를 단다
+    const band = ()=> document.querySelectorAll('.task-head').forEach(h=>{ const box = h.closest('.card') || h.parentElement; if(box && !box.dataset.sdBand){ box.dataset.sdBand = '1'; box.style.borderTop = '5px solid ' + c; box.style.borderTopLeftRadius = box.style.borderTopLeftRadius || ''; } });
+    band(); new MutationObserver(band).observe(document.body, { childList:true, subtree:true });
+    const tb = document.getElementById('unitTitleBar'); if(tb && !tb.querySelector('.sd-type')){ const b = document.createElement('span'); b.className = 'sd-type'; b.textContent = lab; tb.prepend(b); }
+  }
   /* ✔ 확인하기 버튼: 초록색 + 오른쪽 정렬 (개념 확인·맞춤법 확인은 제외) */
   const ckCss = document.createElement('style'); ckCss.textContent = `button.sd-check:not(:disabled){background:#2e7d32!important;border-color:#2e7d32!important;color:#fff!important;}
     button.sd-check:not(:disabled):hover{background:#256b29!important;}`;
