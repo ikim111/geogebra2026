@@ -1172,7 +1172,7 @@ function paintAll(){
    - 모든 AI 사용은 students/{key}/aiLog 에 남는다({type:'feedback'|'chat', ts, ...}) → teacherpa2.html에서 기록 확인.
    - 선생님이 끄면(control/aiOff) 버튼이 잠긴다. 하루 횟수: step별 피드백 5번, 챗봇 30번(오늘 날짜 기준).
    - 피드백: /api/step-feedback, 챗봇: /api/chat-help (둘 다 답을 대신 써 주지 않도록 서버 프롬프트에서 막음). */
-const AI_FB_MAX = 10, AI_CHAT_MAX = 50;   // 2026-10-27: 5·30 → 10·50 (기회 요청 줄이기)
+const AI_FB_MAX = 5, AI_CHAT_MAX = 30;
 /* 선생님이 teacherpa2에서 준 추가 기회(오늘만): students/{key}/aiBonus = {day:'YYYY-M-D', fb:n(step마다), chat:n} */
 let AI_BONUS = { day:'', fb:0, chat:0, ts:0 };
 /* 🙋 기회 다 쓰면 선생님께 요청(2026-10-23): students/{key}/aiReq = {day, kind:'chat'|'fb', step, ts}. 선생님이 추가 기회(aiBonus.ts)를 주면 요청이 풀린다 */

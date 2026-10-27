@@ -720,7 +720,7 @@ function renderAiReq(){
   box.innerHTML = rq.map(({k,s})=>{ const r = s.aiReq, what = r.kind==='chat' ? '💬 AI 도우미' : `🤖 AI 피드백${r.step?` (step${r.step})`:''}`;
     return `<div class="rq"><b>${esc(displayName(k,s.name,s.number))}</b> <span>${what} · ${esc(acTime(r.ts))}</span> `
       + (r.kind==='chat' ? `<button type="button" data-reqgrant="${esc(k)}" data-kind="chat" data-n="5">챗봇 +5</button><button type="button" data-reqgrant="${esc(k)}" data-kind="chat" data-n="10">챗봇 +10</button>`
-                         : `<button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="1">피드백 +1</button><button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="3">피드백 +3</button>`)
+                         : `<button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="3">피드백 +3</button><button type="button" data-reqgrant="${esc(k)}" data-kind="fb" data-n="5">피드백 +5</button>`)
       + `<button type="button" data-acsel="${esc(k)}">대화 보기</button><button type="button" class="rs" data-reqno="${esc(k)}">거절</button></div>`; }).join('');
 }
 document.addEventListener('click', async e=>{
@@ -765,7 +765,7 @@ function renderAiChatTab(){
   let h = `<div style="font-weight:bold;color:#311b92;">${esc(displayName(acSel,s.name,s.number))} <span style="font-weight:normal;color:#888;font-size:12.5px;">· ${acRange==='today'?'오늘':'전체'} 기록 ${es.length}개</span></div>
     <div class="ac-bonus">오늘 사용: 챗봇 <b>${usedChat}/${30+(+bo.chat||0)}</b> · 피드백(step별) <b>${usedFb.join('·')}</b> / ${5+(+bo.fb||0)}번
       <span class="sp"></span>➕ 오늘만 추가:
-      <button type="button" data-bonus="fb" data-n="1">피드백 +1</button><button type="button" data-bonus="fb" data-n="3">피드백 +3</button>
+      <button type="button" data-bonus="fb" data-n="3">피드백 +3</button><button type="button" data-bonus="fb" data-n="5">피드백 +5</button>
       <button type="button" data-bonus="chat" data-n="5">챗봇 +5</button><button type="button" data-bonus="chat" data-n="10">챗봇 +10</button>
       ${(+bo.fb||+bo.chat)?`<button type="button" data-bonus="reset" class="rs">추가 취소</button>`:''}</div>`, lastDay = '';
   es.forEach(l=>{
