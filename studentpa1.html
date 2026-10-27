@@ -124,6 +124,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>/* 🔌 2026-10-27: Firebase 무료 요금제는 동시 접속이 100개까지라, 안 보는 탭은 1분 뒤 연결을 쉬고 다시 보면 바로 잇는다(쓴 내용은 다시 연결될 때 저장됨) */
+(function(){ let t = null; const db = () => (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null;
+  document.addEventListener('visibilitychange', ()=>{ clearTimeout(t);
+    if(document.visibilityState === 'hidden'){ t = setTimeout(()=>{ const d = db(); if(d) d.goOffline(); }, 60000); }
+    else { const d = db(); if(d) d.goOnline(); } });
+  window.__fbIdle = { db }; })();</script>
 <script>
 /* gstatic.com이 학교 네트워크 등에서 차단되어 Firebase 스크립트가 로드되지 않는 경우를 대비해
    jsdelivr CDN으로 한 번 더 시도합니다 (document.write는 아직 파싱 중인 시점이라 동기적으로 동작함). */

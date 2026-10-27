@@ -13,6 +13,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>/* 🔌 2026-10-27: Firebase 무료 요금제는 동시 접속이 100개까지라, 안 보는 탭은 1분 뒤 연결을 쉬고 다시 보면 바로 잇는다(쓴 내용은 다시 연결될 때 저장됨) */
+(function(){ let t = null; const db = () => (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null;
+  document.addEventListener('visibilitychange', ()=>{ clearTimeout(t);
+    if(document.visibilityState === 'hidden'){ t = setTimeout(()=>{ const d = db(); if(d) d.goOffline(); }, 60000); }
+    else { const d = db(); if(d) d.goOnline(); } });
+  window.__fbIdle = { db }; })();</script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --gray:#616161; }
   *{box-sizing:border-box;}
@@ -161,7 +167,7 @@ function authReady(){
   if(!__authP) __authP = firebase.auth().signInAnonymously().catch(e=>{ __authP = null; throw e; });
   return __authP;
 }
-try{ authReady().then(()=> firebase.database().ref('.info/serverTimeOffset').once('value')).catch(()=>{}); }catch(e){}
+try{ authReady().catch(()=>{}); }catch(e){}   // 🔌 DB 연결은 실제로 필요할 때 연다(동시 접속 한도)
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
 const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',38:'__sim38',39:'__sim39',40:'__sim40',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
@@ -301,6 +307,10 @@ function buildTaskLink(t, profile, opts){
    끝나면 실제로 열린 단원만 unlockTaskLink()로 풀어주고, 나머지는 lockTaskLink()로 "진짜
    잠김"을 확정한다. Firebase가 설정 안 됐거나 확인 중 오류가 나면(잠금 기능은 선택 기능이므로)
    예전처럼 전부 열어서 보여준다 - unlockAllPending()이 그 역할이다. */
+/* 🔌 2026-10-27: 목차는 처음 읽고 나면 연결을 쉰다(동시 접속 100개 한도). 화면을 누르거나 다시 보면 잠깐 다시 잇는다. */
+let __tocIdleT = null;
+function scheduleTocIdle(){ clearTimeout(__tocIdleT); __tocIdleT = setTimeout(()=>{ try{ if(firebase.apps.length) firebase.database().goOffline(); }catch(e){} }, 20000); }
+['pointerdown','keydown'].forEach(ev=> document.addEventListener(ev, ()=>{ if(document.getElementById('page2') && document.getElementById('page2').style.display==='block'){ try{ if(firebase.apps.length) firebase.database().goOnline(); }catch(e){} scheduleTocIdle(); } }, true));
 /* ⚡ 2026-10-27: 이 기기에서 마지막으로 받은 단원 열림 상태를 먼저 보여 주고, 서버 값이 오면 바로 맞춘다. */
 const ACCESS_CACHE_KEY = p => 'ggb_access_' + sanitize(p.classNo);
 function applyCachedAccess(profile){
@@ -311,6 +321,7 @@ function applyCachedAccess(profile){
 function applyAccessAndCompletion(profile){
   if(!FIREBASE_CONFIG.apiKey){ unlockAllPending(); return; }
   applyCachedAccess(profile);
+  scheduleTocIdle();
   try{
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     authReady().then(cred=>{
