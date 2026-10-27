@@ -32,7 +32,7 @@
   if(document.body){ fix(); new MutationObserver(later).observe(document.body, { childList:true, subtree:true }); }
 
   /* 못 누르는 이유: 버튼에 data-why="…"가 있으면, 못 누를 때만 버튼 바로 아래에 이유를 보여 준다 */
-  const whyCss = document.createElement('style'); whyCss.textContent = `.sd-why{display:block;margin-top:6px;font-size:13.5px;color:#e65100;font-weight:bold;} .sd-why::before{content:'👉 ';}
+  const whyCss = document.createElement('style'); whyCss.textContent = `.sd-why{display:inline-block;margin-left:10px;vertical-align:middle;font-size:13.5px;color:#e65100;font-weight:bold;} .sd-why::before{content:'👉 ';}
     #progressText{font-size:15px!important;font-weight:bold!important;color:#fff!important;}`;
   document.head.appendChild(whyCss);
   const paintWhy = b=>{ let w = b.nextElementSibling && b.nextElementSibling.classList && b.nextElementSibling.classList.contains('sd-why') ? b.nextElementSibling : null;
