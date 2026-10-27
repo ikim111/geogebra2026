@@ -301,10 +301,12 @@
       </div>
       <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
         <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
-        <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
-        <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 AI 피드백 학생에게 보여 주기</button>
-        <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
-        <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;margin-top:6px;">
+          <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
+          <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 AI 피드백 학생에게 보여 주기</button>
+          <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
+          <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
+        </div>
       </div>
     </div>
 
