@@ -258,6 +258,7 @@
         <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
         <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
         <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
+        <button class="pause" id="fbShowBtn" title="AI 채점과 함께 받은 학생용 피드백(점수 제외)을 학생 화면에 보여 줘요">👀 AI 피드백 학생에게 보여 주기</button>
         <button class="pause" id="anonymizeBtn">🎭 익명화</button>
         <button class="pause" id="backupBtn" title="이 반 학생 기록 전체를 파일로 저장">📦 전체 백업</button>
         <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
@@ -817,6 +818,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
         const c = snap.val() || {};
         paused = !!c.paused;
         updatePauseBtn();
+        fbShow = !!c.fbShow; paintFbShowBtn();
         classEnded = !!c.classEnded;
         updateClassButtons();
         if(c.minTaskId!=null || c.maxTaskId!=null){
@@ -849,6 +851,17 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
   }
 })();
 
+/* 👀 2026-10-27: AI 1차 피드백(잘된 점·보완할 점·생각해 볼 질문, 점수 제외)을 학생 화면에 보여 줄지 — rooms/{반}__prob33/control/fbShow */
+let fbShow = false;
+function paintFbShowBtn(){ const b = document.getElementById('fbShowBtn'); if(!b) return; b.textContent = fbShow ? '🙈 AI 피드백 학생에게서 숨기기' : '👀 AI 피드백 학생에게 보여 주기'; b.style.background = fbShow ? '#e8f5e9' : ''; }
+document.getElementById('fbShowBtn').addEventListener('click', ()=>{
+  if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
+  if(!fbShow){
+    const n = Object.values(allStudents||{}).filter(x=>x && x.aiGrade && x.aiGrade.fb).length, all = Object.keys(allStudents||{}).length;
+    if(!confirm(`AI 피드백을 받은 학생 ${n}명 / 전체 ${all}명\n학생 화면에 잘된 점·보완할 점·생각해 볼 질문을 보여 줄까요? (점수는 보이지 않아요)`)) return;
+  }
+  controlRef.update({ fbShow: !fbShow });
+});
 function updatePauseBtn(){
   const btn=document.getElementById('pauseBtn');
   btn.classList.toggle('active', paused);
