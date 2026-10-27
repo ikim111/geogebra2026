@@ -350,7 +350,7 @@ function applyAccessAndCompletion(profile){
           const n = parseInt(el.dataset.n, 10);
           if(n === 0) return; // 0단원은 항상 열려 있음(이미 열린 상태로 만들어져 있음)
           // ⏰ 2026-10-27: 25(2부 보고서)는 선생님이 목차에서 열었거나, 교시 예약·수업 시작으로 지금 열린 시간이면 열린다
-          const isOpen = access[n] === true || (n === 25 && ctl25 && !effEnded2(ctl25, Date.now()));
+          const isOpen = access[n] === true || (n === 25 && ctl25 && (ctl25.classStartedTs || ctl25.slots) && !effEnded2(ctl25, Date.now()));
           if(isOpen){
             unlockTaskLink(el);
             if(ACTIVITY_SUFFIX[n] && !el.dataset.badgeOn){ el.dataset.badgeOn = '1'; showCompletionBadge(el, n, uid, profile); }
