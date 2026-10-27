@@ -243,6 +243,9 @@
   #ai22Panel.ai-on{background:#e8f5e9!important;border:2px solid #66bb6a!important;color:#1b5e20!important;}
   #ai22Panel.ai-off{background:#ffebee!important;border:2px solid #e57373!important;color:#b71c1c!important;}
   .ai-pill{background:none!important;padding:0!important;font-size:15px;} .ai-pill.on{color:#1b5e20!important;} .ai-pill.off{color:#b71c1c!important;} .ai-pill small{color:#555;}
+  #ai22OnBtn{background:#fff!important;color:#2e7d32!important;border:2px solid #66bb6a!important;font-weight:bold;} #ai22OnBtn.active{background:#2e7d32!important;color:#fff!important;border-color:#2e7d32!important;}
+  #ai22OffBtn{background:#fff!important;color:#c62828!important;border:2px solid #e57373!important;font-weight:bold;} #ai22OffBtn.active{background:#c62828!important;color:#fff!important;border-color:#c62828!important;}
+  #ai22Panel button#ai22ToggleBtn{display:none!important;}
 </style>
 </head>
 <body>
@@ -366,7 +369,8 @@
       <div class="ai-agg" id="ai22Panel" style="display:none;">
         <span>🤖 <b>1부 학생 AI</b></span>
         <span class="st" id="ai22State"></span>
-        <button class="ai-toggle" id="ai22ToggleBtn" style="margin-left:auto;">🤖 1부 학생 AI 끄기</button>
+        <span class="op-btns" style="margin-left:auto;"><button type="button" id="ai22OnBtn">🤖 AI 켜기</button><button type="button" id="ai22OffBtn">🚫 AI 끄기</button></span>
+        <button class="ai-toggle" id="ai22ToggleBtn" style="display:none;">🤖 1부 학생 AI 끄기</button>
       </div>
       <div class="agg" id="gradePanel" style="display:none;">
         <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
@@ -813,8 +817,10 @@ function renderAi22(){
   btn.classList.toggle('off', ai22Off);
   const st = document.getElementById('ai22State'); st.className = 'st ai-pill ' + (ai22Off ? 'off' : 'on');
   st.innerHTML = ai22Off ? '꺼짐 <small>— 학생이 1부 AI를 쓸 수 없어요</small>' : '켜짐 <small>— 학생이 1부 화면에서 AI를 쓸 수 있어요</small>';
-  box.classList.toggle('ai-on', !ai22Off); box.classList.toggle('ai-off', ai22Off);
+  document.getElementById('ai22OnBtn').classList.toggle('active', !ai22Off); document.getElementById('ai22OffBtn').classList.toggle('active', ai22Off);
 }
+document.getElementById('ai22OnBtn').addEventListener('click', ()=>{ if(ai22Off) document.getElementById('ai22ToggleBtn').click(); });
+document.getElementById('ai22OffBtn').addEventListener('click', ()=>{ if(!ai22Off) document.getElementById('ai22ToggleBtn').click(); });
 let paused=false, anonymize=false, checkedKeys=new Set();
 let classEnded=false, currentRoomName='';
 let paceStart=null, paceEnd=null;
@@ -1199,6 +1205,7 @@ document.getElementById('printBtn').addEventListener('click', ()=>{
   keys.sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999));
   const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요. 이 사이트의 팝업을 허용해 주세요.'); return; }
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>${PRINT_CSS}  @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
+  #ai22Panel button#ai22ToggleBtn{display:none!important;}
 </style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>/* 한 장에 안 들어가면 글자를 줄여 A4 한 장에 맞춘다(최소 70%) */
   document.querySelectorAll('.pg').forEach(pg=>{ const max = 297*96/25.4 - 6, h = pg.scrollHeight; if(h > max) pg.style.zoom = Math.max(0.7, max/h).toFixed(3); });
   setTimeout(()=>print(),400)<\/script></body></html>`);
