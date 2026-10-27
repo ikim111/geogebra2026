@@ -954,7 +954,7 @@ function paintAiFb(){
     <div style="font-size:12.5px;color:#666;margin:4px 0 6px;">${when?when+'에 받은 피드백이에요. ':''}참고용이에요 — 점수는 선생님이 정해요. 고친 뒤에도 이 피드백은 바로 바뀌지 않아요.</div>`;
   if(FBV.open){
     if(g.first) h += `<div style="background:#fff8e1;border-radius:8px;padding:8px 10px;margin:6px 0;"><b>가장 먼저 고치면 좋은 점</b><div>${e(g.first)}</div></div>`;
-    FB_ITEMS.forEach(([k,name])=>{ const f = fb[k]; if(!f) return; const body = rows(f.good,'잘된 점','#2e7d32') + rows(f.fix,'보완할 점','#e65100') + rows(f.ask,'생각해 볼 질문','#5e35b1'); if(body) h += `<div style="border-top:1px solid #e8eaf6;padding-top:6px;margin-top:6px;"><b>${name}</b>${body}</div>`; });
+    FB_ITEMS.forEach(([k,name])=>{ const f = fb[k]; if(!f) return; const body = rows(f.good,'잘된 점','#2e7d32') + rows(f.fix,'보완할 점','#e65100'); if(body) h += `<div style="border-top:1px solid #e8eaf6;padding-top:6px;margin-top:6px;"><b>${name}</b>${body}</div>`; });
   }
   box.innerHTML = h;
   box.style.cssText = 'display:block;background:#f5f7ff;border:2px solid #c5cae9;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14.5px;line-height:1.55;';
