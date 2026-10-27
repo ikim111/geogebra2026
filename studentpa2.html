@@ -1050,9 +1050,9 @@ const RT = {
     const personalOn = !!((po && now >= +po.startAt && now < +po.endAt) || (tp && tp.startedAt && now < tpEnd(tp)));
     if(personalOn !== !!this.personalOn){ this.personalOn = personalOn; try{ AI.paint(); }catch(e){} }
     paintTimePass(baseEnded, now);
-    if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true); } }
-    else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded); }
-    this._lastKnownClassEnded = classEnded; this.classEnded = classEnded;
+    if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true, true); } }
+    else if(classEnded !== this._lastKnownClassEnded){ applyFinalLock(classEnded); this.markSubmitted(classEnded, true); }
+    this._lastKnownClassEnded = classEnded; this.classEnded = classEnded; this.maybeAutoUnlock();
   }, viewingTaskId:null, visitedTasks:new Set(), minTaskId:null, maxTaskId:null,
   sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; },
   connect(name, room, number){
@@ -1077,6 +1077,7 @@ const RT = {
       if(existing && existing.data) restoreData(existing.data); // 저장된 내용을 먼저 되살린 뒤에 저장 시작
       setTimeout(()=>{ if(typeof paintSrcShortcut==='function') paintSrcShortcut(); }, 0);
       if(existing && existing.submitted) applyFinalLock(true);
+      this._loadedSub = (existing && existing.submitted) ? { auto: existing.autoSubmitted, at: existing.submittedAt } : null; this.maybeAutoUnlock();
       this.restored = true;
       this.studentRef.update({ name, number: number||null,
         joinedAt: (existing && existing.joinedAt) ? existing.joinedAt : firebase.database.ServerValue.TIMESTAMP,
@@ -1109,9 +1110,18 @@ const RT = {
     clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = setInterval(()=>{ if(this.connected) this.studentRef.update({ lastActive: firebase.database.ServerValue.TIMESTAMP, online:true }); }, 15000);
   },
-  markSubmitted(on){
+  markSubmitted(on, auto){
     if(!this.connected) return;
-    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP } : { submitted:false, submittedAt:null });
+    this.studentRef.update(on ? { submitted:true, submittedAt: firebase.database.ServerValue.TIMESTAMP, autoSubmitted: !!auto } : { submitted:false, submittedAt:null, autoSubmitted:null });
+    if(on) this._loadedSub = { auto: !!auto, at: Date.now() }; else this._loadedSub = null;
+  },
+  /* 2026-10-27: 수업이 끝나서 '자동으로' 제출된 학생이 다음 수업(열린 상태)에 들어오면 자동으로 제출을 풀어 준다.
+     학생이 직접 [결과 제출하기]를 누른 경우(autoSubmitted:false)는 그대로 둔다. */
+  maybeAutoUnlock(){
+    const s = this._loadedSub;
+    if(!s || this._lastKnownClassEnded !== false || !this.connected) return;
+    if(!(s.auto !== false)) return;
+    applyFinalLock(false); this.markSubmitted(false);
   },
   pushProgress(){
     if(!this.connected || !this.restored) return;
