@@ -318,6 +318,15 @@ function applyCachedAccess(profile){
   if(!access) return;
   document.querySelectorAll('.task-link').forEach(el=>{ const n = parseInt(el.dataset.n, 10); if(n !== 0 && access[n] === true) unlockTaskLink(el); });
 }
+const PERIODS = [[9,0],[9,55],[10,50],[11,45],[13,30],[14,25],[15,20]];   // 1~7교시 시작, 45분 수업
+function slotTimes(dayStr, p){ const [y,m,d] = [dayStr.slice(0,4),dayStr.slice(4,6),dayStr.slice(6,8)].map(Number); const [h,mi] = PERIODS[p-1]; const st = new Date(y,m-1,d,h,mi,0,0).getTime(); return { s: st - 5*60000, e: st + 50*60000 }; }
+function effEnded2(c, now){
+  c = c || {}; const ev = [];
+  if(c.classEndedTs) ev.push([+c.classEndedTs, 1]); if(c.classStartedTs) ev.push([+c.classStartedTs, 0]);
+  Object.values(c.slots || {}).forEach(x=>{ if(x && x.s && x.e){ ev.push([+x.s, 0], [+x.e, 1]); } });
+  const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0] || b[1]-a[1]);
+  return past.length ? !!past[past.length-1][1] : !!c.classEnded;
+}
 function applyAccessAndCompletion(profile){
   if(!FIREBASE_CONFIG.apiKey){ unlockAllPending(); return; }
   applyCachedAccess(profile);
@@ -332,13 +341,16 @@ function applyAccessAndCompletion(profile){
       showMyPresentScore(profile);
       // 선생님이 단원을 열고 닫으면 새로고침 없이 바로 따라간다(2026-10-17: 예전에는 처음 한 번만 확인해서, 연 뒤에도 새로고침 전까지 잠겨 보였다).
       let firstAccess = true;
-      firebase.database().ref('rooms/'+accessKey+'/units').on('value', snap=>{
-        const access = snap.val() || {};
-        try{ localStorage.setItem(ACCESS_CACHE_KEY(profile), JSON.stringify(access)); }catch(e){}
+      let lastAccess = {}, ctl25 = null;
+      let gotUnits = false;
+      const paintAccess = ()=>{
+        if(!gotUnits) return;   // 단원 열림 정보를 받기 전에는 캐시 상태 그대로
+        const access = lastAccess;
         document.querySelectorAll('.task-link').forEach(el=>{
           const n = parseInt(el.dataset.n, 10);
           if(n === 0) return; // 0단원은 항상 열려 있음(이미 열린 상태로 만들어져 있음)
-          const isOpen = access[n] === true;
+          // ⏰ 2026-10-27: 25(2부 보고서)는 선생님이 목차에서 열었거나, 교시 예약·수업 시작으로 지금 열린 시간이면 열린다
+          const isOpen = access[n] === true || (n === 25 && ctl25 && !effEnded2(ctl25, Date.now()));
           if(isOpen){
             unlockTaskLink(el);
             if(ACTIVITY_SUFFIX[n] && !el.dataset.badgeOn){ el.dataset.badgeOn = '1'; showCompletionBadge(el, n, uid, profile); }
@@ -346,6 +358,13 @@ function applyAccessAndCompletion(profile){
             lockTaskLink(el);
           }
         });
+      };
+      firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__prob33/control').on('value', snap=>{ ctl25 = snap.val() || {}; paintAccess(); });
+      setInterval(paintAccess, 20000);   // 예약 시각이 되면 (연결이 쉬고 있어도) 저절로 열고 닫힘
+      firebase.database().ref('rooms/'+accessKey+'/units').on('value', snap=>{
+        const access = snap.val() || {}; lastAccess = access; gotUnits = true;
+        try{ localStorage.setItem(ACCESS_CACHE_KEY(profile), JSON.stringify(access)); }catch(e){}
+        paintAccess();
         firstAccess = false;
       }, ()=>{ if(firstAccess) unlockAllPending(); });
     }).catch(()=>{ unlockAllPending(); });
