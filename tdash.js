@@ -57,6 +57,11 @@
   #qScanBtn,#readyBtn{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;height:38px;padding:0 14px!important;}
   .td-plainset button.pause, .td-plainset button.send{background:#fff!important;color:#333!important;border:1px solid #d5d8e0!important;border-radius:8px!important;}
   .td-plainset button.active{background:#3949ab!important;color:#fff!important;border-color:#3949ab!important;}
+  /* 누를 수 있는 버튼 / 못 누르는 버튼 구분 */
+  #teacherAppScreen button:not(:disabled){box-shadow:0 1px 2px rgba(0,0,0,.08);}
+  #teacherAppScreen button:not(:disabled):hover{filter:brightness(.96);}
+  #teacherAppScreen button:disabled{background:#f1f2f4!important;color:#aaa!important;border:1px dashed #d5d8dd!important;box-shadow:none!important;cursor:not-allowed!important;opacity:1!important;}
+  .td-mgmt button:disabled{border-style:dashed!important;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
