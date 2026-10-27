@@ -22,7 +22,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gray:#616161; }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;}
   header{background:#1a237e;color:#fff;padding:16px;text-align:center;}
   header h1{margin:0 0 4px;font-size:19px;}
@@ -196,6 +196,7 @@
   .ai-agg button.ai-toggle{background:#5e35b1;color:#fff;font-weight:bold;}
   .ai-agg button.ai-toggle.off{background:#9e9e9e;}
   .ai-agg .st{font-size:12.5px;}
+  .ck-edit span{cursor:pointer;user-select:none;} .ck-edit span:hover{filter:brightness(.93);} .ck-edit span.tc{outline:2px solid #ff9800;outline-offset:1px;}
 </style>
 </head>
 <body>
@@ -569,7 +570,7 @@ function gradeBoxHTML(key, s){
   const g = gradeOf(s), pending = gradePending.has(key);
   const can = hasReport(s) && !pending;
   const when = g.ai && g.ai.ts ? new Date(g.ai.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → 숫자를 눌러 선생님이 항목별로 고쳐요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
+  let h = `<div class="gr-box"><div class="gr-hd"><span>📊 AI 채점·피드백 <span class="note">AI가 점수와 학생용 피드백을 함께 줘요 → ○✕(또는 숫자)를 눌러 선생님이 고쳐요 · 학생에게는 아직 안 보여요${when?' · '+esc(when):''}</span></span>
     <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점·피드백 받는 중… (10~40초)' : (g.ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button></div>`;
   if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
@@ -591,7 +592,7 @@ function gradeBoxHTML(key, s){
     const fbh = f ? (f.good||[]).map(t=>`<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.fix||[]).map(t=>`<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${esc(t)}</span></div>`).join('')
       + (f.ask||[]).map(t=>`<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(t)}</span></div>`).join('') : '';
-    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${qch}${dch}${binChips(it.k, g.ai, it.ai)}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
+    h += `<div class="gr-item"><div class="gr-row"><span class="nm">${it.name}<small>${it.max}점</small></span><span class="why">${why}</span><span class="gr-chips">${chips}</span></div>${ckEditHTML(key, s, it) || (qch+dch+binChips(it.k, g.ai, it.ai))}${fbh?`<div class="gr-fb"><div class="lbl">학생용 피드백</div>${fbh}</div>`:''}</div>`;
   });
   if(g.ai && (g.ai.first || g.ai.status)){
     const ST = {ok:['st-ok','✅ 현재 상태로 충분해요'], check:['st-mid','🟡 일부 내용을 확인하면 좋아요'], need:['st-bad','🔴 중요한 보완이 필요해요']}[g.ai.status] || null;
@@ -620,11 +621,31 @@ async function requestGrade(key){
     gradePending.delete(key); refreshAI();
   }
 }
+/* ✅ 2026-10-27 교사가 채점 체크리스트(○✕)를 직접 고친다: students/{key}/teacherChecks/{항목} = 'OOX'… → 점수도 그 개수로 teacherGrade에 */
+function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return ''; if((k==='analysis'||k==='logic') && ai.rv!==3) return ''; return c; }
+function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; return (typeof t==='string' && t.length===CHECK_LABELS[k].length) ? t : aiChecksOf(s, k); }
+function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
+function ckEditHTML(key, s, it){
+  const c = checksOf(s, it.k), a = aiChecksOf(s, it.k); if(!c) return '';
+  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>`).join('')}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
+}
+async function toggleCheck(key, k, i){
+  const s = allStudents[key]; if(!s) return;
+  const cur = checksOf(s, k), a = aiChecksOf(s, k); if(!cur) return;
+  const nx = cur.slice(0,i) + (cur[i]==='O'?'X':'O') + cur.slice(i+1);
+  const base = db.ref('rooms/'+currentRoomKey+'/students/'+key);
+  if(!s.teacherChecks) s.teacherChecks = {}; if(!s.teacherGrade) s.teacherGrade = {};
+  if(nx === a){ await Promise.all([base.child('teacherChecks/'+k).remove(), base.child('teacherGrade/'+k).remove()]); delete s.teacherChecks[k]; delete s.teacherGrade[k]; }
+  else { const sc = scoreFromChecks(k, nx); await Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; }
+  refreshAI(); renderGrid();
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); toggleCheck(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); });
 async function setTeacherScore(key, c, v){
   const s = allStudents[key]; if(!s) return;
   const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
   const val = (v==null || v===ai) ? null : v; // AI 점수와 같게 고르면 '수정 없음'으로
   await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/teacherGrade/'+c).set(val);
+  if(v==null && s.teacherChecks && s.teacherChecks[c]){ await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/teacherChecks/'+c).remove(); delete s.teacherChecks[c]; }
   if(!s.teacherGrade) s.teacherGrade = {};
   if(val==null) delete s.teacherGrade[c]; else s.teacherGrade[c] = val;
   refreshAI(); renderGrid();
@@ -1052,35 +1073,59 @@ document.getElementById('passBox').addEventListener('click', async e=>{
     await ref(k).child('fbShowMe').set(true); return; }
 });
 setInterval(()=>{ if(controlRef && document.getElementById('passBox').open) paintPass(); }, 30000);
-/* 🖨 2026-10-27 보고서 인쇄: 1명당 A4 1쪽 — 보고서·자료·점수(선생님이 고친 점수 우선)·AI 피드백 */
+/* 🖨 2026-10-27 보고서 인쇄: 1명당 A4 1쪽 — 보고서·자료·채점 체크리스트(○✕)·AI 피드백 */
+const CHECK_LABELS = {
+  question: ['탐구 질문을 썼다', '확률을 구하는 질문이다', '예측형·비교선택형 질문이다'],
+  data: ['자료 1이 탐구 질문에 맞다', '자료 2가 질문에 맞고 자료 1과 다른 정보다', '확률 계산에 필요한 수치를 모두 얻을 수 있다'],
+  analysis: ['자료 1의 수치를 본론에 활용했다', '자료 2의 수치를 본론에 활용했다', '분자·분모를 올바르게 정했다', '분수·소수로 올바르게 계산했다'],
+  logic: ['서론 150자 이상', '본론 500자 이상', '결론 150자 이상', '확률값의 뜻을 알맞게 해석했다', '결론에 탐구 질문의 답이 있다'] };
+const CHECK_KEY = { question:'qchecks', data:'dchecks', analysis:'achecks', logic:'lchecks' };
+function printPageHTML(st, roomName){
+  const r = repOf(st), g = gradeOf(st), ai = g.ai || {}, fb = ai.fb || {};
+  const paras = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join('') || '<p class="no">(비어 있음)</p>';
+  const sec = (name, t, min) => { const n = countChars(t); return `<div class="sec"><div class="sh">${name}<span class="${min && n<min?'bad':'cnt'}">${n}자${min?' / '+min+'자 이상':''}</span></div>${paras(t)}</div>`; };
+  const srcs = r.sources.map((x,i)=>`<div class="src"><b>자료 ${i+1}</b> ${esc(x.name)||'(출처 이름 없음)'}${x.files.length?` · 첨부 ${x.files.length}개`:''}${x.ana.length?` — ${x.ana.map(esc).join(' / ')}`:''}${x.link?`<div class="lk">${esc(x.link.length>90?x.link.slice(0,90)+'…':x.link)}</div>`:''}</div>`).join('');
+  const crit = g.items.map((c,ci)=>{
+    const ck = checksOf(st, c.k), labels = CHECK_LABELS[c.k], f = fb[c.k] || {};
+    const list = labels.map((l,i)=>{ const v = ck[i]; return `<li class="${v==='O'?'o':v==='X'?'x':'u'}"><span class="m">${v==='O'?'○':v==='X'?'✕':'·'}</span>${l}</li>`; }).join('');
+    const fbh = (f.good||[]).map(t=>`<div class="gd"><span>잘된 점</span>${esc(t)}</div>`).join('') + (f.fix||[]).map(t=>`<div class="fx"><span>보완할 점</span>${esc(t)}</div>`).join('');
+    return `<div class="crit"><div class="ch"><b>${ci+1}. ${c.name}</b><span class="pt">${c.final!=null?c.final:'-'}<small> / ${c.max}</small></span>${c.teacher!=null && c.teacher!==c.ai?`<span class="tch">교사 수정 (AI ${c.ai!=null?c.ai:'-'}점)</span>`:''}</div>
+      <div class="cb"><ul>${list}</ul><div class="fbx">${fbh || (c.reason?`<div class="rs">${esc(c.reason)}</div>`:'')}</div></div></div>`; }).join('');
+  return `<section class="pg">
+    <header><div><div class="who">${esc(roomName)}반 ${esc(st.number||'')}번 ${esc(st.name||'')}</div><div class="meta">확률 탐구 보고서 · ${st.submitted?'제출 완료':'미제출'} · 본문 ${totalOf(st)}자${g.stale?' · <b class="bad">채점 뒤 글 수정됨</b>':''}</div></div>
+      <div class="tot"><div class="tl">합계</div><div class="tv">${g.any?g.total:'-'}<small> / 15</small></div></div></header>
+    <h1>${esc(r.title)||'(제목 없음)'}</h1>
+    ${sec('서론', r.intro, 150)}${sec('본론', r.body, 500)}${sec('결론', r.concl, 150)}
+    ${srcs?`<div class="sec"><div class="sh">자료</div>${srcs}</div>`:''}
+    <div class="grade"><div class="gh">채점 체크리스트 · AI 피드백</div>${crit}</div>
+    ${ai.first?`<div class="first"><b>가장 먼저 고치면 좋은 점</b>${esc(ai.first)}</div>`:''}
+  </section>`;
+}
+const PRINT_CSS = `@page{size:A4;margin:11mm 12mm;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.6;color:#1a1a1a;margin:0;word-break:keep-all;}
+  .pg{page-break-after:always;} .pg:last-child{page-break-after:auto;}
+  header{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #1a237e;padding-bottom:5px;margin-bottom:8px;}
+  .who{font-size:15pt;font-weight:bold;color:#1a237e;} .meta{font-size:8.5pt;color:#666;}
+  .tot{border:2px solid #1a237e;border-radius:8px;padding:2px 12px;text-align:center;} .tl{font-size:7.5pt;color:#666;} .tv{font-size:18pt;font-weight:bold;color:#1a237e;line-height:1.1;} .tv small{font-size:9pt;color:#666;}
+  h1{font-size:13pt;margin:0 0 6px;padding:5px 9px;background:#f1f3fb;border-radius:6px;}
+  .sec{margin:0 0 6px;} .sh{font-size:9pt;font-weight:bold;color:#1a237e;margin-bottom:1px;} .sh span{font-weight:normal;margin-left:6px;font-size:8pt;} .cnt{color:#888;} .bad{color:#c62828;}
+  .sec p{margin:0 0 3px;text-indent:0.6em;} .no{color:#aaa;}
+  .src{font-size:8.5pt;margin:1px 0;} .lk{font-size:7.5pt;color:#888;word-break:break-all;margin-left:3.2em;}
+  .grade{margin-top:8px;border-top:1.5px solid #bbb;padding-top:5px;display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;} .gh{grid-column:1/-1;} .gh{font-size:10pt;font-weight:bold;}
+  .crit{border:1px solid #d5d8e8;border-radius:6px;page-break-inside:avoid;} .ch{display:flex;align-items:center;gap:8px;background:#f1f3fb;padding:2px 8px;border-radius:6px 6px 0 0;font-size:9.5pt;}
+  .pt{margin-left:auto;font-weight:bold;font-size:11pt;color:#1a237e;} .pt small{font-size:8pt;color:#666;font-weight:normal;} .tch{font-size:7.5pt;color:#e65100;}
+  .cb{padding:3px 8px 4px;font-size:8.6pt;line-height:1.45;} .cb ul{list-style:none;margin:0 0 3px;padding:0;} .cb li{display:flex;gap:5px;}
+  .m{width:13px;flex:none;font-weight:bold;text-align:center;} li.o .m{color:#2e7d32;font-size:10pt;} li.x{color:#555;} li.x .m{color:#c62828;} li.u .m{color:#aaa;}
+  .fbx{border-top:1px dashed #ccc;padding-top:3px;} .fbx div{margin:1px 0;} .fbx span{display:inline-block;font-size:7.5pt;font-weight:bold;border-radius:8px;padding:0 5px;margin-right:4px;color:#fff;} .gd span{background:#2e7d32;} .fx span{background:#e65100;} .rs{color:#555;}
+  .first{margin-top:6px;padding:5px 9px;background:#fff8e1;border-left:4px solid #f9a825;font-size:9pt;} .first b{margin-right:6px;}`;
 document.getElementById('printBtn').addEventListener('click', ()=>{
   if(!currentRoomKey){ alert('먼저 반에 접속해주세요.'); return; }
   let keys = [...(checkedKeys||[])].filter(k=> allStudents[k]);
   if(!keys.length) keys = Object.keys(allStudents).filter(k=> hasReport(allStudents[k]));
   if(!keys.length){ alert('인쇄할 보고서가 없어요.'); return; }
   keys.sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999));
-  const nl = t => esc(t).replace(/\n/g,'<br>');
-  const pages = keys.map(k=>{
-    const st = allStudents[k], r = repOf(st), g = gradeOf(st), fb = (g.ai && g.ai.fb) || {};
-    const sec = (name, t, min) => `<div class="sec"><div class="h">${name} <small>${countChars(t)}자${min?' / '+min+'자':''}</small></div><div class="t">${nl(t)||'<span class="no">(비어 있음)</span>'}</div></div>`;
-    const srcs = r.sources.map((x,i)=>`<li><b>자료 ${i+1}</b> ${esc(x.name)}${x.link?` <span class="lk">${esc(x.link.length>70?x.link.slice(0,70)+'…':x.link)}</span>`:''}${x.files.length?` <small>(첨부 ${x.files.length}개)</small>`:''}${x.ana.length?'<br>'+x.ana.map(esc).join(' / '):''}</li>`).join('');
-    const rows = g.items.map(c=>{ const f = fb[c.k] || {};
-      return `<tr><td class="c">${c.name}</td><td class="sc">${c.final!=null?c.final:'-'} / ${c.max}${c.teacher!=null?`<br><small>(AI ${c.ai!=null?c.ai:'-'} → 교사)</small>`:''}</td><td>${c.reason?`<div class="rs">${esc(c.reason)}</div>`:''}${(f.good||[]).map(t=>`<div>👍 ${esc(t)}</div>`).join('')}${(f.fix||[]).map(t=>`<div>🔧 ${esc(t)}</div>`).join('')}</td></tr>`; }).join('');
-    return `<section class="pg"><div class="top"><b>${esc(currentRoomName)}반 ${esc(st.number||'')}번 ${esc(st.name||'')}</b><span>${UNIT_LABEL} · 글자 수 ${totalOf(st)}자 · ${st.submitted?'제출':'미제출'} · 합계 <b>${g.any?g.total:'-'}</b> / 15${g.stale?' · ⚠ 채점 뒤 글 수정됨':''}</span></div>
-      <h2>${esc(r.title)||'(제목 없음)'}</h2>${sec('서론', r.intro, 150)}${sec('본론', r.body, 500)}${sec('결론', r.concl, 150)}
-      ${srcs?`<div class="sec"><div class="h">자료</div><ul>${srcs}</ul></div>`:''}
-      <table><tr><th>항목</th><th>점수</th><th>채점 근거 · AI 피드백</th></tr>${rows}</table>
-      ${g.ai && g.ai.first?`<div class="first"><b>가장 먼저 고치면 좋은 점</b> ${esc(g.ai.first)}</div>`:''}</section>`; }).join('');
   const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요. 이 사이트의 팝업을 허용해 주세요.'); return; }
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>
-    @page{size:A4;margin:12mm;} body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.5;color:#111;margin:0;}
-    .pg{page-break-after:always;} .pg:last-child{page-break-after:auto;}
-    .top{display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid #333;padding-bottom:3px;font-size:9.5pt;} .top b{font-size:11pt;}
-    h2{font-size:12.5pt;margin:6px 0 4px;} .sec{margin:4px 0;} .h{font-weight:bold;font-size:9.5pt;color:#333;border-left:3px solid #3949ab;padding-left:5px;} .h small{font-weight:normal;color:#777;}
-    .t{white-space:normal;margin:2px 0 0 8px;} .no{color:#999;} ul{margin:2px 0;padding-left:18px;font-size:9pt;} .lk{color:#555;font-size:8pt;word-break:break-all;}
-    table{width:100%;border-collapse:collapse;margin-top:6px;font-size:8.8pt;} th,td{border:1px solid #999;padding:3px 5px;vertical-align:top;} th{background:#eee;} td.c{width:58px;font-weight:bold;} td.sc{width:62px;text-align:center;} .rs{color:#444;margin-bottom:2px;}
-    .first{margin-top:5px;font-size:9pt;background:#fff8e1;padding:4px 6px;border-radius:4px;}
-  </style></head><body>${pages}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 보고서 인쇄</title><style>${PRINT_CSS}</style></head><body>${keys.map(k=> printPageHTML(allStudents[k], currentRoomName)).join('')}<script>setTimeout(()=>print(),400)<\/script></body></html>`);
   w.document.close();
 });
 function updateClassButtons(){
