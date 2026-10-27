@@ -35,6 +35,11 @@ const PROMPT = `너는 중학교 2학년 확률·통계 탐구 보고서를 채�
 - lchecks: [채점 기준] 4번의 (4) 확률값의 뜻을 알맞게 해석, (5) 결론에 질문에 대한 답 — 이 순서로 2개를 "O"·"X"로 판단한 배열(2개). (4)는 학생이 구한 값을 기준으로 너그럽게: 해석이 없거나 값과 전혀 맞지 않을 때만 X.
   (1)~(3) 글자 수는 프로그램이 센다. logic.score는 프로그램이 다시 계산한다.
 
+[✕ 근거 — 선생님 검토용]
+- xquotes: 위 체크 항목 중 "X"로 판단한 것마다 하나씩 쓴다. id는 q1~q3(탐구 질문), d1~d3(자료 수집), a1~a4(자료 분석), l4·l5(글의 논리)이다.
+- quote: 그렇게 판단한 근거가 되는 학생 글을 40자 이내로 그대로 옮긴다(따옴표 없이). 근거가 '내용이 없음'이면 "(해당 내용 없음)"이라고 쓰고, 어디에 없는지 짧게 덧붙인다(예: "(결론에 질문의 답 없음)").
+- "O"인 항목은 쓰지 않는다.
+
 [항목마다 쓰는 것]
 - score: 정수. question 0~3, data 0~3, analysis 0~4, logic 0~5.
 - reason: 선생님이 보는 채점 이유. 학생 글의 구체적인 부분을 근거로 1~2문장(80자 이내).
@@ -65,9 +70,10 @@ const arr = { type: 'array', items: { type: 'string' } };
 const item = { type: 'object', additionalProperties: false, required: ['score', 'reason', 'good', 'fix', 'ask'],
   properties: { score: { type: 'integer' }, reason: { type: 'string' }, good: arr, fix: arr, ask: arr } };
 const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'report_assess', strict: true, schema: {
-  type: 'object', additionalProperties: false, required: ['qchecks', 'dchecks', 'achecks', 'lchecks', ...Object.keys(CRITERIA), 'first', 'status', 'statusReason'],
+  type: 'object', additionalProperties: false, required: ['qchecks', 'dchecks', 'achecks', 'lchecks', 'xquotes', ...Object.keys(CRITERIA), 'first', 'status', 'statusReason'],
   properties: Object.assign({ qchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, dchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
-    achecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, lchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
+    achecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, lchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
+    xquotes: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'quote'], properties: { id: { type: 'string', enum: ['q1','q2','q3','d1','d2','d3','a1','a2','a3','a4','l4','l5'] }, quote: { type: 'string' } } } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
     { first: { type: 'string' }, status: { type: 'string', enum: ['ok', 'check', 'need'] }, statusReason: { type: 'string' } }) } } };
 // 탐구 질문 점수 = 3항목((1) 질문을 씀 = 기본 1점, (2) 확률 질문, (3) 형태) O 개수, (1)이 X면 0 — 2026-10-12 간소화(다른 선생님 제안)
 const qScore = q => q[0] === 'X' ? 0 : q.filter(x => x === 'O').length;
@@ -110,7 +116,10 @@ module.exports = async (req, res) => {
     fb[k] = { good: clean(e.good, 2), fix: clean(e.fix, 2), ask: clean(e.ask, 1) };
     total += sc;
   }
+  // ✕ 근거 문장: {question:['','',''], data:[...], analysis:[4], logic:[5]} (O이거나 근거 없으면 '')
+  const XQ = { q: ['question', 0], d: ['data', 0], a: ['analysis', 0], l: ['logic', -1] }, xq = { question: ['', '', ''], data: ['', '', ''], analysis: ['', '', '', ''], logic: ['', '', '', '', ''] };
+  (Array.isArray(j.xquotes) ? j.xquotes : []).forEach(x => { const m = /^([qdal])(\d)$/.exec(String(x && x.id || '')); if (!m) return; const [k] = XQ[m[1]], i = +m[2] - 1; if (xq[k][i] !== undefined) xq[k][i] = String(x.quote || '').replace(/\*\*/g, '').trim().slice(0, 80); });
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model });
 };

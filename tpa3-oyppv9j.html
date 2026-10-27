@@ -201,7 +201,7 @@
   .gr-card{border:1px solid #d5d8e8;border-radius:10px;padding:8px 10px;background:#fff;margin:0;}
   .gr-card .gr-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .gr-card .nm{font-weight:bold;font-size:14px;color:#1a237e;} .gr-card .nm small{margin-left:8px;font-weight:normal;color:#666;font-size:12px;} .gr-card .nm .pt{font-size:17px;color:#1a237e;}
   .gr-card .gr-chips{margin-left:auto;} .gr-card .why{font-size:12px;color:#666;margin:4px 0;}
-  .ck-edit{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:4px 0;} .ck-edit span{font-size:13px;}
+  .ck-edit{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:4px 0;} .ck-edit span{font-size:13px;} .ck-edit .xq{font-size:12px;color:#8d6e63;margin:-1px 0 2px 14px;}
   .gr-card .gr-fb{border-top:1px dashed #ccc;margin-top:6px;padding-top:5px;background:none;}
   @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
 </style>
@@ -620,7 +620,7 @@ async function requestGrade(key){
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
     const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
-      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0 };
+      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0, xq: j.xq || null, goodSrc: (j.goodSrc!=null ? j.goodSrc : null) };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
     return true;
@@ -636,7 +636,9 @@ function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; r
 function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
 function ckEditHTML(key, s, it){
   const c = checksOf(s, it.k), a = aiChecksOf(s, it.k); if(!c) return '';
-  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>`).join('')}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
+  const ai = s.aiGrade || {}, xq = (ai.xq && ai.xq[it.k]) || [];
+  const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && a.includes('O') && !(s.teacherChecks && s.teacherChecks.data);
+  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${c[i]==='X' && a[i]==='X' && xq[i]?`<div class="xq">↳ AI 근거: ${esc(xq[i])}</div>`:''}`).join('')}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 0점이에요(출처 이름·링크·첨부 모두 있어야 인정). 학생 자료가 맞으면 ○✕를 한 번 눌러 점수를 고쳐 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
 }
 async function toggleCheck(key, k, i){
   const s = allStudents[key]; if(!s) return;
@@ -675,12 +677,12 @@ function renderGradePanel(){
 }
 document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
   const keys = gradeEligibleKeys(); if(!keys.length) return;
-  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 3명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
+  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 6명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
   gradeBulkRunning = true; renderGradePanel();
   const st = document.getElementById('gradeBulkStatus');
   let ok=0, fail=[], i=0;
   const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestGrade(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `채점 중… ${ok+fail.length}/${keys.length}`; } };
-  await Promise.all([worker(),worker(),worker()]);
+  await Promise.all(Array.from({length:6}, worker));
   gradeBulkRunning = false; renderGradePanel(); renderGrid();
   st.textContent = `완료: ${ok}명 채점` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 채점해요)` : '');
   if(fail.length) console.warn('AI 채점 실패:', fail);
@@ -917,7 +919,7 @@ document.getElementById('fbShowBtn').addEventListener('click', async ()=>{
   b.disabled = true;
   let ok=0, fail=0, i=0;
   const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestGrade(k)) ok++; }catch(err){ fail++; console.warn(err.message); } b.textContent = `🤖 피드백 받는 중… ${ok+fail}/${keys.length}`; } };
-  try{ await Promise.all([worker(),worker(),worker()]); } finally { b.disabled = false; }
+  try{ await Promise.all(Array.from({length:6}, worker)); } finally { b.disabled = false; }
   await controlRef.update({ fbShow:true });
   renderGrid && renderGrid();
   if(fail) alert(`${fail}명은 피드백을 받지 못했어요. 숨기기 → 다시 보여 주기를 누르면 그 학생만 다시 받아요.`);
