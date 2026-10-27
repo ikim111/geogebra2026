@@ -246,6 +246,10 @@
   #ai22OnBtn{background:#fff!important;color:#2e7d32!important;border:2px solid #66bb6a!important;font-weight:bold;} #ai22OnBtn.active{background:#2e7d32!important;color:#fff!important;border-color:#2e7d32!important;}
   #ai22OffBtn{background:#fff!important;color:#c62828!important;border:2px solid #e57373!important;font-weight:bold;} #ai22OffBtn.active{background:#c62828!important;color:#fff!important;border-color:#c62828!important;}
   #ai22Panel button#ai22ToggleBtn{display:none!important;}
+  .stat-cards{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;} .stat-cards .sc{flex:1;min-width:140px;background:#fff;border:1px solid #d5d8e0;border-radius:12px;padding:8px 14px;}
+  .stat-cards .l{font-size:12.5px;color:#666;} .stat-cards .v{font-size:26px;font-weight:bold;color:#1a237e;line-height:1.2;} .stat-cards .v small{font-size:14px;color:#666;font-weight:normal;margin-left:3px;}
+  #gradePanel{display:block;} .gr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;} .gr-head>b{font-size:15px;} .gr-head .big{font-size:18px;color:#1a237e;}
+  .gr-acts{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;} #gradePanel button.mini{height:34px!important;min-height:34px!important;background:#fff!important;color:#444!important;border:1px solid #d5d8e0!important;}
 </style>
 </head>
 <body>
@@ -290,8 +294,7 @@
 </div>
 
 <header>
-  <h1>📊 교사용 실시간 대시보드 — 23. 확률 탐구 글쓰기 ② 보고서 제출</h1>
-  <p>VIII. 확률 — 학생 보고서(제목·서론·본론·결론)를 보고, AI 채점·피드백을 받아 선생님이 점수를 확정해요</p>
+  <h1>📊 23. 확률 탐구 글쓰기 ② <span style="font-weight:normal;opacity:.85;font-size:.8em;">· <span id="hdrRoom"></span>보고서 제출</span></h1>
 </header>
 
 <div class="wrap">
@@ -356,16 +359,14 @@
         <button class="pause" id="paceClearBtn">제한 해제</button>
       </div>
       <div id="paceBadge" class="pace-badge" style="display:none!important;"></div>
-      <div class="stat-row">
-      <div class="summary" id="summary" style="display:none;">
-        <div>학생 수: <b id="sumCount">0</b></div>
-        <div>평균 진행률: <b id="sumAvg">0%</b></div>
-        <div>글자 수 기준 모두 충족: <b id="sumDone">0</b></div>
+      <div class="stat-cards" id="summary" style="display:none;">
+        <div class="sc"><div class="l">접속 학생</div><div class="v"><span id="sumCount">0</span><small>명</small></div></div>
+        <div class="sc"><div class="l">평균 진행률</div><div class="v"><span id="sumAvg">0%</span></div></div>
+        <div class="sc"><div class="l">800자 이상</div><div class="v"><span id="aggLong">0</span><small>명</small></div></div>
+        <div class="sc"><div class="l">제출</div><div class="v"><span id="aggSub">0</span><small>명</small></div></div>
+        <span id="sumDone" style="display:none;"></span>
       </div>
-      <div class="agg" id="aggPanel" style="display:none;">
-        <span>📋 제출 <b id="aggSub">0</b>명 · 800자 이상 <b id="aggLong">0</b>명</span>
-      </div>
-      </div>
+      <div id="aggPanel" style="display:none!important;"></div>
       <div class="ai-agg" id="ai22Panel" style="display:none;">
         <span>🤖 <b>1부 학생 AI</b></span>
         <span class="st" id="ai22State"></span>
@@ -373,13 +374,14 @@
         <button class="ai-toggle" id="ai22ToggleBtn" style="display:none;">🤖 1부 학생 AI 끄기</button>
       </div>
       <div class="agg" id="gradePanel" style="display:none;">
-        <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;margin-top:6px;">
-          <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점·피드백 일괄 (0명)</button>
-          <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 AI 피드백 학생에게 보여 주기</button>
-          <button class="pause" id="exportExcelBtn">📥 점수 엑셀 다운로드</button>
-          <button class="pause" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 보고서 인쇄</button>
+        <div class="gr-head"><b>📊 AI 채점</b><span><b id="grAi" class="big">0</b> / <span id="grTot">0</span>명 완료 · 교사 수정 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span></div>
+        <div class="gr-acts">
+          <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점</button>
+          <button class="gr-ai" id="fbShowBtn" style="background:#3949ab;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
+          <span style="flex:1"></span>
+          <button class="mini" id="exportExcelBtn">📥 엑셀</button>
+          <button class="mini" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 인쇄</button>
         </div>
       </div>
     </div>
@@ -719,7 +721,7 @@ async function setTeacherScore(key, c, v){
 function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
 function renderGradePanel(){
   const panel = document.getElementById('gradePanel'); if(!panel) return;
-  panel.style.display = currentRoomKey ? 'flex' : 'none';
+  panel.style.display = currentRoomKey ? 'block' : 'none';
   const list = Object.keys(allStudents).map(k=>allStudents[k]||{});
   const graded = list.map(gradeOf).filter(g=>g.any);
   document.getElementById('grAi').textContent = list.filter(s=>s.aiGrade&&s.aiGrade.scores).length;
@@ -727,7 +729,8 @@ function renderGradePanel(){
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
   const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
-  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 제출한 학생 모두 채점됨' : `🤖 AI 채점·피드백 일괄 — 제출했고 아직 안 받았거나 고친 학생 (${n}명)`;
+  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 제출한 학생 모두 채점됨' : `🤖 미채점 ${n}명 AI 채점`; btn.title = '제출했고 아직 채점 안 했거나, 채점 뒤 글을 고친 학생';
+  { const t = document.getElementById('grTot'); if(t) t.textContent = Object.values(allStudents||{}).filter(x=> x && hasReport(x)).length; }
   btn.disabled = n===0 || gradeBulkRunning;
   btn.classList.toggle('done', n===0 && anyGraded && !gradeBulkRunning);
 }
@@ -945,7 +948,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
       });
       document.getElementById('teacherGateScreen').style.display='none';
       document.getElementById('teacherAppScreen').style.display='block';
-      document.getElementById('currentRoomLabel').textContent = room+'반';
+      document.getElementById('currentRoomLabel').textContent = room+'반'; document.getElementById('hdrRoom').textContent = room+'반 ';
       document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(room));
       document.getElementById('summary').style.display='flex';
       renderAggregate(); renderGradePanel();
@@ -967,7 +970,7 @@ document.getElementById('connectBtn').addEventListener('click', ()=>{
 
 /* 👀 2026-10-27: AI 1차 피드백(잘된 점·보완할 점·생각해 볼 질문, 점수 제외)을 학생 화면에 보여 줄지 — rooms/{반}__prob33/control/fbShow */
 let fbShow = false;
-function paintFbShowBtn(){ const b = document.getElementById('fbShowBtn'); if(!b) return; b.textContent = fbShow ? '🙈 AI 피드백 학생에게서 숨기기' : '👀 AI 피드백 학생에게 보여 주기'; b.style.background = fbShow ? '#2e7d32' : '#3949ab'; }
+function paintFbShowBtn(){ const b = document.getElementById('fbShowBtn'); if(!b) return; b.textContent = fbShow ? '🙈 학생에게서 피드백 숨기기' : '👀 학생에게 피드백 공개'; b.style.background = fbShow ? '#2e7d32' : '#3949ab'; }
 document.getElementById('fbShowBtn').addEventListener('click', async ()=>{
   if(!controlRef){ alert('먼저 반에 접속해주세요.'); return; }
   if(fbShow){ controlRef.update({ fbShow:false }); return; }
