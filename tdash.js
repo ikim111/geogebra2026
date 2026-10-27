@@ -73,7 +73,7 @@
     const row = sel.parentElement; row.style.display = 'none'; row.after(grid);
     const h = row.parentElement && row.parentElement.querySelector('h2, h3, .title'); if(h && /반을 선택/.test(h.textContent)) h.textContent = '들어갈 반을 누르세요';
     const cs = $('connStatus'); if(cs && /시작하기/.test(cs.textContent)) cs.textContent = '';
-    const st2 = document.createElement('style'); st2.textContent = `.td-rooms{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:6px 0 4px;}
+    const st2 = document.createElement('style'); st2.textContent = `.td-rooms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 4px;}
       .td-rooms button{height:46px;border-radius:10px;border:1px solid #c5cae9;background:#fff;color:#1a237e;font-size:16px;font-weight:bold;cursor:pointer;}
       .td-rooms button:hover{background:#e8eaf6;} .td-rooms button.last{background:#1a237e;color:#fff;border-color:#1a237e;}
       @media (max-width:520px){ .td-rooms{grid-template-columns:repeat(4,minmax(0,1fr));} }`;
