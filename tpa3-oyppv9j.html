@@ -204,6 +204,16 @@
   .ck-edit{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:4px 0;} .ck-edit span{font-size:13px;} .ck-edit .xq{font-size:12px;color:#8d6e63;margin:-1px 0 2px 14px;}
   .gr-card .gr-fb{border-top:1px dashed #ccc;margin-top:6px;padding-top:5px;background:none;}
   @media (max-width:760px){ .gr-grid{grid-template-columns:1fr;} }
+  .sec-title{margin:14px 0 4px;font-size:13px;font-weight:bold;color:#1a237e;border-bottom:1px solid #e0e3f0;padding-bottom:3px;}
+  .state-banner{margin-top:6px;padding:10px 14px;border-radius:10px;font-size:15px;font-weight:bold;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f5f5f5;color:#555;border:2px solid #ddd;}
+  .state-banner.open{background:#e8f5e9;color:#1b5e20;border-color:#66bb6a;} .state-banner.closed{background:#fbe9e7;color:#8d2a10;border-color:#ffab91;}
+  .state-banner small{font-weight:normal;font-size:12.5px;color:#555;}
+  .more-menu{position:relative;} .more-menu>summary{list-style:none;cursor:pointer;padding:9px 14px;border-radius:6px;font-size:13.5px;background:#f5f5f5;border:1px solid #ccc;color:#333;}
+  .more-menu>summary::-webkit-details-marker{display:none;}
+  .more-pop{position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:#fff;border:1px solid #ccc;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.15);padding:8px;display:flex;flex-direction:column;gap:6px;min-width:190px;}
+  .more-pop button{width:100%;text-align:left;} .danger-zone{border-top:1px dashed #ef9a9a;padding-top:6px;display:flex;flex-direction:column;gap:6px;} .danger-zone small{color:#c62828;font-size:11.5px;}
+  .stat-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;} .stat-row .agg{margin-top:4px;}
+  button.gr-ai.done:disabled{background:#e8f5e9;color:#2e7d32;cursor:default;}
 </style>
 </head>
 <body>
@@ -272,21 +282,27 @@
         <a href="mgmt-9x3k7f2p.html" class="unitListLink" style="padding:9px 14px;border-radius:6px;font-size:13.5px;white-space:nowrap;background:#e8eaf6;color:#1a237e;border:1px solid #c5cae9;text-decoration:none;display:inline-flex;align-items:center;">📚 단원 목록</a>
         <button class="pause" id="changeRoomBtn">🔁 반 변경</button>
         <button class="pause" id="pauseBtn">⏸ 전체 일시정지</button>
-        <button class="pause" id="anonymizeBtn">🎭 익명화</button>
-        <button class="pause" id="backupBtn" title="이 반 학생 기록 전체를 파일로 저장">📦 전체 백업</button>
-        <button class="pause" id="clearBtn">🗑 이 반 초기화</button>
-        <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
-        <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+        <details class="more-menu"><summary>⋯ 관리</summary><div class="more-pop">
+          <button class="pause" id="anonymizeBtn">🎭 익명화</button>
+          <button class="pause" id="backupBtn" title="이 반 학생 기록 전체를 파일로 저장">📦 전체 백업</button>
+          <button class="send" id="surveySubmitBtn" disabled>📨 설문 제출 (0)</button>
+          <div class="danger-zone"><small>되돌릴 수 없어요</small>
+          <button class="pause" id="deleteSelectedBtn" disabled>🗑 선택 삭제 (0)</button>
+          <button class="pause" id="clearBtn">🗑 이 반 초기화</button></div>
+        </div></details>
       </div>
+      <div class="sec-title">① 수업 운영</div>
+      <div id="stateBanner" class="state-banner">반에 접속하면 보여요.</div>
       <div class="row" style="margin-top:10px;">
         <input type="text" id="announceInput" placeholder="학생 화면에 띄울 공지 메시지">
         <button class="send" id="announceBtn">📢 공지 보내기</button>
         <button class="pause" id="announceClearBtn">🔽 공지 내리기</button>
       </div>
       <div class="row" style="margin-top:10px;">
-        <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+        <span style="font-size:12.5px;color:#555;font-weight:bold;">직접 열고 닫기:</span>
         <button class="pause" id="classStartBtn">▶ 수업 시작</button>
-        <span style="font-size:12px;color:#888;">("일시정지"와는 별개 기능 — 학생 전체의 최종 제출/취소 버튼을 대신 눌러줘요.)</span>
+        <button class="pause" id="classEndBtn">⏹ 수업 종료</button>
+        <span style="font-size:12px;color:#888;">(예약 없이 급할 때만 — 연 뒤에는 꼭 [수업 종료])</span>
       </div>
       <details id="slotBox" style="margin-top:8px;font-size:13px;">
         <summary style="cursor:pointer;display:inline-block;background:#e8eaf6;border:2px solid #3949ab;color:#1a237e;border-radius:8px;padding:5px 12px;font-size:14px;"><b>⏰ 2부 교시 예약</b> <span id="slotNow"></span> <span style="color:#5c6bc0;font-size:12px;">▼ 눌러서 예약하기</span></summary>
@@ -301,12 +317,14 @@
         <button type="button" class="gr-ai" data-pass-give="110" style="background:#f57f17;">🎫 110분 주기</button>
         <div id="passList" style="margin-top:8px;"></div>
       </details>
-      <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap;">
+      <div class="row" style="display:none;margin-top:10px;align-items:center;flex-wrap:wrap;">
         <span style="font-size:13px;color:#555;font-weight:bold;white-space:nowrap;">속도조절(화면 범위 제한):</span>
         <div id="paceTrack" class="pace-track"></div>
         <button class="pause" id="paceClearBtn">제한 해제</button>
       </div>
-      <div id="paceBadge" class="pace-badge"></div>
+      <div id="paceBadge" class="pace-badge" style="display:none!important;"></div>
+      <div class="sec-title">② 학생 현황</div>
+      <div class="stat-row">
       <div class="summary" id="summary" style="display:none;">
         <div>학생 수: <b id="sumCount">0</b></div>
         <div>평균 진행률: <b id="sumAvg">0%</b></div>
@@ -315,11 +333,13 @@
       <div class="agg" id="aggPanel" style="display:none;">
         <span>📋 제출 <b id="aggSub">0</b>명 · 800자 이상 <b id="aggLong">0</b>명</span>
       </div>
+      </div>
       <div class="ai-agg" id="ai22Panel" style="display:none;">
-        <span>🤖 <b>1부 탐구 준비(22번) 학생 AI</b> <span style="font-size:12px;color:#777;">— AI 피드백·AI 도우미 (2부 보고서 화면에는 AI가 없어요)</span></span>
+        <span>🤖 <b>1부 학생 AI</b></span>
         <button class="ai-toggle" id="ai22ToggleBtn">🤖 1부 학생 AI 끄기</button>
         <span class="st" id="ai22State"></span>
       </div>
+      <div class="sec-title">③ 채점·피드백</div>
       <div class="agg" id="gradePanel" style="display:none;background:#f3fbfa;border-color:#b2dfdb;color:#00594f;">
         <span>📊 <b>AI 채점·피드백</b> — 받은 학생 <b id="grAi">0</b>명 · 선생님이 고친 학생 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;margin-top:6px;">
@@ -674,8 +694,10 @@ function renderGradePanel(){
   document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
-  btn.textContent = `🤖 AI 채점·피드백 일괄 — 제출했고 아직 안 받았거나 고친 학생 (${n}명)`;
+  const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
+  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 제출한 학생 모두 채점됨' : `🤖 AI 채점·피드백 일괄 — 제출했고 아직 안 받았거나 고친 학생 (${n}명)`;
   btn.disabled = n===0 || gradeBulkRunning;
+  btn.classList.toggle('done', n===0 && anyGraded && !gradeBulkRunning);
 }
 document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
   const keys = gradeEligibleKeys(); if(!keys.length) return;
@@ -1025,6 +1047,13 @@ function paintSlots(){
   const fut = Object.values(slotsCur).flatMap(x=>[x.s,x.e]).filter(t=> t>now).sort((a,b)=>a-b)[0];
   const inSlot = Object.values(slotsCur).some(x=> x.s<=now && now<x.e);
   document.getElementById('slotNow').textContent = `— 지금 ${ended?'🔒 닫힘':'🟢 열림'}${(!ended && !inSlot)?' (예약 밖인데 직접 열어 둔 상태 — 필요 없으면 [⏹ 수업 종료])':''}` + (fut ? ` · 다음 바뀌는 시각 ${new Date(fut).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}` : '');
+  { const sb = document.getElementById('stateBanner'); if(sb){
+      const when = fut ? new Date(fut).toLocaleString('ko-KR',{month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      sb.className = 'state-banner ' + (ended ? 'closed' : 'open');
+      sb.innerHTML = ended
+        ? `🔒 지금 닫힘 — 학생이 쓸 수 없어요 <small>${when ? '다음 열림: '+esc(when)+' (예약)' : '예약된 시간이 없어요 — 아래 [⏰ 2부 교시 예약]에서 예약하세요'}</small>`
+        : `🟢 지금 열림 — 학생이 쓸 수 있어요 <small>${inSlot ? '예약 시간이에요' + (when ? ' · '+esc(when)+'에 닫힘' : '') : '직접 열어 둔 상태예요 — 끝나면 꼭 [⏹ 수업 종료]를 눌러 주세요'}</small>`;
+  } }
 }
 document.getElementById('slotGrid').addEventListener('click', e=>{
   const b = e.target.closest('[data-slot]'); if(!b || b.disabled || !controlRef) return;
