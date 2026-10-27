@@ -757,7 +757,7 @@ const RT = {
     const now = Date.now() + (this._tOff||0), p2 = this._p2;
     const p2End = p2 && p2.startedAt ? +p2.startedAt + (+p2.minutes||55)*60000 : 0;
     if(p2End && now >= p2End) this.finishPass2(p2End);   // 시간이 다 되면 기록 남기고 이용권 정리
-    const p2Active = !!(p2End && now < p2End), p2Ready = !!(p2 && !p2.startedAt && now < +p2.until);
+    const p2Active = !!(p2End && now < p2End), p2Ready = !!(p2 && !p2.startedAt && (!p2.until || now < +p2.until));
     const classEnded = effEnded2(this._ctlRaw, now) && !p2Active;
     paintPass2(p2Active ? p2End : 0);
     if(this._lastKnownClassEnded===null){ if(classEnded){ applyFinalLock(true); this.markSubmitted(true, true); } }

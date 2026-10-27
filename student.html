@@ -361,7 +361,7 @@ function applyAccessAndCompletion(profile){
       };
       firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__prob33/control').on('value', snap=>{ ctl25 = snap.val() || {}; paintAccess(); });
       // 🎫 결석생 이용권(2부): 내 기록에 pass2가 있으면 시작 기한·쓰는 시간 동안 2부를 연다
-      let p2 = null; const p2Open = ()=>{ if(!p2) return false; const now = Date.now(); return p2.startedAt ? now < +p2.startedAt + (+p2.minutes||55)*60000 : now < +p2.until; };
+      let p2 = null; const p2Open = ()=>{ if(!p2) return false; const now = Date.now(); return p2.startedAt ? now < +p2.startedAt + (+p2.minutes||55)*60000 : (!p2.until || now < +p2.until); };
       if(profile.name) firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__prob33/students/'+sanitize(profile.number||'')+'_'+sanitize(profile.name)+'/pass2').on('value', snap=>{ p2 = snap.val(); paintAccess(); });
       setInterval(paintAccess, 20000);   // 예약 시각이 되면 (연결이 쉬고 있어도) 저절로 열고 닫힘
       firebase.database().ref('rooms/'+accessKey+'/units').on('value', snap=>{

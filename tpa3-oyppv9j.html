@@ -287,7 +287,7 @@
       </details>
       <details id="passBox" style="margin-top:6px;font-size:13px;">
         <summary style="cursor:pointer;display:inline-block;background:#fff8e1;border:2px solid #f9a825;color:#5d4037;border-radius:8px;padding:5px 12px;font-size:14px;"><b>🎫 결석생 이용권</b> <span id="passNow"></span> <span style="color:#8d6e63;font-size:12px;">▼ 눌러서 열기</span></summary>
-        <div style="font-size:12px;color:#888;margin:4px 0 6px;">학생을 고르고 55분/110분을 주면, 그 학생만 <b>오늘 16:30까지</b> 목차에서 2부에 들어가 [▶ 시작]을 눌러 쓸 수 있어요. 시작한 순간부터 시간이 흐르고, 학생이 [작성 끝내기]를 누르거나 시간이 다 되면 닫혀요. 선생님 앞에서 시작하게 해 주세요.</div>
+        <div style="font-size:12px;color:#888;margin:4px 0 6px;">학생을 고르고 55분/110분을 주면, 그 학생만 목차에서 2부에 들어가 [▶ 시작]을 눌러 쓸 수 있어요(시작 기한 없음). 시작한 순간부터 시간이 흐르고, 학생이 [작성 끝내기]를 누르거나 시간이 다 되면 닫혀요. 선생님 앞에서 시작하게 해 주세요.</div>
         <div id="passPick" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
         <button type="button" class="gr-ai" data-pass-give="55" style="background:#f9a825;color:#3e2723;">🎫 55분 주기</button>
         <button type="button" class="gr-ai" data-pass-give="110" style="background:#f57f17;">🎫 110분 주기</button>
@@ -1014,7 +1014,7 @@ function paintPass(){
   pl.innerHTML = rows.length ? rows.map(k=>{ const s = allStudents[k], p = s.pass2, e = p2EndT(p);
       let st = '';
       if(p && e && now < e){ st = `<b style="color:#2e7d32;">쓰는 중 · 남은 ${Math.ceil((e-now)/60000)}분</b>`; act++; }
-      else if(p && !p.startedAt && now < +p.until) st = `<span style="color:#f57f17;">${+p.minutes}분 · 시작 전</span>`;
+      else if(p && !p.startedAt && (!p.until || now < +p.until)) st = `<span style="color:#f57f17;">${+p.minutes}분 · 시작 전</span>`;
       else if(p && !p.startedAt) st = '<span style="color:#999;">기한 지남(시작 안 함)</span>';
       else st = '<span style="color:#666;">끝남</span>';
       return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;border-top:1px solid #eee;"><b style="min-width:90px;">${esc(displayName(k,s.name,s.number))}</b>${st}<span style="color:#555;">누적 ${p2Used(s)}분 / 110분</span>
@@ -1029,14 +1029,12 @@ document.getElementById('passBox').addEventListener('click', async e=>{
   if(t.dataset.passPick){ const k = t.dataset.passPick; passPick.has(k) ? passPick.delete(k) : passPick.add(k); paintPass(); return; }
   if(t.dataset.passGive){
     const m = +t.dataset.passGive, ks = [...passPick]; if(!ks.length){ alert('학생을 먼저 골라 주세요.'); return; }
-    const until = new Date(); until.setHours(16,30,0,0);
-    if(Date.now() > until.getTime()){ until.setTime(Date.now() + 60*60000); }
     const names = ks.map(k=> (allStudents[k]||prepKeys[k]||{}).name || k).join(', ');
-    if(!confirm(`${names}에게 ${m}분 이용권을 줄까요?\n${until.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}까지 [시작]을 눌러야 해요.`)) return;
+    if(!confirm(`${names}에게 ${m}분 이용권을 줄까요?\n학생이 [시작]을 누른 순간부터 시간이 흘러요.`)) return;
     for(const k of ks){
       const s = allStudents[k] || {}, p = s.pass2;
       if(p && p.startedAt){ const e2 = Math.min(Date.now(), p2EndT(p)); await ref(k).child('passLog/'+p.startedAt).set({ minutes:+p.minutes||55, startedAt:+p.startedAt, endedAt:e2 }); }
-      const up = { pass2: { minutes:m, until: until.getTime(), setAt: Date.now() } };
+      const up = { pass2: { minutes:m, setAt: Date.now() } };
       if(!allStudents[k] && prepKeys[k]){ up.name = prepKeys[k].name || null; up.number = prepKeys[k].number || null; }
       await ref(k).update(up);
     }
