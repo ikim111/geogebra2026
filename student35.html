@@ -684,7 +684,7 @@ function aifbMount(box, opt){
   const paint = () => {
     const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
     const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
-    btn.disabled = busy || out_ || aifbLocked() || short;
+    btn.disabled = busy || out_ || aifbLocked() || short; btn.dataset.why = (!busy && !aifbLocked()) ? (out_ ? '오늘 AI 피드백 횟수를 다 썼어요' : (short ? '답을 조금 더 쓰면 받을 수 있어요' : '')) : '';
     req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
     req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
     left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
@@ -919,7 +919,7 @@ function renderRec2(){
   document.querySelectorAll('#tools2 [data-v]').forEach(b=>{ b.classList.toggle('used', state.hang.lines[+b.dataset.v]); b.disabled = !!(HANG && !HANG.done); });
   $('conj3').classList.toggle('locked', state.hang.ok || isLk());
   document.querySelectorAll('input[name=hang2]').forEach(r=>{ r.checked = r.value===state.hang.ans; });
-  $('h3Check').disabled = !state.hang.lines.every(Boolean) || !state.hang.ans || state.hang.ok || isLk();
+  $('h3Check').disabled = !state.hang.lines.every(Boolean) || !state.hang.ans || state.hang.ok || isLk(); $('h3Check').dataset.why = (state.hang.ok || isLk()) ? '' : (!state.hang.lines.every(Boolean) ? '선을 모두 그으면 확인할 수 있어요' : (!state.hang.ans ? '답을 고르면 확인할 수 있어요' : ''));
   $('h3Msg').innerHTML = !state.hang.checked ? '' : state.hang.ok
     ? '<span class="ok">✅ 맞아요! 어느 꼭짓점을 들어도 실은 <b>같은 한 점</b>을 지나요. 이 점이 정말 균형점일까요? 다음 화면에서 핀으로 확인해 봐요.</span>'
     : '<span class="bad">기록판을 다시 잘 보세요. 세 빨간 선이 지나는 곳을 확대해 보듯 살펴봐요.</span>';
@@ -973,7 +973,7 @@ function renderCtrl2(){
   const b = state.bal[state.cur];
   $('pin4').innerHTML = b.pin ? `핀: <b>(${b.pin[0]}, ${b.pin[1]})</b>` : '핀: <b>아직 안 놓음</b>';
   $('try4').textContent = `올려 본 횟수 ${b.tries}`;
-  $('go4').disabled = !b.pin || finalLocked || !!ANIM2;
+  $('go4').disabled = !b.pin || finalLocked || !!ANIM2; $('go4').dataset.why = (!b.pin && !finalLocked) ? '먼저 놓을 자리를 고르세요' : '';
   $('re4').disabled = !b.pin || b.done || finalLocked || !!ANIM2;
 }
 $('ttabs').addEventListener('click', e=>{ const bt = e.target.closest('button'); if(!bt || ANIM2) return; state.cur = +bt.dataset.i; renderTabs(); renderCtrl2(); renderBal(0); $('gm4').innerHTML=''; refreshAll(); });
@@ -1160,7 +1160,7 @@ function paintShare(n){
   SH_FIELDS[n].forEach(id=>{ $(id).readOnly = sh; $(id).classList.toggle('shared', sh); });
   b.classList.toggle('edit', sh);
   b.textContent = sh ? '✏️ 수정하기' : (state.seen[n] ? '📤 다시 공유' : '📤 답변 공유');
-  b.disabled = !sh && (!SH_READY[n]() || finalLocked);
+  b.disabled = !sh && (!SH_READY[n]() || finalLocked); b.dataset.why = (!sh && !SH_READY[n]() && !(finalLocked)) ? '답을 다 쓰면 공유할 수 있어요' : '';
   $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
 }
 [9,'w'].forEach(n=> $('sh'+n).addEventListener('click', ()=>{

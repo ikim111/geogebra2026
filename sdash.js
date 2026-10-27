@@ -40,5 +40,15 @@
     else if(w) w.style.display = 'none'; };
   const watchWhy = ()=> document.querySelectorAll('button[data-why]').forEach(b=>{ if(b.dataset.sdWhy) return; b.dataset.sdWhy = '1'; paintWhy(b);
     new MutationObserver(()=> paintWhy(b)).observe(b, { attributes:true, attributeFilter:['disabled','data-why'] }); });
-  watchWhy(); new MutationObserver(()=> watchWhy()).observe(document.body, { childList:true, subtree:true });
+  watchWhy();
+  new MutationObserver(recs=>{ let need = false; recs.forEach(r=>{ if(r.type === 'attributes' && r.target.dataset && !r.target.dataset.sdWhy) need = true; else if(r.type === 'childList' && r.addedNodes.length) need = true; }); if(need) watchWhy(); })
+    .observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['data-why'] });
+
+  /* 👀 교사용 미리보기(?preview=1)에서는 막힌 버튼을 모두 풀어서 선생님이 어느 단계든 눌러 볼 수 있게 한다(기록은 저장되지 않음) */
+  if(/[?&]preview=1/.test(location.search)){
+    const un = root=> (root.querySelectorAll ? root.querySelectorAll('button[disabled], input[disabled], textarea[disabled], select[disabled]') : []).forEach(el=>{ el.disabled = false; });
+    un(document);
+    new MutationObserver(recs=> recs.forEach(r=>{ if(r.type === 'attributes' && r.target.disabled) r.target.disabled = false; else if(r.addedNodes) r.addedNodes.forEach(n=>{ if(n.nodeType === 1) un(n); }); }))
+      .observe(document.body, { subtree:true, childList:true, attributes:true, attributeFilter:['disabled'] });
+  }
 })();

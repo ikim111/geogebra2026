@@ -533,7 +533,7 @@ function aifbMount(box, opt){
   const paint = () => {
     const n = aifbUsed(key), mx = aifbMax(), short = opt.answer().trim().length < opt.minLen, out_ = n >= mx;
     const pending = out_ && AIFB_REQ > (AIFB_BONUS.ts || 0);
-    btn.disabled = busy || out_ || aifbLocked() || short;
+    btn.disabled = busy || out_ || aifbLocked() || short; btn.dataset.why = (!busy && !aifbLocked()) ? (out_ ? '오늘 AI 피드백 횟수를 다 썼어요' : (short ? '답을 조금 더 쓰면 받을 수 있어요' : '')) : '';
     req.style.display = (out_ && !busy) ? '' : 'none'; req.disabled = pending || aifbLocked();
     req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
     left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
@@ -877,7 +877,7 @@ function paintShare(n){
   SH_FIELDS[n].forEach(id=>{ $(id).readOnly = sh; $(id).classList.toggle('shared', sh); });
   b.classList.toggle('edit', sh);
   b.textContent = sh ? '✏️ 수정하기' : (state.seen[n] ? '📤 다시 공유' : '📤 답변 공유');
-  b.disabled = !sh && (!SH_READY[n]() || isLocked());
+  b.disabled = !sh && (!SH_READY[n]() || isLocked()); b.dataset.why = (!sh && !SH_READY[n]() && !(isLocked())) ? '답을 다 쓰면 공유할 수 있어요' : '';
   $('shn'+n).textContent = sh ? '공유했어요! 아래에서 친구들의 생각을 볼 수 있어요.' : (SH_READY[n]() ? '답변을 공유하면 친구들의 생각을 볼 수 있어요.' : '');
 }
 $('sh3').addEventListener('click', ()=>{
