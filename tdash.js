@@ -44,7 +44,7 @@
   #stageFree{background:#fff!important;color:#e65100!important;border:2px solid #fb8c00!important;border-radius:8px!important;font-weight:bold;}
   .stg-wait{margin-top:8px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;background:#f3f4f7;color:#999;}
   .stg-wait.now{background:#e8f5e9;color:#2e7d32;font-weight:bold;}
-  #aggPanel{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #f9c74f!important;color:#333!important;}
+  #aggPanel{background:#fff!important;border:1px solid #d5d8e0!important;color:#333!important;}
   #aggAnnounceBtn{background:#1565c0!important;color:#fff!important;border:none!important;border-radius:8px!important;}
   #aiReqBox{background:#fff!important;border:1px solid #d5d8e0!important;border-left:5px solid #9575cd!important;}
 
