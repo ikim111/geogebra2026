@@ -84,6 +84,14 @@
   .ordBtn.item{background:#fff3cd;font-weight:bold;}
   .ordBtn:disabled{opacity:.45;cursor:default;}
   .ordPanel{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  /* 2026-10-27 목차 정리 */
+  .top-card .who{display:inline-block;background:#e8eaf6;color:#1a237e;border-radius:16px;padding:4px 14px;font-size:15px;margin-top:4px;}
+  .top-card .acct-btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px;}
+  .top-card .acct-btns .editBtn{margin:0;background:#fff;border:1px solid #c5cae9;color:#3949ab;font-size:12.5px;padding:6px 11px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.08);}
+  .top-card .acct-btns .editBtn:hover{background:#e8eaf6;}
+  .task-link .lockwhy{display:none;font-size:12px;color:#888;font-weight:normal;margin-top:2px;}
+  .task-link.locked.lockok .lockwhy{display:block;}
+  .task-link[data-n="0"]{padding-top:9px;padding-bottom:9px;background:#e8eaf6;}
 </style>
 </head>
 <body>
@@ -118,8 +126,7 @@
       <h1>과제를 선택하세요</h1>
       <div class="who"><b id="viewClass"></b>반 <b id="viewNumber"></b>번 <b id="viewName"></b></div>
       <div class="myscore" id="myScore" style="display:none;"></div>
-      <button class="editBtn" id="editBtn">✏️ 정보 다시 입력하기</button>
-      <button class="editBtn" id="fixBtn" style="margin-left:6px;">🔁 번호·이름을 잘못 입력했어요</button>
+      <div class="acct-btns"><button class="editBtn" id="editBtn">↩ 다른 학생으로 로그인</button><button class="editBtn" id="fixBtn">🔁 번호·이름이 틀렸어요 (기록 옮기기)</button></div>
       <div class="fixbox" id="fixBox" style="display:none;">
         <div>지금까지 <b id="fixOld"></b>(으)로 한 활동 기록을 올바른 번호·이름으로 옮겨요.</div>
         <div class="fixrow">올바른 번호 <input id="fixNo" inputmode="numeric"> 이름 <input id="fixNm"> <button type="button" id="fixGo">옮기기</button> <button type="button" id="fixCancel">취소</button></div>
@@ -274,6 +281,7 @@ function buildTaskLink(t, profile, opts){
   a.dataset.n = t.n;
   const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; title.textContent=t.title;
+  const why=document.createElement('small'); why.className='lockwhy'; why.textContent = t.n===25 ? '🔒 수업 시간(시작 5분 전)에 열려요' : '🔒 선생님이 열어 주면 들어갈 수 있어요'; title.appendChild(why);
   const badge=document.createElement('span'); badge.className='badge'; badge.style.display='none';
   const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(badge); a.appendChild(arrow);
@@ -434,12 +442,12 @@ function setPendingLock(a){
 }
 // 선생님이 실제로 잠가둔 것으로 최종 확인된 상태 - 클릭 방지까지 확실히 걸어둔다.
 function lockTaskLink(a){
-  setPendingLock(a);
+  setPendingLock(a); a.classList.add('lockok');
   if(!a.dataset.lockGuard){ a.dataset.lockGuard = '1'; a.addEventListener('click', e=>{ if(a.classList.contains('locked')) e.preventDefault(); }); }   // 나중에 풀리면 다시 눌리게
 }
 // 열려있는 것으로 확인된 상태 - 원래 목적지로 다시 이어준다.
 function unlockTaskLink(a){
-  a.classList.remove('locked');
+  a.classList.remove('locked','lockok');
   if(a.dataset.href) a.href = a.dataset.href;
   const isExternal = a.dataset.external === '1';
   if(isExternal){ a.target = '_blank'; a.rel = 'noopener'; }
