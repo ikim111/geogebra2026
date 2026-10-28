@@ -1722,7 +1722,7 @@ window.addEventListener('message', (e)=>{
    ⭐ = students/{key}/bestPick {n:1~3, by:'ai'|'t', q:선생님 질문} — 띄우기·인쇄는 이름을 가리고(학생 A·B·C) 보여 준다. 15점 채점과는 별개. */
 const BEST_K = ['q','d','a','i'], BEST_NAME = { q:'질문', d:'자료', a:'분석', i:'해석' };
 const BEST_LOOK = { q:'질문에서 사건·대상·조건을 분명히 정한 점', d:'전체가 몇 번 중인지 밝히고 한계를 생각한 점', a:'질문과 같은 조건의 자료로 확률을 구한 점', i:'확률의 뜻을 자기 주제에 맞게 풀어 쓴 점' };
-let bestBusy = false, bestShowI = 0;
+let bestBusy = false, bestShowI = 0, bestOpen = false; try{ bestOpen = localStorage.getItem('bp_open') === '1'; }catch(e){}
 const bestRef = k => db.ref('rooms/'+currentRoomKey+'/students/'+k);
 const bestOs = j => j && j.checks ? (j.checks.match(/O/g)||[]).length : 0;
 const bestLabel = s => `${esc(s.number||'')}번 ${esc(s.name||'')}`;
@@ -1751,7 +1751,9 @@ function renderBest(){
   const slot = n=>{ const k = picks.find(x=> allStudents[x].bestPick.n===n); if(!k) return `<div class="pk empty">${'①②③'[n-1]} 아직 안 골랐어요</div>`;
     const s = allStudents[k], p = s.bestPick, j = s.bestJudge || {}, sk = p.strength || j.strength;
     return `<div class="pk"><b>⭐ ${n} · ${bestLabel(s)}</b>${p.by==='ai'?' <small style="color:#7b1fa2">AI</small>':''}<div class="s">강점: ${sk?BEST_LOOK[sk]:'-'}</div><input data-bp-q="${esc(k)}" placeholder="💬 학생들에게 던질 질문" title="띄우기·인쇄 화면에 나와요" value="${esc(p.q||'')}"></div>`; };
-  el.innerHTML = `<div class="bp-top"><b style="font-size:15px;">⭐ 잘 쓴 글 고르기</b><span class="bp-cnt">고른 글 ${picks.length} / 3</span></div>
+  const tgl = `<button class="bp-b" id="bpTgl" style="margin-left:8px;">${bestOpen?'접기':'펼치기'}</button>`;
+  if(!bestOpen && !bestBusy){ el.innerHTML = `<div class="bp-top"><b style="font-size:15px;">⭐ 잘 쓴 글 고르기</b><span><span class="bp-cnt">고른 글 ${picks.length} / 3</span>${tgl}</span></div>`; return; }
+  el.innerHTML = `<div class="bp-top"><b style="font-size:15px;">⭐ 잘 쓴 글 고르기</b><span><span class="bp-cnt">고른 글 ${picks.length} / 3</span>${tgl}</span></div>
     <div class="bp-note">① AI가 제출한 글을 기준 4개(질문·자료·분석·해석)로 판단 → ② 기준을 만족한 글을 후보로 → ③ 두 편씩 비교해 순위. 15점 채점과는 별개예요.</div>
     <div class="bp-acts"><button class="bp-ai" id="bpAuto" ${bestBusy||!all.length?'disabled':''}>🤖 AI가 3편 고르기</button><button class="bp-ai bp-ai2" id="bpRec" ${bestBusy||!all.length?'disabled':''}>🤖 AI 추천 받고 직접 고르기</button></div>
     <div class="bp-st">${stTxt || (judged.length ? `✔ 제출 ${all.length}명 중 ${judged.length}명 판단 · 기준 4개 모두 만족 ${judged.filter(k=>bestOs(allStudents[k].bestJudge)===4).length}명` : (all.length ? `제출한 글 ${all.length}편 — 버튼을 누르면 AI가 판단해요(1~3분)` : '제출한 글이 아직 없어요'))}</div>
@@ -1830,7 +1832,8 @@ function bestShowPaint(){
 }
 document.addEventListener('click', e=>{
   const t = e.target.closest('#bestPanel button, #bestShow button'); if(!t) return;
-  if(t.id === 'bpAuto') bestRun(true);
+  if(t.id === 'bpTgl'){ bestOpen = !bestOpen; try{ localStorage.setItem('bp_open', bestOpen?'1':'0'); }catch(e){} renderBest(); }
+  else if(t.id === 'bpAuto') bestRun(true);
   else if(t.id === 'bpRec') bestRun(false);
   else if(t.dataset.bpStar) bestToggle(t.dataset.bpStar);
   else if(t.dataset.bpView){ const k = t.dataset.bpView, w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
