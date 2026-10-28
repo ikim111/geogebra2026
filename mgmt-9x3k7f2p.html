@@ -110,6 +110,9 @@
   .rp-box:not(.open) .rp-all{display:none;}
   .rp-box:not(.open) .rp-tg{margin-left:auto;}
   .chapter-title .cnt::before{content:'활동 ';}
+  /* 🎨 2026-10-28 학생 목차와 통일: 위 버튼 3개 = 흰 바탕+파란 테두리(A안), 순서 발표자리·학생관리·QR */
+  #seatFabBtn,#smFabBtn,#qrFabBtn{background:#fff!important;color:#1565c0!important;border:2px solid #1565c0!important;}
+  #qrFabBtn{right:10px!important;} #smFabBtn{right:116px!important;} #seatFabBtn{right:232px!important;}
 </style>
 </head>
 <body>
@@ -164,7 +167,7 @@
 
 <div id="page1">
   <div class="gate-card">
-    <h1>📊 교사용 대시보드</h1>
+    <h1>📐 2026 신도림중 수학 · 교사</h1>
     <p class="gate-sub">먼저 확인할 반을 선택하세요</p>
     <label>반</label>
     <div class="class-grid" id="classGrid"></div>
@@ -177,7 +180,7 @@
 <div id="page2">
   <div class="wrap2">
     <div class="top-card">
-      <div class="tc-row"><h1><span class="cls-badge"><b id="viewClass"></b>반</span> 단원 관리 <span class="tc-i" title="잠긴 단원은 이 반 학생들이 아직 들어갈 수 없어요. 오른쪽 버튼을 눌러 열고 잠글 수 있어요. (0단원 지오지브라 연습은 항상 열려 있어요)">ⓘ</span></h1></div>
+      <div class="tc-row"><h1><span class="cls-badge"><b id="viewClass"></b>반</span> 📐 2026 신도림중 수학 · 교사 <span class="tc-i" title="잠긴 단원은 이 반 학생들이 아직 들어갈 수 없어요. 오른쪽 버튼을 눌러 열고 잠글 수 있어요. (0단원 지오지브라 연습은 항상 열려 있어요)">ⓘ</span></h1></div>
       <div class="tc-btns" id="tcBtns"><button class="editBtn" id="editBtn">🔁 반 변경</button></div>
       <div class="lockNote" style="display:none;">🔒 잠긴 단원은 이 반 학생들이 아직 들어갈 수 없어요. 오른쪽 버튼을 눌러 열고 잠글 수 있어요. (0단원 지오지브라 연습은 항상 열려 있어요)</div>
     </div>
@@ -344,6 +347,13 @@ function buildUnitRow(u){
   const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
   row.appendChild(a);
+  { // 🏷 활동 종류 색 줄(학생 목차와 같은 색) — 파일 이름(t번호-…, tpa…)으로 종류를 찾는다
+    const TC = { think:'#1565c0', explore:'#00897b', talk:'#d81b60', pa:'#f9a825' };
+    const TN = {1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',
+      2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa'};
+    const f = String(u.file||''), m = /^t(\d+)-/.exec(f), ty = /^tpa/.test(f) ? 'pa' : (m ? TN[+m[1]] : null);
+    if(ty) a.style.borderLeft = '6px solid ' + TC[ty];
+  }
 
   if(u.external){
     // Snorkl 같은 외부 사이트 링크: 반 정보는 붙이지 않고 새 탭으로 열지만, 다른
