@@ -54,6 +54,7 @@
   .unit-link:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.22);}
   .unit-link .num{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:15px;}
   .unit-link .title{font-size:15px;font-weight:bold;}
+  .tcap{display:block;font-size:12.5px;color:#777;font-weight:normal;line-height:1.4;} .tq{display:block;font-size:16px;line-height:1.35;}
   .unit-link .arrow{margin-left:auto;color:#bbb;font-size:18px;}
   .unit-row.locked .unit-link{background:#eceff1;color:#888;box-shadow:none;}
   .unit-row.locked .unit-link .num{background:#b0bec5;}
@@ -323,6 +324,21 @@ let accessRef = null;
 let accessData = {}; // {unitNumber: true|false}
 let foldRef = null;   // rooms/{반}__access/fold (목차 접기/펼치기)
 
+/* 🏷 2026-10-28 활동 제목 두 줄: "8.2. 확률의 뜻 생각열기 - 동전을 …" → 윗줄(작게) "8.2 확률의 뜻 · 생각열기" + 아랫줄(크게) 질문.
+   " - "가 없는 제목은 그대로 한 줄. 종류 이름은 그 종류 색 글씨로. */
+function fillTitle2(el, text, color){
+  const s = String(text||''), i = s.indexOf(' - ');
+  if(i < 0){ el.textContent = s; return; }
+  let left = s.slice(0, i).trim(), q = s.slice(i+3).trim(), typ = '';
+  const m = /^(\d+\.\d+)\.?\s+(.+?)\s+(생각열기|탐구하기|의사소통)$/.exec(left);
+  if(m){ left = m[1] + ' ' + m[2]; typ = m[3]; }
+  else { const k = /^(.*?[①②③④⑤])\s*(.+)$/.exec(q); if(k){ typ = k[1]; q = k[2]; } }
+  el.textContent = '';
+  const cap = document.createElement('span'); cap.className = 'tcap'; cap.textContent = left + (typ ? ' · ' : '');
+  if(typ){ const b = document.createElement('b'); b.textContent = typ; b.style.color = color === '#f9a825' ? '#9a6700' : (color || '#555'); cap.appendChild(b); }
+  const big = document.createElement('span'); big.className = 'tq'; big.textContent = q;
+  el.appendChild(cap); el.appendChild(big);
+}
 function buildUnitRow(u){
   const row=document.createElement('div');
   row.className='unit-row';
@@ -343,7 +359,7 @@ function buildUnitRow(u){
   const a=document.createElement('a');
   a.className='unit-link';
   const num=document.createElement('span'); num.className='num'; num.textContent=u.label;
-  const title=document.createElement('span'); title.className='title'; title.textContent=u.title;
+  const title=document.createElement('span'); title.className='title'; fillTitle2(title, u.title, (()=>{ const TC={think:'#1565c0',explore:'#00897b',talk:'#d81b60',pa:'#f9a825'}, TN={1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',2:'explore',3:'explore',4:'explore',16:'explore',17:'explore',0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk',7:'pa'}; const f=String(u.file||''), m=/^t(\d+)-/.exec(f); return /^tpa/.test(f)?TC.pa:(m&&TN[+m[1]]?TC[TN[+m[1]]]:''); })());
   const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
   row.appendChild(a);
