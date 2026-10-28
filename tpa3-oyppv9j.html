@@ -388,6 +388,7 @@
           <button class="mini" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 인쇄</button>
         </div>
       </div>
+      <div id="bestPanel" style="display:none;"></div>
     </div>
 
     <div class="tab-bar">
@@ -1672,6 +1673,181 @@ window.addEventListener('message', (e)=>{
     if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
   }
 });
+</script>
+<div id="bestShow"></div>
+<style>
+/* ⭐ 2026-10-28 잘 쓴 글 고르기 */
+#bestPanel{background:#fff;border:1px solid #d5d8e0;border-left:5px solid #f9a825;border-radius:12px;padding:12px 14px;margin-top:10px;color:#333;font-size:14px;}
+#bestPanel .bp-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+#bestPanel .bp-cnt{font-weight:bold;color:#9a6700;}
+#bestPanel .bp-note{color:#666;font-size:13px;margin:4px 0 8px;}
+#bestPanel .bp-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+#bestPanel button.bp-ai{height:38px;padding:0 14px;border-radius:8px;font-weight:bold;cursor:pointer;background:#7b1fa2;color:#fff;border:2px solid #7b1fa2;}
+#bestPanel button.bp-ai2{background:#fff;color:#7b1fa2;}
+#bestPanel .bp-st{font-size:13px;color:#7b1fa2;margin-top:6px;min-height:18px;}
+#bestPanel .bp-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;}
+#bestPanel .pk{border:2px solid #f9a825;border-radius:10px;padding:8px 10px;background:#fffbea;font-size:13px;}
+#bestPanel .pk b{color:#9a6700;font-size:14px;} #bestPanel .pk .s{color:#555;margin:2px 0 4px;}
+#bestPanel .pk input{width:100%;box-sizing:border-box;border:1px solid #d5d8e0;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;}
+#bestPanel .pk.empty{border-style:dashed;background:#fff;color:#aaa;display:flex;align-items:center;justify-content:center;min-height:60px;}
+#bestPanel table{width:100%;border-collapse:collapse;font-size:13.5px;} #bestPanel th{font-size:12.5px;color:#666;font-weight:normal;}
+#bestPanel td,#bestPanel th{padding:6px 5px;border-bottom:1px solid #eceff1;text-align:left;vertical-align:middle;}
+#bestPanel tr.on{background:#fffbea;}
+#bestPanel .c{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;font-weight:bold;font-size:12.5px;cursor:help;}
+#bestPanel .c.o{background:#2e7d32;color:#fff;} #bestPanel .c.x{background:#eceff1;color:#9aa0a6;}
+#bestPanel .rk{color:#7b1fa2;font-weight:bold;} #bestPanel .why{color:#666;font-size:12.5px;}
+#bestPanel button.bp-b{border:1px solid #c5cae9;background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;font-size:13px;}
+#bestPanel button.bp-star{border:1px solid #f9a825;background:#fff;color:#9a6700;border-radius:8px;padding:3px 9px;cursor:pointer;font-weight:bold;font-size:13px;}
+#bestPanel button.bp-star.on{background:#f9a825;color:#fff;}
+#bestPanel details summary{cursor:pointer;color:#666;font-size:13px;margin-top:6px;}
+#bestPanel .bp-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+#bestPanel button.bp-show{background:#1565c0;color:#fff;border:2px solid #1565c0;border-radius:8px;height:38px;padding:0 14px;font-weight:bold;cursor:pointer;}
+#bestPanel button.bp-print{background:#fff;color:#444;border:1px solid #d5d8e0;border-radius:8px;height:38px;padding:0 14px;cursor:pointer;}
+#bestPanel button:disabled{opacity:.5;cursor:not-allowed;}
+#bestShow{position:fixed;inset:0;z-index:100000;background:#1a237e;overflow:auto;display:none;font-family:inherit;}
+#bestShow .w{max-width:960px;margin:0 auto;padding:18px;}
+#bestShow .top{display:flex;justify-content:space-between;align-items:center;color:#fff;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
+#bestShow .top b{font-size:24px;} #bestShow .top button{background:#fff;color:#1a237e;border:0;border-radius:8px;padding:8px 16px;font-weight:bold;margin-left:6px;cursor:pointer;font-size:15px;}
+#bestShow .pg{background:#fff;border-radius:14px;padding:20px 26px;border-top:6px solid #f9a825;font-size:18px;line-height:1.75;color:#222;}
+#bestShow .lk{background:#fff8e1;border-radius:8px;padding:8px 12px;font-size:16px;color:#7a5200;margin-bottom:8px;}
+#bestShow h2{margin:6px 0 10px;font-size:22px;color:#1a237e;} #bestShow h3{margin:14px 0 4px;color:#9a6700;font-size:17px;}
+#bestShow p{margin:0 0 6px;} #bestShow .q{background:#e3f2fd;border-radius:8px;padding:10px 14px;margin-top:16px;font-size:18px;color:#0d47a1;}
+#bestShow .src{font-size:15px;color:#555;}
+</style>
+<script>
+/* ⭐ 2026-10-28 잘 쓴 글 고르기 (선생님과 정한 방식)
+   ① AI가 반 전체 글을 4개 기준(질문·자료·분석·해석)으로 절대평가 → students/{key}/bestJudge {checks,why,strength,line,hash,ts,rank}
+   ② 기준을 모두 만족한 글(3편보다 적으면 3개 만족까지)을 후보로, 최대 6편을 두 편씩 비교(AI)해 순위
+   ③ [AI가 3편 고르기]: 위 순위에서 강점이 겹치지 않게 3편 자동 ⭐ / [AI 추천 받고 직접 고르기]: 순위까지만, ⭐는 선생님
+   ⭐ = students/{key}/bestPick {n:1~3, by:'ai'|'t', q:선생님 질문} — 띄우기·인쇄는 이름을 가리고(학생 A·B·C) 보여 준다. 15점 채점과는 별개. */
+const BEST_K = ['q','d','a','i'], BEST_NAME = { q:'질문', d:'자료', a:'분석', i:'해석' };
+const BEST_LOOK = { q:'질문에서 사건·대상·조건을 분명히 정한 점', d:'전체가 몇 번 중인지 밝히고 한계를 생각한 점', a:'질문과 같은 조건의 자료로 확률을 구한 점', i:'확률의 뜻을 자기 주제에 맞게 풀어 쓴 점' };
+let bestBusy = false, bestShowI = 0;
+const bestRef = k => db.ref('rooms/'+currentRoomKey+'/students/'+k);
+const bestOs = j => j && j.checks ? (j.checks.match(/O/g)||[]).length : 0;
+const bestLabel = s => `${esc(s.number||'')}번 ${esc(s.name||'')}`;
+function bestPicks(){ return Object.keys(allStudents).filter(k=> allStudents[k] && allStudents[k].bestPick && allStudents[k].bestPick.n).sort((a,b)=> allStudents[a].bestPick.n - allStudents[b].bestPick.n); }
+function bestCands(){
+  const ks = Object.keys(allStudents).filter(k=>{ const s = allStudents[k]; return s && s.bestJudge && s.bestJudge.checks; });
+  const ord = (a,b)=>{ const A = allStudents[a], B = allStudents[b], ra = A.bestJudge.rank||99, rb = B.bestJudge.rank||99; if(ra!==rb) return ra-rb; const d = bestOs(B.bestJudge)-bestOs(A.bestJudge); if(d) return d; return gradeOf(B).total - gradeOf(A).total; };
+  const four = ks.filter(k=> bestOs(allStudents[k].bestJudge)===4).sort(ord);
+  const three = ks.filter(k=> bestOs(allStudents[k].bestJudge)===3).sort(ord);
+  const rest = ks.filter(k=> bestOs(allStudents[k].bestJudge)<3).sort(ord);
+  return four.length >= 3 ? { main:four, more:three.concat(rest) } : { main:four.concat(three), more:rest };
+}
+function renderBest(){
+  const el = document.getElementById('bestPanel'); if(!el) return;
+  el.style.display = currentRoomKey ? 'block' : 'none'; if(!currentRoomKey) return;
+  const all = Object.keys(allStudents).filter(k=> allStudents[k] && allStudents[k].submitted && hasReport(allStudents[k]));
+  const judged = all.filter(k=> allStudents[k].bestJudge && allStudents[k].bestJudge.hash === repHash(allStudents[k]));
+  const picks = bestPicks(), c = bestCands();
+  const act = document.activeElement && el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT' ? document.activeElement.dataset.bpQ : null;
+  if(act) return; // 선생님 질문을 쓰는 중이면 다시 그리지 않는다
+  const st = el.querySelector('.bp-st'), stTxt = st && bestBusy ? st.textContent : '';
+  const row = k=>{ const s = allStudents[k], j = s.bestJudge, p = s.bestPick;
+    return `<tr class="${p&&p.n?'on':''}"><td class="rk">${j.rank||''}</td><td>${bestLabel(s)}</td>${BEST_K.map((x,i)=>`<td><span class="c ${j.checks[i]==='O'?'o':'x'}" title="${esc((j.why||[])[i]||'')}">${j.checks[i]}</span></td>`).join('')}
+      <td class="why">${esc(j.line||'')}</td><td style="white-space:nowrap;text-align:right;"><button class="bp-b" data-bp-view="${esc(k)}" title="글 보기">📄</button> <button class="bp-star ${p&&p.n?'on':''}" data-bp-star="${esc(k)}">${p&&p.n?'⭐':'☆'}</button></td></tr>`; };
+  const head = `<tr><th>순위</th><th>학생</th>${BEST_K.map(x=>`<th>${BEST_NAME[x]}</th>`).join('')}<th>AI 한 줄</th><th></th></tr>`;
+  const slot = n=>{ const k = picks.find(x=> allStudents[x].bestPick.n===n); if(!k) return `<div class="pk empty">${'①②③'[n-1]} 아직 안 골랐어요</div>`;
+    const s = allStudents[k], p = s.bestPick, j = s.bestJudge || {}, sk = p.strength || j.strength;
+    return `<div class="pk"><b>⭐ ${n} · ${bestLabel(s)}</b>${p.by==='ai'?' <small style="color:#7b1fa2">AI</small>':''}<div class="s">강점: ${sk?BEST_LOOK[sk]:'-'}</div><input data-bp-q="${esc(k)}" placeholder="💬 학생들에게 던질 질문" title="띄우기·인쇄 화면에 나와요" value="${esc(p.q||'')}"></div>`; };
+  el.innerHTML = `<div class="bp-top"><b style="font-size:15px;">⭐ 잘 쓴 글 고르기</b><span class="bp-cnt">고른 글 ${picks.length} / 3</span></div>
+    <div class="bp-note">① AI가 제출한 글을 기준 4개(질문·자료·분석·해석)로 판단 → ② 기준을 만족한 글을 후보로 → ③ 두 편씩 비교해 순위. 15점 채점과는 별개예요.</div>
+    <div class="bp-acts"><button class="bp-ai" id="bpAuto" ${bestBusy||!all.length?'disabled':''}>🤖 AI가 3편 고르기</button><button class="bp-ai bp-ai2" id="bpRec" ${bestBusy||!all.length?'disabled':''}>🤖 AI 추천 받고 직접 고르기</button></div>
+    <div class="bp-st">${stTxt || (judged.length ? `✔ 제출 ${all.length}명 중 ${judged.length}명 판단 · 기준 4개 모두 만족 ${judged.filter(k=>bestOs(allStudents[k].bestJudge)===4).length}명` : (all.length ? `제출한 글 ${all.length}편 — 버튼을 누르면 AI가 판단해요(1~3분)` : '제출한 글이 아직 없어요'))}</div>
+    <div class="bp-picks">${slot(1)}${slot(2)}${slot(3)}</div>
+    ${c.main.length ? `<table>${head}${c.main.map(row).join('')}</table>` : ''}
+    ${c.more.length ? `<details><summary>나머지 학생 보기 (${c.more.length}명)</summary><table>${head}${c.more.map(row).join('')}</table></details>` : ''}
+    <div class="bp-foot"><button class="bp-print" id="bpPrint" ${picks.length?'':'disabled'}>🖨 고른 글 인쇄</button><button class="bp-show" id="bpShow" ${picks.length?'':'disabled'}>🖥 이름 가리고 띄우기</button></div>`;
+}
+async function bestPost(body){
+  const r = await fetch('/api/report-best', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+  const j = await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error || ('HTTP '+r.status)); return j;
+}
+async function bestRun(auto){
+  if(bestBusy || !currentRoomKey) return;
+  const all = Object.keys(allStudents).filter(k=> allStudents[k] && allStudents[k].submitted && hasReport(allStudents[k]));
+  if(!all.length) return;
+  if(auto && bestPicks().length && !confirm('이미 고른 ⭐가 있어요. AI가 고른 3편으로 바꿀까요?')) return;
+  bestBusy = true; renderBest();
+  const st = ()=> document.querySelector('#bestPanel .bp-st'), say = t=>{ const e = st(); if(e) e.textContent = t; };
+  try{
+    // ① 판단(글이 바뀌지 않았으면 예전 판단을 그대로 쓴다)
+    const need = all.filter(k=>{ const j = allStudents[k].bestJudge; return !(j && j.hash === repHash(allStudents[k])); });
+    let i = 0, done = 0, fail = 0;
+    const w1 = async ()=>{ while(i < need.length){ const k = need[i++], s = allStudents[k];
+      try{ const j = await bestPost(Object.assign({ mode:'judge' }, repOf(s))); const v = { checks:j.checks, why:j.why, strength:j.strength, line:j.line, hash:repHash(s), ts:Date.now() };
+        await bestRef(k).child('bestJudge').set(v); s.bestJudge = v; }catch(e){ fail++; console.warn('판단 실패', k, e); }
+      done++; say(`① 기준 판단 중… ${done}/${need.length}`); } };
+    await Promise.all(Array.from({length:6}, w1));
+    // ② 후보 최대 6편을 두 편씩 비교(라운드 로빈)
+    const c = bestCands().main.slice(0, 6), win = {}; c.forEach(k=> win[k] = 0);
+    const pairs = []; for(let a=0;a<c.length;a++) for(let b=a+1;b<c.length;b++) pairs.push([c[a], c[b]]);
+    let p = 0, pd = 0;
+    const w2 = async ()=>{ while(p < pairs.length){ const [a,b] = pairs[p++];
+      try{ const j = await bestPost({ mode:'compare', a:repOf(allStudents[a]), b:repOf(allStudents[b]) }); win[j.win==='a'?a:b]++; }catch(e){ console.warn('비교 실패', e); }
+      pd++; say(`② 두 편씩 비교 중… ${pd}/${pairs.length}`); } };
+    await Promise.all(Array.from({length:6}, w2));
+    const ranked = c.slice().sort((x,y)=> (win[y]-win[x]) || (bestOs(allStudents[y].bestJudge)-bestOs(allStudents[x].bestJudge)) || (gradeOf(allStudents[y]).total - gradeOf(allStudents[x]).total));
+    const upd = {}; Object.keys(allStudents).forEach(k=>{ const j = allStudents[k] && allStudents[k].bestJudge; if(j){ const r = ranked.indexOf(k); j.rank = r >= 0 ? r+1 : null; upd[k+'/bestJudge/rank'] = j.rank; } });
+    // ③ AI가 고르기: 순위대로 보되 강점이 겹치지 않게
+    if(auto){
+      const pick = [], used = new Set();
+      ranked.forEach(k=>{ const sk = allStudents[k].bestJudge.strength; if(pick.length < 3 && sk && !used.has(sk)){ pick.push(k); used.add(sk); } });
+      ranked.forEach(k=>{ if(pick.length < 3 && !pick.includes(k)) pick.push(k); });
+      Object.keys(allStudents).forEach(k=>{ if(allStudents[k] && allStudents[k].bestPick) { upd[k+'/bestPick'] = null; allStudents[k].bestPick = null; } });
+      pick.forEach((k,n)=>{ const v = { n:n+1, by:'ai', strength: allStudents[k].bestJudge.strength || '', q:'' }; upd[k+'/bestPick'] = v; allStudents[k].bestPick = v; });
+    }
+    await db.ref('rooms/'+currentRoomKey+'/students').update(upd);
+    bestBusy = false; renderBest();
+    say(`완료 · 판단 ${need.length - fail}명 새로 함${fail?` (실패 ${fail}명 — 다시 누르면 실패한 학생만 다시 해요)`:''} · 후보 ${c.length}편 비교 ${pairs.length}번${auto?' · ⭐ 3편 자동 선택':' · ⭐로 3편을 골라 주세요'}`);
+  }catch(e){ alert('잘 쓴 글 고르기 중 오류: '+(e.message||e)); }
+  finally{ bestBusy = false; }
+}
+function bestToggle(k){
+  const s = allStudents[k]; if(!s) return;
+  if(s.bestPick && s.bestPick.n){ bestRef(k).child('bestPick').remove(); s.bestPick = null;
+    bestPicks().forEach((x,i)=>{ if(allStudents[x].bestPick.n !== i+1){ allStudents[x].bestPick.n = i+1; bestRef(x).child('bestPick/n').set(i+1); } });
+    renderBest(); return; }
+  const ps = bestPicks(); if(ps.length >= 3){ alert('3편까지 고를 수 있어요. 먼저 다른 ⭐를 눌러 빼 주세요.'); return; }
+  const v = { n: ps.length+1, by:'t', strength: (s.bestJudge && s.bestJudge.strength) || '', q:'' };
+  bestRef(k).child('bestPick').set(v); s.bestPick = v; renderBest();
+}
+function bestPageHTML(k, idx, forPrint){
+  const s = allStudents[k], r = repOf(s), p = s.bestPick || {}, sk = p.strength || (s.bestJudge && s.bestJudge.strength);
+  const paras = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join('') || '<p style="color:#aaa">(비어 있음)</p>';
+  return `<div class="pg"><div style="color:#888;font-size:${forPrint?'9pt':'14px'};">학생 ${'ABC'[idx]} (이름은 가렸어요)</div>
+    ${sk?`<div class="lk">👀 이 글에서 볼 점: <b>${BEST_LOOK[sk]}</b></div>`:''}
+    <h2>${esc(r.title)||'(제목 없음)'}</h2><h3>서론</h3>${paras(r.intro)}<h3>본론</h3>${paras(r.body)}<h3>결론</h3>${paras(r.concl)}
+    ${r.sources.length?`<h3>자료</h3>${r.sources.map((x,i)=>`<div class="src">자료 ${i+1}. ${esc(x.name)||'(출처 이름 없음)'}</div>`).join('')}`:''}
+    ${p.q?`<div class="q">💬 선생님 질문: ${esc(p.q)}</div>`:''}</div>`;
+}
+function bestShowPaint(){
+  const ps = bestPicks(), box = document.getElementById('bestShow'); if(!ps.length){ box.style.display = 'none'; return; }
+  bestShowI = Math.max(0, Math.min(ps.length-1, bestShowI));
+  box.innerHTML = `<div class="w"><div class="top"><b>⭐ ${esc(currentRoomName)}반 잘 쓴 글 ${'①②③'[bestShowI]} / ${ps.length}</b><div><button data-bs="-1">◀ 이전</button><button data-bs="1">다음 ▶</button><button data-bs="x">✕ 닫기</button></div></div>${bestPageHTML(ps[bestShowI], bestShowI)}</div>`;
+  box.style.display = 'block'; box.scrollTop = 0;
+}
+document.addEventListener('click', e=>{
+  const t = e.target.closest('#bestPanel button, #bestShow button'); if(!t) return;
+  if(t.id === 'bpAuto') bestRun(true);
+  else if(t.id === 'bpRec') bestRun(false);
+  else if(t.dataset.bpStar) bestToggle(t.dataset.bpStar);
+  else if(t.dataset.bpView){ const k = t.dataset.bpView, w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${bestLabel(allStudents[k])}</title><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;line-height:1.7;padding:0 16px;} h3{color:#9a6700;margin:14px 0 4px;} .lk{background:#fff8e1;padding:6px 10px;border-radius:8px;} .q{background:#e3f2fd;padding:8px;border-radius:8px;} .src{color:#555;}</style></head><body><b>${esc(currentRoomName)}반 ${bestLabel(allStudents[k])}</b>${bestPageHTML(k, 0).replace(/학생 A \(이름은 가렸어요\)/,'')}</body></html>`); w.document.close(); }
+  else if(t.id === 'bpShow'){ bestShowI = 0; bestShowPaint(); }
+  else if(t.dataset.bs){ if(t.dataset.bs === 'x') document.getElementById('bestShow').style.display = 'none'; else { bestShowI += +t.dataset.bs; bestShowPaint(); } }
+  else if(t.id === 'bpPrint'){ const ps = bestPicks(); const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 잘 쓴 글</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10.5pt;line-height:1.65;color:#1a1a1a;word-break:keep-all;}
+      .pg{width:210mm;padding:12mm 14mm;page-break-after:always;border-top:6px solid #f9a825;} .pg:last-child{page-break-after:auto;} .hd{font-size:13pt;font-weight:bold;color:#1a237e;margin-bottom:4px;}
+      .lk{background:#fff8e1;border-radius:6px;padding:5px 9px;margin:4px 0;} h2{font-size:14pt;margin:6px 0;color:#1a237e;} h3{font-size:10.5pt;color:#9a6700;margin:8px 0 2px;} p{margin:0 0 3px;text-indent:.6em;} .src{font-size:9pt;color:#555;} .q{background:#e3f2fd;border-radius:6px;padding:6px 9px;margin-top:8px;}</style></head><body>
+      ${ps.map((k,i)=> bestPageHTML(k, i, true).replace('<div class="pg">', `<div class="pg"><div class="hd">⭐ ${esc(currentRoomName)}반 잘 쓴 글 ${'①②③'[i]}</div>`)).join('')}
+      <script>document.querySelectorAll('.pg').forEach(pg=>{ const max = 297*96/25.4 - 6, h = pg.scrollHeight; if(h > max) pg.style.zoom = Math.max(0.7, max/h).toFixed(3); }); setTimeout(()=>print(),400)<\/script></body></html>`); w.document.close(); }
+});
+document.addEventListener('change', e=>{ const t = e.target; if(t && t.dataset && t.dataset.bpQ){ const k = t.dataset.bpQ; if(allStudents[k] && allStudents[k].bestPick){ allStudents[k].bestPick.q = t.value.slice(0,200); bestRef(k).child('bestPick/q').set(t.value.slice(0,200)); } } });
+document.addEventListener('keydown', e=>{ const b = document.getElementById('bestShow'); if(!b || b.style.display !== 'block') return;
+  if(e.key === 'ArrowRight'){ bestShowI++; bestShowPaint(); } else if(e.key === 'ArrowLeft'){ bestShowI--; bestShowPaint(); } else if(e.key === 'Escape') b.style.display = 'none'; });
+(function(){ const _rg = renderGradePanel; renderGradePanel = function(){ _rg.apply(this, arguments); try{ renderBest(); }catch(e){ console.warn(e); } }; })();
 </script>
 <script src="tdash.js"></script>
 </body>
