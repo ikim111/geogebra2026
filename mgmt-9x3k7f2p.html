@@ -615,10 +615,31 @@ async function fxAutoScan(){
   const sorted = keys.sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0) || a.localeCompare(b));
   const warn = sorted.filter(k=>warnOf(k)), rest = sorted.filter(k=>!warnOf(k));
   const row = k => { const {no, nm} = fxSplit(k), w = warnOf(k);
-    return `<tr data-k="${rpEsc(k)}"><td><b>${rpEsc(no)}번 ${rpEsc(nm)}</b>${w?` <span class="cf">⚠️ ${w}</span>`:''}</td><td>${seen[k].length}개 활동</td>
+    return `<tr data-k="${rpEsc(k)}"><td style="width:28px;"><input type="checkbox" class="fx-ck" aria-label="선택"></td><td><b>${rpEsc(no)}번 ${rpEsc(nm)}</b>${w?` <span class="cf">⚠️ ${w}</span>`:''}</td><td>${seen[k].length}개 활동</td>
       <td class="fx-ed"><button type="button" class="fx-btn" data-edit="1">✏️ 고치기</button> <button type="button" class="rp-tg" data-pin="1" title="비밀번호를 0000으로">🔑 비밀번호 초기화</button> <button type="button" class="rp-tg" data-del="1" style="color:#c62828;border-color:#ef9a9a;">🗑 삭제</button></td></tr>`; };
   box.innerHTML = `${cls}반 학생 기록 ${keys.length}개 ${rset?'(명단과 다른 이름은 ⚠️)':''} — 잘못 입력한 이름 옆 <b>✏️ 고치기</b>를 누르고 맞는 번호·이름을 넣으세요. 모든 활동의 기록이 한꺼번에 옮겨져요.`
-    + `<table class="fx-tab"><tr><th>번호·이름</th><th>기록</th><th></th></tr>${warn.map(row).join('')}${warn.length && rest.length ? '<tr><td colspan="3" style="background:#fafbfc;color:#888;">— 나머지 —</td></tr>' : ''}${rest.map(row).join('')}</table><div class="fx-res" id="fxAutoRes"></div>`;
+    + `<div class="fx-bulk" id="fxBulk" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap;"><label style="cursor:pointer;"><input type="checkbox" id="fxAll"> 전체 선택</label><button type="button" class="rp-tg" id="fxDelSel" disabled style="color:#c62828;border-color:#ef9a9a;">🗑 선택 삭제 (0)</button></div>`
+    + `<table class="fx-tab"><tr><th></th><th>번호·이름</th><th>기록</th><th></th></tr>${warn.map(row).join('')}${warn.length && rest.length ? '<tr><td colspan="4" style="background:#fafbfc;color:#888;">— 나머지 —</td></tr>' : ''}${rest.map(row).join('')}</table><div class="fx-res" id="fxAutoRes"></div>`;
+  { // 🗑 2026-10-29 선택 삭제: 여러 학생 기록을 한 번에 지운다(한 명씩 누르기 귀찮다는 선생님 요청)
+    const cks = () => [...box.querySelectorAll('.fx-ck')], sel = () => cks().filter(c=>c.checked).map(c=> c.closest('tr').dataset.k);
+    const paint = () => { const n = sel().length, b = document.getElementById('fxDelSel'); if(b){ b.disabled = !n; b.textContent = `🗑 선택 삭제 (${n})`; }
+      const all = document.getElementById('fxAll'); if(all){ all.checked = n && n === cks().length; all.indeterminate = n > 0 && n < cks().length; } };
+    cks().forEach(c=> c.addEventListener('change', paint));
+    document.getElementById('fxAll').addEventListener('change', e=>{ cks().forEach(c=> c.checked = e.target.checked); paint(); });
+    document.getElementById('fxDelSel').addEventListener('click', ()=>{
+      const ks = sel(); if(!ks.length) return; const bar = document.getElementById('fxBulk');
+      const names = ks.map(k=>{ const {no, nm} = fxSplit(k); return no+'번 '+nm; });
+      bar.innerHTML = `<span class="cf">${rpEsc(names.join(', '))} — ${ks.length}명의 모든 활동 기록을 지울까요? 되돌릴 수 없어요.</span> <button type="button" class="fx-btn go" id="fxDelGo">🗑 ${ks.length}명 삭제</button> <button type="button" class="rp-tg" id="fxDelX">취소</button>`;
+      document.getElementById('fxDelX').addEventListener('click', fxAutoScan);
+      document.getElementById('fxDelGo').addEventListener('click', async ev=>{
+        ev.target.disabled = true; const out = document.getElementById('fxAutoRes'); let ok = 0; const fail = [];
+        for(const k of ks){ out.textContent = `⏳ 지우는 중… ${ok + fail.length + 1}/${ks.length}`;
+          const n = await fxDelete(cls, k).catch(()=> -1); if(n < 0) fail.push(k); else ok++; }
+        const msg = `<span class="ok">✅ ${ok}명의 기록을 지웠어요.</span>` + (fail.length ? ` <span class="cf">지우지 못한 학생: ${rpEsc(fail.join(', '))}</span>` : '');
+        fxAutoScan().then(()=>{ const o = document.getElementById('fxAutoRes'); if(o) o.innerHTML = msg; });
+      });
+    });
+  }
   box.querySelectorAll('tr[data-k]').forEach(tr=>{
     const k = tr.dataset.k, {no, nm} = fxSplit(k), cell = tr.querySelector('.fx-ed');
     cell.querySelector('[data-del]').addEventListener('click', ()=>{
