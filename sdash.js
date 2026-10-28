@@ -85,6 +85,16 @@
   markCheck(document);
   new MutationObserver(recs=> recs.forEach(r=> r.addedNodes.forEach(n=>{ if(n.nodeType === 1){ markCheck(n.parentElement || n); } })))
     .observe(document.body, { childList:true, subtree:true });
+  /* 📏 2026-10-28 글상자 잘림 방지: 글이 길어진 뒤 화면 폭이 좁아지면(태블릿 회전·창 크기 변경) 자동 높이 글상자가
+     예전 높이로 남아 글이 잘리고 스크롤도 안 됐다 → 폭이 바뀌거나 글상자가 화면에 보일 때·누를 때 모자라면 늘려 준다(줄이지는 않음) */
+  const fitTA = t=>{ if(!t.offsetParent) return; if(getComputedStyle(t).overflowY !== 'hidden') return; if(t.scrollHeight > t.clientHeight + 2) t.style.height = (t.scrollHeight + 2) + 'px'; };
+  let fitT = null; window.addEventListener('resize', ()=>{ clearTimeout(fitT); fitT = setTimeout(()=> document.querySelectorAll('textarea').forEach(fitTA), 150); });
+  document.addEventListener('focusin', e=>{ if(e.target && e.target.tagName === 'TEXTAREA') fitTA(e.target); });
+  if('IntersectionObserver' in window){
+    const io = new IntersectionObserver(es=> es.forEach(e=>{ if(e.isIntersecting) fitTA(e.target); }));
+    const watchTA = ()=> document.querySelectorAll('textarea:not([data-sd-fit])').forEach(t=>{ t.dataset.sdFit = '1'; io.observe(t); });
+    watchTA(); new MutationObserver(watchTA).observe(document.body, { childList:true, subtree:true });
+  }
   /* 👀 교사용 미리보기(?preview=1)에서는 막힌 버튼을 모두 풀어서 선생님이 어느 단계든 눌러 볼 수 있게 한다(기록은 저장되지 않음) */
   if(/[?&]preview=1/.test(location.search)){
     const un = root=> (root.querySelectorAll ? root.querySelectorAll('button[disabled], input[disabled], textarea[disabled], select[disabled]') : []).forEach(el=>{ el.disabled = false; });
