@@ -208,7 +208,18 @@
   .tdm-r .gr-grid{grid-template-columns:1fr;}
   .tdm-r .ck-edit{align-items:stretch;}
   .tdm-r .ck-edit span{display:block;border-radius:6px;padding:5px 9px;}
-  .tdm-l mark{background:#fff59d;border-radius:3px;padding:0 1px;}
+  .rb-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;} .rb-hd>b{color:#7b1fa2;font-size:15px;} .rb-tot{margin-left:auto;font-size:13px;color:#555;} .rb-tot b{font-size:20px;color:#1a237e;}
+  .rb-t{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;} .rb-t th,.rb-t td{border:1px solid #e0e3ea;padding:6px 8px;vertical-align:top;text-align:left;}
+  .rb-t th{background:#f5f6fa;color:#1a237e;font-size:12.5px;} .rb-t th small{font-weight:400;color:#888;} .rb-it{white-space:nowrap;color:#1a237e;} .rb-pt{font-size:13px;color:#555;margin-top:2px;}
+  .rb-ed{font-size:11px;color:#888;margin-top:4px;} .rb-ed a{color:#888;} .rb-ox{text-align:center!important;width:44px;}
+  .rb-b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border-radius:6px;cursor:pointer;font-weight:700;border:1px solid #cfd8e3;background:#fff;}
+  .rb-b.o{color:#1565c0;} .rb-b.x{color:#c62828;} .rb-b.tc{outline:2px solid #00897b;} .rb-b:hover{border-color:#1565c0;}
+  .rb-ev.ok{color:#33691e;} .rb-ev.no{color:#8d6e00;} .rb-ev [data-evq]{cursor:pointer;} .rb-ev [data-evq]:hover{text-decoration:underline;} .rb-none{color:#aaa;font-size:12px;}
+  .rb-note{font-weight:400;font-size:11.5px;color:#7b1fa2;} .rb-mk{font-size:11.5px;border:1px solid #7b1fa2;color:#7b1fa2;background:#fff;border-radius:6px;padding:2px 7px;cursor:pointer;margin-left:4px;}
+  .rb-warn{color:#e65100;font-size:12px;} .rb-ask{color:#555;margin-top:4px;font-size:12px;}
+  .rb-first-box{border-left:4px solid #e65100;padding:8px 10px;margin-bottom:6px;font-size:13px;} .rb-first-box b{color:#e65100;} .rb-st{font-size:12.5px;color:#555;}
+  .tdm-l mark{background:#fff59d;border-radius:3px;padding:0 1px;} .tdm-l mark.ok{background:#dcedc8;} .tdm-l mark.flash{outline:2px solid #1565c0;}
+  .ck-edit .xq.ev-o{color:#33691e;} .ck-edit .xq[data-evq]{cursor:pointer;} .ck-edit .xq.ev-n{color:#888;}
   .tdm-nav{border:1px solid #c5cae9;background:#fff;color:#1565c0;border-radius:8px;padding:3px 10px;font-size:12.5px;cursor:pointer;}
   .tdm-nav:disabled{opacity:.4;cursor:default;}
   @media (max-width:900px){ #tdmBox.wide{height:auto;max-height:92vh;overflow:auto!important;} .tdm-cols{grid-template-columns:1fr;height:auto;} .tdm-l,.tdm-r{overflow:visible;border:0;padding:0;} }
@@ -700,6 +711,7 @@ async function requestGrade(key){
       total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0, xq: j.xq || null, goodSrc: (j.goodSrc!=null ? j.goodSrc : null) };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
+    requestEvidence(key).catch(err=> console.warn('근거 문장 실패', err));   // 🔎 2026-10-29 ○✕마다 근거 문장(뒤에서)
     return true;
   }catch(err){
     throw new Error(`${s.name||key}: ${err.message||err}`);
@@ -713,11 +725,26 @@ function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length
   return c; }
 function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; return (typeof t==='string' && t.length===CHECK_LABELS[k].length) ? t : aiChecksOf(s, k); }
 function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
+/* 🔎 2026-10-29 ○✕마다 근거 문장: aiGrade/ev = {question:[...], ..., ck:{question:'OOX',...}} — 만든 때의 ○✕(ck)와 지금이 같은 칸만 보여 준다 */
+const CK_KEYS = ['question','data','analysis','logic'];
+async function requestEvidence(key, roomKey){
+  const rk = roomKey || currentRoomKey, s = allStudents[key]; if(!s || !s.aiGrade || !hasReport(s)) return false;
+  const checks = {}; CK_KEYS.forEach(k=> checks[k] = checksOf(s, k) || '');
+  const r = await fetch('/api/report-evidence', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({ checks }, repOf(s))) });
+  const j = await r.json().catch(()=>({})); if(!r.ok || !j.ev) throw new Error(j.error || ('HTTP '+r.status));
+  const ev = Object.assign({}, j.ev, { ck: checks, ts: Date.now() });
+  await db.ref('rooms/'+rk+'/students/'+key+'/aiGrade/ev').set(ev);
+  if(allStudents[key] && allStudents[key].aiGrade) allStudents[key].aiGrade.ev = ev;
+  try{ refreshOpenModal(); }catch(e){}
+  return true;
+}
+function evQuote(s, k, i){ const ev = s && s.aiGrade && s.aiGrade.ev; if(!ev || !ev[k] || !ev.ck) return ''; const c = checksOf(s, k); return (c && ev.ck[k] && c[i] === ev.ck[k][i]) ? String(ev[k][i]||'') : ''; }
 function ckEditHTML(key, s, it){
   const c = checksOf(s, it.k), a = aiChecksOf(s, it.k); if(!c) return '';
   const ai = s.aiGrade || {}, xq = (ai.xq && ai.xq[it.k]) || [];
   const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && String(ai.dchecks||'').includes('O') && !(s.teacherChecks && s.teacherChecks.data);
-  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${c[i]==='X' && a[i]==='X' && xq[i]?`<div class="xq">↳ AI 근거: ${esc(xq[i])}</div>`:''}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
+  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${(()=>{ if(it.k==='logic' && i<3){ const r = repOf(s), n = countChars([r.intro,r.body,r.concl][i]); return `<div class="xq ev-n">↳ ${n.toLocaleString()}자</div>`; }
+      const q = evQuote(s, it.k, i) || (c[i]==='X' && a[i]==='X' ? xq[i] : ''); return q ? `<div class="xq ${c[i]==='O'?'ev-o':''}" data-evq="${esc(q)}" title="누르면 왼쪽 글에서 찾아요">↳ 근거: ${esc(q)}</div>` : ''; })()}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
 }
 async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체크박스의 toggleCheck와 겹쳐서 ○✕를 눌러도 안 바뀌던 문제 → 이름 바꿈
   const s = allStudents[key]; if(!s) return;
@@ -1491,13 +1518,63 @@ function renderDetail(item){
 }
 
 /* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 채점·피드백을 모달로 보여준다. */
+
+/* 📋 2026-10-29 보고서 창 오른쪽 '채점표': 항목 | 채점 기준 | 판정(○✕ 누르면 바뀜) | 근거(학생 글, 누르면 왼쪽 글로) + 피드백 표 */
+const evPending = new Set();
+function makeEvidence(key){ if(evPending.has(key)) return; evPending.add(key); refreshOpenModal();
+  requestEvidence(key).catch(err=> alert('근거 문장을 만들지 못했어요: '+(err.message||err))).finally(()=>{ evPending.delete(key); refreshOpenModal(); }); }
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ev-make]'); if(!b) return; e.preventDefault(); e.stopPropagation(); makeEvidence(b.dataset.evMake); }, true);
+function rubricTableHTML(key, s){
+  const g = gradeOf(s), ai = g.ai, pending = gradePending.has(key), can = hasReport(s) && !pending;
+  const btn = `<button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점 중… (10~40초)' : (ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button>`;
+  let h = `<div class="gr-box rb"><div class="rb-hd"><b>📊 AI 채점표</b><span class="rb-tot">합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}${g.overridden?` <small>· 선생님 수정 ${g.overridden}개</small>`:''}</span>${btn}</div>`;
+  if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "다시 받기"를 눌러 보세요.</div>`;
+  if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
+  if(!ai) return h + `<div class="gr-warn" style="color:#888;">아직 채점 전이에요. 위의 🤖 버튼을 눌러 주세요.</div></div>`;
+  const ev = ai.ev, r = repOf(s);
+  const evNote = !ev ? (evPending.has(key) || (ai.ts && Date.now()-ai.ts < 90000) ? '<span class="rb-note">⏳ 근거 문장 만드는 중…</span>' : `<button type="button" class="rb-mk" data-ev-make="${esc(key)}">🔎 근거 문장 만들기</button>`)
+    : (evPending.has(key) ? '<span class="rb-note">⏳ 근거 다시 만드는 중…</span>' : `<button type="button" class="rb-mk" data-ev-make="${esc(key)}" title="○✕를 고친 칸은 근거가 비어요 → 다시 만들기">↻ 근거 다시 만들기</button>`);
+  h += `<table class="rb-t"><thead><tr><th>항목</th><th>채점 기준</th><th>판정</th><th>근거 <small>(학생 글 · 누르면 왼쪽 글로)</small> ${evNote}</th></tr></thead><tbody>`;
+  g.items.forEach((it, ii)=>{
+    const c = checksOf(s, it.k), a = aiChecksOf(s, it.k), xq = (ai.xq && ai.xq[it.k]) || [], L = CHECK_LABELS[it.k];
+    const edited = it.teacher!=null && it.teacher!==it.ai;
+    const head = `<td rowspan="${L.length}" class="rb-it"><b>${ii+1}. ${it.name}</b><div class="rb-pt">${it.final!=null?it.final:'-'}/${it.max}</div>${edited?`<div class="rb-ed">✏️ 수정됨(AI ${it.ai!=null?it.ai:'-'}점)<br><a href="#" data-gr="${esc(key)}" data-gc="${it.k}">↺ 되돌리기</a></div>`:''}</td>`;
+    L.forEach((t, i)=>{
+      const v = c ? c[i] : '', tc = a && c && c[i]!==a[i];
+      let evc = '', cls = '';
+      if(it.k==='logic' && i<3){ evc = countChars([r.intro,r.body,r.concl][i]).toLocaleString()+'자'; }
+      else { const q = evQuote(s, it.k, i) || (v==='X' && a[i]==='X' ? xq[i] : '');
+        if(q){ evc = `<span data-evq="${esc(q)}">"${esc(q)}"</span>`; cls = v==='O' ? 'ok' : 'no'; }
+        else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
+        else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td>${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${evc}</td></tr>`;
+    });
+    const tg = s.teacherGrade && s.teacherGrade[it.k];
+    if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
+  });
+  h += '</tbody></table>';
+  const fb = ai.fb || {}, rows = g.items.filter(it=> fb[it.k] && ((fb[it.k].good||[]).length || (fb[it.k].fix||[]).length || (fb[it.k].ask||[]).length));
+  if(rows.length){
+    const li = a => (a||[]).length ? a.map(t=>`<div>${esc(t)}</div>`).join('') : '<span class="rb-none">-</span>';
+    h += `<table class="rb-t rb-fb"><thead><tr><th>피드백</th><th>잘된 점</th><th>보완할 점</th></tr></thead><tbody>` + rows.map(it=>{ const f = fb[it.k];
+      return `<tr><td class="rb-it"><b>${esc(it.name)}</b></td><td>${li(f.good)}</td><td>${li(f.fix)}${(f.ask||[]).length?`<div class="rb-ask">💬 ${f.ask.map(esc).join('<br>💬 ')}</div>`:''}</td></tr>`; }).join('') + '</tbody></table>';
+  }
+  if(ai.first) h += `<div class="rb-first-box"><b>가장 먼저 고치면 좋은 점</b> · ${esc(ai.first)}</div>`;
+  const ST = {ok:'✅ 현재 상태로 충분해요', check:'🟡 일부 내용을 확인하면 좋아요', need:'🔴 중요한 보완이 필요해요'}[ai.status];
+  if(ST) h += `<div class="rb-st">${ST}${ai.statusReason?` — ${esc(ai.statusReason)}`:''}</div>`;
+  return h + '</div>';
+}
 function modalHTML(key, s){   // 2026-10-29: 왼쪽 글(✕ 근거 문장은 노란색) · 오른쪽 채점
   if(!hasReport(s)) return activityDetailHTML(s, 1, key);
   let left = activityDetailHTML(s, 1, null);
-  const xq = (s.aiGrade && s.aiGrade.xq) || {};
-  Object.values(xq).forEach(arr=> (arr||[]).forEach(q=>{ q = String(q||'').trim(); if(q.length < 4 || q.startsWith('(')) return; const e = esc(q), i = left.indexOf(e); if(i >= 0) left = left.slice(0, i) + '<mark>' + e + '</mark>' + left.slice(i + e.length); }));
-  return `<div class="tdm-cols"><div class="tdm-l">${left}</div><div class="tdm-r">${gradeBoxHTML(key, s)}</div></div>`;
+  const marks = [];
+  CK_KEYS.forEach(k=>{ const c = checksOf(s, k) || '', a = aiChecksOf(s, k) || '', xq = ((s.aiGrade && s.aiGrade.xq) || {})[k] || [];
+    [...c].forEach((v, i)=>{ const q = evQuote(s, k, i) || (v==='X' && a[i]==='X' ? xq[i] : ''); if(q) marks.push([q, v==='O' ? 'ok' : '']); }); });
+  marks.forEach(([q, cls])=>{ q = String(q||'').trim(); if(q.length < 4 || q.startsWith('(')) return; const e = esc(q), i = left.indexOf(e); if(i >= 0 && left.lastIndexOf('<mark', i) <= left.lastIndexOf('</mark>', i)) left = left.slice(0, i) + `<mark class="${cls}" data-evm="${e}">` + e + '</mark>' + left.slice(i + e.length); });
+  return `<div class="tdm-cols"><div class="tdm-l">${left}</div><div class="tdm-r">${rubricTableHTML(key, s)}</div></div>`;
 }
+document.addEventListener('click', e=>{ const q = e.target.closest && e.target.closest('[data-evq]'); if(!q) return; const L = document.querySelector('.tdm-l'); if(!L) return;
+  const m = [...L.querySelectorAll('mark')].find(x=> x.textContent === q.dataset.evq); if(!m) return; m.scrollIntoView({block:'center', behavior:'smooth'}); m.classList.add('flash'); setTimeout(()=> m.classList.remove('flash'), 1500); });
 function tdmOrder(){ return Object.keys(allStudents).filter(k=> hasReport(allStudents[k]||{})).sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999)); }
 function paintTdmNav(){
   const nav = document.getElementById('tdmNav'); if(!nav) return;

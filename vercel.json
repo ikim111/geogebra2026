@@ -8,6 +8,9 @@
     },
     "api/spell-check.js": {
       "maxDuration": 60
+    },
+    "api/report-evidence.js": {
+      "maxDuration": 60
     }
   }
 }
