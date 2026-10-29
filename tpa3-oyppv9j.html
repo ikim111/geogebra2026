@@ -1875,7 +1875,7 @@ function renderSpellReq(){
     .sort((a,b)=> (a.s.spellReq.ts||0) - (b.s.spellReq.ts||0));
   if(!currentRoomKey || !rq.length){ box.style.display = 'none'; return; }
   box.style.display = 'block';
-  box.innerHTML = `<b>🙋 맞춤법 확인 기회 요청 ${rq.length}명</b> <span style="color:#666;font-size:12.5px;">하루 3번을 다 쓴 학생이에요. 주면 오늘만 더 쓸 수 있어요.</span>`
+  box.innerHTML = `<b>🙋 맞춤법 확인 기회 요청 ${rq.length}명</b> <span style="color:#666;font-size:12.5px;">하루 5번을 다 쓴 학생이에요. 주면 오늘만 더 쓸 수 있어요.</span>`
     + rq.map(({k,s})=>`<div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="flex:1;">${esc(displayName(k, s.name, s.number))} <small style="color:#888;">${new Date(+s.spellReq.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></span>
       <button type="button" data-spgive="${esc(k)}" style="background:#1565c0;color:#fff;border:2px solid #1565c0;border-radius:8px;padding:4px 12px;font-weight:bold;cursor:pointer;">+3 주기</button>
       <button type="button" data-spno="${esc(k)}" style="background:#fff;color:#555;border:1px solid #d5d8e0;border-radius:8px;padding:4px 12px;cursor:pointer;">안 주기</button></div>`).join('');

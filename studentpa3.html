@@ -832,9 +832,9 @@ function restoreData(d){
 }
 function paintAll(){ document.querySelectorAll('textarea[data-k]').forEach(autoGrow); }
 
-/* ---------- 🔤 맞춤법 확인(2026-10-23 선생님 요청) — 하루 3번, 틀린 낱말과 맞는 표기만 보여 주고 학생이 직접 고친다 ----------
+/* ---------- 🔤 맞춤법 확인(2026-10-23 선생님 요청) — 하루 5번(2026-10-29 3→5), 틀린 낱말과 맞는 표기만 보여 주고 학생이 직접 고친다 ----------
    api/spell-check.js. 사용 횟수는 students/{key}/spell = {day, n(오늘), total} — tpa3 선생님 화면에 표시 */
-const SPELL_MAX = 3, SPELL_SEC = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
+const SPELL_MAX = 5, SPELL_SEC = {title:'제목', intro:'서론', body:'본론', concl:'결론'};
 const SPELL = { day:'', n:0, total:0, busy:false, items:null, err:'', bonus:{day:'',n:0,ts:0}, req:null };
 /* 🙋 2026-10-29: 3번을 다 쓰면 선생님께 기회 더 요청 — students/{key}/spellReq = {day, ts}, 선생님이 주면 spellBonus = {day, n, ts} */
 const spellMax = () => SPELL_MAX + (SPELL.bonus.day===spellDay() ? SPELL.bonus.n : 0);
