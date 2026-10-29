@@ -407,6 +407,8 @@
             <span><i class="error"></i>입력함 (확인 필요)</span>
             <span><i style="background:var(--green);"></i>완료</span>
             <span><i class="locked"></i>속도조절로 제한된 화면</span>
+            <span><b>주의</b>: ✋ 붙여넣기 시도(막혔음) · 📋 한꺼번에 많이 입력됨 — 누르면 자세히</span>
+            <span><b>점수</b>: AI = AI 점수 · ✏️ = 선생님이 고침 · <b style="color:#e65100;">↻</b> = 채점 뒤 글이 바뀜(다시 채점)</span>
           </div>
           <table id="grid">
             <thead><tr id="gridHeadRow"></tr></thead>
@@ -896,11 +898,14 @@ function buildGridHead(){
   thScore.title='최종 점수(선생님 수정 반영) / 15점 — 누르면 채점 화면이 열려요';
   tr.appendChild(thScore);
 
+  const thCa=document.createElement('th'); thCa.textContent='주의';
+  thCa.title='✋ 붙여넣기 시도 횟수(막혀서 실제로 붙여 넣지는 못함) · 📋 한꺼번에 많이 입력된 횟수 — 누르면 자세히'; tr.appendChild(thCa);   // 2026-10-29 1부와 같게
+
   const thTime=document.createElement('th'); thTime.textContent='마지막 활동';
   tr.appendChild(thTime);
 }
 buildGridHead();
-const GRID_COLSPAN = 4 + TASK_IDS.length + 2; // 체크박스+이름+번호+진행률 + 과제N개 + 점수 + 마지막활동
+const GRID_COLSPAN = 4 + TASK_IDS.length + 3; // 체크박스+이름+번호+진행률 + 과제N개 + 점수 + 마지막활동
 
 function populateRoomSelect(){
   const sel=document.getElementById('roomCode');
@@ -1358,7 +1363,7 @@ function renderGrid(){
       const sd=document.createElement('span'); sd.className='submit-dot'; sd.title='아직 제출 안 함';
       tdName.appendChild(sd);
     }
-    if(igFlag(s)){ const g=igOf(s); const w=document.createElement('span'); w.textContent=' ⚠️'; w.title=`붙여넣기 시도 ${g.paste}회 · 한꺼번에 입력 ${g.big.length}회 (보고서 칸에서 자세히 보기)`; tdName.appendChild(w); }
+    // 2026-10-29: 이름 옆 ⚠️ 대신 오른쪽 '주의' 칸(✋·📋)으로 옮김
     tr.appendChild(tdName);
 
     const tdNum = document.createElement('td'); tdNum.textContent = s.number || '-';
@@ -1397,11 +1402,18 @@ function renderGrid(){
     const tdScore=document.createElement('td'); tdScore.className='score-cell';
     const gg = gradeOf(s);
     if(gg.any){
-      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' ⚠️':''}</span>`;
+      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' <b style="color:#e65100;">↻</b>':''}</span>`;
       tdScore.title = `${gg.total}/${SCORE_MAX}점` + (gg.overridden?` · 선생님 수정 ${gg.overridden}개`:' · AI 점수') + (gg.stale?' · 채점 뒤 글이 바뀜':'');
     } else { tdScore.textContent = '-'; tdScore.style.color='#bbb'; tdScore.title='아직 채점 전'; }
     tdScore.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); });
     tr.appendChild(tdScore);
+
+    const tdCa=document.createElement('td'); { const g=igOf(s);
+      if(g.paste){ const b=document.createElement('span'); b.textContent='✋'+g.paste; b.style.cssText='color:#c62828;font-weight:bold;margin-right:5px;'; tdCa.appendChild(b); }
+      if(g.big.length){ const b=document.createElement('span'); b.textContent='📋'+g.big.length; b.style.cssText='color:#6d4c41;font-weight:bold;'; tdCa.appendChild(b); }
+      if(g.paste||g.big.length){ tdCa.style.cursor='pointer'; tdCa.title=`붙여넣기 시도 ${g.paste}회 · 한꺼번에 입력 ${g.big.length}회 — 누르면 보고서 칸에서 자세히`;
+        tdCa.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); }); } }
+    tr.appendChild(tdCa);
 
     const tdTime=document.createElement('td');
     tdTime.textContent = fmtTime(s.lastActive);

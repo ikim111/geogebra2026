@@ -65,6 +65,7 @@
   .lock-toggle.locked{background:#f4f6f8;color:#888;border:1px solid #ddd;}
   .lock-toggle.always{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;cursor:default;}
   .lock-toggle:disabled{opacity:.6;cursor:not-allowed;}
+  .lock-toggle.sched{background:#fff;color:#1565c0;border:2px solid #1565c0;line-height:1.2;} .lock-toggle small{display:block;font-weight:normal;font-size:11.5px;}
 
   .chapter-title{font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:9px 14px;margin:6px 0 2px;}
   .chapter-title.toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.13);font-size:14.5px;padding:11px 14px;}
@@ -396,6 +397,7 @@ function buildUnitRow(u){
     const btn=document.createElement('button');
     btn.className='lock-toggle ' + (isOpen?'open':'locked');
     btn.textContent = isOpen ? '🔓 열림' : '🔒 잠김';
+    btn.dataset.n = u.n;
     btn.disabled = !FIREBASE_CONFIG.apiKey;
     btn.addEventListener('click', (e)=>{
       e.preventDefault(); e.stopPropagation();
@@ -406,6 +408,37 @@ function buildUnitRow(u){
   return row;
 }
 
+/* ⏰ 2026-10-29 2부(25번) 교시 예약 표시: 학생 목차는 예약(rooms/{반}__prob33/control의 slots·수업 시작/종료)을 따라 열리는데
+   교사 목차 버튼은 직접 연 것만 보여서 헷갈렸다 → 예약으로 열려 있으면 "⏰ 예약으로 열림 ~끝", 아니면 "🔒 잠김 / ⏰ 다음 시각" */
+let p2Ctl = null, p2Ref = null, p2Timer = null;
+function p2EffEnded(c, now){   // student.html의 effEnded2와 같은 계산
+  c = c || {}; const ev = [];
+  if(c.classEndedTs) ev.push([+c.classEndedTs, 1]); if(c.classStartedTs) ev.push([+c.classStartedTs, 0]);
+  Object.values(c.slots || {}).forEach(x=>{ if(x && x.s && x.e){ ev.push([+x.s, 0], [+x.e, 1]); } });
+  const past = ev.filter(e=> e[0] <= now).sort((a,b)=> a[0]-b[0] || b[1]-a[1]);
+  return past.length ? !!past[past.length-1][1] : !!c.classEnded;
+}
+function watchP2Sched(room){
+  if(p2Ref) p2Ref.off(); p2Ctl = null;
+  p2Ref = firebase.database().ref('rooms/'+sanitize(room)+'__prob33/control');
+  p2Ref.on('value', snap=>{ p2Ctl = snap.val() || {}; paintP2Sched(); });
+  clearInterval(p2Timer); p2Timer = setInterval(paintP2Sched, 20000);
+}
+function paintP2Sched(){
+  const btn = document.querySelector('.lock-toggle[data-n="25"]'); if(!btn || !p2Ctl) return;
+  if(accessData[25] === true){ btn.className = 'lock-toggle open'; btn.textContent = '🔓 열림'; return; }
+  const now = Date.now(), hm = t => new Date(t).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const sameDay = t => new Date(t).toDateString() === new Date(now).toDateString();
+  const when = t => sameDay(t) ? hm(t) : (new Date(t).getMonth()+1)+'/'+new Date(t).getDate()+' '+hm(t);
+  const slots = Object.values(p2Ctl.slots || {}).filter(x=> x && x.s && x.e);
+  const open = (p2Ctl.classStartedTs || slots.length) && !p2EffEnded(p2Ctl, now);
+  if(open){ const cur = slots.find(x=> now >= +x.s && now < +x.e);
+    btn.className = 'lock-toggle sched'; btn.innerHTML = '⏰ 예약으로 열림' + (cur ? `<small>~${when(+cur.e)}</small>` : '<small>2부 화면에서 시작</small>'); return; }
+  const nx = slots.filter(x=> +x.s > now).sort((a,b)=> a.s - b.s)[0];
+  btn.className = 'lock-toggle locked'; btn.innerHTML = '🔒 잠김' + (nx ? `<small style="color:#1565c0;">⏰ 다음 ${when(+nx.s)}</small>` : '');
+}
+
+{ const _rul = renderUnitList; renderUnitList = function(){ _rul.apply(this, arguments); try{ paintP2Sched(); }catch(e){} }; }
 function toggleUnit(n, row, btn){
   if(!accessRef) return;
   const next = !(accessData[n]===true);
@@ -419,6 +452,7 @@ function toggleUnit(n, row, btn){
     btn.className = 'lock-toggle ' + (next?'open':'locked');
     btn.textContent = next ? '🔓 열림' : '🔒 잠김';
     btn.disabled = false;
+    paintP2Sched();
   }).catch(()=>{
     btn.disabled = false;
     alert('저장에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.');
@@ -508,7 +542,7 @@ function goToUnitPage(room){
       tocFoldRemote = {};
       foldRef = accessRef.child('fold2');
       foldRef.on('value', snap=>{ tocFoldRemote = snap.val() || {}; applyFoldToDom(); });
-      watchReports(); watchPinReq(room);
+      watchReports(); watchPinReq(room); watchP2Sched(room);
       accessRef.child('units').once('value').then(snap=>{
         accessData = snap.val() || {};
         try{ localStorage.setItem('mgmt_access_'+sanitize(room), JSON.stringify(accessData)); }catch(e){}
