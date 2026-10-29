@@ -652,7 +652,7 @@ function gradeBoxHTML(key, s){
       chips += `<button class="${on?'on':''}${aiMark?' ai-mark':''}" data-gs="${esc(key)}" data-gc="${it.k}" data-gv="${v}" title="${aiMark?'AI 점수 · ':''}${v}점으로 정하기">${v}</button>`;
     }
     const why = it.teacher!=null && it.teacher!==it.ai
-      ? `<span class="ov">선생님 수정 ${it.teacher}점</span>${it.ai!=null?` (AI ${it.ai}점: ${esc(it.reason)})`:''} <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="font-size:11.5px;color:#888;">↺ AI 점수로</a>`
+      ? `${it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : ''} <span style="font-size:11.5px;color:#888;white-space:nowrap;">· ✏️ 수정됨(AI ${it.ai!=null?it.ai:'-'}점) <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="color:#888;">↺ 되돌리기</a></span>`   // 2026-10-29: ○✕를 눌러도 위 글이 크게 바뀌지 않게
       : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
     const f = g.ai && g.ai.fb && g.ai.fb[it.k];
     const qc = it.k==='question' && g.ai && typeof g.ai.qchecks==='string' && g.ai.qchecks ? g.ai.qchecks : '';
