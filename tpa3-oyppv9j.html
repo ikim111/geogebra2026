@@ -704,7 +704,7 @@ function ckEditHTML(key, s, it){
   const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && String(ai.dchecks||'').includes('O') && !(s.teacherChecks && s.teacherChecks.data);
   return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${c[i]==='X' && a[i]==='X' && xq[i]?`<div class="xq">↳ AI 근거: ${esc(xq[i])}</div>`:''}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
 }
-async function toggleCheck(key, k, i){
+async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체크박스의 toggleCheck와 겹쳐서 ○✕를 눌러도 안 바뀌던 문제 → 이름 바꿈
   const s = allStudents[key]; if(!s) return;
   const cur = checksOf(s, k), a = aiChecksOf(s, k); if(!cur) return;
   const nx = cur.slice(0,i) + (cur[i]==='O'?'X':'O') + cur.slice(i+1);
@@ -714,7 +714,7 @@ async function toggleCheck(key, k, i){
   else { const sc = scoreFromChecks(k, nx); await Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; }
   refreshAI(); renderGrid();
 }
-document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); toggleCheck(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); });
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); });
 async function setTeacherScore(key, c, v){
   const s = allStudents[key]; if(!s) return;
   const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
