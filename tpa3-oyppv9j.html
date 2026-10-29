@@ -724,7 +724,7 @@ async function setTeacherScore(key, c, v){
   refreshAI(); renderGrid();
 }
 /* 일괄 채점 대상: 제출했고, 아직 AI 채점 전이거나 채점 뒤 글을 고친 학생 */
-function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return s.submitted && hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
+function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
 function renderGradePanel(){
   const panel = document.getElementById('gradePanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'block' : 'none';
@@ -735,14 +735,14 @@ function renderGradePanel(){
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
   const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
-  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 제출한 학생 모두 채점됨' : `🤖 미채점 ${n}명 AI 채점`; btn.title = '제출했고 아직 채점 안 했거나, 채점 뒤 글을 고친 학생';
+  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 글을 쓴 학생 모두 채점됨' : `🤖 미채점 ${n}명 AI 채점`; btn.title = '글을 쓴 학생 중(제출 여부 무관 — 2026-10-29) 아직 채점 안 했거나, 채점 뒤 글을 고친 학생';
   { const t = document.getElementById('grTot'); if(t) t.textContent = Object.values(allStudents||{}).filter(x=> x && hasReport(x)).length; }
   btn.disabled = n===0 || gradeBulkRunning;
   btn.classList.toggle('done', n===0 && anyGraded && !gradeBulkRunning);
 }
 document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
   const keys = gradeEligibleKeys(); if(!keys.length) return;
-  if(!confirm(`제출한 학생 ${keys.length}명의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 6명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
+  if(!confirm(`글을 쓴 학생 ${keys.length}명(아직 다 못 쓴 학생 포함)의 보고서를 AI로 1차 채점하고 피드백을 받을까요?\n(한 번에 6명씩 처리해요. 선생님이 고친 점수는 그대로 남아요)`)) return;
   gradeBulkRunning = true; renderGradePanel();
   const st = document.getElementById('gradeBulkStatus');
   let ok=0, fail=[], i=0;
