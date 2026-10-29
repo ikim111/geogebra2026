@@ -710,9 +710,13 @@ async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체
   const nx = cur.slice(0,i) + (cur[i]==='O'?'X':'O') + cur.slice(i+1);
   const base = db.ref('rooms/'+currentRoomKey+'/students/'+key);
   if(!s.teacherChecks) s.teacherChecks = {}; if(!s.teacherGrade) s.teacherGrade = {};
-  if(nx === a){ await Promise.all([base.child('teacherChecks/'+k).remove(), base.child('teacherGrade/'+k).remove()]); delete s.teacherChecks[k]; delete s.teacherGrade[k]; }
-  else { const sc = scoreFromChecks(k, nx); await Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; }
+  // ⚡ 2026-10-29: 화면을 먼저 바꾸고(바로 반응) 저장은 뒤에서 — 저장에 실패하면 되돌린다
+  const prevC = s.teacherChecks[k], prevG = s.teacherGrade[k];
+  let job;
+  if(nx === a){ delete s.teacherChecks[k]; delete s.teacherGrade[k]; job = Promise.all([base.child('teacherChecks/'+k).remove(), base.child('teacherGrade/'+k).remove()]); }
+  else { const sc = scoreFromChecks(k, nx); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; job = Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); }
   refreshAI(); renderGrid();
+  try{ await job; }catch(err){ if(prevC===undefined) delete s.teacherChecks[k]; else s.teacherChecks[k] = prevC; if(prevG===undefined) delete s.teacherGrade[k]; else s.teacherGrade[k] = prevG; refreshAI(); renderGrid(); throw err; }
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); e.stopPropagation();   /* 2026-10-29: 캡처 단계에서 받아 학생 카드 클릭(보고서 창 열기)으로 번지지 않게 */ toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); }, true);
 async function setTeacherScore(key, c, v){
@@ -811,7 +815,9 @@ let tdmKey = null;
 function refreshOpenModal(){
   if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
   const s = allStudents[tdmKey]; if(!s) return;
-  document.getElementById('tdmTextWrap').innerHTML = activityDetailHTML(s, 1, tdmKey) || '';
+  const w = document.getElementById('tdmTextWrap'), sc = []; for(let e = w; e; e = e.parentElement) sc.push([e, e.scrollTop]);   // 다시 그려도 스크롤 위치 유지
+  w.innerHTML = activityDetailHTML(s, 1, tdmKey) || '';
+  sc.forEach(([e, t])=>{ if(e.scrollTop !== t) e.scrollTop = t; });
 }
 function onStudentsUpdated(){ refreshOpenModal(); }
 
