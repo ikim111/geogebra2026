@@ -1094,7 +1094,7 @@ const RT = {
     this.controlRef.on('value', snap=>{
       const c = snap.val() || {};
       this.paused = !!c.paused; applyPauseLock(this.paused);
-      AI.teacherOff = !!c.aiOff; AI.paint();
+      AI.teacherOff = !!c.aiOff; AI.paint(); try{ this.applyClassState(); }catch(e){}   // AI가 꺼지면 이용권 띠를 다시 그린다
       if(c.announcement && c.announcementTs && c.announcementTs > this.lastSeenAnnounceTs){
         this.lastSeenAnnounceTs = c.announcementTs; $('announceText').textContent = c.announcement; $('announceBanner').style.display = 'flex';
       } else if(!c.announcement){ $('announceBanner').style.display = 'none'; }
@@ -1534,7 +1534,8 @@ let __tpTick = null, __tpWarned = false;
 function paintTimePass(baseEnded, now){
   let bar = document.getElementById('tpBar');
   const tp = RT._tp;
-  const show = tp && baseEnded && (tp.startedAt ? now < tpEnd(tp) : (now >= +tp.from && now < +tp.until));
+  // 2026-10-29: 반이 열려 있어도(평일 자동 열기 등) 반 AI가 꺼져 있으면 띠를 보여 준다 — 이용권 시간에는 그 학생만 AI도 켜진다
+  const show = tp && (baseEnded || AI.teacherOff) && (tp.startedAt ? now < tpEnd(tp) : (now >= +tp.from && now < +tp.until));
   if(!show){ if(bar) bar.style.display = 'none'; clearInterval(__tpTick); __tpTick = null; return; }
   if(!bar){ bar = document.createElement('div'); bar.id = 'tpBar';
     bar.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:10002;background:#004d40;color:#fff;border-radius:12px;padding:10px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:15px;font-weight:bold;display:flex;align-items:center;gap:12px;max-width:94vw;';
