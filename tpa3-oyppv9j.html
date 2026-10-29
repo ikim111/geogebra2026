@@ -210,7 +210,7 @@
   .tdm-r .ck-edit span{display:block;border-radius:6px;padding:5px 9px;}
   .rb-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;} .rb-hd>b{color:#7b1fa2;font-size:15px;} .rb-tot{margin-left:auto;font-size:13px;color:#555;} .rb-tot b{font-size:20px;color:#1a237e;}
   .rb-t{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;} .rb-t th,.rb-t td{border:1px solid #e0e3ea;padding:6px 8px;vertical-align:top;text-align:left;}
-  .rb-t th{background:#f5f6fa;color:#1a237e;font-size:12.5px;} .rb-t th small{font-weight:400;color:#888;} .rb-it{white-space:nowrap;color:#1a237e;} .rb-pt{font-size:13px;color:#555;margin-top:2px;}
+  .rb-t th{background:#f5f6fa;color:#1a237e;font-size:12.5px;} .rb-t th small{font-weight:400;color:#888;} .rb-it{white-space:nowrap;color:#1a237e;} .rb-c{min-width:140px;} .rb-pt{font-size:13px;color:#555;margin-top:2px;}
   .rb-ed{font-size:11px;color:#888;margin-top:4px;} .rb-ed a{color:#888;} .rb-ox{text-align:center!important;width:44px;}
   .rb-b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border-radius:6px;cursor:pointer;font-weight:700;border:1px solid #cfd8e3;background:#fff;}
   .rb-b.o{color:#1565c0;} .rb-b.x{color:#c62828;} .rb-b.tc{outline:2px solid #00897b;} .rb-b:hover{border-color:#1565c0;}
@@ -1547,7 +1547,7 @@ function rubricTableHTML(key, s){
         if(q){ evc = `<span data-evq="${esc(q)}">"${esc(q)}"</span>`; cls = v==='O' ? 'ok' : 'no'; }
         else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
         else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
-      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td>${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${evc}</td></tr>`;
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${evc}</td></tr>`;
     });
     const tg = s.teacherGrade && s.teacherGrade[it.k];
     if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
