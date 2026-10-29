@@ -388,6 +388,7 @@
           <button class="mini" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 인쇄</button>
         </div>
       </div>
+      <div id="spellReqBox" style="display:none;background:#fff;border:1px solid #d5d8e0;border-left:5px solid #1565c0;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:14px;"></div>
       <div id="bestPanel" style="display:none;"></div>
     </div>
 
@@ -1851,6 +1852,32 @@ document.addEventListener('change', e=>{ const t = e.target; if(t && t.dataset &
 document.addEventListener('keydown', e=>{ const b = document.getElementById('bestShow'); if(!b || b.style.display !== 'block') return;
   if(e.key === 'ArrowRight'){ bestShowI++; bestShowPaint(); } else if(e.key === 'ArrowLeft'){ bestShowI--; bestShowPaint(); } else if(e.key === 'Escape') b.style.display = 'none'; });
 (function(){ const _rg = renderGradePanel; renderGradePanel = function(){ _rg.apply(this, arguments); try{ renderBest(); }catch(e){ console.warn(e); } }; })();
+</script>
+<script>
+/* 🙋 2026-10-29 맞춤법 확인 기회 요청: students/{key}/spellReq = {day, ts} → [+3 주기] = spellBonus {day, n, ts} (오늘만) */
+const spDayT = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+function renderSpellReq(){
+  const box = document.getElementById('spellReqBox'); if(!box) return;
+  const td = spDayT();
+  const rq = Object.keys(allStudents||{}).map(k=>({k, s:allStudents[k]||{}})).filter(({s})=>{ const r = s.spellReq, b = s.spellBonus || {}; return r && r.day===td && (+r.ts||0) > (+b.ts||0); })
+    .sort((a,b)=> (a.s.spellReq.ts||0) - (b.s.spellReq.ts||0));
+  if(!currentRoomKey || !rq.length){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = `<b>🙋 맞춤법 확인 기회 요청 ${rq.length}명</b> <span style="color:#666;font-size:12.5px;">하루 3번을 다 쓴 학생이에요. 주면 오늘만 더 쓸 수 있어요.</span>`
+    + rq.map(({k,s})=>`<div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="flex:1;">${esc(displayName(k, s.name, s.number))} <small style="color:#888;">${new Date(+s.spellReq.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></span>
+      <button type="button" data-spgive="${esc(k)}" style="background:#1565c0;color:#fff;border:2px solid #1565c0;border-radius:8px;padding:4px 12px;font-weight:bold;cursor:pointer;">+3 주기</button>
+      <button type="button" data-spno="${esc(k)}" style="background:#fff;color:#555;border:1px solid #d5d8e0;border-radius:8px;padding:4px 12px;cursor:pointer;">안 주기</button></div>`).join('');
+}
+document.addEventListener('click', async e=>{
+  const g = e.target.closest && e.target.closest('[data-spgive]'), no = e.target.closest && e.target.closest('[data-spno]');
+  if(!g && !no) return;
+  const k = (g||no).dataset.spgive || (g||no).dataset.spno, s = allStudents[k]; if(!s || !currentRoomKey) return;
+  const base = db.ref('rooms/'+currentRoomKey+'/students/'+k), td = spDayT();
+  if(g){ const cur = (s.spellBonus && s.spellBonus.day===td) ? +s.spellBonus.n||0 : 0; const v = { day: td, n: cur + 3, ts: Date.now() }; await base.child('spellBonus').set(v); s.spellBonus = v; }
+  else { await base.child('spellReq').set(null); delete s.spellReq; }
+  renderSpellReq();
+});
+(function(){ const _rg2 = renderGradePanel; renderGradePanel = function(){ _rg2.apply(this, arguments); try{ renderSpellReq(); }catch(e){ console.warn(e); } }; })();
 </script>
 <script src="tdash.js"></script>
 </body>
