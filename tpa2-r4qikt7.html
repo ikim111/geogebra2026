@@ -1370,7 +1370,7 @@ function smBodyRoom(){
 }
 function smBodyPass(){
   const now = Date.now(), rows = smStudents().filter(({s})=> s.timePass && (+s.timePass.until > now - 86400000 || (s.timePass.startedAt && tpEndT(s.timePass) > now - 86400000)));
-  return `<p class="sm-desc">결석생에게 주는 이용권이에요. 기간 안에 학생이 원할 때 [▶ 시작]을 누르면 정한 시간만큼 열리고, 끝나면 저장·제출돼요. ${currentRoomName?`(${esc(currentRoomName)}반)`:''}</p>
+  return `<p class="sm-desc">결석생에게 주는 이용권이에요(반 AI가 꺼져 있어도 이용권 시간에는 그 학생만 1부 AI를 쓸 수 있어요). 기간 안에 학생이 원할 때 [▶ 시작]을 누르면 정한 시간만큼 열리고, 끝나면 저장·제출돼요. ${currentRoomName?`(${esc(currentRoomName)}반)`:''}</p>
   <div class="sm-card"><div class="sm-lab">학생 (여러 명 가능)</div>${smStuChips(s=> s.timePass && !(s.timePass.startedAt && tpEndT(s.timePass) < now) ? '<small>🎫</small>' : '')}
     <div class="sm-lab">쓸 수 있는 기간과 시간</div><div class="sm-row"><input type="date" id="tpFrom" value="${SM.day}"> ~ <input type="date" id="tpUntil" value="${SM.until||SM.day}"> · <input type="number" id="tpMin" value="${SM.min}" min="5" max="180" style="width:70px;">분</div>
     <button type="button" class="sm-go" id="smPassGo" style="background:#f9a825;color:#3e2723;" ${SM.pick.size?'':'disabled'}>🎫 ${SM.pick.size ? SM.pick.size+'명에게 '+SM.min+'분 이용권 주기' : '학생을 골라 주세요'}</button></div>

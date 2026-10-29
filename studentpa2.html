@@ -1195,7 +1195,9 @@ const AI = {
   offReason(){
     if(PREVIEW_MODE) return '';   // 2026-10-23: 선생님이 미리보기에서 AI 답을 시험해 볼 수 있게(기록은 저장되지 않음)
     if(!RT.connected) return '실시간 연결이 되어야 AI를 쓸 수 있어요.';
-    if(this.teacherOff && !RT.personalOn) return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)';
+    if(this.teacherOff && !RT.personalOn){ const tp = RT._tp, n = Date.now() + (RT._tOff||0);
+      if(tp && !tp.startedAt && n >= +tp.from && n < +tp.until) return '🎫 이용권의 [▶ 시작]을 누르면 그 시간 동안 AI도 함께 쓸 수 있어요.';   // 2026-10-29 이용권 = AI도 함께
+      return '🔒 선생님이 AI를 꺼 두었어요. (보고서 쓰기가 시작되면 AI를 쓸 수 없어요)'; }
     if(finalLocked) return '제출한 뒤에는 AI를 쓸 수 없어요. 고치려면 "제출 취소"를 누르세요.';
     if(!this.loaded) return 'AI 사용 기록을 불러오는 중이에요…';
     return '';
