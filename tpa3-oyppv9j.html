@@ -714,7 +714,7 @@ async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체
   else { const sc = scoreFromChecks(k, nx); await Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; }
   refreshAI(); renderGrid();
 }
-document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); });
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); e.stopPropagation();   /* 2026-10-29: 캡처 단계에서 받아 학생 카드 클릭(보고서 창 열기)으로 번지지 않게 */ toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); }, true);
 async function setTeacherScore(key, c, v){
   const s = allStudents[key]; if(!s) return;
   const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
@@ -1626,7 +1626,7 @@ function renderTeacherView(){
     const detail=document.createElement('div');
     detail.innerHTML = activityDetailHTML(s, selectedTaskId, item.key) || '<div class="ta-text" style="color:#999;">(아직 쓴 내용 없음)</div>';
     box.appendChild(detail);
-    box.addEventListener('click', ()=> openTaskDetail(item.key, s, selectedTaskId));
+    box.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('button, a, input, textarea, select, [data-ck], [data-gs], [data-gr], .gr-box')) return; openTaskDetail(item.key, s, selectedTaskId); });   // 2026-10-29: 채점 상자 안을 누를 때는 보고서 창을 열지 않음
     textWrap.appendChild(box);
   });
 }
