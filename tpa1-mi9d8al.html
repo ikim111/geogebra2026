@@ -1306,7 +1306,7 @@ document.getElementById('classStartBtn').addEventListener('click', ()=>{
 document.getElementById('clearBtn').addEventListener('click', ()=>{
   if(!studentsRef){ alert('먼저 반에 접속해주세요.'); return; }
   if(!confirm(`${currentRoomName}반의 학생 접속 기록을 모두 지울까요?`)) return;
-  studentsRef.set(null); selectedKey=null;
+  (window.trashSave ? window.trashSave(studentsRef, null, '반 초기화') : Promise.resolve()).then(()=> studentsRef.set(null)).catch(e=> alert('휴지통에 보관하지 못해서 지우지 않았어요. 다시 해 주세요.\n'+(e&&e.message||e)));   // 🗑 2026-10-29 selectedKey=null;
 });
 document.querySelectorAll('.taskPick').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -1599,7 +1599,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   const names = Array.from(checkedKeys).map(k=> (students[k]&&students[k].name) || '(이름없음)');
   if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}`)) return;
   const updates={}; checkedKeys.forEach(k=>{ updates[k]=null; });
-  studentsRef.update(updates);
+  (window.trashSave ? window.trashSave(studentsRef, Object.keys(updates), '선택 삭제') : Promise.resolve()).then(()=> studentsRef.update(updates)).catch(e=> alert('휴지통에 보관하지 못해서 지우지 않았어요. 다시 해 주세요.\n'+(e&&e.message||e)));   // 🗑 2026-10-29 지우기 전에 휴지통에 보관
   if(selectedKey && checkedKeys.has(selectedKey)) selectedKey=null;
   checkedKeys=new Set();
 });
@@ -1638,6 +1638,7 @@ document.getElementById('announceClearBtn').addEventListener('click', ()=>{
   }
 })();
 </script>
+<script src="trash.js"></script>
 <script src="tdash.js"></script>
 </body>
 </html>

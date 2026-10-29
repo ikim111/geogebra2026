@@ -1116,7 +1116,7 @@ document.getElementById('clearBtn').addEventListener('click', async ()=>{
   try{ const n = await backupRoomJSON('초기화전'); alert(`지우기 전에 학생 ${n}명의 기록을 백업 파일로 내려받았어요. 파일이 저장된 것을 확인한 뒤 확인을 눌러 주세요.`); }
   catch(e){ alert('백업 파일을 만들지 못해서 지우지 않았어요. 인터넷 연결을 확인하고 다시 해 주세요.'); return; }
   if(!confirm('백업 파일이 저장됐나요? 정말 지울까요? (되돌릴 수 없어요)')) return;
-  studentsRef.set(null);
+  (window.trashSave ? window.trashSave(studentsRef, null, '반 초기화') : Promise.resolve()).then(()=> studentsRef.set(null)).catch(e=> alert('휴지통에 보관하지 못해서 지우지 않았어요. 다시 해 주세요.\n'+(e&&e.message||e)));   // 🗑 2026-10-29
   selectedKey = null; checkedKeys = new Set();
 });
 
@@ -1484,7 +1484,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
   if(!confirm(`선택한 학생 ${checkedKeys.size}명을 삭제할까요?\n${names.join(', ')}\n⚠️ 그 학생이 쓴 내용과 AI 사용 기록도 함께 지워져요.`)) return;
   const updates = {};
   checkedKeys.forEach(k=>{ updates[k] = null; });
-  studentsRef.update(updates);
+  (window.trashSave ? window.trashSave(studentsRef, Object.keys(updates), '선택 삭제') : Promise.resolve()).then(()=> studentsRef.update(updates)).catch(e=> alert('휴지통에 보관하지 못해서 지우지 않았어요. 다시 해 주세요.\n'+(e&&e.message||e)));   // 🗑 2026-10-29 지우기 전에 휴지통에 보관
   if(selectedKey && checkedKeys.has(selectedKey)) selectedKey = null;
   checkedKeys = new Set();
 });
@@ -1890,6 +1890,7 @@ window.addEventListener('message', (e)=>{
   }
 });
 </script>
+<script src="trash.js"></script>
 <script src="tdash.js"></script>
 </body>
 </html>
