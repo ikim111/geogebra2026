@@ -279,6 +279,10 @@
   #slotBox .op-hint{margin-left:10px;}
   .pass-btn{background:#fff;color:#1565c0;border:2px solid #1565c0;height:38px;padding:0 16px;border-radius:8px;font-weight:bold;font-size:13.5px;cursor:pointer;} .pass-btn:hover{background:#e8eaf6;}
   .sb2{display:flex;flex-direction:column;gap:2px;} .sb2 .big{font-size:17px;} .sb2 .big small{font-size:13px;font-weight:normal;margin-left:4px;} .sb2 .nx{font-size:13px;font-weight:normal;color:#555;}
+#gbPanel .gb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0;}
+#gbPanel .tag{display:inline-block;font-size:11.5px;border:1px solid #f9a825;border-radius:10px;padding:0 7px;margin-bottom:3px;color:#9a6700;}
+#gbPanel .cls{font-size:12px;color:#888;} #gbPanel .gw{font-size:12px;color:#444;margin-top:4px;} #gbPanel .act{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
+#gbPanel .act button,#gbPanel .act select{font-size:12px;border:1px solid #1565c0;color:#1565c0;background:#fff;border-radius:6px;padding:3px 6px;max-width:100%;}
 </style>
 </head>
 <body>
@@ -414,6 +418,7 @@
         </div>
       </div>
       <div id="spellReqBox" style="display:none;background:#fff;border:1px solid #d5d8e0;border-left:5px solid #1565c0;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:14px;"></div>
+      <div id="gbPanel"></div>
       <div id="bestPanel" style="display:none;"></div>
     </div>
 
@@ -1807,32 +1812,59 @@ window.addEventListener('message', (e)=>{
 <style>
 /* ⭐ 2026-10-28 잘 쓴 글 고르기 */
 #bestPanel{background:#fff;border:1px solid #d5d8e0;border-left:5px solid #f9a825;border-radius:12px;padding:12px 14px;margin-top:10px;color:#333;font-size:14px;}
+#gbPanel{background:#fff;border:1px solid #d5d8e0;border-left:5px solid #f9a825;border-radius:12px;padding:12px 14px;margin-top:10px;color:#333;font-size:14px;}
 #bestPanel .bp-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+#gbPanel .bp-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 #bestPanel .bp-cnt{font-weight:bold;color:#9a6700;}
+#gbPanel .bp-cnt{font-weight:bold;color:#9a6700;}
 #bestPanel .bp-note{color:#666;font-size:13px;margin:4px 0 8px;}
+#gbPanel .bp-note{color:#666;font-size:13px;margin:4px 0 8px;}
 #bestPanel .bp-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+#gbPanel .bp-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 #bestPanel button.bp-ai{height:38px;padding:0 14px;border-radius:8px;font-weight:bold;cursor:pointer;background:#7b1fa2;color:#fff;border:2px solid #7b1fa2;}
+#gbPanel button.bp-ai{height:38px;padding:0 14px;border-radius:8px;font-weight:bold;cursor:pointer;background:#7b1fa2;color:#fff;border:2px solid #7b1fa2;}
 #bestPanel button.bp-ai2{background:#fff;color:#7b1fa2;}
+#gbPanel button.bp-ai2{background:#fff;color:#7b1fa2;}
 #bestPanel .bp-st{font-size:13px;color:#7b1fa2;margin-top:6px;min-height:18px;}
+#gbPanel .bp-st{font-size:13px;color:#7b1fa2;margin-top:6px;min-height:18px;}
 #bestPanel .bp-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;}
+#gbPanel .bp-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;}
 #bestPanel .pk{border:2px solid #f9a825;border-radius:10px;padding:8px 10px;background:#fffbea;font-size:13px;}
+#gbPanel .pk{border:2px solid #f9a825;border-radius:10px;padding:8px 10px;background:#fffbea;font-size:13px;}
 #bestPanel .pk b{color:#9a6700;font-size:14px;} #bestPanel .pk .s{color:#555;margin:2px 0 4px;}
+#gbPanel .pk b{color:#9a6700;font-size:14px;} #gbPanel .pk .s{color:#555;margin:2px 0 4px;}
 #bestPanel .pk input{width:100%;box-sizing:border-box;border:1px solid #d5d8e0;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;}
+#gbPanel .pk input{width:100%;box-sizing:border-box;border:1px solid #d5d8e0;border-radius:6px;padding:5px 7px;font-size:12.5px;font-family:inherit;}
 #bestPanel .pk.empty{border-style:dashed;background:#fff;color:#aaa;display:flex;align-items:center;justify-content:center;min-height:60px;}
+#gbPanel .pk.empty{border-style:dashed;background:#fff;color:#aaa;display:flex;align-items:center;justify-content:center;min-height:60px;}
 #bestPanel table{width:100%;border-collapse:collapse;font-size:13.5px;} #bestPanel th{font-size:12.5px;color:#666;font-weight:normal;}
+#gbPanel table{width:100%;border-collapse:collapse;font-size:13.5px;} #gbPanel th{font-size:12.5px;color:#666;font-weight:normal;}
 #bestPanel td,#bestPanel th{padding:6px 5px;border-bottom:1px solid #eceff1;text-align:left;vertical-align:middle;}
+#gbPanel td,#gbPanel th{padding:6px 5px;border-bottom:1px solid #eceff1;text-align:left;vertical-align:middle;}
 #bestPanel tr.on{background:#fffbea;}
+#gbPanel tr.on{background:#fffbea;}
 #bestPanel .c{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;font-weight:bold;font-size:12.5px;cursor:help;}
+#gbPanel .c{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;font-weight:bold;font-size:12.5px;cursor:help;}
 #bestPanel .c.o{background:#2e7d32;color:#fff;} #bestPanel .c.x{background:#eceff1;color:#9aa0a6;}
+#gbPanel .c.o{background:#2e7d32;color:#fff;} #gbPanel .c.x{background:#eceff1;color:#9aa0a6;}
 #bestPanel .rk{color:#7b1fa2;font-weight:bold;} #bestPanel .why{color:#666;font-size:12.5px;}
+#gbPanel .rk{color:#7b1fa2;font-weight:bold;} #gbPanel .why{color:#666;font-size:12.5px;}
 #bestPanel button.bp-b{border:1px solid #c5cae9;background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;font-size:13px;}
+#gbPanel button.bp-b{border:1px solid #c5cae9;background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;font-size:13px;}
 #bestPanel button.bp-star{border:1px solid #f9a825;background:#fff;color:#9a6700;border-radius:8px;padding:3px 9px;cursor:pointer;font-weight:bold;font-size:13px;}
+#gbPanel button.bp-star{border:1px solid #f9a825;background:#fff;color:#9a6700;border-radius:8px;padding:3px 9px;cursor:pointer;font-weight:bold;font-size:13px;}
 #bestPanel button.bp-star.on{background:#f9a825;color:#fff;}
+#gbPanel button.bp-star.on{background:#f9a825;color:#fff;}
 #bestPanel details summary{cursor:pointer;color:#666;font-size:13px;margin-top:6px;}
+#gbPanel details summary{cursor:pointer;color:#666;font-size:13px;margin-top:6px;}
 #bestPanel .bp-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+#gbPanel .bp-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
 #bestPanel button.bp-show{background:#1565c0;color:#fff;border:2px solid #1565c0;border-radius:8px;height:38px;padding:0 14px;font-weight:bold;cursor:pointer;}
+#gbPanel button.bp-show{background:#1565c0;color:#fff;border:2px solid #1565c0;border-radius:8px;height:38px;padding:0 14px;font-weight:bold;cursor:pointer;}
 #bestPanel button.bp-print{background:#fff;color:#444;border:1px solid #d5d8e0;border-radius:8px;height:38px;padding:0 14px;cursor:pointer;}
+#gbPanel button.bp-print{background:#fff;color:#444;border:1px solid #d5d8e0;border-radius:8px;height:38px;padding:0 14px;cursor:pointer;}
 #bestPanel button:disabled{opacity:.5;cursor:not-allowed;}
+#gbPanel button:disabled{opacity:.5;cursor:not-allowed;}
 #bestShow{position:fixed;inset:0;z-index:100000;background:#1a237e;overflow:auto;display:none;font-family:inherit;}
 #bestShow .w{max-width:960px;margin:0 auto;padding:18px;}
 #bestShow .top{display:flex;justify-content:space-between;align-items:center;color:#fff;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
@@ -1957,7 +1989,7 @@ function bestShowPaint(){
   const ps = bestPicks(), box = document.getElementById('bestShow'); if(!ps.length){ box.style.display = 'none'; return; }
   bestShowI = Math.max(0, Math.min(ps.length-1, bestShowI));
   box.innerHTML = `<div class="w"><div class="top"><b>⭐ ${esc(currentRoomName)}반 잘 쓴 글 ${'①②③'[bestShowI]} / ${ps.length}</b><div><button data-bs="-1">◀ 이전</button><button data-bs="1">다음 ▶</button><button data-bs="x">✕ 닫기</button></div></div>${bestPageHTML(ps[bestShowI], bestShowI)}</div>`;
-  box.style.display = 'block'; box.scrollTop = 0;
+  box.style.display = 'block'; box.scrollTop = 0; box.dataset.mode = '';
 }
 document.addEventListener('click', e=>{
   const t = e.target.closest('#bestPanel button, #bestShow button'); if(!t) return;
@@ -1979,7 +2011,113 @@ document.addEventListener('click', e=>{
 document.addEventListener('change', e=>{ const t = e.target; if(t && t.dataset && t.dataset.bpQ){ const k = t.dataset.bpQ; if(allStudents[k] && allStudents[k].bestPick){ allStudents[k].bestPick.q = t.value.slice(0,200); bestRef(k).child('bestPick/q').set(t.value.slice(0,200)); } } });
 document.addEventListener('keydown', e=>{ const b = document.getElementById('bestShow'); if(!b || b.style.display !== 'block') return;
   if(e.key === 'ArrowRight'){ bestShowI++; bestShowPaint(); } else if(e.key === 'ArrowLeft'){ bestShowI--; bestShowPaint(); } else if(e.key === 'Escape') b.style.display = 'none'; });
-(function(){ const _rg = renderGradePanel; renderGradePanel = function(){ _rg.apply(this, arguments); try{ renderBest(); }catch(e){ console.warn(e); } }; })();
+
+/* 🏆 2026-10-29 학년 잘 쓴 글(1~12반): 반별 ⭐(없는 반은 AI 판단 상위 3편)을 후보로 모아 두 편씩 비교 → 종합 1위 + 강점(질문·자료·분석·해석)별 1편.
+   결과는 rooms/__gradeBest/prob33 = {ts, picks:[{slot,room,key}], cands:[{room,key,checks,line,strength,wins,rank}]} — 세 선생님이 같은 결과를 본다. 반별 ⭐는 바꾸지 않는다. */
+const GB_REF = ()=> db.ref('rooms/__gradeBest/prob33'), GB_SLOTS = ['all','q','d','a','i'], GB_TAG = { all:'🏆 종합 1위', q:'❓ 질문', d:'📊 자료', a:'🧮 분석', i:'💡 해석' };
+let gb = null, gbBusy = false, gbMsg = '', gbOpen = false, gbStu = {}, gbShowI = 0; try{ gbOpen = localStorage.getItem('gb_open') === '1'; }catch(e){}
+let gbSub = false; function gbWatch(){ if(gbSub || typeof db==='undefined' || !db) return; gbSub = true; GB_REF().on('value', sn=>{ gb = sn.val(); renderGB(); }); }   // db는 반에 연결할 때 생긴다
+const gbCls = room => String(room).split('__')[0];
+const gbName = (room, s)=> `${gbCls(room)}반 ${esc(s && s.number || '')}번 ${esc(s && s.name || '')}`;
+const gbCand = (room, key)=> ((gb && gb.cands) || []).find(c=> c.room===room && c.key===key);
+async function gbStudent(room, key){ const id = room+'/'+key; if(!gbStu[id]) gbStu[id] = (await db.ref('rooms/'+room+'/students/'+key).once('value')).val() || {}; return gbStu[id]; }
+function renderGB(){
+  const el = document.getElementById('gbPanel'); if(!el) return;
+  const picks = (gb && gb.picks) || [], cands = (gb && gb.cands) || [];
+  const when = gb && gb.ts ? new Date(gb.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  const top = `<div class="bp-top"><b style="font-size:15px;">🏆 학년 잘 쓴 글 (1~12반)</b><span><span class="bp-cnt">${picks.length ? `고른 글 ${picks.length} / 5 · ${when}` : '아직 안 골랐어요'}</span><button class="bp-b" id="gbTgl" style="margin-left:8px;">${gbOpen?'접기':'펼치기'}</button></span></div>`;
+  if(!gbOpen && !gbBusy){ el.innerHTML = top; return; }
+  const card = p=>{ const c = gbCand(p.room, p.key) || {}, nm = c.label || (p.room+' '+p.key);
+    return `<div class="pk"><span class="tag">${GB_TAG[p.slot]}</span><br><b>${esc(nm)}</b><div class="gw">${esc(c.line||'')}</div><div class="act"><button data-gb-view="${esc(p.room+'|'+p.key)}">📄 글</button>
+      <select data-gb-sel="${p.slot}" title="다른 후보로 바꾸기"><option value="">🔁 바꾸기</option>${cands.map(x=>`<option value="${esc(x.room+'|'+x.key)}">${x.rank}위 ${esc(x.label||'')}</option>`).join('')}</select></div></div>`; };
+  const row = c=> `<tr><td class="rk">${c.rank}</td><td>${esc(c.label||'')}</td>${BEST_K.map((x,i)=>`<td><span class="c ${(c.checks||'')[i]==='O'?'o':'x'}">${(c.checks||'')[i]||'-'}</span></td>`).join('')}<td>${c.wins!=null?c.wins+'승':''}</td><td class="why">${esc(c.line||'')}</td><td><button class="bp-b" data-gb-view="${esc(c.room+'|'+c.key)}">📄</button></td></tr>`;
+  el.innerHTML = top + `<div class="bp-note">① 반마다 고른 ⭐ 3편을 모아 후보로(⭐가 없는 반은 AI 판단 상위 3편) → ② 상위 후보끼리 두 편씩 비교해 순위 → ③ 종합 1편 + 강점(질문·자료·분석·해석)별 대표 1편씩. 세 선생님이 모두 같은 결과를 봐요. 반별 ⭐는 바뀌지 않아요.</div>
+    <div class="bp-acts"><button class="bp-ai" id="gbRun" ${gbBusy?'disabled':''}>🤖 ${picks.length?'학년 5편 다시 고르기':'AI가 학년 5편 고르기'}</button></div>
+    <div class="bp-st">${esc(gbMsg || (cands.length ? `✔ 후보 ${cands.length}편 · 반 ⭐가 바뀌면 다시 고르기를 눌러 주세요` : '버튼을 누르면 1~12반 후보를 모아 AI가 골라요(2~5분)'))}</div>
+    ${picks.length ? `<div class="gb-grid">${GB_SLOTS.map(sl=> picks.find(p=> p.slot===sl)).filter(Boolean).map(card).join('')}</div>` : ''}
+    ${cands.length ? `<details><summary>후보 ${cands.length}편 순위 보기</summary><table><tr><th>순위</th><th>학생</th>${BEST_K.map(x=>`<th>${BEST_NAME[x]}</th>`).join('')}<th>비교</th><th>AI 한 줄</th><th></th></tr>${cands.map(row).join('')}</table></details>` : ''}
+    <div class="bp-foot"><button class="bp-print" id="gbPrint" ${picks.length?'':'disabled'}>🖨 5편 인쇄</button><button class="bp-show" id="gbShow" ${picks.length?'':'disabled'}>🖥 이름 가리고 띄우기</button></div>`;
+}
+async function gbRun(){
+  if(gbBusy) return; if(gb && gb.picks && gb.picks.length && !confirm('학년 5편을 AI가 새로 골라요. 지금 결과는 바뀌어요. 할까요?')) return;
+  gbBusy = true; gbStu = {}; const say = t=>{ gbMsg = t; const e = document.querySelector('#gbPanel .bp-st'); if(e) e.textContent = t; };
+  renderGB();
+  try{
+    // ① 반마다 후보 3편: ⭐가 있으면 ⭐, 없으면 판단해서 상위 3편
+    const pool = [];
+    for(let c=1; c<=12; c++){
+      const room = c+'__prob33'; say(`① ${c}반 후보 모으는 중…`);
+      const v = (await db.ref('rooms/'+room+'/students').once('value')).val() || {};
+      const subs = Object.keys(v).filter(k=> v[k] && v[k].submitted && hasReport(v[k])); if(!subs.length) continue;
+      let ks = subs.filter(k=> v[k].bestPick && v[k].bestPick.n).sort((a,b)=> v[a].bestPick.n - v[b].bestPick.n);
+      const fresh = k=> v[k].bestJudge && v[k].bestJudge.hash === repHash(v[k]) && v[k].bestJudge.checks;
+      const need = (ks.length ? ks : subs).filter(k=> !fresh(k));
+      let i = 0, d = 0;
+      await Promise.all(Array.from({length:6}, async ()=>{ while(i < need.length){ const k = need[i++];
+        try{ const j = await bestPost(Object.assign({ mode:'judge' }, repOf(v[k]))); const jv = { checks:j.checks, why:j.why, strength:j.strength, line:j.line, hash:repHash(v[k]), ts:Date.now() };
+          await db.ref('rooms/'+room+'/students/'+k+'/bestJudge').set(jv); v[k].bestJudge = jv; }catch(e){ console.warn('판단 실패', room, k, e); }
+        d++; say(`① ${c}반 기준 판단 중… ${d}/${need.length}`); } }));
+      if(!ks.length) ks = subs.filter(fresh).sort((a,b)=> (bestOs(v[b].bestJudge)-bestOs(v[a].bestJudge)) || (gradeOf(v[b]).total - gradeOf(v[a]).total)).slice(0,3);
+      ks.filter(fresh).forEach(k=>{ gbStu[room+'/'+k] = v[k]; pool.push({ room, key:k, s:v[k] }); });
+    }
+    if(!pool.length){ say('후보가 없어요(제출한 글이 없음).'); return; }
+    // ② 상위 10편을 두 편씩 비교(라운드 로빈)
+    pool.sort((x,y)=> (bestOs(y.s.bestJudge)-bestOs(x.s.bestJudge)) || (gradeOf(y.s).total - gradeOf(x.s).total));
+    const fin = pool.slice(0, 10); fin.forEach(x=> x.wins = 0);
+    const pairs = []; for(let a=0;a<fin.length;a++) for(let b=a+1;b<fin.length;b++) pairs.push([fin[a], fin[b]]);
+    let p = 0, pd = 0;
+    await Promise.all(Array.from({length:6}, async ()=>{ while(p < pairs.length){ const [a,b] = pairs[p++];
+      try{ const j = await bestPost({ mode:'compare', a:repOf(a.s), b:repOf(b.s) }); (j.win==='a'?a:b).wins++; }catch(e){ console.warn('비교 실패', e); }
+      pd++; say(`② 두 편씩 비교 중… ${pd}/${pairs.length}`); } }));
+    fin.sort((x,y)=> (y.wins-x.wins) || (bestOs(y.s.bestJudge)-bestOs(x.s.bestJudge)) || (gradeOf(y.s).total - gradeOf(x.s).total));
+    const ranked = fin.concat(pool.slice(10));
+    // ③ 종합 1위 + 강점별 1편(강점이 같은 글 우선, 없으면 그 기준 O인 글)
+    const used = new Set(), picks = [{ slot:'all', room:ranked[0].room, key:ranked[0].key }]; used.add(ranked[0]);
+    BEST_K.forEach((sk, si)=>{ const x = ranked.find(r=> !used.has(r) && r.s.bestJudge.strength===sk) || ranked.find(r=> !used.has(r) && String(r.s.bestJudge.checks)[si]==='O') || ranked.find(r=> !used.has(r));
+      if(x){ used.add(x); picks.push({ slot:sk, room:x.room, key:x.key }); } });
+    const cands = ranked.map((x,i)=> ({ room:x.room, key:x.key, rank:i+1, label:`${gbCls(x.room)}반 ${x.s.number||''}번 ${x.s.name||''}`, checks:x.s.bestJudge.checks||'', line:x.s.bestJudge.line||'', strength:x.s.bestJudge.strength||'', wins: x.wins!=null ? x.wins : null }));
+    await GB_REF().set({ ts:Date.now(), picks, cands });
+    say(`완료 · 후보 ${pool.length}편 · 비교 ${pairs.length}번`);
+  }catch(e){ alert('학년 잘 쓴 글 고르기 중 오류: '+(e.message||e)); }
+  finally{ gbBusy = false; renderGB(); }
+}
+function gbPageHTML(s, idx, label, look, forPrint){
+  const r = repOf(s), paras = t => String(t||'').split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join('') || '<p style="color:#aaa">(비어 있음)</p>';
+  return `<div class="pg"><div style="color:#888;font-size:${forPrint?'9pt':'14px'};">${label || `학생 ${'ABCDE'[idx]} (이름은 가렸어요)`}</div>${look?`<div class="lk">👀 이 글에서 볼 점: <b>${look}</b></div>`:''}
+    <h2>${esc(r.title)||'(제목 없음)'}</h2><h3>서론</h3>${paras(r.intro)}<h3>본론</h3>${paras(r.body)}<h3>결론</h3>${paras(r.concl)}
+    ${r.sources.length?`<h3>자료</h3>${r.sources.map((x,i)=>`<div class="src">자료 ${i+1}. ${esc(x.name)||'(출처 이름 없음)'}</div>`).join('')}`:''}</div>`;
+}
+const gbLook = p=> p.slot==='all' ? '여러 기준을 고루 잘 갖춘 점' : BEST_LOOK[p.slot];
+async function gbPicksLoaded(){ const ps = ((gb && gb.picks) || []).slice().sort((a,b)=> GB_SLOTS.indexOf(a.slot)-GB_SLOTS.indexOf(b.slot)); for(const p of ps) p.s = await gbStudent(p.room, p.key); return ps; }
+async function gbShowPaint(){
+  const ps = await gbPicksLoaded(), box = document.getElementById('bestShow'); if(!ps.length) return;
+  gbShowI = Math.max(0, Math.min(ps.length-1, gbShowI)); const p = ps[gbShowI];
+  box.innerHTML = `<div class="w"><div class="top"><b>🏆 학년 잘 쓴 글 ${gbShowI+1} / ${ps.length} · ${GB_TAG[p.slot]}</b><div><button data-gbs="-1">◀ 이전</button><button data-gbs="1">다음 ▶</button><button data-gbs="x">✕ 닫기</button></div></div>${gbPageHTML(p.s, gbShowI, '', gbLook(p))}</div>`;
+  box.style.display = 'block'; box.scrollTop = 0; box.dataset.mode = 'gb';
+}
+document.addEventListener('click', async e=>{
+  const t = e.target.closest && e.target.closest('#gbPanel button, #bestShow [data-gbs]'); if(!t) return;
+  if(t.id === 'gbTgl'){ gbOpen = !gbOpen; try{ localStorage.setItem('gb_open', gbOpen?'1':'0'); }catch(e){} renderGB(); }
+  else if(t.id === 'gbRun') gbRun();
+  else if(t.dataset.gbs){ if(t.dataset.gbs === 'x') document.getElementById('bestShow').style.display = 'none'; else { gbShowI += +t.dataset.gbs; gbShowPaint(); } }
+  else if(t.id === 'gbShow'){ gbShowI = 0; gbShowPaint(); }
+  else if(t.dataset.gbView){ const [room, key] = t.dataset.gbView.split('|'), w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
+    const s = await gbStudent(room, key); w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${gbName(room, s)}</title><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;line-height:1.7;padding:0 16px;} h3{color:#9a6700;margin:14px 0 4px;} .lk{background:#fff8e1;padding:6px 10px;border-radius:6px;}</style></head><body>${gbPageHTML(s, 0, gbName(room, s), '', false)}</body></html>`); w.document.close(); }
+  else if(t.id === 'gbPrint'){ const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; } const ps = await gbPicksLoaded();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>학년 잘 쓴 글</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10pt;line-height:1.55;}
+      .pg{width:210mm;padding:12mm 14mm;page-break-after:always;border-top:6px solid #f9a825;} .pg:last-child{page-break-after:auto;} .hd{font-size:13pt;font-weight:bold;color:#1a237e;margin-bottom:4px;}
+      .lk{background:#fff8e1;border-radius:6px;padding:5px 9px;margin:4px 0;} h2{font-size:14pt;margin:6px 0;color:#1a237e;} h3{font-size:10.5pt;color:#9a6700;margin:8px 0 2px;} p{margin:0 0 3px;text-indent:.6em;} .src{font-size:9pt;color:#555;}</style></head><body>
+      ${ps.map((p,i)=> gbPageHTML(p.s, i, '', gbLook(p), true).replace('<div class="pg">', `<div class="pg"><div class="hd">🏆 학년 잘 쓴 글 ${i+1} · ${GB_TAG[p.slot]}</div>`)).join('')}
+      <script>document.querySelectorAll('.pg').forEach(pg=>{ const max = 297*96/25.4 - 6, h = pg.scrollHeight; if(h > max) pg.style.zoom = Math.max(0.7, max/h).toFixed(3); }); setTimeout(()=>print(),400)<\/script></body></html>`); w.document.close(); }
+}, true);
+document.addEventListener('change', async e=>{ const t = e.target; if(!t || !t.dataset || !t.dataset.gbSel || !t.value) return;
+  const [room, key] = t.value.split('|'), picks = ((gb && gb.picks) || []).map(p=> ({ slot:p.slot, room:p.room, key:p.key }));
+  const i = picks.findIndex(p=> p.slot === t.dataset.gbSel); if(i < 0) return;
+  if(picks.some((p,j)=> j!==i && p.room===room && p.key===key)){ alert('이미 다른 칸에 고른 글이에요.'); renderGB(); return; }
+  picks[i] = { slot:t.dataset.gbSel, room, key }; await GB_REF().child('picks').set(picks); });
+document.addEventListener('keydown', e=>{ const b = document.getElementById('bestShow'); if(!b || b.style.display !== 'block' || b.dataset.mode !== 'gb') return;
+  if(e.key === 'ArrowRight'){ gbShowI++; gbShowPaint(); e.stopImmediatePropagation(); } else if(e.key === 'ArrowLeft'){ gbShowI--; gbShowPaint(); e.stopImmediatePropagation(); } }, true);
+(function(){ const _rg = renderGradePanel; renderGradePanel = function(){ _rg.apply(this, arguments); try{ renderBest(); }catch(e){ console.warn(e); } try{ gbWatch(); }catch(e){ console.warn(e); } }; })();
 </script>
 <script>
 /* 🙋 2026-10-29 맞춤법 확인 기회 요청: students/{key}/spellReq = {day, ts} → [+3 주기] = spellBonus {day, n, ts} (오늘만) */
