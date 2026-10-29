@@ -198,6 +198,20 @@
   .ai-agg .st{font-size:12.5px;}
   .ck-edit span{cursor:pointer;user-select:none;} .ck-edit span:hover{filter:brightness(.93);} .ck-edit span.tc{outline:2px solid #ff9800;outline-offset:1px;}
   .gr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px;}
+
+  /* 🖥 2026-10-29 보고서 창: 왼쪽 학생 글 · 오른쪽 채점(채점기준표) — 따로 스크롤 */
+  #tdmBox.wide{max-width:1400px!important;height:92vh;display:flex;flex-direction:column;overflow:hidden!important;}
+  #tdmBox.wide #tdmTextWrap{flex:1;min-height:0;}
+  .tdm-cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;height:100%;}
+  .tdm-l,.tdm-r{overflow:auto;min-height:0;padding-right:6px;}
+  .tdm-l{border-right:1px solid #e0e3ea;padding-right:14px;}
+  .tdm-r .gr-grid{grid-template-columns:1fr;}
+  .tdm-r .ck-edit{align-items:stretch;}
+  .tdm-r .ck-edit span{display:block;border-radius:6px;padding:5px 9px;}
+  .tdm-l mark{background:#fff59d;border-radius:3px;padding:0 1px;}
+  .tdm-nav{border:1px solid #c5cae9;background:#fff;color:#1565c0;border-radius:8px;padding:3px 10px;font-size:12.5px;cursor:pointer;}
+  .tdm-nav:disabled{opacity:.4;cursor:default;}
+  @media (max-width:900px){ #tdmBox.wide{height:auto;max-height:92vh;overflow:auto!important;} .tdm-cols{grid-template-columns:1fr;height:auto;} .tdm-l,.tdm-r{overflow:visible;border:0;padding:0;} }
   .gr-card{border:1px solid #d5d8e8;border-radius:10px;padding:8px 10px;background:#fff;margin:0;}
   .gr-card .gr-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .gr-card .nm{font-weight:bold;font-size:14px;color:#1a237e;} .gr-card .nm small{margin-left:8px;font-weight:normal;color:#666;font-size:12px;} .gr-card .nm .pt{font-size:17px;color:#1a237e;}
   .gr-card .gr-chips{margin-left:auto;} .gr-card .why{font-size:12px;color:#666;margin:4px 0;}
@@ -288,10 +302,10 @@
 
 <!-- 요약뷰에서 학생의 칸(또는 상세 패널의 행)을 클릭하면, 그 학생의 보고서 전체와 AI 채점·피드백을 보여주는 모달. -->
 <div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:14px;padding:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
+  <div id="tdmBox" style="background:#fff;border-radius:14px;padding:20px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3);position:relative;">
     <button id="taskDetailCloseBtn" type="button" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:#888;">×</button>
     <h3 id="tdmTitle" style="margin:0 24px 4px 0;font-size:16px;color:#1a237e;"></h3>
-    <div id="tdmMeta" style="font-size:12.5px;color:#888;margin-bottom:14px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><div id="tdmMeta" style="font-size:12.5px;color:#888;"></div><span id="tdmNav" style="margin-left:auto;margin-right:28px;display:flex;gap:6px;"></span></div>
     <div id="tdmCanvasWrap" style="border-radius:8px;margin-bottom:12px;overflow:hidden;"></div>
     <div id="tdmTextWrap"></div>
   </div>
@@ -651,9 +665,10 @@ function gradeBoxHTML(key, s){
       const on = it.final===v, aiMark = it.ai===v;
       chips += `<button class="${on?'on':''}${aiMark?' ai-mark':''}" data-gs="${esc(key)}" data-gc="${it.k}" data-gv="${v}" title="${aiMark?'AI 점수 · ':''}${v}점으로 정하기">${v}</button>`;
     }
+    const whyTxt = r => (esc(r)||'(이유 없음)').replace(/([.?!])\s+(?=\S)/g, '$1<br>');   // 2026-10-29: 근거를 문장마다 줄 바꿈
     const why = it.teacher!=null && it.teacher!==it.ai
-      ? `${it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : ''} <span style="font-size:11.5px;color:#888;white-space:nowrap;">· ✏️ 수정됨(AI ${it.ai!=null?it.ai:'-'}점) <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="color:#888;">↺ 되돌리기</a></span>`   // 2026-10-29: ○✕를 눌러도 위 글이 크게 바뀌지 않게
-      : (it.ai!=null ? `AI: ${esc(it.reason)||'(이유 없음)'}` : '<span style="color:#aaa;">아직 채점 전</span>');
+      ? `${it.ai!=null ? `AI: ${whyTxt(it.reason)}` : ''} <span style="font-size:11.5px;color:#888;white-space:nowrap;">· ✏️ 수정됨(AI ${it.ai!=null?it.ai:'-'}점) <a href="#" data-gr="${esc(key)}" data-gc="${it.k}" style="color:#888;">↺ 되돌리기</a></span>`   // 2026-10-29: ○✕를 눌러도 위 글이 크게 바뀌지 않게
+      : (it.ai!=null ? `AI: ${whyTxt(it.reason)}` : '<span style="color:#aaa;">아직 채점 전</span>');
     const f = g.ai && g.ai.fb && g.ai.fb[it.k];
     const qc = it.k==='question' && g.ai && typeof g.ai.qchecks==='string' && g.ai.qchecks ? g.ai.qchecks : '';
     const qch = qc ? (qc.length===3 ? `<div class="gr-q">${Q3.map((t,i)=>`<span class="${qc[i]==='O'?'o':'x'}" title="${esc(t)}">${i+1}. ${esc(Q3S[i])} <b>${qc[i]==='O'?'1':'0'}</b></span>`).join('')}<small>${qc[0]==='X' ? '질문이 없어 0점' : `합계 ${it.ai}점`}</small></div>` : `<div class="gr-q"><small>예전 기준(5항목)으로 채점된 결과예요. "다시 받기"를 누르면 새 기준으로 채점해요.</small></div>`) : '';
@@ -816,8 +831,10 @@ function refreshOpenModal(){
   if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
   const s = allStudents[tdmKey]; if(!s) return;
   const w = document.getElementById('tdmTextWrap'), sc = []; for(let e = w; e; e = e.parentElement) sc.push([e, e.scrollTop]);   // 다시 그려도 스크롤 위치 유지
-  w.innerHTML = activityDetailHTML(s, 1, tdmKey) || '';
+  const inner = ['.tdm-l','.tdm-r'].map(q=>{ const e = w.querySelector(q); return e ? e.scrollTop : 0; });
+  w.innerHTML = modalHTML(tdmKey, s) || '';
   sc.forEach(([e, t])=>{ if(e.scrollTop !== t) e.scrollTop = t; });
+  ['.tdm-l','.tdm-r'].forEach((q,i)=>{ const e = w.querySelector(q); if(e) e.scrollTop = inner[i]; });
 }
 function onStudentsUpdated(){ refreshOpenModal(); }
 
@@ -1474,6 +1491,20 @@ function renderDetail(item){
 }
 
 /* 요약뷰의 칸(또는 상세 패널의 행)을 클릭했을 때, 그 학생의 보고서 전체와 AI 채점·피드백을 모달로 보여준다. */
+function modalHTML(key, s){   // 2026-10-29: 왼쪽 글(✕ 근거 문장은 노란색) · 오른쪽 채점
+  if(!hasReport(s)) return activityDetailHTML(s, 1, key);
+  let left = activityDetailHTML(s, 1, null);
+  const xq = (s.aiGrade && s.aiGrade.xq) || {};
+  Object.values(xq).forEach(arr=> (arr||[]).forEach(q=>{ q = String(q||'').trim(); if(q.length < 4 || q.startsWith('(')) return; const e = esc(q), i = left.indexOf(e); if(i >= 0) left = left.slice(0, i) + '<mark>' + e + '</mark>' + left.slice(i + e.length); }));
+  return `<div class="tdm-cols"><div class="tdm-l">${left}</div><div class="tdm-r">${gradeBoxHTML(key, s)}</div></div>`;
+}
+function tdmOrder(){ return Object.keys(allStudents).filter(k=> hasReport(allStudents[k]||{})).sort((a,b)=> (parseInt(allStudents[a].number)||999) - (parseInt(allStudents[b].number)||999)); }
+function paintTdmNav(){
+  const nav = document.getElementById('tdmNav'); if(!nav) return;
+  const o = tdmOrder(), i = o.indexOf(tdmKey);
+  nav.innerHTML = i < 0 ? '' : `<button type="button" class="tdm-nav" data-tdm-go="${i-1}" ${i<=0?'disabled':''}>◀ 이전 학생</button><button type="button" class="tdm-nav" data-tdm-go="${i+1}" ${i>=o.length-1?'disabled':''}>다음 학생 ▶</button>`;
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-tdm-go]'); if(!b || b.disabled) return; const k = tdmOrder()[+b.dataset.tdmGo]; if(k) openTaskDetail(k, allStudents[k], TASK_IDS[0]); });
 function openTaskDetail(key, s, taskId){
   const t = TASK_LABELS.find(x=>x.id===taskId);
   const done = taskDone(s,taskId);
@@ -1483,10 +1514,12 @@ function openTaskDetail(key, s, taskId){
   document.getElementById('tdmMeta').textContent = `${displayName(key,s.name,s.number)} · ${statusLabel}`;
   document.getElementById('tdmCanvasWrap').textContent='';
   tdmKey = key;
-  const html = activityDetailHTML(s, taskId, key);
+  const html = modalHTML(key, s);
+  document.getElementById('tdmBox').classList.toggle('wide', hasReport(s));
   const textWrap = document.getElementById('tdmTextWrap');
   textWrap.innerHTML = html || `<div style="color:#999;font-size:13px;padding:30px;text-align:center;">${visited ? '아직 쓴 내용이 없어요.' : '아직 시작하지 않았어요.'}</div>`;
   document.getElementById('taskDetailOverlay').style.display='flex';
+  paintTdmNav();
 }
 document.getElementById('taskDetailCloseBtn').addEventListener('click', ()=>{
   document.getElementById('taskDetailOverlay').style.display='none';
