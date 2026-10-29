@@ -1,6 +1,13 @@
 {
   "functions": {
-    "api/report-grade.js": { "maxDuration": 60 },
-    "api/report-best.js": { "maxDuration": 60 }
+    "api/report-grade.js": {
+      "maxDuration": 60
+    },
+    "api/report-best.js": {
+      "maxDuration": 60
+    },
+    "api/spell-check.js": {
+      "maxDuration": 60
+    }
   }
 }

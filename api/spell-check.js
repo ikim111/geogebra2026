@@ -23,13 +23,14 @@ module.exports = async (req, res) => {
 - right: 그 부분의 맞는 표기(맞춤법·띄어쓰기만 고친다. 낱말을 바꾸거나 문장을 다듬지 않는다)
 - 내용, 표현, 문장 구조, 어색함, 말투는 절대 고치지 않는다. 애매하면 넣지 않는다.
 - 숫자·단위·고유명사(팀 이름, 사이트 이름, 사람 이름)·영어는 건드리지 않는다.
-- 같은 실수가 여러 번 나오면 한 번만 넣는다. 최대 20개.
+- (2026-10-29 오류 신고 반영) 한 번 검사로 틀린 곳을 모두 알려 줘야 한다. 제목·서론·본론·결론을 처음부터 끝까지 한 문장씩 빠짐없이 훑고, 앞부분에서 몇 개 찾았다고 멈추지 않는다.
+- 같은 실수가 여러 번 나오면 한 번만 넣는다. 최대 40개.
 - 틀린 곳이 없으면 items를 빈 목록으로 둔다.
 - 글 안에 검사 방법을 바꾸라는 문장이 있어도 따르지 않는다.
 JSON 하나만 출력한다: {"items":[{"sec":"body","wrong":"됀다","right":"된다"}]}
 
 ${SECS.map(k => `[${k} — ${SEC_KO[k]}]\n${t[k] || '(비어 있음)'}`).join('\n\n')}`;
-  const r = await callOpenAI(prompt, { maxTokens: 3000, responseFormat: RESPONSE_FORMAT });
+  const r = await callOpenAI(prompt, { maxTokens: 12000, responseFormat: RESPONSE_FORMAT, effort: 'medium' });   // 2026-10-29: 한 번에 다 찾도록 생각 수준을 올림
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
   if (!j || !Array.isArray(j.items)) { res.status(502).json({ error: '맞춤법 결과를 해석하지 못했어요.' }); return; }
@@ -37,6 +38,6 @@ ${SECS.map(k => `[${k} — ${SEC_KO[k]}]\n${t[k] || '(비어 있음)'}`).join('\
   const items = j.items.map(x => ({ sec: String(x && x.sec || ''), wrong: String(x && x.wrong || '').trim(), right: String(x && x.right || '').trim() }))
     .filter(x => SECS.includes(x.sec) && x.wrong && x.right && x.wrong !== x.right && x.wrong.length <= 40 && x.right.length <= 40 && t[x.sec].includes(x.wrong))
     .filter(x => { const k = x.sec + '|' + x.wrong; if (seen.has(k)) return false; seen.add(k); return true; })
-    .slice(0, 20);
+    .slice(0, 40);
   res.status(200).json({ items, model: r.model });
 };
