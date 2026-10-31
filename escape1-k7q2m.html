@@ -137,7 +137,7 @@ svg.grid{width:100%;display:block;border-radius:10px;background:linear-gradient(
   <div class="ttl serif" style="text-align:center;margin-bottom:26px"><div class="ep">붉은 나침반 · 제1회</div><div class="nm">탈출 성공!</div></div>
   <div class="res"><div class="seal serif">탈출</div><h2 class="serif">항해 일지</h2>
     <div class="st" id="stars"></div><div id="resTb"></div></div>
-  <div class="sc" style="width:min(560px,92vw);margin-top:20px">되돌아보기: 이번 회에 쓴 성질을 모둠이 함께 말해 보세요.<small>평행사변형 · 사각형의 대각선 · 이등변삼각형 · 외심 · 내심 &nbsp;|&nbsp; 다음 회: 「강을 건너, 동굴로」</small></div>
+  <div class="sc" style="width:min(560px,92vw);margin-top:20px">되돌아보기: 이번 회에 쓴 성질을 모둠이 함께 말해 보세요.<small>평행사변형 · 사각형의 대각선 · 이등변삼각형 · 외심 · 내심</small></div>
 </div>
 <div class="note">테스트용 · 기록은 저장되지 않아요</div>
 
@@ -183,8 +183,8 @@ const PT={machine:['⚙️ 기계','초록 카드의 번호를 넣으세요.',2]
 function paint(){const n=padMode==='code'?4:Math.min(PT[padMode][2],buf.length+1);let h='';for(let i=0;i<n;i++)h+=`<div class="sl mono${buf[i]===undefined?' e':''}">${buf[i]===undefined?'·':buf[i]}</div>`;$('slots').innerHTML=h}
 function openPad(mode){if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}
  padMode=mode;buf='';$('padMsg').style.display='none';const T=PT[mode];$('padTitle').textContent=T[0];$('padSub').textContent=T[1];paint();show('pad')}
-['1','2','3','4','5','6','7','8','9','지움','0','X'].forEach(k=>{const b=document.createElement('button');b.className='k'+(k.length>1||k==='X'?' s':'');b.textContent=k;
- b.onclick=()=>{if(k==='지움')buf='';else if(buf.length<PT[padMode][2])buf+=k;paint()};$('keys').appendChild(b)});
+['1','2','3','4','5','6','7','8','9','지움','0','⌫'].forEach(k=>{const b=document.createElement('button');b.className='k'+(k.length>1||k==='⌫'?' s':'');b.textContent=k;b.setAttribute('aria-label',k==='⌫'?'한 글자 지우기':k==='지움'?'모두 지우기':k);
+ b.onclick=()=>{if(k==='지움')buf='';else if(k==='⌫')buf=buf.slice(0,-1);else if(buf.length<PT[padMode][2])buf+=k;paint()};$('keys').appendChild(b)});
 document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('home'));
 document.querySelector('[data-ok]').onclick=()=>$('padOk').click();
 $('padOk').onclick=()=>{
