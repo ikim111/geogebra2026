@@ -23,7 +23,7 @@ document.body.insertAdjacentHTML('afterbegin', `
     ${ring}</div>
   <div class="side">
     <div class="ttl serif" style="margin-bottom:${P?12:26}px">${ttl}</div>
-    ${P?'<div class="steps" id="steps"></div><div class="tcard" id="tcard"></div><button class="startbtn" id="endBtn" style="display:none;margin-top:14px">🏁 탈출 (마지막 카드 번호)</button>':
+    ${P?'<div class="badges" id="badges"></div><div class="sc" id="homeMsg">'+(G.intro||'')+'</div><button class="startbtn" id="endBtn" style="margin-top:14px">🏁 탈출 (마지막 카드 번호)</button>':
       `<div class="sc" id="homeMsg">모둠이 모두 모이면 <b>항해 시작</b>을 누르세요.<small>시작 카드를 펼치는 순간 시간이 흘러요.</small></div>
        <button class="startbtn" id="startBtn">⚓ 항해 시작</button>
        <div class="stat"><div>벌점<b class="mono" id="sPen">0</b></div><div>틀린 답<b class="mono" id="sWrong">0</b></div><div>힌트<b class="mono" id="sHint">0</b></div></div>
@@ -86,7 +86,7 @@ function resultHTML(r){
   return h;
 }
 /* 첫 화면 알림: 본게임은 말풍선, 연습은 지금 단계 카드 아래 */
-function homeSay(cls, html){ if(P){ tutFeedback(cls, html); return; }
+function homeSay(cls, html){
   const m=$('homeMsg'); m.className='sc'+(cls?' '+cls:''); m.innerHTML=html; }
 function sub(el, cls, html){ const m=$(el); m.className='sc pm'+(cls?' '+cls:''); m.innerHTML=html; m.style.display=''; }
 
@@ -186,33 +186,23 @@ if(!P){
 $('endBtn').onclick=()=> openPad('end');
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') show('home'); });
 
-/* ---------- 연습: 단계 안내 ---------- */
-let step=0;
-function emit(ev, arg){ if(!P) return; const st=G.steps[step]; if(st && st.wait && st.wait(ev, arg)) nextStep(); }
-function tutFeedback(cls, html){ const f=$('tfb'); if(!f) return; f.className='fb '+(cls==='ok'?'ok':cls==='no'?'no':'ok'); f.innerHTML=html; }
-function paintStep(){
-  const st=G.steps[step];
-  $('steps').innerHTML = G.steps.map((_,i)=>`<i class="${i<step?'d':i===step?'n':''}"></i>`).join('');
-  document.querySelectorAll('.btn').forEach(b=> b.classList.remove('glow'));
-  (st.glow||[]).forEach(id=>{ const b=$('b_'+id); if(b) b.classList.add('glow'); });
-  $('tcard').innerHTML = `<div class="lv">${step+1} / ${G.steps.length} · ${st.name}</div>${st.text(chip, dz)}`+
-    (st.todo?`<div class="do">👉 ${st.todo(chip)}</div>`:'')+`<div class="fb" id="tfb"></div>`+
-    (st.next?`<button class="tnext" id="tnext">${st.next}</button>`:'');
-  if(st.next) $('tnext').onclick=()=> nextStep();
-  if(st.showEnd){ $('endBtn').style.display=''; $('endBtn').classList.add('glow'); }
-}
-function nextStep(){ if(step < G.steps.length-1){ step++; paintStep(); } }
-if(P) paintStep();
+/* ---------- 연습: 배울 것 체크리스트 (순서 자유, 카드와 화면을 오가며) ---------- */
+const got={};
+function paintBadges(){ if(!P) return; $('badges').innerHTML=G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join(''); }
+function emit(ev, arg){ if(!P) return; let n=0;
+  G.badges.forEach(b=>{ if(!got[b.k] && b.on(ev, arg, got)){ got[b.k]=1; n++; } });
+  if(n){ paintBadges(); setTimeout(()=>{ const left=G.badges.filter(b=>!got[b.k]).length; if(left && ev!=='end'){ const m=$('homeMsg'); m.insertAdjacentHTML('beforeend', `<small>✔ 배운 것 ${G.badges.length-left}/${G.badges.length}</small>`); } }, 0); } }
+paintBadges();
 
 /* ---------- 결과 ---------- */
 function finish(){
   if(S.running){ S.acc+=Date.now()-S.start; S.running=false; }
   const f=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
-  if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="ln"><span>배운 것</span><b>합치기 · 함정 · 숨은 번호 · 기계 · 힌트 · 자물쇠 · 탈출</b></div>'; show('done'); return; }
+  if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="ln"><span>배운 것</span><b>'+G.badges.map(b=>(got[b.k]?'✔ ':'· ')+b.name).join('  ')+'</b></div>'; show('done'); return; }
   const ms=elapsed(), min=ms/60000;
   let st=min<=30?5:min<=35?4:min<=40?3:min<=45?2:1; st=Math.max(0, st-Math.floor(S.hint/4));
   $('stars').innerHTML='★'.repeat(st)+'<em>'+'★'.repeat(5-st)+'</em>';
   $('resTb').innerHTML=`<div class="ln"><span>걸린 시간 · 힌트</span><b class="mono">${f(ms)} · ${S.hint}번</b></div><div class="ln"><span>벌점으로 잃은 시간</span><b class="mono">${S.pen}분 (${S.pen}번)</b></div><div class="ln"><span>틀린 답으로 잃은 시간</span><b class="mono">${S.wrong}분 (${S.wrong}번)</b></div>`;
   show('done'); }
-window.__S=S; window.__step=()=>step;
+window.__S=S; window.__got=got;
 })();

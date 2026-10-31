@@ -99,3 +99,6 @@ body.practice{background:radial-gradient(ellipse at 35% 40%,rgba(255,220,140,.18
 .tnext{margin-top:12px;width:100%;min-height:56px;border:0;border-radius:28px;font-size:19px;font-weight:900;color:#fff;background:linear-gradient(180deg,#4caf50,#2e7d32);cursor:pointer;font-family:inherit}
 .glow{animation:gl 1.2s infinite}@keyframes gl{50%{box-shadow:0 0 0 3px #ffe9a8,0 0 0 10px rgba(255,233,168,.45),0 0 28px 10px rgba(255,233,168,.6)}}
 .paused-note{font-size:calc(var(--D)*.022);color:#c9b991;margin-top:4px}
+
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}.badges .bd{padding:6px 11px;border-radius:16px;font-size:15px;font-weight:800;color:#c9b991;border:1.5px dashed #8a7442;background:rgba(0,0,0,.18)}
+.badges .bd.on{color:#fff;background:#2e7d32;border:1.5px solid #2e7d32}

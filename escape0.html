@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>붉은 나침반 — 연습 (모둠 디벗)</title>
+<link rel="stylesheet" href="escape-core.css">
+</head><body>
+<script>
+/* 🧭 붉은 나침반 연습(선원 훈련소) — 1·2·3회 모두 이 연습으로 사용법을 익힌다 (2026-11-01)
+   연습 카드: 연습 시작, 10 양동이(빨강), 20 밧줄(파랑), 11 구멍 난 바가지(파랑), 21 벌점, 30 쪽지(숨은 5), 5 우물 지도(기계), X 훈련 상자(자물쇠 0804), 9 훈련 수료증(마지막) */
+window.EG = {
+  mode:'practice', ep:'연습', title:'선원 훈련소',
+  kinds:{'연습':'G', 10:'R', 20:'B', 11:'B', 21:'P', 30:'G', 5:'Gr', X:'Y', 9:'G'},
+  codes:{ X:{code:'0804', ok:{msg:'철컥! 훈련 상자가 열렸다. 안에 무언가 들어 있다!', open:['9'], clear:['X']}} },
+  wrongCodes:{},
+  hints:{
+    10:['빨강 카드는 파랑 카드와 합쳐요.','파랑 카드는 밧줄(20)과 바가지(11)예요.'],
+    30:['쪽지를 자세히 보세요.','쪽지 위에 작은 숫자가 있어요. 그 번호의 카드를 펼쳐요.','5번 카드를 펼치세요.'],
+    5:['쪽지(30)에 적힌 자리를 지도에서 찾아요.','x좌표가 먼저, y좌표가 나중이에요.','(2, 3)을 누르세요.'],
+    9:['훈련 수료증이 마지막 카드예요.','🏁 탈출을 누르고 9를 넣어요.']},
+  mach:{ 5:{t:'우물 지도',s:'쪽지에 적힌 자리를 누르고 확인을 누르세요.',type:'img',img:'escape1-wellmap.jpg',
+      xs:[0,1,2,3,4,5,6].map(k=>11+12.95*k), ys:[81,67,53,39,25],
+      check:(x,y)=> x==2&&y==3 ? {ok:true,msg:'삽으로 파 보니 훈련 상자가 나왔다!',open:['X'],clear:['30','5']}
+        : (x==3&&y==2) ? {ok:false,msg:'x좌표가 먼저, y좌표가 나중이에요.'} : {ok:false,msg:'쪽지에 적힌 자리를 다시 보세요.'} } },
+  hidden:()=>'우물에서 건진 쪽지(30)를 자세히 보세요. 작은 숫자가 숨어 있어요.',
+  endCard:9,
+  reflect:'이제 진짜 모험이에요!<small>연습 카드(노란 뒷면)는 모두 치우고, 본게임 카드(파란 뒷면)를 번호가 보이게 쌓아 두세요. 시작 카드만 펼쳐 둬요.</small>',
+  next:{url:'escape1.html', label:'⚓ 1회 「찢어진 지도」 시작하기'},
+  intro:'<b>연습 시작</b> 카드를 펼치고, <b>카드에 적힌 대로</b> 해 보세요.<small>카드를 읽고 → 디벗에서 해 보고 → 다시 카드로. 위의 배울 것 7가지를 모두 해 보면 연습 끝이에요. 막히면 💡 힌트에 카드 번호!</small>',
+  badges:[
+    {k:'add', i:'➕', name:'합치기', on:e=> e==='pen'||e==='hid'||e==='mach'||e==='code'},
+    {k:'pen', i:'⏳', name:'함정', on:e=> e==='pen'},
+    {k:'hid', i:'🔍', name:'숨은 번호', on:(e,a)=> e==='hid'||(e==='mach'&&+a===5)},
+    {k:'hint', i:'💡', name:'힌트', on:e=> e==='hint'},
+    {k:'mach', i:'⚙️', name:'기계', on:e=> e==='mach'},
+    {k:'code', i:'🔒', name:'자물쇠', on:e=> e==='code'},
+    {k:'end', i:'🏁', name:'탈출', on:e=> e==='end'}]
+};
+</script>
+<script src="escape-core.js"></script>
+</body></html>
