@@ -796,7 +796,8 @@ async function fxDelete(cls, key){
   const rooms = await fxScan(cls, key, '__none__');
   // 🗑 2026-10-29 지우기 전에 휴지통에 통째로 보관(실패하면 지우지 않는다)
   const entries = []; rooms.forEach(r=> r.moves.forEach(([from, , val])=>{ if(!from.startsWith('rosterCodes/')) entries.push({ p: r.base+'/'+from, v: val }); }));
-  if(window.trashSaveEntries) await window.trashSaveEntries(entries, '학생 관리 삭제', cls, [key]);
+  if(!window.trashSaveEntries) throw new Error('휴지통(trash.js)을 불러오지 못했어요');
+  await window.trashSaveEntries(entries, '학생 관리 삭제', cls, [key]);
   let n = 0;
   for(const r of rooms){
     const up = {}; r.moves.forEach(([from])=>{ if(!from.startsWith('rosterCodes/')) up[from] = null; });

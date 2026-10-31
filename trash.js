@@ -1,7 +1,8 @@
 /* 🗑 2026-10-29 휴지통 — 학생 기록을 지우기 전에 rooms/__trash/items 에 통째로 보관한다(7일 동안 되살리기 가능).
    (2반 7번 1부 기록을 지운 뒤 되살릴 방법이 없었던 일을 계기로 만듦)
    보관 형식: {ts, why, cls, who:[학생 키…], page, entries:[{p:'rooms/…/students/키', v:값}], restoredAt?}
-   - 교사 대시보드: trashSave(studentsRef, keys|null, why)  — keys가 null이면 그 반 학생 전체(반 초기화)
+   - 교사 대시보드: trashSave(studentsRef, keys|null, why, extra)  — keys가 null이면 그 반 학생 전체(반 초기화), extra는 함께 지울 반 칸 이름들
+   - trash.js를 못 불러온 화면은 지우지 않는다(각 화면에서 Promise.reject).
    - 학생 관리(mgmt): trashSaveEntries(entries, why, cls, who)
    - 되살리기·목록은 mgmt 학생 관리 창의 '휴지통' 칸에서 한다. 보관에 실패하면 지우지 않는다. */
 (function(){
@@ -14,9 +15,11 @@
     return entries.length;
   }
   window.trashSaveEntries = saveEntries;
-  window.trashSave = async function(studentsRef, keys, why){
+  window.trashSave = async function(studentsRef, keys, why, extra){
     const room = studentsRef.parent.key, cls = String(room).split('__')[0];
     let entries = [], who = [];
+    /* 반 초기화 때 함께 지우는 반 공유 칸(share, a1summary 등)도 같이 보관 (2026-11-01) */
+    for(const name of (extra || [])){ const v = (await studentsRef.parent.child(name).once('value')).val(); if(v != null) entries.push({ p: 'rooms/'+room+'/'+name, v }); }
     if(keys == null){
       const v = (await studentsRef.once('value')).val() || {};
       Object.keys(v).forEach(k=>{ entries.push({ p: 'rooms/'+room+'/students/'+k, v: v[k] }); who.push(k); });
