@@ -57,10 +57,11 @@ document.body.insertAdjacentHTML('afterbegin', `
   <div class="sc" style="width:min(560px,100%);margin-top:20px">${G.reflect||''}</div>
   ${G.next?`<a class="startbtn" style="display:block;width:min(560px,100%);text-align:center;line-height:64px;text-decoration:none" href="${G.next.url}">${G.next.label}</a>`:''}
 </div>
-<div class="note">테스트용 · 기록은 저장되지 않아요</div>`);
+<div class="note">테스트용 · 기록은 이 디벗 안에만 잠깐 남아요</div>`);
 
 const $ = id => document.getElementById(id);
 const S = {start:null, acc:0, running:false, begun:P, pen:0, hint:0, wrong:0, penMs:0, wrongMs:0, solved:{}, hintLv:{}, seen:[]};
+const KEY='escape:'+location.pathname.replace(/\.html$/,''); let saveOff=false;
 const LIMIT = (G.limitMin||45)*60000;
 const elapsed = ()=> S.acc + (S.running ? Date.now()-S.start : 0) + S.penMs + S.wrongMs;
 function fmtLeft(ms){ const r=LIMIT-ms, a=Math.abs(r), m=Math.floor(a/60000), s=Math.floor(a%60000/1000); return (r<0?'+':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
@@ -111,13 +112,14 @@ function win(r){ homeSay('ok', resultHTML(r)); show('home'); }
 $('padOk').onclick=()=>{
   const v=buf; if(!v) return;
   if(padMode==='code'){
+    if(v.length<4){ sub('padMsg','info','4자리를 모두 넣으세요.'); return; }
     const hit = Object.entries(G.codes||{}).find(([n,c])=> c.code===v);
     if(hit){ S.solved[hit[0]]=1; emit('code', hit[0]); win(hit[1].ok); return; }
     const why = (G.wrongCodes||{})[v] || '이 비밀번호로 열리는 자물쇠가 없어요.';
     sub('padMsg','no', resultHTML({msg:why, lose:lose('wrong')})); buf=''; paint(); return; }
   if(padMode==='machine'){ openMach(+v); return; }
   if(padMode==='hint'){
-    const n=+v, h=(G.hints||{})[n];
+    const n0=+v, n=(G.hintSame&&n0 in G.hintSame)?G.hintSame[n0]:n0, h=(G.hints||{})[n];
     if(!h){ sub('padMsg','info','그 카드에는 힌트가 없어요. 다른 카드 번호를 넣어 보세요.'); return; }
     const lv=S.hintLv[n]||0, L=h.length;
     if(lv>=L){ sub('padMsg','info','이 카드의 힌트를 모두 봤어요.<br>'+h.map((x,i)=>(i===2?'정답: ':(i+1)+'단계: ')+x).join('<br>')); return; }
@@ -200,6 +202,7 @@ paintBadges(); if(P){ glowNow(); homeSay('', G.intro||''); }
 
 /* ---------- 결과 ---------- */
 function finish(){
+  saveOff=true; try{ localStorage.removeItem(KEY); }catch(e){}
   if(S.running){ S.acc+=Date.now()-S.start; S.running=false; }
   const f=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
   if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="badges" style="justify-content:center;margin:12px 0 4px">'+G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join('')+'</div>'; show('done'); return; }
@@ -208,5 +211,19 @@ function finish(){
   $('stars').innerHTML='★'.repeat(st)+'<em>'+'★'.repeat(5-st)+'</em>';
   $('resTb').innerHTML=`<div class="ln"><span>걸린 시간 · 힌트</span><b class="mono">${f(ms)} · ${S.hint}번</b></div><div class="ln"><span>벌점으로 잃은 시간</span><b class="mono">${S.pen}분 (${S.pen}번)</b></div><div class="ln"><span>틀린 답으로 잃은 시간</span><b class="mono">${S.wrong}분 (${S.wrong}번)</b></div>`;
   show('done'); }
+/* ---------- 새로고침해도 이어 하기 (이 디벗 안에만 저장, 3시간 지나면 버림) ---------- */
+function save(){ if(saveOff) return; if(P ? !(flow||Object.keys(got).length) : !S.begun) return;
+  const d={t:Date.now(), acc:S.acc+(S.running?Date.now()-S.start:0), running:S.running, pen:S.pen, hint:S.hint, wrong:S.wrong, penMs:S.penMs, wrongMs:S.wrongMs, solved:S.solved, hintLv:S.hintLv, seen:S.seen, flow, got};
+  try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
+setInterval(save, 1000); window.addEventListener('pagehide', save);
+(function restore(){ let d=null; try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+  if(!d || Date.now()-d.t > 3*3600000) return;
+  ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
+  if(P){ flow=d.flow||0; Object.assign(got, d.got||{}); paintBadges(); glowNow(); }
+  else { S.begun=true; S.running=!!d.running; if(S.running) S.start=Date.now(); else $('pauseBtn').textContent='▶';
+    $('startBtn').style.display='none'; $('endBtn').style.display=''; }
+  homeSay('info','💾 하던 곳부터 이어서 해요. (새로고침 전 기록을 불러왔어요)<small><a href="#" id="resetGame" style="color:#7a1d10;font-weight:900">처음부터 다시 하기</a></small>');
+  const r=$('resetGame'); r.onclick=e=>{ e.preventDefault(); if(r.dataset.sure){ saveOff=true; try{ localStorage.removeItem(KEY); }catch(_){} location.reload(); } else { r.dataset.sure=1; r.textContent='정말 처음부터? 한 번 더 누르세요'; } };
+  tick(); })();
 window.__S=S; window.__got=got;
 })();
