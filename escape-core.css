@@ -102,3 +102,4 @@ body.practice{background:radial-gradient(ellipse at 35% 40%,rgba(255,220,140,.18
 
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}.badges .bd{padding:6px 11px;border-radius:16px;font-size:15px;font-weight:800;color:#c9b991;border:1.5px dashed #8a7442;background:rgba(0,0,0,.18)}
 .badges .bd.on{color:#fff;background:#2e7d32;border:1.5px solid #2e7d32}
+.guide{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff6dc;border:2px dashed #c9a55a;font-size:.86em;color:#3b2a12}

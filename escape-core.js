@@ -86,8 +86,10 @@ function resultHTML(r){
   return h;
 }
 /* 첫 화면 알림: 본게임은 말풍선, 연습은 지금 단계 카드 아래 */
+let flow=0;
+function guideHTML(){ if(!P||!G.flow) return ''; const st=G.flow[flow]; return st&&st.say ? `<div class="guide">🧭 훈련관: ${st.say}</div>` : ''; }
 function homeSay(cls, html){
-  const m=$('homeMsg'); m.className='sc'+(cls?' '+cls:''); m.innerHTML=html; }
+  const m=$('homeMsg'); m.className='sc'+(cls?' '+cls:''); m.innerHTML=html+guideHTML(); }
 function sub(el, cls, html){ const m=$(el); m.className='sc pm'+(cls?' '+cls:''); m.innerHTML=html; m.style.display=''; }
 
 /* ---------- 숫자판 ---------- */
@@ -167,7 +169,7 @@ document.querySelectorAll('[data-act]').forEach(b=> b.onclick=()=>{
   const a=b.dataset.act;
   if(a==='hint'||a==='code'||a==='machine') return openPad(a);
   if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
-  if(a==='pen'){ emit('pen'); homeSay('no', resultHTML({msg:'벌점 카드를 펼쳤군요. 그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen')})); }
+  if(a==='pen'){ emit('pen'); homeSay('no', resultHTML({msg:G.penMsg||'벌점 카드를 펼쳤군요. 그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen')})); }
   if(a==='hid'){ emit('hid'); homeSay('info','🔍 '+G.hidden(S)); }
 });
 if(!P){
@@ -189,10 +191,12 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') show('home'); });
 /* ---------- 연습: 배울 것 체크리스트 (순서 자유, 카드와 화면을 오가며) ---------- */
 const got={};
 function paintBadges(){ if(!P) return; $('badges').innerHTML=G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join(''); }
-function emit(ev, arg){ if(!P) return; let n=0;
+function setFlow(n){ if(!G.flow||n<=flow) return; flow=n; glowNow(); }
+function glowNow(){ document.querySelectorAll('.btn,#endBtn').forEach(b=> b.classList.remove('glow')); const st=G.flow&&G.flow[flow]; ((st&&st.glow)||[]).forEach(id=>{ const b=id==='end'?$('endBtn'):$('b_'+id); if(b) b.classList.add('glow'); }); }
+function emit(ev, arg){ if(!P) return; if(G.flowOn){ const t=G.flowOn(ev,arg); if(t!=null) setFlow(t); } let n=0;
   G.badges.forEach(b=>{ if(!got[b.k] && b.on(ev, arg, got)){ got[b.k]=1; n++; } });
-  if(n){ paintBadges(); setTimeout(()=>{ const left=G.badges.filter(b=>!got[b.k]).length; if(left && ev!=='end'){ const m=$('homeMsg'); m.insertAdjacentHTML('beforeend', `<small>✔ 배운 것 ${G.badges.length-left}/${G.badges.length}</small>`); } }, 0); } }
-paintBadges();
+  if(n) paintBadges(); }
+paintBadges(); if(P){ glowNow(); homeSay('', G.intro||''); }
 
 /* ---------- 결과 ---------- */
 function finish(){
