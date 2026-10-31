@@ -160,16 +160,16 @@ const bin=n=>`<small>🗑 ${n}번 카드는 버리세요</small>`;
 const CODES={
   94:{code:'3242',ok:'철컥! 금고가 열렸다. <b>58번</b> 카드를 펼치세요.'+bin('94, 49'),wrong:{'2242':'하나를 빠뜨렸어요. 사다리꼴을 다시 보세요.'}},
   6:{code:'2000',ok:'"딱 맞는 길이로군!" 보트를 탔다. <b>86번</b> 카드를 펼치세요.'+bin('6, 24'),wrong:{'5000':'그건 세 <b>등대</b>까지의 거리(외심)예요. 호수는 <b>해안 길</b>에 닿아요.','4000':'그건 지름이에요.','0002':'단위를 m로 바꿔 보세요.','0020':'단위를 m로 바꿔 보세요.'}}};
-const PHINTS={30:['카드 구석까지 잘 보세요.','오른쪽 아래에 작은 숫자 5가 있어요.'],5:['⚙️ 기계에 5를 넣었나요?','지도에서 가로 2, 세로 3인 점을 누르세요.'],10:['양동이와 합칠 파랑 카드는 두 장이에요.','밧줄(20)과 합쳐 보세요.']};
+const PHINTS={30:['쪽지를 자세히 보세요.','쪽지 위에 작은 숫자 5가 있어요.'],5:['⚙️ 기계에 5를 넣었나요?','지도에서 가로 2, 세로 3인 점을 누르세요.'],10:['양동이와 합칠 파랑 카드는 두 장이에요.','밧줄(20)과 합쳐 보세요.']};
 const HINTS={
  52:['AB와 DC는 평행하고 길이가 같아요.','B에서 C로 간 만큼, A에서도 똑같이 가 보세요.'],
  94:['사각형마다 네 성질을 하나씩 따져 보세요.','❶ 대각선 길이가 같은 것은 정사각형·직사각형 말고 하나 더 있어요.'],
- 58:['카드를 구석구석 살펴보세요.','오른쪽 아래 구석을 보세요.'],
+ 58:['금고 안쪽 벽에 무언가 걸려 있어요.','꼬리표를 자세히 보세요.'],
  44:['이등변삼각형의 꼭지각을 이등분하는 선은 밑변과 어떤 관계일까요?','밑변을 수직이등분해요. 각은 90°, 거리는 12의 절반.'],
  4:['선장의 메모를 다시 읽어 보세요.','둥근 손잡이(14)가 키 받침에 맞아요.'],
  26:['녹슨 열쇠는 어디에 쓰일까요? 메모를 보세요.','키 받침에는 둥근 손잡이를 끼워야 해요. 녹슨 열쇠는 함정이에요.'],
  73:['두 변의 길이가 같은 삼각형은 두 밑각의 크기도 같아요.','세 각의 합은 180°예요. (180 − 40) ÷ 2'],
- 59:['손잡이가 어디 있을까요? 선장실을 찾아보세요.','선장실 문(44)을 먼저 열어 보세요.'],
+ 59:['손잡이가 어디 있을까요? 선장실을 찾아보세요.','도르래(44)로 돛대를 먼저 세워 보세요.'],
  3:['세 점에서 같은 거리에 있는 점은 외심이에요.','직각삼각형의 외심은 빗변의 중점에 있어요.'],
  6:['세 변에 모두 닿는 원의 중심은 내심이에요.','넓이 = ½ × 반지름 × (세 변의 합)'],
  31:['멀리 있는 것을 볼 때 쓰는 물건이 있었죠?','망원경(5)과 합쳐 보세요.'],
@@ -190,8 +190,8 @@ document.querySelector('[data-ok]').onclick=()=>$('padOk').click();
 $('padOk').onclick=()=>{
  const v=buf;if(!v)return;
  if(padMode==='code'){
-   if(S.practice){if(v==='2026'){$('endBtn').style.display='';Object.assign(S,{practice:false,acc:0,penMs:0,wrongMs:0,pen:0,hint:0,wrong:0,seen:[],hintLv:{},start:Date.now(),running:true});say('homeMsg','ok','훈련 끝! 이제 진짜 모험이 시작돼요. <b>시작</b> 카드를 펼치세요.<small>⏱ 타이머가 처음부터 다시 시작해요. 🗑 연습 카드는 모두 치우세요.</small>');show('home')}
-     else{buf='';paint();say('padMsg','no','아니에요. 연습이라 벌점은 없어요. 쪽지(연습 30)를 다시 보세요.')}return}
+   if(S.practice){if(v==='0804'){$('endBtn').style.display='';Object.assign(S,{practice:false,acc:0,penMs:0,wrongMs:0,pen:0,hint:0,wrong:0,seen:[],hintLv:{},start:Date.now(),running:true});say('homeMsg','ok','훈련 끝! 이제 진짜 모험이 시작돼요. <b>시작</b> 카드를 펼치세요.<small>⏱ 타이머가 처음부터 다시 시작해요. 🗑 연습 카드는 모두 치우세요.</small>');show('home')}
+     else{buf='';paint();say('padMsg','no','아니에요. 연습이라 벌점은 없어요. 훈련 상자의 깃발을 다시 보세요.')}return}
    const hit=Object.entries(CODES).find(([n,c])=>c.code===v);
    if(hit){S.solved[hit[0]]=1;say('homeMsg','ok',hit[1].ok);show('home');return}
    let why='이 비밀번호로 열리는 자물쇠가 없어요.';for(const c of Object.values(CODES))if(c.wrong[v])why=c.wrong[v];
@@ -218,8 +218,8 @@ function gridSvg(M){const u=46,ox=34,oy=M.ymax*u+36,W=M.xmax*u+74,H=oy+30;
 const PMACH={5:{t:'우물 지도 (연습)',s:'(2, 3) 점을 누르세요.',type:'grid',pts:{'우물':[0,0]},xmax:5,ymax:4,
    check:(x,y)=>x==2&&y==3?['ok','깃발 상자 발견! <b>연습 X</b> 카드를 펼치세요.'+bin('연습 30, 연습 5')+'<small>이렇게 기계는 ⚙️에 번호를 넣고 풀어요.</small>']:['no','가로가 먼저, 세로가 나중이에요. (가로 2, 세로 3)']}};
 const MACH={
- 44:{t:'선장실 문',s:'두 다이얼을 맞추세요.',type:'dial2',
-   check:(a,m)=>a==90&&m==6?['ok','철컥! 선장실 문이 열렸다! <b>4번</b> 카드를 펼치세요.'+bin('2, 44')]:a==70?['no','70°는 <b>돛</b>의 아래 각이에요. 문은 <b>돛대</b>가 갑판과 이루는 각을 물어요.']:m==12?['no','12m는 두 밧줄 끝 사이 <b>전체</b> 거리예요.']:a!=90?['no','돛대와 갑판이 이루는 각이 아니에요. 두 밧줄 길이가 같다는 걸 떠올려 보세요.']:['no','각은 맞았어요! 거리를 다시 보세요.']},
+ 44:{t:'도르래',s:'두 다이얼을 맞춰 돛대를 바로 세우세요.',type:'dial2',
+   check:(a,m)=>a==90&&m==6?['ok','끼익… 돛대가 바로 섰다! 막혀 있던 선장실 문이 열렸다. <b>4번</b> 카드를 펼치세요.'+bin('2, 44')]:a==70?['no','70°는 <b>돛</b>의 아래 각이에요. 지금은 <b>돛대</b>가 갑판과 이루는 각이에요.']:m==12?['no','12m는 두 밧줄 끝 사이 <b>전체</b> 거리예요.']:a!=90?['no','돛대와 갑판이 이루는 각이 아니에요. 두 밧줄 길이가 같다는 걸 떠올려 보세요.']:['no','각은 맞았어요! 거리를 다시 보세요.']},
  52:{t:'찢어진 지도',s:'찢긴 꼭짓점 D가 있던 점을 누르세요.',type:'grid',pts:{A:[1,1],B:[6,1],C:[8,5]},xmax:13,ymax:6,poly:[[1,1],[6,1],[8,5]],open:1,
    check:(x,y)=>x==3&&y==5?['ok','찢긴 귀퉁이에 <b>"35번 부두"</b>라고 적혀 있다! <b>35번</b> 카드를 펼치세요.'+bin('52, 50, 18')]:(x==13&&y==5)?['no','평행사변형은 되지만 A→B→C→D 순서가 아니에요.']:['no','마주 보는 변이 평행하지 않아요.']},
  73:{t:'나침반 키',s:'키를 몇 도 돌릴까요?',type:'dial',
@@ -246,8 +246,8 @@ $('startBtn').onclick=()=>{S.begun=true;S.start=Date.now();S.running=true;$('sta
  say('homeMsg','info','<b>연습</b> 카드를 펼치세요.<small>빨강 + 파랑 = 새 카드 번호예요. 양동이(10)와 바가지(11)부터 합쳐 보세요. 막히면 💡 힌트에 카드 번호를 넣어요.</small>')};
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>openPad(b.dataset.mode));
 $('penBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','no','⏳ 벌점! 본게임에서는 <b>1분</b>을 잃어요. (연습이라 지금은 안 줄어요)<small>🗑 벌점 카드(21)만 버리세요. 바가지(11)는 그대로 두고, 이제 양동이(10)와 밧줄(20)을 합쳐 보세요.</small>');return}say('homeMsg','no',penal('pen','벌점 카드를 펼쳤군요.')+'<small>🗑 그 벌점 카드는 버리세요</small>')};
-$('hidBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','info','🔍 우물에서 건진 쪽지(연습 30) 구석을 보세요. 작은 숫자가 숨어 있어요.<small>찾은 숫자는 그 번호의 카드를 펼치면 돼요.</small>');return}
- say('homeMsg','info',S.solved[94]?'🔍 금고 속(58) 카드를 구석구석 살펴보세요. 작은 숫자가 숨어 있어요.':'🔍 지금 펼친 카드에는 숨은 번호가 없어요.')};
+$('hidBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','info','🔍 우물에서 건진 쪽지(연습 30)를 자세히 보세요. 작은 숫자가 숨어 있어요.<small>찾은 숫자는 그 번호의 카드를 펼치면 돼요.</small>');return}
+ say('homeMsg','info',S.solved[94]?'🔍 금고 속(58) 안쪽에 걸린 것을 자세히 보세요.':'🔍 지금 펼친 카드에는 숨은 번호가 없어요.')};
 $('seenBtn').onclick=()=>{say('homeMsg','info',S.seen.length?'📜 지금까지 본 힌트<small>'+S.seen.map(h=>`${h[0]}번 ${h[1]}단계: ${h[2]}`).join('<br>')+'</small>':'📜 아직 본 힌트가 없어요.')};
 $('pauseBtn').onclick=()=>{if(!S.begun)return;if(S.running){S.acc+=Date.now()-S.start;S.running=false;$('pauseBtn').textContent='▶'}else{S.start=Date.now();S.running=true;$('pauseBtn').textContent='❚❚'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')show('home')});
