@@ -179,8 +179,8 @@ const HINTS={
 
 /* ---------- 숫자판 ---------- */
 let padMode='',buf='';
-const PT={machine:['⚙️ 기계','초록 카드의 번호를 넣으세요.',3],code:['🔒 자물쇠','4자리 비밀번호를 넣으세요.',4],hint:['💡 힌트','막힌 카드의 번호를 넣으세요. (시작 카드는 0)',3],end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',3]};
-function paint(){const n=PT[padMode][2];let h='';for(let i=0;i<n;i++)h+=`<div class="sl mono${buf[i]===undefined?' e':''}">${buf[i]===undefined?'·':buf[i]}</div>`;$('slots').innerHTML=h}
+const PT={machine:['⚙️ 기계','초록 카드의 번호를 넣으세요.',2],code:['🔒 자물쇠','4자리 비밀번호를 넣으세요.',4],hint:['💡 힌트','막힌 카드의 번호를 넣으세요. (시작 카드는 0)',2],end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',2]};
+function paint(){const n=padMode==='code'?4:Math.min(PT[padMode][2],buf.length+1);let h='';for(let i=0;i<n;i++)h+=`<div class="sl mono${buf[i]===undefined?' e':''}">${buf[i]===undefined?'·':buf[i]}</div>`;$('slots').innerHTML=h}
 function openPad(mode){if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}
  padMode=mode;buf='';$('padMsg').style.display='none';const T=PT[mode];$('padTitle').textContent=T[0];$('padSub').textContent=T[1];paint();show('pad')}
 ['1','2','3','4','5','6','7','8','9','지움','0','X'].forEach(k=>{const b=document.createElement('button');b.className='k'+(k.length>1||k==='X'?' s':'');b.textContent=k;
