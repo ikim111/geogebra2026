@@ -482,11 +482,17 @@ document.querySelectorAll('button.rv').forEach(b=> b.addEventListener('click', (
   controlRef.child('reveal/'+b.dataset.k).set(!reveal[b.dataset.k]);
 }));
 
-/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 control/aiBonus/{학생키}에 기회를 더 준다 ---------- */
+/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 students/{학생키}/aiBonus에 기회를 더 준다 ---------- */
 let aiBonusMap = {}, aiBonusWatched = false;
 function renderAiReq(){
   if(typeof controlRef==='undefined' || !controlRef) return;
-  if(!aiBonusWatched){ aiBonusWatched = true; controlRef.child('aiBonus').on('value', s=>{ aiBonusMap = s.val() || {}; renderAiReq(); }); }
+  if(!aiBonusWatched){ aiBonusWatched = true;
+    /* 2026-11-01: 옛 control/aiBonus(반 학생 모두에게 보이던 곳)를 students/{키}/aiBonus 로 옮긴다 */
+    controlRef.child('aiBonus').on('value', s=>{ const old = s.val(); if(!old || typeof studentsRef==='undefined' || !studentsRef) return;
+      Promise.all(Object.keys(old).map(k=> studentsRef.child(k+'/aiBonus').transaction(cur=> (cur && (+cur.ts||0) >= (+old[k].ts||0)) ? cur : old[k])))
+        .then(()=> controlRef.child('aiBonus').remove()).catch(()=>{}); });
+  }
+  aiBonusMap = {}; Object.keys(allStudents||{}).forEach(k=>{ const b = allStudents[k] && allStudents[k].aiBonus; if(b) aiBonusMap[k] = b; });
   let box = document.getElementById('aiReqBox');
   if(!box){
     const anchor = document.getElementById('stagePanel'); if(!anchor) return;
@@ -496,7 +502,7 @@ function renderAiReq(){
     box.addEventListener('click', e=>{
       const b = e.target.closest('button[data-k]'); if(!b) return;
       const k = b.dataset.k, cur = aiBonusMap[k] || {};
-      controlRef.child('aiBonus/'+k).set({ n: (+cur.n || 0) + 3, ts: Date.now() });
+      studentsRef.child(k+'/aiBonus').set({ n: (+cur.n || 0) + 3, ts: Date.now() });
     });
   }
   const reqs = Object.keys(allStudents||{}).map(k=>({k, s: allStudents[k]})).filter(x=>{

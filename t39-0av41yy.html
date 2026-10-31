@@ -412,11 +412,17 @@ document.querySelectorAll('button.rv').forEach(b=> b.addEventListener('click', (
 const aiFbHTML = d => { const v = d && d.aiFb; const a = Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object') ? Object.values(v).filter(Boolean) : [];
   if(!a.length) return ''; return `<div style="margin-top:6px;font-size:13px;"><b style="color:#5e35b1;">🤖 AI 피드백 ${a.length}번 받음</b>` + a.map((e,i)=> e.skip ? `<div style="color:#999;">(AI 연결 실패로 건너뜀)</div>` : `<div style="background:#faf8ff;border:1px solid #e1d9f5;border-radius:8px;padding:6px 8px;margin-top:4px;"><div style="color:#888;">${i+1}번째 · 보낸 글: ${esc(e.a||'')}</div>${(e.good||[]).map(x=>'<div>👍 '+esc(x)+'</div>').join('')}${(e.fix||[]).map(x=>'<div>🔧 '+esc(x)+'</div>').join('')}</div>`).join('') + `</div>`; };
 
-/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 control/aiBonus/{학생키}에 기회를 더 준다 ---------- */
+/* ---------- 🙋 AI 피드백 기회 요청: 기회를 다 쓴 학생이 요청하면(data.aiReq) 여기에 뜨고, 「+3번 주기」로 students/{학생키}/aiBonus에 기회를 더 준다 ---------- */
 let aiBonusMap = {}, aiBonusWatched = false;
 function renderAiReq(){
   if(typeof controlRef==='undefined' || !controlRef) return;
-  if(!aiBonusWatched){ aiBonusWatched = true; controlRef.child('aiBonus').on('value', s=>{ aiBonusMap = s.val() || {}; renderAiReq(); }); }
+  if(!aiBonusWatched){ aiBonusWatched = true;
+    /* 2026-11-01: 옛 control/aiBonus(반 학생 모두에게 보이던 곳)를 students/{키}/aiBonus 로 옮긴다 */
+    controlRef.child('aiBonus').on('value', s=>{ const old = s.val(); if(!old || typeof studentsRef==='undefined' || !studentsRef) return;
+      Promise.all(Object.keys(old).map(k=> studentsRef.child(k+'/aiBonus').transaction(cur=> (cur && (+cur.ts||0) >= (+old[k].ts||0)) ? cur : old[k])))
+        .then(()=> controlRef.child('aiBonus').remove()).catch(()=>{}); });
+  }
+  aiBonusMap = {}; Object.keys(allStudents||{}).forEach(k=>{ const b = allStudents[k] && allStudents[k].aiBonus; if(b) aiBonusMap[k] = b; });
   let box = document.getElementById('aiReqBox');
   if(!box){
     const anchor = document.getElementById('stagePanel'); if(!anchor) return;
@@ -426,7 +432,7 @@ function renderAiReq(){
     box.addEventListener('click', e=>{
       const b = e.target.closest('button[data-k]'); if(!b) return;
       const k = b.dataset.k, cur = aiBonusMap[k] || {};
-      controlRef.child('aiBonus/'+k).set({ n: (+cur.n || 0) + 3, ts: Date.now() });
+      studentsRef.child(k+'/aiBonus').set({ n: (+cur.n || 0) + 3, ts: Date.now() });
     });
   }
   const reqs = Object.keys(allStudents||{}).map(k=>({k, s: allStudents[k]})).filter(x=>{

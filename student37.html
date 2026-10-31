@@ -521,7 +521,7 @@ const AIFB_MAX = 3;
 const aifbLocked = () => { try{ return !!finalLocked; }catch(e){ return false; } };
 let AIFB = [];
 let AIFB_REQ = 0;                       // 기회를 다 쓴 학생이 선생님께 요청한 시각(data.aiReq)
-let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(control/aiBonus/{학생키} = {n, ts})
+let AIFB_BONUS = {n:0, ts:0};           // 선생님이 더 준 기회(students/{학생키}/aiBonus = {n, ts}, 2026-11-01부터)
 const aifbMax = () => AIFB_MAX + (+AIFB_BONUS.n || 0);
 /* 한 화면에 피드백 칸이 여러 개일 때: key='main'은 data.aiFb(AIFB), 그 밖은 data['aiFb_'+key](AIFB_SETS[key]) */
 const AIFB_SETS = {};
@@ -536,11 +536,13 @@ function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['a
   const t = setInterval(()=>{
     if(typeof RT==='undefined' || !RT.controlRef || !RT.studentKey) return;
     clearInterval(t);
-    RT.controlRef.child('aiBonus/'+RT.studentKey).on('value', snap=>{
-      const v = snap.val() || {}; AIFB_BONUS = {n: +v.n || 0, ts: +v.ts || 0};
+    /* 2026-11-01: 기회 기록은 students/{내 키}/aiBonus 로 옮김(다른 학생이 못 보게). 옛 control/aiBonus 는 선생님 화면이 열리면 옮겨진다 */
+    let fromStu = {}, fromCtl = {};
+    const apply = ()=>{ const v = (+fromStu.ts||0) >= (+fromCtl.ts||0) ? fromStu : fromCtl; AIFB_BONUS = {n: +v.n || 0, ts: +v.ts || 0};
       document.querySelectorAll('.aifb').forEach(b=> b._paint && b._paint());
-      if(typeof aifbOnChange==='function') aifbOnChange();
-    });
+      if(typeof aifbOnChange==='function') aifbOnChange(); };
+    RT.roomRef.child('students/'+RT.studentKey+'/aiBonus').on('value', snap=>{ fromStu = snap.val() || {}; apply(); });
+    RT.controlRef.child('aiBonus/'+RT.studentKey).on('value', snap=>{ fromCtl = snap.val() || {}; apply(); });
   }, 500);
 })();
 const aifbEsc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
