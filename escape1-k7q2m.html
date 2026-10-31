@@ -245,7 +245,7 @@ $('mOk').onclick=()=>{const M=(S.practice?PMACH:MACH)[mState.n];let r;
 $('startBtn').onclick=()=>{S.begun=true;S.start=Date.now();S.running=true;$('startBtn').style.display='none';
  say('homeMsg','info','<b>연습</b> 카드를 펼치세요.<small>빨강 + 파랑 = 새 카드 번호예요. 양동이(10)와 바가지(11)부터 합쳐 보세요. 막히면 💡 힌트에 카드 번호를 넣어요.</small>')};
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>openPad(b.dataset.mode));
-$('penBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','no','⏳ 벌점! 본게임에서는 <b>1분</b>을 잃어요. (연습이라 지금은 안 줄어요)<small>🗑 연습 21, 연습 11은 버리세요. 이제 양동이(10)와 밧줄(20)을 합쳐 보세요.</small>');return}say('homeMsg','no',penal('pen','벌점 카드를 펼쳤군요.')+'<small>🗑 그 벌점 카드는 버리세요</small>')};
+$('penBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','no','⏳ 벌점! 본게임에서는 <b>1분</b>을 잃어요. (연습이라 지금은 안 줄어요)<small>🗑 벌점 카드(21)만 버리세요. 바가지(11)는 그대로 두고, 이제 양동이(10)와 밧줄(20)을 합쳐 보세요.</small>');return}say('homeMsg','no',penal('pen','벌점 카드를 펼쳤군요.')+'<small>🗑 그 벌점 카드는 버리세요</small>')};
 $('hidBtn').onclick=()=>{if(!S.begun){say('homeMsg','info','먼저 <b>항해 시작</b>을 누르세요.');return}if(S.practice){say('homeMsg','info','🔍 우물에서 건진 쪽지(연습 30) 구석을 보세요. 작은 숫자가 숨어 있어요.<small>찾은 숫자는 그 번호의 카드를 펼치면 돼요.</small>');return}
  say('homeMsg','info',S.solved[94]?'🔍 금고 속(58) 카드를 구석구석 살펴보세요. 작은 숫자가 숨어 있어요.':'🔍 지금 펼친 카드에는 숨은 번호가 없어요.')};
 $('seenBtn').onclick=()=>{say('homeMsg','info',S.seen.length?'📜 지금까지 본 힌트<small>'+S.seen.map(h=>`${h[0]}번 ${h[1]}단계: ${h[2]}`).join('<br>')+'</small>':'📜 아직 본 힌트가 없어요.')};
