@@ -217,7 +217,7 @@ function gridSvg(M){const u=46,ox=34,oy=M.ymax*u+36,W=M.xmax*u+74,H=oy+30;
  return s+`<circle id="pick" r="12" fill="#1565c0" opacity="0" stroke="#fff" stroke-width="3" pointer-events="none"/></svg>`}
 const PMACH={5:{t:'우물 지도 (연습)',s:'쪽지에 적힌 자리를 누르세요.',type:'img',
    check:(x,y)=>x==2&&y==3?['ok','깃발 상자 발견! <b>연습 X</b> 카드를 펼치세요.'+bin('연습 30, 연습 5')+'<small>이렇게 기계는 ⚙️에 번호를 넣고 풀어요.</small>']:(x==3&&y==2)?['no','x좌표가 먼저, y좌표가 나중이에요. (2, 3)']:['no','쪽지에 적힌 자리를 다시 보세요.']}};
-function imgSvg(){const xs=[0,1,2,3,4,5,6].map(k=>11+12.95*k),ys=[81,67,53,39,25,11.5];
+function imgSvg(){const xs=[0,1,2,3,4,5,6].map(k=>11+12.95*k),ys=[81,67,53,39,25];
  let s='<svg class="grid" viewBox="0 0 100 100"><image href="escape1-wellmap.jpg" x="0" y="0" width="100" height="100"/>';
  xs.forEach((x,i)=>s+=`<text x="${x}" y="${ys[0]+4.5}" text-anchor="middle" font-size="3.6" font-weight="800" fill="#5a3a12">${i}</text>`);
  ys.forEach((y,j)=>{if(j)s+=`<text x="${xs[0]-2.4}" y="${y+1.3}" text-anchor="end" font-size="3.6" font-weight="800" fill="#5a3a12">${j}</text>`});
