@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>붉은 나침반 1회 — 모둠 디벗 (테스트)</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans KR",system-ui,sans-serif;background:#1a237e;color:#222;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:14px}
+.top{display:flex;align-items:center;justify-content:space-between;color:#fff;gap:10px;flex-wrap:wrap}
+.top h1{font-size:20px;margin:0}.timer{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;background:#fff;color:#1a237e;border-radius:12px;padding:2px 16px}
+.timer.pen{animation:flash .6s 2}@keyframes flash{50%{background:#e53935;color:#fff}}
+.panel{background:#fff;border-radius:16px;padding:16px;margin-top:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{min-height:56px;min-width:56px;border:0;border-radius:12px;font-size:18px;font-weight:800;cursor:pointer;padding:0 16px;font-family:inherit}
+.b-g{background:#2e7d32;color:#fff}.b-y{background:#f9a825;color:#222}.b-h{background:#7b1fa2;color:#fff}.b-p{background:#5d4037;color:#fff}.b-blue{background:#1565c0;color:#fff}.b-gray{background:#eceff1;color:#333}.b-end{background:#c62828;color:#fff}
+.big{flex:1 1 150px;font-size:20px}
+.disp{font-size:40px;font-weight:900;text-align:center;letter-spacing:6px;border:3px solid #1565c0;border-radius:12px;min-height:66px;padding:6px;margin:8px 0;font-variant-numeric:tabular-nums}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.keys .btn{font-size:26px;background:#eceff1}
+.msg{font-size:19px;font-weight:700;line-height:1.5;padding:12px;border-radius:12px;margin-top:10px;display:none}
+.msg.ok{display:block;background:#e8f5e9;color:#1b5e20}.msg.no{display:block;background:#ffebee;color:#b71c1c}.msg.info{display:block;background:#f3e5f5;color:#4a148c}
+.title{font-size:20px;font-weight:900;margin:0 0 6px}.sub{color:#666;font-size:15px;margin-bottom:8px}
+svg.grid{width:100%;max-width:520px;display:block;margin:0 auto;touch-action:manipulation;background:#fffdf5;border-radius:10px}
+.dial{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0}
+.dial .val{font-size:48px;font-weight:900;min-width:150px;text-align:center}
+.hidden{display:none}
+.result td{padding:6px 10px;font-size:18px}.stars{font-size:40px;text-align:center}
+.note{color:#fff;opacity:.75;font-size:13px;margin-top:10px;text-align:center}
+</style></head><body><div class="wrap">
+<div class="top"><h1>🧭 붉은 나침반 · 1회</h1><div class="timer" id="timer">45:00</div></div>
+
+<div class="panel" id="home">
+  <div class="row" id="startRow"><button class="btn b-blue big" id="startBtn">▶ 시작 (연습부터)</button></div>
+  <div id="mainBtns" class="hidden">
+    <div class="row">
+      <button class="btn b-g big" data-mode="machine">⚙️ 기계 (초록)</button>
+      <button class="btn b-y big" data-mode="code">🔒 자물쇠 (노랑)</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn b-h big" data-mode="hint">💡 힌트</button>
+      <button class="btn b-p big" id="penBtn">⏱ 벌점 카드</button>
+      <button class="btn b-end big" data-mode="end">🏁 탈출</button>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn b-gray" id="pauseBtn">⏸ 잠깐 멈춤</button></div>
+  </div>
+  <div class="msg" id="homeMsg"></div>
+</div>
+
+<div class="panel hidden" id="pad">
+  <div class="title" id="padTitle"></div><div class="sub" id="padSub"></div>
+  <div class="disp" id="disp"></div>
+  <div class="keys" id="keys"></div>
+  <div class="row" style="margin-top:10px"><button class="btn b-gray big" id="padBack">← 돌아가기</button><button class="btn b-blue big" id="padOk">확인</button></div>
+  <div class="msg" id="padMsg"></div>
+</div>
+
+<div class="panel hidden" id="mach">
+  <div class="title" id="mTitle"></div><div class="sub" id="mSub"></div>
+  <div id="mBody"></div>
+  <div class="row" style="margin-top:10px"><button class="btn b-gray big" id="mBack">← 돌아가기</button><button class="btn b-g big" id="mOk">확인</button></div>
+  <div class="msg" id="mMsg"></div>
+</div>
+
+<div class="panel hidden" id="done">
+  <div class="title" style="text-align:center;font-size:26px">🎉 1회 탈출 성공!</div>
+  <div class="stars" id="stars"></div>
+  <table class="result" style="margin:0 auto"><tbody id="resTb"></tbody></table>
+  <div class="sub" style="text-align:center;margin-top:10px">되돌아보기: 이번 회에 쓴 성질을 모둠이 함께 말해 보세요.<br>평행사변형 · 사각형의 대각선 · 이등변삼각형 · 외심 · 내심</div>
+</div>
+<div class="note">테스트용 화면 · 기록은 저장되지 않아요</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const S={start:null,acc:0,running:false,pen:0,hint:0,wrong:0,penaltyMs:0,solved:{},hintLv:{},practice:true};
+const LIMIT=45*60*1000;
+function elapsed(){return S.acc+(S.running?Date.now()-S.start:0)+S.penaltyMs}
+function fmt(ms){const r=Math.max(0,LIMIT-ms),m=Math.floor(r/60000),s=Math.floor(r%60000/1000);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+setInterval(()=>{$('timer').textContent=fmt(elapsed())},250);
+function penalty(why){S.penaltyMs+=60000;S.pen++;const t=$('timer');t.classList.remove('pen');void t.offsetWidth;t.classList.add('pen');return why+' <b>(1분 잃음)</b>'}
+function show(id){['home','pad','mach','done'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function say(el,cls,html){const m=$(el);m.className='msg '+cls;m.innerHTML=html;m.style.display=''}
+
+/* ---------- 데이터 ---------- */
+const CODES={'연습':{X:{code:'2026',ok:'훈련 끝! 이제 진짜 모험이 시작돼요. <b>시작</b> 카드를 펼치세요. (타이머가 처음부터 다시 시작해요)',practice:true}},
+ main:{
+  94:{code:'3242',ok:'철컥! 금고가 열렸다. <b>58번</b> 카드를 펼치세요.',wrong:{'2242':'하나를 빠뜨렸어요. 사다리꼴을 다시 보세요.'}},
+  44:{code:'9006',ok:'선장실 문이 열렸다! <b>4번</b> 카드를 펼치세요.',wrong:{'9012':'12m는 두 밧줄 끝 사이 전체 거리예요.'}},
+  6:{code:'2000',ok:'"딱 맞는 길이로군!" 보트를 탔다. <b>86번</b> 카드를 펼치세요.',wrong:{'4000':'그건 지름이에요.','0002':'단위를 m로 바꿔 보세요.','2':'단위를 m로 바꿔 보세요.'}}}};
+const HINTS={
+ 52:['AB와 DC는 평행하고 길이가 같아요.','B에서 C로 간 만큼, A에서도 똑같이 가 보세요.'],
+ 94:['사각형마다 네 성질을 하나씩 따져 보세요.','❶ 대각선 길이가 같은 것은 정사각형·직사각형 말고 하나 더 있어요.'],
+ 58:['카드를 구석구석 살펴보세요.','오른쪽 아래 구석을 보세요.'],
+ 44:['이등변삼각형의 꼭지각을 이등분하는 선은 밑변과 어떤 관계일까요?','밑변을 수직이등분해요. 각은 90°, 거리는 12의 절반.'],
+ 73:['두 변의 길이가 같은 삼각형은 두 밑각의 크기도 같아요.','세 각의 합은 180°예요. (180 − 40) ÷ 2'],
+ 59:['손잡이가 어디 있을까요? 선장실을 찾아보세요.','선장실 문(44)을 먼저 열어 보세요.'],
+ 3:['세 점에서 같은 거리에 있는 점은 외심이에요.','직각삼각형의 외심은 빗변의 중점에 있어요.'],
+ 6:['세 변에 모두 닿는 원의 중심은 내심이에요.','넓이 = ½ × 반지름 × (세 변의 합)'],
+ 31:['멀리 있는 것을 볼 때 쓰는 물건이 있었죠?','망원경(5)과 합쳐 보세요.'],
+ 40:['쇠사슬을 여는 열쇠가 필요해요.','금고(94) 안을 잘 살펴보세요.'],
+ 0:['그림 속 번호 카드를 모두 펼쳐 보세요.','빨강 27과 파랑 23을 합쳐 보세요.'],
+ 29:['섬에서는 두 갈래를 나눠 풀 수 있어요.','등대(31)와 안내판(24)부터 보세요.']};
+
+/* ---------- 숫자판 ---------- */
+let padMode='',buf='';
+function openPad(mode){padMode=mode;buf='';$('disp').textContent='';say('padMsg','','');$('padMsg').style.display='none';
+ const T={machine:['⚙️ 기계','초록 카드의 번호를 넣으세요.'],code:['🔒 자물쇠','4자리 비밀번호를 넣으세요. (카드 번호는 안 넣어도 돼요)'],hint:['💡 힌트','막힌 카드의 번호를 넣으세요. (시작 카드는 0)'],end:['🏁 탈출','마지막 카드의 번호를 넣으세요.']}[mode];
+ $('padTitle').textContent=T[0];$('padSub').textContent=T[1];show('pad')}
+const keys=['1','2','3','4','5','6','7','8','9','지우기','0','X'];
+keys.forEach(k=>{const b=document.createElement('button');b.className='btn';b.textContent=k;b.onclick=()=>{if(k==='지우기')buf=buf.slice(0,-1);else if(buf.length<6)buf+=k;$('disp').textContent=buf};$('keys').appendChild(b)});
+$('padBack').onclick=()=>show('home');
+$('padOk').onclick=()=>{
+ const v=buf;if(!v)return;
+ if(padMode==='code'){
+   if(S.practice){if(v===CODES['연습'].X.code){S.practice=false;S.acc=0;S.penaltyMs=0;S.pen=0;S.hint=0;S.wrong=0;S.start=Date.now();S.running=true;say('homeMsg','ok',CODES['연습'].X.ok);show('home')}else{buf='';$('disp').textContent='';say('padMsg','no','아니에요. 연습이라 벌점은 없어요. 쪽지(연습 30)를 다시 보세요.')}return}
+   const hit=Object.entries(CODES.main).find(([n,c])=>c.code===v);
+   if(hit){S.solved[hit[0]]=1;say('homeMsg','ok',hit[1].ok);show('home');return}
+   let why='이 비밀번호로 열리는 자물쇠가 없어요.';for(const c of Object.values(CODES.main))if(c.wrong[v])why=c.wrong[v];
+   S.wrong++;say('padMsg','no',penalty(why));buf='';$('disp').textContent='';return}
+ if(padMode==='machine'){const n=+v;if(!MACH[n]){say('padMsg','no','그 번호는 기계(초록) 카드가 아니에요.');return}openMach(n);return}
+ if(padMode==='hint'){if(S.practice){say('padMsg','info','연습 중에는 쪽지(연습 30)와 훈련 상자(X)를 보세요.');return}
+   const n=+v,h=HINTS[n];if(!h){say('padMsg','info','그 카드에는 힌트가 없어요. 다른 카드 번호를 넣어 보세요.');return}
+   const lv=S.hintLv[n]||0;if(lv>=2){say('padMsg','info','힌트를 모두 봤어요.<br>① '+h[0]+'<br>② '+h[1]);return}
+   S.hintLv[n]=lv+1;S.hint++;say('padMsg','info','🏮 등대지기 할머니: "'+h[lv]+'"'+(lv===0?'<br><small>한 번 더 넣으면 다음 힌트가 나와요.</small>':''));return}
+ if(padMode==='end'){if(v==='99')finish();else{say('padMsg','no','아직 끝이 아니에요!')}}
+};
+
+/* ---------- 기계 ---------- */
+let mState=null;
+function gridSvg(pts,opt){const u=46,ox=30,oy=opt.ymax*u+36,W=opt.xmax*u+70,H=oy+30;
+ let s=`<svg class="grid" viewBox="0 0 ${W} ${H}">`;
+ for(let i=0;i<=opt.xmax;i++)s+=`<line x1="${ox+i*u}" y1="${oy}" x2="${ox+i*u}" y2="${oy-opt.ymax*u}" stroke="#ddd"/><text x="${ox+i*u-4}" y="${oy+18}" font-size="13">${i}</text>`;
+ for(let j=0;j<=opt.ymax;j++)s+=`<line x1="${ox}" y1="${oy-j*u}" x2="${ox+opt.xmax*u}" y2="${oy-j*u}" stroke="#ddd"/><text x="${ox-20}" y="${oy-j*u+5}" font-size="13">${j}</text>`;
+ if(opt.poly)s+=`<polygon points="${opt.poly.map(p=>(ox+p[0]*u)+','+(oy-p[1]*u)).join(' ')}" fill="#fff3d6" stroke="#8d6e63" stroke-width="2"/>`;
+ for(const [nm,[x,y]] of Object.entries(pts))s+=`<circle cx="${ox+x*u}" cy="${oy-y*u}" r="8" fill="#c62828"/><text x="${ox+x*u+10}" y="${oy-y*u-10}" font-size="17" font-weight="800">${nm}</text>`;
+ for(let i=0;i<=opt.xmax;i++)for(let j=0;j<=opt.ymax;j++)s+=`<circle class="pt" data-x="${i}" data-y="${j}" cx="${ox+i*u}" cy="${oy-j*u}" r="16" fill="transparent"/>`;
+ s+=`<circle id="pick" r="11" fill="#1565c0" opacity="0" stroke="#fff" stroke-width="3"/></svg>`;return {svg:s,u,ox,oy}}
+const MACH={
+ 52:{t:'찢어진 지도',s:'찢긴 꼭짓점 D가 있던 점을 눌러 고르세요.',type:'grid',pts:{A:[1,1],B:[6,1],C:[8,5]},xmax:13,ymax:6,poly:[[1,1],[6,1],[8,5]],
+   check:(x,y)=>x==3&&y==5?['ok','찢긴 귀퉁이에 <b>"35번 부두"</b>라고 적혀 있다! <b>35번</b> 카드를 펼치세요.']:(x==13&&y==5)?['no','평행사변형은 되지만 A→B→C→D 순서가 아니에요.']:['no','마주 보는 변이 평행하지 않아요.']},
+ 73:{t:'나침반 키',s:'키를 몇 도 돌릴까요?',type:'dial',
+   check:a=>a==70?['ok','바람이 돛을 가득 채운다. 섬이 보인다! <b>29번</b> 카드를 펼치세요.']:a==40?['no','꼭대기 각만큼 돌렸더니 배가 제자리에서 빙글…']:a==140?['no','두 밑각을 더한 만큼 돌려서 너무 돌았어요.']:a==110?['no','방향이 크게 빗나갔어요.']:['no','배가 엉뚱한 쪽으로 간다…']},
+ 3:{t:'삽',s:'파 볼 점을 눌러 고르세요.',type:'grid',pts:{P:[0,0],Q:[8,0],R:[0,6]},xmax:8,ymax:6,poly:[[0,0],[8,0],[0,6]],
+   check:(x,y)=>x==4&&y==3?['ok','삽 끝에 무언가 걸렸다! 상자 발견! <b>43번</b> 카드를 펼치세요.']:(x==2&&y==2)?['no','여기는 세 <b>해안 길</b>에서 같은 거리예요. <b>등대</b>에서는 아니에요!']:((x==3||x==2)&&y==2)?['no','세 등대의 가운데쯤이지만 거리가 같지 않아요. 모래뿐이다.']:((x==4&&y==0)||(x==0&&y==3))?['no','두 등대에서만 같은 거리예요.']:['no','모래뿐이다…']}};
+function openMach(n){if(S.practice){say('padMsg','info','연습 중이에요. 훈련 상자(X)부터 여세요.');return}
+ const M=MACH[n];mState={n,x:null,y:null,a:0};$('mTitle').textContent='⚙️ '+n+'. '+M.t;$('mSub').textContent=M.s;$('mMsg').style.display='none';
+ if(M.type==='grid'){const g=gridSvg(M.pts,M);$('mBody').innerHTML=g.svg;
+   $('mBody').querySelectorAll('.pt').forEach(c=>c.onclick=()=>{mState.x=+c.dataset.x;mState.y=+c.dataset.y;const p=$('pick');p.setAttribute('cx',c.getAttribute('cx'));p.setAttribute('cy',c.getAttribute('cy'));p.setAttribute('opacity','1');$('mSub').textContent=`고른 점: (${mState.x}, ${mState.y})`})}
+ else{$('mBody').innerHTML=`<div class="dial"><button class="btn b-gray" data-d="-10">−10</button><button class="btn b-gray" data-d="-1">−1</button><div class="val" id="dval">0°</div><button class="btn b-gray" data-d="1">+1</button><button class="btn b-gray" data-d="10">+10</button></div>`;
+   $('mBody').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{mState.a=(mState.a+ +b.dataset.d+360)%360;$('dval').textContent=mState.a+'°'})}
+ show('mach')}
+$('mBack').onclick=()=>show('home');
+$('mOk').onclick=()=>{const M=MACH[mState.n];let r;
+ if(M.type==='grid'){if(mState.x===null){say('mMsg','info','먼저 점을 하나 고르세요.');return}r=M.check(mState.x,mState.y)}else r=M.check(mState.a);
+ if(r[0]==='ok'){S.solved[mState.n]=1;say('homeMsg','ok',r[1]);show('home')}else{S.wrong++;say('mMsg','no',penalty(r[1]))}};
+
+/* ---------- 기타 ---------- */
+$('startBtn').onclick=()=>{$('startRow').classList.add('hidden');$('mainBtns').classList.remove('hidden');S.start=Date.now();S.running=true;say('homeMsg','info','<b>연습</b> 카드를 펼치세요. 양동이(10)와 밧줄(20)을 합쳐 보고, 훈련 상자(X)를 🔒 자물쇠로 열어 보세요.')};
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>openPad(b.dataset.mode));
+$('penBtn').onclick=()=>{if(S.practice){say('homeMsg','info','연습 중에는 벌점이 없어요.');return}say('homeMsg','no',penalty('벌점 카드를 펼쳤군요. 그 카드는 버리세요.'))};
+$('pauseBtn').onclick=()=>{if(S.running){S.acc+=Date.now()-S.start;S.running=false;$('pauseBtn').textContent='▶ 다시 시작'}else{S.start=Date.now();S.running=true;$('pauseBtn').textContent='⏸ 잠깐 멈춤'}};
+function finish(){if(S.running){S.acc+=Date.now()-S.start;S.running=false}const ms=elapsed(),min=ms/60000;
+ let st=min<=30?5:min<=35?4:min<=40?3:2;st=Math.max(1,st-Math.floor(S.hint/4));
+ $('stars').textContent='⭐'.repeat(st)+'☆'.repeat(5-st);
+ const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);
+ $('resTb').innerHTML=`<tr><td>걸린 시간</td><td><b>${m}분 ${s}초</b></td></tr><tr><td>벌점</td><td>${S.pen}번 (${S.pen}분)</td></tr><tr><td>틀린 답</td><td>${S.wrong}번</td></tr><tr><td>힌트</td><td>${S.hint}번</td></tr>`;show('done')}
+window.__S=S;
+</script></body></html>
