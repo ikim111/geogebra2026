@@ -24,7 +24,7 @@ document.body.insertAdjacentHTML('afterbegin', `
   <div class="side">
     <div class="ttl serif" style="margin-bottom:${P?12:26}px">${ttl}</div>
     ${P?'<div class="badges" id="badges"></div><div class="sc" id="homeMsg">'+(G.intro||'')+'</div><button class="startbtn" id="endBtn" style="margin-top:14px">🏁 탈출 (마지막 카드 번호)</button>':
-      `<div class="sc" id="homeMsg">모둠이 모두 모이면 <b>항해 시작</b>을 누르세요.<small>시작 카드를 펼치는 순간 시간이 흘러요.</small></div>
+      `<div class="sc" id="homeMsg">모둠이 모두 모이면 <b>항해 시작</b>을 누르세요.<small>누르는 순간 시간이 흘러요. 처음이면 <a href="${G.practiceUrl||'escape0.html'}" style="color:#7a1d10;font-weight:900">연습부터 →</a></small></div>
        <button class="startbtn" id="startBtn">⚓ 항해 시작</button>
        <div class="stat"><div>벌점<b class="mono" id="sPen">0</b></div><div>틀린 답<b class="mono" id="sWrong">0</b></div><div>힌트<b class="mono" id="sHint">0</b></div></div>
        <button class="startbtn" id="endBtn" style="display:none">🏁 탈출 (마지막 카드 번호)</button>
@@ -74,7 +74,7 @@ function lose(kind){ if(P) return '<span class="lost">⏳ 본게임이면 1분 �
 function show(id){ ['home','pad','mach','done'].forEach(x=> $(x).classList.toggle('on', x===id)); }
 
 /* 카드와 같은 모양의 번호 */
-const chip = n => `<span class="chip ${(G.kinds||{})[n]||'G'}"${/[가-힣]/.test(n)?' style="font-size:12px"':''}><i>${n}</i></span>`;
+const chip = n => `<span class="chip ${(G.kinds||{})[n]||'G'}${/[가-힣]/.test(n)?' kr':''}"><i>${n}</i></span>`;
 const dz = list => `<span class="dz">${list.map(n=>`<span>${n}</span>`).join('')}</span>`;
 function resultHTML(r){
   let h = r.msg || '';
@@ -122,7 +122,7 @@ $('padOk').onclick=()=>{
     const lv=S.hintLv[n]||0, L=h.length;
     if(lv>=L){ sub('padMsg','info','이 카드의 힌트를 모두 봤어요.<br>'+h.map((x,i)=>(i===2?'정답: ':(i+1)+'단계: ')+x).join('<br>')); return; }
     S.hintLv[n]=lv+1; if(!P) S.hint += (lv===2 ? 2 : 1); S.seen.push([n,lv+1,h[lv]]); emit('hint', n);
-    const head = lv===2 ? '🗝 정답' : '🏮 등대지기 할머니';
+    const head = lv===2 ? '🗝 정답' : (G.hintBy||'🏮 등대지기 할머니');
     const more = lv+1<L ? '<small>같은 번호를 한 번 더 넣으면 '+(lv+1===2?'<b>정답</b>이 나와요. 정답은 힌트 2번으로 세요.':'다음 힌트가 나와요.')+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>' : '';
     sub('padMsg','info', head+': "'+h[lv]+'"'+more); return; }
   if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else sub('padMsg','no','아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.'); }
@@ -140,8 +140,8 @@ function gridSvg(M){ const u=46, ox=34, oy=M.ymax*u+36, W=M.xmax*u+74, H=oy+30;
   return s+`<circle id="pick" r="12" fill="#1565c0" opacity="0" stroke="#fff" stroke-width="3" pointer-events="none"/></svg>`; }
 function imgSvg(M){ const xs=M.xs, ys=M.ys;
   let s=`<svg class="grid" viewBox="0 0 100 100"><image href="${M.img}" x="0" y="0" width="100" height="100"/>`;
-  xs.forEach((x,i)=> s+=`<text x="${x}" y="${ys[0]+4.5}" text-anchor="middle" font-size="3.6" font-weight="800" fill="#5a3a12">${i}</text>`);
-  ys.forEach((y,j)=>{ if(j) s+=`<text x="${xs[0]-2.4}" y="${y+1.3}" text-anchor="end" font-size="3.6" font-weight="800" fill="#5a3a12">${j}</text>`; });
+  xs.forEach((x,i)=> s+=`<circle cx="${x}" cy="${ys[0]+3.4}" r="2.6" fill="#fbf3dc" opacity=".92"/><text x="${x}" y="${ys[0]+4.7}" text-anchor="middle" font-size="3.6" font-weight="800" fill="#5a3a12">${i}</text>`);
+  ys.forEach((y,j)=>{ if(j) s+=`<circle cx="${xs[0]-3.6}" cy="${y}" r="2.6" fill="#fbf3dc" opacity=".92"/><text x="${xs[0]-3.6}" y="${y+1.3}" text-anchor="middle" font-size="3.6" font-weight="800" fill="#5a3a12">${j}</text>`; });
   xs.forEach((x,i)=> ys.forEach((y,j)=>{ s+=`<circle cx="${x}" cy="${y}" r=".8" fill="#5a3a12" opacity=".6"/><circle class="pt" data-x="${i}" data-y="${j}" cx="${x}" cy="${y}" r="5" fill="transparent" style="cursor:pointer"/>`; }));
   return s+'<circle id="pick" r="2.6" fill="#1565c0" opacity="0" stroke="#fff" stroke-width=".8" pointer-events="none"/></svg>'; }
 function openMach(n){ const M=(G.mach||{})[n];
@@ -154,7 +154,7 @@ function openMach(n){ const M=(G.mach||{})[n];
     $('mBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:26px">${one('dA',M.l1,'°')}${one('dM',M.l2,'m')}</div>`;
     $('mBody').querySelectorAll('[data-w]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; if(b.dataset.w==='dA'){ mState.a=(mState.a+d+360)%360; $('dA').textContent=mState.a+'°'; } else { mState.m=Math.max(0,Math.min(30,mState.m+d)); $('dM').textContent=mState.m+'m'; } }); }
   else { $('mBody').innerHTML=`<div class="dial"><div class="dialface"><div class="dialin"><div class="needle" id="needle"></div><div id="dval" class="mono">0°</div></div></div><div class="drow"><button class="k" data-d="-10">−10</button><button class="k" data-d="-1">−1</button><button class="k" data-d="1">+1</button><button class="k" data-d="10">+10</button></div></div>`;
-    const upd=()=>{ $('dval').textContent=mState.a+'°'; $('needle').style.transform=`rotate(${180+mState.a}deg)`; }; upd();
+    const upd=()=>{ $('dval').textContent=mState.a+'°'; $('needle').style.transform=`rotate(${mState.a}deg)`; }; upd();
     $('mBody').querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{ mState.a=(mState.a + +b.dataset.d + 360)%360; upd(); }); }
   show('mach'); }
 $('mOk').onclick=()=>{ const M=G.mach[mState.n]; let r;
@@ -202,7 +202,7 @@ paintBadges(); if(P){ glowNow(); homeSay('', G.intro||''); }
 function finish(){
   if(S.running){ S.acc+=Date.now()-S.start; S.running=false; }
   const f=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
-  if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="ln"><span>배운 것</span><b>'+G.badges.map(b=>(got[b.k]?'✔ ':'· ')+b.name).join('  ')+'</b></div>'; show('done'); return; }
+  if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="badges" style="justify-content:center;margin:12px 0 4px">'+G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join('')+'</div>'; show('done'); return; }
   const ms=elapsed(), min=ms/60000;
   let st=min<=30?5:min<=35?4:min<=40?3:min<=45?2:1; st=Math.max(0, st-Math.floor(S.hint/4));
   $('stars').innerHTML='★'.repeat(st)+'<em>'+'★'.repeat(5-st)+'</em>';

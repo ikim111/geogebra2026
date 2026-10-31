@@ -55,8 +55,9 @@ svg.grid{width:100%;display:block;border-radius:10px;background:linear-gradient(
 .dial{display:flex;flex-direction:column;align-items:center;gap:16px}
 .dialface{width:min(300px,70vw);height:min(300px,70vw);border-radius:50%;background:conic-gradient(from 20deg,#7a5a22,#f1d38a,#9b7331,#e9c87a,#6e4f1c,#f4dc9a,#7a5a22);padding:16px;box-shadow:0 10px 26px rgba(0,0,0,.6)}
 .dialin{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle,#1d2a40,#070b16 75%);display:flex;align-items:center;justify-content:center;position:relative}
-.needle{position:absolute;left:50%;top:50%;width:6px;height:42%;margin-left:-3px;background:linear-gradient(#e53935,#7a1d10);transform-origin:50% 0;border-radius:3px}
-#dval{position:relative;font-size:56px;font-weight:700;color:#ffe9a8;text-shadow:0 0 12px rgba(255,200,90,.6);background:rgba(7,11,22,.75);border-radius:12px;padding:0 10px}
+.needle{position:absolute;left:50%;bottom:50%;width:6px;height:42%;margin-left:-3px;background:linear-gradient(#e53935,#7a1d10);transform-origin:50% 100%;border-radius:3px}
+.dialin:after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:#c9a55a}
+#dval{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);font-size:56px;font-weight:700;color:#ffe9a8;text-shadow:0 0 12px rgba(255,200,90,.6);background:rgba(7,11,22,.75);border-radius:12px;padding:0 10px}
 .drow{display:flex;gap:12px}.drow .k{--k:72px;font-size:22px}
 /* 결과 */
 #done{align-items:center;justify-content:center;flex-direction:column}
@@ -100,6 +101,7 @@ body.practice{background:radial-gradient(ellipse at 35% 40%,rgba(255,220,140,.18
 .glow{animation:gl 1.2s infinite}@keyframes gl{50%{box-shadow:0 0 0 3px #ffe9a8,0 0 0 10px rgba(255,233,168,.45),0 0 28px 10px rgba(255,233,168,.6)}}
 .paused-note{font-size:calc(var(--D)*.022);color:#c9b991;margin-top:4px}
 
-.badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}.badges .bd{padding:6px 11px;border-radius:16px;font-size:15px;font-weight:800;color:#c9b991;border:1.5px dashed #8a7442;background:rgba(0,0,0,.18)}
+.badges{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 14px}.badges .bd{padding:6px 11px;border-radius:16px;font-size:15px;font-weight:800;color:#c9b991;border:1.5px dashed #8a7442;background:rgba(0,0,0,.18)}
 .badges .bd.on{color:#fff;background:#2e7d32;border:1.5px solid #2e7d32}
 .guide{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff6dc;border:2px dashed #c9a55a;font-size:.86em;color:#3b2a12}
+.chip.kr{width:auto;min-width:36px;padding:0 9px;border-radius:18px;font:900 15px "Noto Sans KR",sans-serif}
