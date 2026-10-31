@@ -54,8 +54,8 @@ document.body.insertAdjacentHTML('afterbegin', `
 <div class="scr" id="done">
   <div class="ttl serif" style="text-align:center;margin-bottom:26px"><div class="ep">붉은 나침반 · ${G.ep}</div><div class="nm">${P?'훈련 끝!':'탈출 성공!'}</div></div>
   <div class="res"><div class="seal serif">${P?'수료':'탈출'}</div><h2 class="serif">${P?'훈련 일지':'항해 일지'}</h2><div class="st" id="stars"></div><div id="resTb"></div></div>
-  <div class="sc" style="width:min(560px,92vw);margin-top:20px">${G.reflect||''}</div>
-  ${G.next?`<a class="startbtn" style="display:block;width:min(560px,92vw);text-align:center;line-height:64px;text-decoration:none" href="${G.next.url}">${G.next.label}</a>`:''}
+  <div class="sc" style="width:min(560px,100%);margin-top:20px">${G.reflect||''}</div>
+  ${G.next?`<a class="startbtn" style="display:block;width:min(560px,100%);text-align:center;line-height:64px;text-decoration:none" href="${G.next.url}">${G.next.label}</a>`:''}
 </div>
 <div class="note">테스트용 · 기록은 저장되지 않아요</div>`);
 
@@ -98,7 +98,7 @@ function paint(){ const n = padMode==='code' ? 4 : Math.max(1, buf.length); let 
   for(let i=0;i<n;i++) h += `<div class="sl mono${buf[i]===undefined?' e':''}">${buf[i]===undefined?'·':buf[i]}</div>`; $('slots').innerHTML=h; }
 function openPad(mode){ if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
   padMode=mode; buf=''; $('padMsg').style.display='none'; const T=PT[mode]; $('padTitle').textContent=T[0]; $('padSub').textContent=T[1];
-  if(mode==='hint' && S.seen.length) sub('padMsg','info','📜 지금까지 본 힌트<small>'+S.seen.map(h=>`${h[0]}번 ${h[1]}단계: ${h[2]}`).join('<br>')+'</small>');
+  if(mode==='hint' && S.seen.length) sub('padMsg','info','📜 지금까지 본 힌트<small>'+S.seen.map(h=>`${h[0]}번 ${h[1]===3?'정답':h[1]+'단계'}: ${h[2]}`).join('<br>')+'</small>');
   paint(); show('pad'); }
 ['1','2','3','4','5','6','7','8','9','지움','0','⌫'].forEach(k=>{ const b=document.createElement('button'); b.className='k'+(k.length>1||k==='⌫'?' s':''); b.textContent=k;
   b.setAttribute('aria-label', k==='⌫'?'한 글자 지우기':k==='지움'?'모두 지우기':k);
@@ -117,10 +117,12 @@ $('padOk').onclick=()=>{
   if(padMode==='hint'){
     const n=+v, h=(G.hints||{})[n];
     if(!h){ sub('padMsg','info','그 카드에는 힌트가 없어요. 다른 카드 번호를 넣어 보세요.'); return; }
-    const lv=S.hintLv[n]||0;
-    if(lv>=2){ sub('padMsg','info','힌트를 모두 봤어요.<br>① '+h[0]+'<br>② '+h[1]); return; }
-    S.hintLv[n]=lv+1; if(!P) S.hint++; S.seen.push([n,lv+1,h[lv]]); emit('hint', n);
-    sub('padMsg','info','🏮 등대지기 할머니: "'+h[lv]+'"'+(lv===0?'<small>같은 번호를 한 번 더 넣으면 다음 힌트가 나와요.'+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>':'')); return; }
+    const lv=S.hintLv[n]||0, L=h.length;
+    if(lv>=L){ sub('padMsg','info','이 카드의 힌트를 모두 봤어요.<br>'+h.map((x,i)=>(i===2?'정답: ':(i+1)+'단계: ')+x).join('<br>')); return; }
+    S.hintLv[n]=lv+1; if(!P) S.hint += (lv===2 ? 2 : 1); S.seen.push([n,lv+1,h[lv]]); emit('hint', n);
+    const head = lv===2 ? '🗝 정답' : '🏮 등대지기 할머니';
+    const more = lv+1<L ? '<small>같은 번호를 한 번 더 넣으면 '+(lv+1===2?'<b>정답</b>이 나와요. 정답은 힌트 2번으로 세요.':'다음 힌트가 나와요.')+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>' : '';
+    sub('padMsg','info', head+': "'+h[lv]+'"'+more); return; }
   if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else sub('padMsg','no','아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.'); }
 };
 
