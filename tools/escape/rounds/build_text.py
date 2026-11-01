@@ -42,10 +42,10 @@ def front(c):
     body = body.replace('<div class="hid">', '<div class="hid">')
     d = R.DIS.get(bl, '')
     dis = f'<div class="dis">🗑 치우기: {d}</div>' if d else ''
-    return f'<div class="card"><div class="band" style="background:{col}"><span class="no">{H.escape(n)}</span><span class="lab">{lab}</span></div><div class="ti">{title}</div><div class="bd">{body}{fig}{vis(c)}</div>{dis}<div class="ft">붉은 나침반 {N}회</div></div>'
+    return f'<div class="card"><div class="band" style="background:{col}"><span class="no">{H.escape(n)}</span><span class="lab">{lab}</span></div><div class="ti">{title}</div><div class="bd">{body}{fig}{vis(c)}</div>{dis}<div class="ft">나침반 시리즈 {N}회</div></div>'
 def back(c):
     bl = c[0]; fs = '18pt' if len(bl) > 3 else '30pt'
-    return f'<div class="card bk"><div class="bt">붉은 나침반</div><div class="bn" style="font-size:{fs}">{H.escape(bl)}</div><div class="bt2">{N}회</div></div>'
+    return f'<div class="card bk"><div class="bt">{R.EP.split(" · ")[0]}</div><div class="bn" style="font-size:{fs}">{H.escape(bl)}</div><div class="bt2">{N}회</div></div>'
 # 화면 설정에서 정답 뽑기
 html = os.path.join(HERE, '..', '..', '..', f'escape{N}.html')
 js = r'''const fs=require('fs');const h=fs.readFileSync(process.argv[1],'utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/);const window={};eval(m[1]);const G=window.EG;

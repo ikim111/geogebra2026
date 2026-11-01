@@ -13,7 +13,7 @@ if(P) document.body.classList.add('practice'); else document.body.classList.add(
 /* ---------- 화면 뼈대 ---------- */
 const BTN = [['p','hint','💡','힌트',50.0,9.0], ['y','code','🔒','자물쇠',89.0,37.3], ['g','machine','⚙️','기계',74.1,83.2], ['r','pen','⏳','벌점',25.9,83.2], ['','hid','🔍','숨은 번호',11.0,37.3]];
 const ring = BTN.map(([c,m,i,t,x,y])=>`<button class="btn ${c}" style="left:${x}%;top:${y}%" data-act="${m}" id="b_${m}"><i>${i}</i><span>${t}</span></button>`).join('');
-const ttl = `<div class="ep">붉은 나침반 · ${G.ep}</div><div class="nm">${G.title}</div>`;
+const ttl = `<div class="ep">${G.series||"붉은 나침반"} · ${G.ep}</div><div class="nm">${G.title}</div>`;
 document.body.insertAdjacentHTML('afterbegin', `
 <div class="scr on" id="home">
   <div class="ttl top serif">${ttl}</div>
@@ -52,7 +52,7 @@ document.body.insertAdjacentHTML('afterbegin', `
   <div class="machbox" id="mBody"></div>
 </div>
 <div class="scr" id="done">
-  <div class="ttl serif" style="text-align:center;margin-bottom:26px"><div class="ep">붉은 나침반 · ${G.ep}</div><div class="nm">${P?'훈련 끝!':'탈출 성공!'}</div></div>
+  <div class="ttl serif" style="text-align:center;margin-bottom:26px"><div class="ep">${G.series||"붉은 나침반"} · ${G.ep}</div><div class="nm">${P?'훈련 끝!':'탈출 성공!'}</div></div>
   <div class="res"><div class="seal serif">${P?'수료':'탈출'}</div><h2 class="serif">${P?'훈련 일지':'항해 일지'}</h2><div class="st" id="stars"></div><div id="resTb"></div></div>
   <div class="sc" style="width:min(560px,100%);margin-top:20px">${G.reflect||''}</div>
   ${G.next?`<a class="startbtn" style="display:block;width:min(560px,100%);text-align:center;line-height:64px;text-decoration:none" href="${G.next.url}">${G.next.label}</a>`:''}
@@ -127,7 +127,7 @@ $('padOk').onclick=()=>{
     const head = lv===2 ? '🗝 정답' : (G.hintBy||'🏮 등대지기 할머니');
     const more = lv+1<L ? '<small>같은 번호를 한 번 더 넣으면 '+(lv+1===2?'<b>정답</b>이 나와요. 정답은 힌트 2번으로 세요.':'다음 힌트가 나와요.')+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>' : '';
     sub('padMsg','info', head+': "'+h[lv]+'"'+more); return; }
-  if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else sub('padMsg','no','아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.'); }
+  if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else { sub('padMsg','no', resultHTML({msg:'아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.', lose:lose('wrong')})); buf=''; paint(); } }
 };
 
 /* ---------- 기계 ---------- */

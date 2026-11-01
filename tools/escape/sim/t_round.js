@@ -22,6 +22,7 @@ if(tag==='Surface'){await pad('#b_machine',N==2?'59':'36');await p.waitForTimeou
 for(const st of PLAN[N]){ if(st[0]==='code')await pad('#b_code',st[2]); else await mach(st[1],st[2]);
   T(tag+' 풀기 '+st[1],(await p.textContent('#homeMsg')).includes('펼치기'),(await p.textContent('#homeMsg')).slice(0,30));}
 for(const n of Object.keys(await p.evaluate(()=>window.EG.hints))){await pad('#b_hint',n);const m=await p.textContent('#padMsg');if(m.includes('힌트가 없어요'))T('힌트 '+n,false);await back();}
-await pad('#endBtn','99');T(tag+' 탈출',await p.isVisible('#done'));
+if(String(await p.evaluate(()=>window.EG.endCard))!=='99'){await pad('#endBtn','99');T(tag+' 찍은 99는 벌점',(await p.textContent('#padMsg')).includes('1분'));await p.locator('#pad [data-back]:visible').first().click();}
+await pad('#endBtn',String(await p.evaluate(()=>window.EG.endCard)));T(tag+' 탈출',await p.isVisible('#done'));
 T(tag+' 가로 넘침 없음',(await p.evaluate(()=>document.documentElement.scrollWidth))<=w);T(tag+' 오류 없음',!errs.length,errs.join('|'));await p.close();}
 console.log('틀림',bad);await b.close()})();
