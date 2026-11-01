@@ -70,8 +70,8 @@ function tick(){ if(P){ $('padTm').textContent='연습'; $('mTm').textContent='�
   $('sPen').textContent=S.pen; $('sWrong').textContent=S.wrong; $('sHint').textContent=S.hint; }
 setInterval(tick, 250); tick();
 function flash(){ const t=$('timer'); t.classList.remove('pen'); void t.offsetWidth; t.classList.add('pen'); }
-function lose(kind){ if(P) return '<span class="lost">⏳ 본게임이면 1분 잃어요</span> (연습이라 괜찮아요)';
-  if(kind==='pen'){ S.penMs+=60000; S.pen++; } else { S.wrongMs+=60000; S.wrong++; } flash(); return '<span class="lost">⏳ 1분 잃음</span>'; }
+function lose(kind, m){ m=m||1; if(P) return `<span class="lost">⏳ 본게임이면 ${m}분 잃어요</span> (연습이라 괜찮아요)`;
+  if(kind==='pen'){ S.penMs+=60000*m; S.pen++; } else { S.wrongMs+=60000; S.wrong++; } flash(); return `<span class="lost">⏳ ${m}분 잃음</span>`; }
 function show(id){ ['home','pad','mach','done'].forEach(x=> $(x).classList.toggle('on', x===id)); }
 
 /* 카드와 같은 모양의 번호 */
@@ -96,7 +96,8 @@ function sub(el, cls, html){ const m=$(el); m.className='sc pm'+(cls?' '+cls:'')
 /* ---------- 숫자판 ---------- */
 let padMode='', buf='';
 const PT = {machine:['⚙️ 기계','초록 카드의 번호를 넣고 열어 보기를 누르세요.',2], code:['🔒 자물쇠','4자리 비밀번호를 넣으세요.',4],
-  hint:['💡 힌트','막힌 카드의 번호를 넣으세요.'+(G.zeroHint?' (시작 카드는 0)':''),2], end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',2]};
+  hint:['💡 힌트','막힌 카드의 번호를 넣으세요.'+(G.zeroHint?' (시작 카드는 0)':''),2], end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',2],
+  pen:['⏳ 벌점','펼친 벌점 카드의 번호를 넣으세요.',2]};
 function paint(){ const n = padMode==='code' ? 4 : Math.max(PT[padMode][2], buf.length); let h='';
   if(padMode!=='code'){ $('slots').innerHTML=`<div class="sl wide mono${buf?'':' e'}">${buf||'<span class=ph>번호</span>'}</div>`; return; } for(let i=0;i<n;i++){ const c = buf[i]; h += `<div class="sl mono${c===undefined?' e':''}">${c===undefined?'·':c}</div>`; } $('slots').innerHTML=h; }
 function openPad(mode){ if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
@@ -127,6 +128,11 @@ $('padOk').onclick=()=>{
     const head = lv===2 ? '🗝 정답' : (G.hintBy||'🏮 등대지기 할머니');
     const more = lv+1<L ? '<small>같은 번호를 한 번 더 넣으면 '+(lv+1===2?'<b>정답</b>이 나와요. 정답은 힌트 2번으로 세요.':'다음 힌트가 나와요.')+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>' : '';
     sub('padMsg','info', head+': "'+h[lv]+'"'+more); return; }
+  if(padMode==='pen'){ const pc=(G.pens||{})[v];
+    if(G.pens && !pc){ sub('padMsg','info','그 번호는 벌점 카드가 아니에요. 카드 위의 번호를 다시 보세요.'); buf=''; paint(); return; }
+    const m=(pc&&pc.m)||1; emit('pen', v); show('home');
+    homeSay('no', resultHTML({msg:((pc&&pc.msg)||G.penMsg||'')+'<br>그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen', m)})+(P?'':'<small><a href="#" id="undoPen" style="color:#7a1d10;font-weight:900">잘못 넣었어요 · 되돌리기</a></small>'));
+    const u=$('undoPen'); if(u) u.onclick=e=>{ e.preventDefault(); if(S.pen>0){ S.pen--; S.penMs-=60000*m; } homeSay('info',`벌점을 되돌렸어요. ${m}분이 다시 돌아왔어요.`); tick(); }; return; }
   if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else { sub('padMsg','no', resultHTML({msg:'아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.', lose:lose('wrong')})); buf=''; paint(); } }
 };
 
@@ -174,10 +180,8 @@ $('mOk').onclick=()=>{ const M=G.mach[mState.n]; let r;
 /* ---------- 첫 화면 버튼 ---------- */
 document.querySelectorAll('[data-act]').forEach(b=> b.onclick=()=>{
   const a=b.dataset.act;
-  if(a==='hint'||a==='code'||a==='machine') return openPad(a);
+  if(a==='hint'||a==='code'||a==='machine'||a==='pen') return openPad(a);
   if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
-  if(a==='pen'){ emit('pen'); homeSay('no', resultHTML({msg:G.penMsg||'벌점 카드를 펼쳤군요. 그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen')})+(P?'':'<small><a href="#" id="undoPen" style="color:#7a1d10;font-weight:900">잘못 눌렀어요 · 되돌리기</a></small>'));
-    const u=$('undoPen'); if(u) u.onclick=e=>{ e.preventDefault(); if(S.pen>0){ S.pen--; S.penMs-=60000; } homeSay('info','벌점을 되돌렸어요. 1분이 다시 돌아왔어요.'); tick(); }; }
   if(a==='hid'){ emit('hid'); homeSay('info','🔍 '+G.hidden(S)); }
 });
 if(!P){
