@@ -171,7 +171,8 @@ document.querySelectorAll('[data-act]').forEach(b=> b.onclick=()=>{
   const a=b.dataset.act;
   if(a==='hint'||a==='code'||a==='machine') return openPad(a);
   if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
-  if(a==='pen'){ emit('pen'); homeSay('no', resultHTML({msg:G.penMsg||'벌점 카드를 펼쳤군요. 그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen')})); }
+  if(a==='pen'){ emit('pen'); homeSay('no', resultHTML({msg:G.penMsg||'벌점 카드를 펼쳤군요. 그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen')})+(P?'':'<small><a href="#" id="undoPen" style="color:#7a1d10;font-weight:900">잘못 눌렀어요 · 되돌리기</a></small>'));
+    const u=$('undoPen'); if(u) u.onclick=e=>{ e.preventDefault(); if(S.pen>0){ S.pen--; S.penMs-=60000; } homeSay('info','벌점을 되돌렸어요. 1분이 다시 돌아왔어요.'); tick(); }; }
   if(a==='hid'){ emit('hid'); homeSay('info','🔍 '+G.hidden(S)); }
 });
 if(!P){
