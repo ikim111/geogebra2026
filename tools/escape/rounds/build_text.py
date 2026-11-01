@@ -27,6 +27,13 @@ FIG = {
 <line x1="73.3" y1="42" x2="126.7" y2="42" stroke="#000"/><line x1="52" y1="69.2" x2="148" y2="69.2" stroke="#000"/>
 <text x="96" y="6">A</text><text x="8" y="118">B</text><text x="184" y="118">C</text>
 <text x="60" y="44">H</text><text x="130" y="44">I</text><text x="38" y="74">F</text><text x="152" y="74">G</text></svg>''',
+ 'shadow': '''<svg width="190" height="80" viewBox="0 0 190 80" font-size="9" font-weight="700">
+<line x1="175" y1="5" x2="175" y2="75" stroke="#000" stroke-width="3"/><text x="160" y="78">벽</text>
+<circle cx="15" cy="40" r="5" fill="#f9a825" stroke="#000"/><text x="5" y="58">횃불</text>
+<line x1="110" y1="29" x2="110" y2="51" stroke="#5d4037" stroke-width="4"/><text x="96" y="64">열쇠</text>
+<line x1="175" y1="23.5" x2="175" y2="56.5" stroke="#555" stroke-width="7" opacity=".5"/>
+<line x1="15" y1="40" x2="175" y2="23.5" stroke="#999" stroke-dasharray="3 2"/><line x1="15" y1="40" x2="175" y2="56.5" stroke="#999" stroke-dasharray="3 2"/>
+<text x="55" y="12">2뼘</text><line x1="15" y1="16" x2="110" y2="16" stroke="#000"/><text x="88" y="78">3뼘</text><line x1="15" y1="70" x2="175" y2="70" stroke="#000"/></svg>''',
  'cave': '''<svg width="200" height="70" viewBox="0 0 200 70" font-size="9" font-weight="700">
 <circle cx="18" cy="35" r="12" fill="#eee" stroke="#000"/><text x="8" y="38">입구</text>
 <circle cx="100" cy="35" r="12" fill="#eee" stroke="#000"/><text x="90" y="38">광장</text>
