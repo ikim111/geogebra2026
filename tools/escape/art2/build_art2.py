@@ -29,7 +29,7 @@ for k, v in LAY.items():
     if v.get('py'):
         f = v['py']
         fn, _, arg = f.partition(':')
-        g['OVER'][k] = g['SV'](figs2.pair(arg, (12, 30, 74, 76) if arg == 'AA' else (14, 30, 88, 80)) if fn == 'pair' else (getattr(figs2, fn)(arg) if arg else getattr(figs2, fn)()))
+        g['OVER'][k] = g['SV'](figs2.pair(arg) if fn == 'pair' else (getattr(figs2, fn)(arg) if arg else getattr(figs2, fn)()))
 g['ETCH'] = set(g['HID'])
 g['PANEL'] = {k for k, v in LAY.items() if v.get('panel')}
 # front()는 ART+img로 그림을 찾으니 절대경로를 그대로 쓰게 바꿈
@@ -40,7 +40,7 @@ FIT = '<script>document.fonts.ready.then(()=>{for(const c of document.querySelec
 def back(c):
     lab = c[0]; small = ' s' if re.search('[가-힣]', lab) else ''
     return f'<div class="card bk2"><img src="{ART}aback.jpg"><div class="bv"></div><div class="bw{small}">{H.escape(lab)}</div></div>'
-NOTE = '.note{position:absolute;z-index:3;font-family:"Gowun Dodum",sans-serif;font-size:2.35mm;line-height:5.2mm;color:#2b1a0a;white-space:nowrap;background:rgba(238,222,182,.96);padding:.8mm 1.2mm;top:12%}.note.L{right:34%;text-align:right}.note.R{left:42%}'
+NOTE = '.tag.Y{background:#3b2412!important}.tag.Y:before{content:"";position:absolute;inset:.45mm;background:#fbf3dc;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}.tag.Y:after{content:"";position:absolute;inset:1mm;background:var(--t);clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}.tag.Y i{z-index:2}.tag{box-shadow:0 0 0 .55mm #fbf3dc,0 0 0 .85mm #3b2412!important}.tag.Y{box-shadow:none!important}.note{position:absolute;z-index:3;font-family:"Gowun Dodum",sans-serif;font-size:2.35mm;line-height:5.2mm;color:#2b1a0a;white-space:nowrap;background:rgba(238,222,182,.96);padding:.8mm 1.2mm;top:12%}.note.L{right:34%;text-align:right}.note.R{left:42%}'
 def front2(c):
     m = re.search(r'<div class="note (L|R)">.*?</div>', c[4], re.S)
     if m and c[0] in PYK: return g['front']((c[0], c[1], c[2], c[3], c[4].replace(m.group(0), '')))

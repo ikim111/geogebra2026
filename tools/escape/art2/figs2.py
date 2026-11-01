@@ -48,12 +48,29 @@ def pair(kind, box=(14, 14, 86, 74)):
     k = None
     raw = [sp[0] for sp in specs]
     if kind == 'AA': raw = [[(x*sp[1], y*sp[1]) for x,y in sp[0]] for sp in specs]
-    half = (W - 10) / 2; H = y1 - y0 - 8
-    cx0 = [x0 + 2, x0 + 2 + half + 6]
+    # 가로로 나란히(상징 아래) 또는 세로로 쌓기(상징 왼쪽) 중 더 크게 그려지는 쪽
+    sizes = [ext(P) for P in raw]; shrink = [0.72 if (i == 0 and kind != 'AA') else 1.0 for i in range(2)]
+    def fit(bx, by, bw, bh, vertical):
+        gap = 18 if kind == 'AA' else 12
+        if vertical:
+            s0 = min(min(bw / w, 1e9) for w, h in sizes); s0 = min(bw / max(sizes[0][0]*shrink[0], sizes[1][0]), (bh - gap - 8) / (sizes[0][1]*shrink[0] + sizes[1][1]))
+        else:
+            s0 = min((bw - gap) / (sizes[0][0]*shrink[0] + sizes[1][0]), (bh - 10) / max(sizes[0][1]*shrink[0], sizes[1][1]))
+        return s0
+    H1 = (19, 32, 62, 37); V1 = (18, 26, 64, 49)
+    sh, sv = fit(*H1, False), fit(*V1, True)
+    vertical = sv > sh * 1.08; sc = sv if vertical else sh; bx, by, bw, bh = V1 if vertical else H1
+    dims = [(sizes[i][0]*sc*shrink[i], sizes[i][1]*sc*shrink[i]) for i in range(2)]
+    if vertical:
+        G = 12; tot = dims[0][1] + dims[1][1] + G; ys = by + (bh - tot)/2
+        origin = [(bx + (bw - dims[0][0])/2, ys + dims[0][1]), (bx + (bw - dims[1][0])/2, ys + dims[0][1] + G + dims[1][1])]
+    else:
+        G = 18 if kind == 'AA' else 12; tot = dims[0][0] + dims[1][0] + G; xs = bx + (bw - tot)/2; hm = max(d[1] for d in dims)
+        base = by + (bh + hm)/2
+        origin = [(xs, base), (xs + dims[0][0] + G, base)]
     for i, P in enumerate(raw):
-        w, h = ext(P); mnx = min(p[0] for p in P)
-        si = min(half / w, H / h) * (0.72 if i == 0 and kind != 'AA' else 1.0)
-        Q = place([(x-mnx, y) for x, y in P], cx0[i] + (half - w*si)/2, y0 + 4 + (H + h*si)/2, si)
+        mnx = min(p[0] for p in P)
+        Q = place([(x-mnx, y) for x, y in P], origin[i][0], origin[i][1], sc*shrink[i])
         C = cen(Q); out += poly(Q)
         sp = specs[i]
         if kind == 'AA':
@@ -158,4 +175,15 @@ def side81():
         s += f'<line x1="{x}" y1="14" x2="{x}" y2="25" stroke="{ink}" stroke-width=".35" stroke-dasharray="1 1" opacity=".7"/>'
     s += dim(T[0], K1[0]+.5, 19, '2뼘') + dim(T[0], W, 12, '3뼘')
     s += pen(T[0], 42, '횃불걸이', 4.6, 'middle', col=ink) + pen(K1[0]+9, 46, '열쇠', 4.6, 'start', col=ink) + pen(W+3, 76, '벽', 5.2, 'start', col=ink) + pen(W+3, 61, '그림자', 4.2, 'start', col=ink)
+    return s
+
+def journal41c():
+    s = pen(11, 24, '절벽 높이 재기', 6) + pen(11, 34, '거울을 땅에 놓고', 5) + pen(11, 42, '뒤로 물러서다가', 5) + pen(11, 50, '꼭대기가 거울에', 5) + pen(11, 58, '보이는 곳에 섰다.', 5)
+    s += pen(11, 70, '높이 =', 5.4) + '<ellipse cx="32" cy="68.5" rx="9" ry="4" fill="#6b5a44" opacity=".5"/><ellipse cx="35" cy="70.5" rx="5" ry="2.4" fill="#6b5a44" opacity=".4"/>'
+    s += pen(60.5, 67, '3m', 4.6, 'middle') + pen(74, 67, '24m', 4.6, 'middle')
+    return s
+def notebook66c():
+    s = pen(10, 24, '닮음 표시', 6.4) + pen(10, 36, 'SSS 닮음 = 1', 5.4) + pen(10, 46, 'SAS 닮음 = 2', 5.4) + pen(10, 56, 'AA 닮음 = 3', 5.4) + pen(10, 66, '닮지 않음 = 0', 5.4)
+    s += pen(50, 24, '측량대 규칙', 5.2)
+    s += '<g fill="none" stroke="#3b2412" stroke-width=".6"><polygon points="52,48 62,48 55,40"/><polygon points="66,52 81,52 70.5,40"/></g>' + pen(66, 62, '닮음!', 4.6, 'middle')
     return s
