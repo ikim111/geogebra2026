@@ -58,28 +58,53 @@ def front(c):
 def back(c):
     bl = c[0]; fs = '18pt' if len(bl) > 3 else '30pt'
     return f'<div class="card bk"><div class="bt">{R.EP.split(" · ")[0]}</div><div class="bn" style="font-size:{fs}">{H.escape(bl)}</div><div class="bt2">{N}회</div></div>'
-# 화면 설정에서 정답 뽑기
+# 화면 설정에서 정답·오답 안내 뽑기
 html = os.path.join(HERE, '..', '..', '..', f'escape{N}.html')
-js = r'''const fs=require('fs');const h=fs.readFileSync(process.argv[1],'utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/);const window={};eval(m[1]);const G=window.EG;
-const o={codes:{},mach:{},wrong:G.wrongCodes,hints:G.hints};for(const[k,c]of Object.entries(G.codes))o.codes[k]=c;
-for(const[k,M]of Object.entries(G.mach)){let ans=null;if(M.type==='grid'){for(let x=0;x<=12;x++)for(let y=0;y<=12;y++)if(M.check(x,y).ok)ans=`(${x}, ${y})`}else{for(let a=0;a<400;a++)if(M.check(a).ok)ans=a+(M.unit||'°')}
- o.mach[k]={t:M.t,ans,open:M.check(...(ans&&ans.startsWith('(')?ans.slice(1,-1).split(',').map(Number):[parseInt(ans)])).open}}console.log(JSON.stringify(o));'''
+js = r"""const fs=require('fs');const h=fs.readFileSync(process.argv[1],'utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/);const window={};eval(m[1]);const G=window.EG;
+const o={codes:G.codes,mach:{},wrong:G.wrongCodes,hints:G.hints,same:G.hintSame||{},pens:G.pens||{},end:G.endCard};
+for(const[k,M]of Object.entries(G.mach)){let ans=null,open=[],wr=[],cnt={};const tr=[];
+ if(M.type==='grid'){for(let x=0;x<=(M.xmax||12);x++)for(let y=0;y<=(M.ymax||12);y++)tr.push([[x,y],`(${x}, ${y})`])}else{for(let a=0;a<=(M.max||360);a++)tr.push([[a],a+(M.unit||'°')])}
+ for(const[t,l]of tr){const r=M.check(...t);if(r.ok){ans=l;open=r.open}else{cnt[r.msg]=(cnt[r.msg]||0)+1;wr.push([l,r.msg])}}
+ o.mach[k]={t:M.t,s:M.s,ans,open,wrong:wr.filter(([l,m])=>cnt[m]<=2)}}
+console.log(JSON.stringify(o));"""
 G = json.loads(subprocess.check_output(['node', '-e', js, html]).decode())
+strip = lambda t: re.sub('<[^>]+>', '', str(t))
+def hint3(k):
+    h = G['hints'].get(k) or G['hints'].get(str(G['same'].get(k, ''))) or ['', '', '']
+    return ''.join(f'<td>{strip(x)}</td>' for x in (h + ['', '', ''])[:3])
+def wrongs_for(k):
+    if k in G['mach']: return '<br>'.join(f'<b>{l}</b>: {strip(m)}' for l, m in G['mach'][k]['wrong'])
+    return ''
+lock_wrong = {}
+for code, msg in G['wrong'].items(): lock_wrong.setdefault('lock', []).append((code, msg))
 rows = ''
-for k, c in G['codes'].items():
-    w = '<br>'.join(f'{a}: {b}' for a, b in G['wrong'].items() if a in c.get('wrongFor', G['wrong']) )
-    h = G['hints'].get(k, ['', '', ''])
-    rows += f'<tr><td>{k} {cards[k][3]}</td><td><b>{c["code"]}</b> → {", ".join(c["ok"]["open"])}</td><td>{h[0]}</td><td>{h[1]}</td><td>{h[2] if len(h)>2 else ""}</td></tr>'
-for k, m in G['mach'].items():
-    h = G['hints'].get(k, ['', '', ''])
-    rows += f'<tr><td>{k} {m["t"]}</td><td><b>{m["ans"]}</b> → {", ".join(m["open"])}</td><td>{h[0]}</td><td>{h[1]}</td><td>{h[2] if len(h)>2 else ""}</td></tr>'
-combo = ' · '.join(f'{r}+{b}={v}' + (' (⏳벌점)' if cards[str(v)][1]=='pen' else '') for (r, b), v in R.COMBOS.items())
-wrong = '<br>'.join(f'<b>{a}</b>: {H.escape(re.sub("<[^>]+>","",b))}' for a, b in G['wrong'].items())
-teacher = f'''<div class="sheet"><h1>{R.EP} 선생님 정답표 (내용 검수판)</h1>
-<p>🔗 디벗 화면: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습: <a href="https://geogebra2026.vercel.app/escape0.html">escape0.html</a></p>
-<table><tr><th>카드</th><th>정답 → 펼칠 카드</th><th>힌트 1</th><th>힌트 2</th><th>정답 힌트</th></tr>{rows}</table>
-<h2>합치기 (빨강 + 파랑)</h2><p>{combo}. 그 밖의 합은 해당 카드가 없어요.</p>
-<h2>자물쇠 오답 안내 (−1분)</h2><p style="font-size:8pt">{wrong}</p></div>'''
+for scene, k, math, clue in R.FLOW:
+    if k in G['codes']:
+        c = G['codes'][k]; ans = f'<b>{c["code"]}</b> → {", ".join(c["ok"]["open"])}'; kind = '🔒'
+    elif k in G['mach']:
+        m = G['mach'][k]; ans = f'<b>{m["ans"]}</b> → {", ".join(m["open"])}'; kind = '⚙️'
+    else:
+        ans = f'<b>{k}</b> = ' + k.split('+')[0] if '+' in k else k; kind = '➕'
+        a, b = k.split('+'); ans = f'<b>{int(a)+int(b)}</b>'
+    title = cards[k][3] if k in cards else ''
+    rows += f'<tr><td>{scene}</td><td>{kind} {k} {title}</td><td>{ans}</td><td>{math}</td><td>{clue}</td></tr>'
+hrows = ''
+for scene, k, math, clue in R.FLOW:
+    kk = k.split('+')[0]
+    hrows += f'<tr><td>{k}</td>{hint3(kk)}<td style="font-size:7pt">{wrongs_for(k)}</td></tr>'
+lw = '<br>'.join(f'<b>{a}</b>: {strip(b)}' for a, b in G['wrong'].items())
+pens = ''.join(f'<tr><td>{n} {strip(cards[n][4]).split("⏳")[0][:40]}</td><td>{p.get("m",1)}분</td><td>{strip(p.get("msg",""))}</td></tr>' for n, p in G['pens'].items())
+dis = ''.join(f'<tr><td>{a} {cards[a][3]}</td><td>{b}</td></tr>' for a, b in R.DIS.items())
+combo = ' · '.join(f'{r}+{b}={v}' + (' (⏳)' if cards[str(v)][1]=='pen' else '') for (r, b), v in R.COMBOS.items())
+teacher = f"""<div class="sheet"><h1>{R.EP} — 선생님 정답표</h1>
+<p>🔗 디벗: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습: <a href="https://geogebra2026.vercel.app/escape0.html">escape0.html</a> · 제한 45분 · 카드 {len(R.CARDS)}장 · 탈출 번호 <b>{G['end']}</b></p>
+<h2>1. 풀이 흐름 (이 순서로 풀려요)</h2><table><tr><th>장면</th><th>카드</th><th>정답 → 펼칠 카드</th><th>쓰는 수학</th><th>필요한 단서</th></tr>{rows}</table>
+<p>합치기(빨강 + 파랑): {combo}. 그 밖의 합은 해당 카드가 없어요.</p>
+<h2>2. 힌트 3단계와 디벗 오답 안내</h2><table><tr><th>카드</th><th>힌트 1</th><th>힌트 2</th><th>정답 힌트</th><th>기계 오답 → 디벗 안내 (−1분)</th></tr>{hrows}</table>
+<p style="font-size:7.5pt"><b>자물쇠 오답 → 디벗 안내 (−1분)</b><br>{lw}</p>
+<h2>3. 벌점 카드</h2><table><tr><th>카드</th><th>잃는 시간</th><th>디벗에 뜨는 설명</th></tr>{pens}</table>
+<h2>4. 치우기</h2><table><tr><th>이 카드를 펼치면</th><th>치울 카드</th></tr>{dis}</table>
+<h2>5. 준비</h2><p>· A4 <b>양면 인쇄 — 긴 쪽 넘김</b>, 배율 100%. 점선대로 잘라 모둠당 1세트.<br>· 카드는 번호가 보이게 뒷면으로 쌓아 두고 <b>시작 카드만</b> 펼쳐요. 그림 속 번호가 보이면 그 카드를 찾아 펼쳐요.<br>· 디벗은 모둠당 1대. 처음 하는 반은 연습(escape0)부터.<br>· 이 정답표는 선생님만 가지고 계세요.</p></div>"""
 css = open(os.path.join(HERE, '..', 'print', 'build.py'), encoding='utf-8').read().split("css='''")[1].split("'''")[0]
 css += '.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}'
 pages = ''
@@ -91,5 +116,5 @@ for i in range(0, len(L), 9):
     pages += '<div class="page">' + ''.join(sum([bk[j:j+3][::-1] for j in range(0, 9, 3)], [])) + '</div>'
 out = os.path.join(HERE, 'out'); os.makedirs(out, exist_ok=True)
 p = os.path.join(out, f'방탈출{N}회_글카드.html')
-open(p, 'w', encoding='utf-8').write(f'<html><head><meta charset="utf-8"><style>{css}.sheet table{{border-collapse:collapse;width:100%;font-size:8pt}}.sheet td,.sheet th{{border:1px solid #999;padding:3px;vertical-align:top}}</style></head><body>{pages}{teacher}</body></html>')
+open(p, 'w', encoding='utf-8').write(f'<html><head><meta charset="utf-8"><style>{css}.sheet table{{border-collapse:collapse;width:100%;font-size:7.5pt;margin-bottom:6px}}.sheet h2{{font-size:11pt;margin:10px 0 4px}}.sheet td,.sheet th{{border:1px solid #999;padding:3px;vertical-align:top}}</style></head><body>{pages}{teacher}</body></html>')
 print(p, len(L), '장')
