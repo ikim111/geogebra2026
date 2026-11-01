@@ -110,3 +110,6 @@ body.practice{background:radial-gradient(ellipse at 35% 40%,rgba(255,220,140,.18
 .res .bd:not(.on){color:#5e4d26;border-color:#9c8550;background:rgba(255,255,255,.35)}
 body.nostart .rg .btn{opacity:.4;filter:grayscale(.7)}
 .dial.nu .dialin:after{display:none}.dial.nu #dval{bottom:auto;top:50%;transform:translate(-50%,-50%);white-space:nowrap}.dial.nu #dval small{font-size:.45em;margin-left:4px}
+
+.mnum{display:flex;flex-direction:column;align-items:center;gap:18px}.mnum .slots{align-items:center}.mnum .un{font-size:34px;font-weight:700;color:#ffe9a8;margin-left:6px}
+.sl.wide{width:auto;min-width:clamp(150px,18vw,220px);padding:0 18px;letter-spacing:6px}.sl .ph{font-size:.4em;letter-spacing:0;color:#5b6886;font-family:sans-serif}

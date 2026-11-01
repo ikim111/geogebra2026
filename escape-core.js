@@ -97,8 +97,8 @@ function sub(el, cls, html){ const m=$(el); m.className='sc pm'+(cls?' '+cls:'')
 let padMode='', buf='';
 const PT = {machine:['⚙️ 기계','초록 카드의 번호를 넣고 열어 보기를 누르세요.',2], code:['🔒 자물쇠','4자리 비밀번호를 넣으세요.',4],
   hint:['💡 힌트','막힌 카드의 번호를 넣으세요.'+(G.zeroHint?' (시작 카드는 0)':''),2], end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',2]};
-function paint(){ const n = padMode==='code' ? 4 : Math.max(1, buf.length); let h='';
-  for(let i=0;i<n;i++) h += `<div class="sl mono${buf[i]===undefined?' e':''}">${buf[i]===undefined?'·':buf[i]}</div>`; $('slots').innerHTML=h; }
+function paint(){ const n = padMode==='code' ? 4 : Math.max(PT[padMode][2], buf.length); let h='';
+  if(padMode!=='code'){ $('slots').innerHTML=`<div class="sl wide mono${buf?'':' e'}">${buf||'<span class=ph>번호</span>'}</div>`; return; } for(let i=0;i<n;i++){ const c = buf[i]; h += `<div class="sl mono${c===undefined?' e':''}">${c===undefined?'·':c}</div>`; } $('slots').innerHTML=h; }
 function openPad(mode){ if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
   padMode=mode; buf=''; $('padMsg').style.display='none'; const T=PT[mode]; $('padTitle').textContent=T[0]; $('padSub').textContent=T[1];
   if(mode==='hint' && S.seen.length) sub('padMsg','info','📜 지금까지 본 힌트<small>'+S.seen.map(h=>`${h[0]}번 ${h[1]===3?'정답':h[1]+'단계'}: ${h[2]}`).join('<br>')+'</small>');
@@ -155,6 +155,11 @@ function openMach(n){ const M=(G.mach||{})[n];
     const one=(id,lab,unit)=>`<div style="text-align:center"><div class="sub" style="margin:0 0 8px">${lab}</div><div class="lock" style="display:inline-block"><div class="slots"><div class="sl mono" id="${id}" style="width:auto;padding:0 14px;min-width:120px">0${unit}</div></div></div><div class="drow" style="margin-top:12px;justify-content:center">${[-10,-1,1,10].filter(d=>unit==='°'||Math.abs(d)==1).map(d=>`<button class="k" data-w="${id}" data-d="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}</div></div>`;
     $('mBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:26px">${one('dA',M.l1,'°')}${one('dM',M.l2,'m')}</div>`;
     $('mBody').querySelectorAll('[data-w]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; if(b.dataset.w==='dA'){ mState.a=(mState.a+d+360)%360; $('dA').textContent=mState.a+'°'; } else { mState.m=Math.max(0,Math.min(30,mState.m+d)); $('dM').textContent=mState.m+'m'; } }); }
+  else if(M.unit){ const D=String(M.max||99).length; mState.buf='';
+    const pnt=()=>{ $('mSl').innerHTML=`<div class="sl wide mono${mState.buf?'':' e'}">${mState.buf||'<span class=ph>답</span>'}</div><div class="un">${M.unit}</div>`; mState.a=parseInt(mState.buf||'0'); };
+    $('mBody').innerHTML=`<div class="mnum"><div class="lock"><div class="slots" id="mSl"></div></div><div class="kp" id="mKeys"></div></div>`;
+    ['1','2','3','4','5','6','7','8','9','지움','0','⌫'].forEach(k=>{ const b=document.createElement('button'); b.className='k'+(k.length>1||k==='⌫'?' s':''); b.textContent=k;
+      b.onclick=()=>{ if(k==='지움') mState.buf=''; else if(k==='⌫') mState.buf=mState.buf.slice(0,-1); else if(mState.buf.length<D) mState.buf+=k; pnt(); }; $('mKeys').appendChild(b); }); pnt(); }
   else { $('mBody').innerHTML=`<div class="dial${M.unit?' nu':''}"><div class="dialface"><div class="dialin">${M.unit?'':'<div class="needle" id="needle"></div>'}<div id="dval" class="mono">0${M.unit||'°'}</div></div></div><div class="drow"><button class="k" data-d="-10">−10</button><button class="k" data-d="-1">−1</button><button class="k" data-d="1">+1</button><button class="k" data-d="10">+10</button></div></div>`;
     const upd=()=>{ $('dval').innerHTML=mState.a+(M.unit?'<small>'+M.unit+'</small>':'°'); if(!M.unit) $('needle').style.transform=`rotate(${mState.a}deg)`; }; upd();
     $('mBody').querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; mState.a = M.unit ? Math.max(0,Math.min(M.max||99, mState.a+d)) : (mState.a+d+360)%360; upd(); }); }
@@ -162,7 +167,7 @@ function openMach(n){ const M=(G.mach||{})[n];
 $('mOk').onclick=()=>{ const M=G.mach[mState.n]; let r;
   if(M.type==='dial2') r=M.check(mState.a, mState.m);
   else if(M.type==='grid' || M.type==='img'){ if(mState.x===null){ sub('mMsg','info','먼저 점을 하나 고르세요.'); return; } r=M.check(mState.x, mState.y); }
-  else r=M.check(mState.a);
+  else { if(M.unit && !mState.buf){ sub('mMsg','info','먼저 숫자를 넣으세요.'); return; } r=M.check(mState.a); }
   if(r.ok){ S.solved[mState.n]=1; emit('mach', mState.n); win(r); }
   else sub('mMsg','no', resultHTML({msg:r.msg, lose:lose('wrong')})); };
 

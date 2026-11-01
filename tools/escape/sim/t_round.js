@@ -11,13 +11,14 @@ const okb=()=>p.locator('#padOk:visible, [data-ok]:visible').first();const back=
 const pad=async(sel,v)=>{await p.click(sel);for(const k of v)await p.click(`#keys button:text-is("${k}")`);await okb().click();};
 const mach=async(n,a)=>{await pad('#b_machine',n);await p.waitForTimeout(120);
   if(a.pt)await p.click(`.pt[data-x="${a.pt[0]}"][data-y="${a.pt[1]}"]`);
-  if(a.dial!==undefined){let v=a.dial;for(;v>=10;v-=10)await p.click('[data-d="10"]');for(;v>0;v--)await p.click('[data-d="1"]');}
+  if(a.dial!==undefined){for(const k of String(a.dial))await p.click(`#mKeys button:text-is("${k}")`);}
   await p.click('#mOk');};
 await p.goto(`file:///home/claude/geogebra2026/escape${N}.html`);await p.waitForTimeout(300);await p.click('#startBtn');
 for(const wr of WRONG[N]){ if(wr[0]==='code'){await pad('#b_code',wr[1]);T(tag+' 오답 '+wr[1],(await p.textContent('#padMsg')).includes(wr[2]));await back();}
   else {await mach(wr[1],wr[2]);T(tag+' 오답 기계'+wr[1],(await p.textContent('#mMsg')).includes(wr[3]),(await p.textContent('#mMsg')).slice(0,40));await back();} }
-if(tag==='Surface'){await pad('#b_machine',N==2?'59':'36');await p.waitForTimeout(150);T('다이얼 단위 표시',/m|가지/.test(await p.textContent('#dval')),await p.textContent('#dval'));
-  for(let i=0;i<5;i++)await p.click('[data-d="-10"]');T('다이얼 0 아래로 안 내려감',(await p.textContent('#dval')).startsWith('0'));
+if(tag==='Surface'){await pad('#b_machine',N==2?'59':'36');await p.waitForTimeout(150);T('단위 표시',/m|가지/.test(await p.textContent('#mSl')),await p.textContent('#mSl'));
+  await p.click('#mOk');T('빈 답은 벌점 없이 안내',(await p.textContent('#mMsg')).includes('먼저'));
+  for(const k of '9999')await p.click(`#mKeys button:text-is("${k}")`);T('자리 수 제한',(await p.textContent('#mSl')).replace(/\D/g,'').length<=3,await p.textContent('#mSl'));
   await p.screenshot({path:`/tmp/claude-0/escape/review/r${N}_dial.png`});await back();}
 for(const st of PLAN[N]){ if(st[0]==='code')await pad('#b_code',st[2]); else await mach(st[1],st[2]);
   T(tag+' 풀기 '+st[1],(await p.textContent('#homeMsg')).includes('펼치기'),(await p.textContent('#homeMsg')).slice(0,30));}
