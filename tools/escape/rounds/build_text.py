@@ -14,7 +14,7 @@ FIG = {
 <polygon points="40,4 40,40 110,90" fill="none" stroke="#000"/><line x1="40" y1="4" x2="40" y2="40" stroke="#000" stroke-width="2"/>
 <line x1="75" y1="47" x2="75" y2="65" stroke="#000" stroke-dasharray="3 2"/>
 <circle cx="40" cy="4" r="2.5"/><text x="45" y="12">A</text><circle cx="40" cy="40" r="2.5"/><text x="28" y="52">B</text>
-<circle cx="110" cy="90" r="2.5"/><text x="114" y="94">C</text><circle cx="75" cy="47" r="2.5"/><text x="80" y="48">M</text><circle cx="75" cy="65" r="2.5"/><text x="62" y="72">N</text>
+<line x1="60.6" y1="23.0" x2="54.4" y2="28.0" stroke="#d32f2f" stroke-width="1.5"/><line x1="95.6" y1="66.0" x2="89.4" y2="71.0" stroke="#d32f2f" stroke-width="1.5"/><line x1="58.3" y1="49.3" x2="53.7" y2="55.7" stroke="#d32f2f" stroke-width="1.5"/><line x1="62.3" y1="49.3" x2="57.7" y2="55.7" stroke="#d32f2f" stroke-width="1.5"/><line x1="93.3" y1="74.3" x2="88.7" y2="80.7" stroke="#d32f2f" stroke-width="1.5"/><line x1="97.3" y1="74.3" x2="92.7" y2="80.7" stroke="#d32f2f" stroke-width="1.5"/><circle cx="110" cy="90" r="2.5"/><text x="114" y="94">C</text><circle cx="75" cy="47" r="2.5"/><text x="80" y="48">M</text><circle cx="75" cy="65" r="2.5"/><text x="62" y="72">N</text>
 </svg>''',
  'mirror': '''<svg width="170" height="92" viewBox="0 0 170 92" font-size="8.5" font-weight="700">
 <line x1="0" y1="80" x2="170" y2="80" stroke="#000"/><rect x="123" y="32" width="14" height="48" fill="#bbb" stroke="#000"/>
@@ -26,14 +26,15 @@ FIG = {
 <polygon points="100,8 20,110 180,110" fill="none" stroke="#000" stroke-width="1.5"/>
 <line x1="73.3" y1="42" x2="126.7" y2="42" stroke="#000"/><line x1="52" y1="69.2" x2="148" y2="69.2" stroke="#000"/>
 <text x="96" y="6">A</text><text x="8" y="118">B</text><text x="184" y="118">C</text>
-<text x="60" y="44">H</text><text x="130" y="44">I</text><text x="38" y="74">F</text><text x="152" y="74">G</text></svg>''',
+<text x="60" y="44">H</text><text x="76" y="26" font-size="8" fill="#d32f2f">5칸</text><text x="50" y="58" font-size="8" fill="#d32f2f">4칸</text><text x="24" y="92" font-size="8" fill="#d32f2f">6칸</text><text x="97" y="40" font-size="9">›</text><text x="97" y="67" font-size="9">›</text><text x="97" y="108" font-size="9">›</text><text x="130" y="44">I</text><text x="38" y="74">F</text><text x="152" y="74">G</text></svg>''',
  'shadow': '''<svg width="190" height="80" viewBox="0 0 190 80" font-size="9" font-weight="700">
 <line x1="175" y1="5" x2="175" y2="75" stroke="#000" stroke-width="3"/><text x="160" y="78">벽</text>
 <circle cx="15" cy="40" r="5" fill="#f9a825" stroke="#000"/><text x="5" y="58">횃불</text>
 <line x1="110" y1="29" x2="110" y2="51" stroke="#5d4037" stroke-width="4"/><text x="96" y="64">열쇠</text>
 <line x1="175" y1="23.5" x2="175" y2="56.5" stroke="#555" stroke-width="7" opacity=".5"/>
 <line x1="15" y1="40" x2="175" y2="23.5" stroke="#999" stroke-dasharray="3 2"/><line x1="15" y1="40" x2="175" y2="56.5" stroke="#999" stroke-dasharray="3 2"/>
-<text x="55" y="12">2뼘</text><line x1="15" y1="16" x2="110" y2="16" stroke="#000"/><text x="88" y="78">3뼘</text><line x1="15" y1="70" x2="175" y2="70" stroke="#000"/></svg>''',
+<text x="55" y="12">2뼘</text><line x1="15" y1="16" x2="110" y2="16" stroke="#000"/><text x="88" y="78">3뼘</text><line x1="15" y1="70" x2="175" y2="70" stroke="#000"/><text x="122" y="30" font-size="9" fill="#555">자국 12cm →</text></svg>''',
+ 'pairs': '''<svg width="210" height="124" viewBox="0 0 210 124" font-size="8.5" font-weight="700"><text x="0" y="21" font-size="10">①</text><polygon points="14,28 44,28 30,10" fill="none" stroke="#000"/><text x="48" y="22">40°, 60°</text><polygon points="112,30 150,30 132,8" fill="none" stroke="#000"/><text x="154" y="22">60°, 80°</text><text x="0" y="51" font-size="10">②</text><polygon points="14,58 44,58 30,40" fill="none" stroke="#000"/><text x="48" y="52">2, 3, 4</text><polygon points="112,60 150,60 132,38" fill="none" stroke="#000"/><text x="154" y="52">4, 6, 9</text><text x="0" y="81" font-size="10">③</text><polygon points="14,88 44,88 30,70" fill="none" stroke="#000"/><text x="48" y="82">4, 5, 6</text><polygon points="112,90 150,90 132,68" fill="none" stroke="#000"/><text x="154" y="82">8, 10, 12</text><text x="0" y="111" font-size="10">④</text><polygon points="14,118 44,118 30,100" fill="none" stroke="#000"/><text x="48" y="112">4, 6, 끼인각 50°</text><polygon points="112,120 150,120 132,98" fill="none" stroke="#000"/><text x="154" y="112">6, 9, 끼인각 50°</text></svg>''',
  'cave': '''<svg width="200" height="70" viewBox="0 0 200 70" font-size="9" font-weight="700">
 <circle cx="18" cy="35" r="12" fill="#eee" stroke="#000"/><text x="8" y="38">입구</text>
 <circle cx="100" cy="35" r="12" fill="#eee" stroke="#000"/><text x="90" y="38">광장</text>
