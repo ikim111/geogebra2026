@@ -8,7 +8,7 @@
 (function(){
 const G = window.EG;
 const P = G.mode === 'practice';
-if(P) document.body.classList.add('practice');
+if(P) document.body.classList.add('practice'); else document.body.classList.add('nostart');
 
 /* ---------- 화면 뼈대 ---------- */
 const BTN = [['p','hint','💡','힌트',50.0,9.0], ['y','code','🔒','자물쇠',89.0,37.3], ['g','machine','⚙️','기계',74.1,83.2], ['r','pen','⏳','벌점',25.9,83.2], ['','hid','🔍','숨은 번호',11.0,37.3]];
@@ -176,7 +176,7 @@ document.querySelectorAll('[data-act]').forEach(b=> b.onclick=()=>{
   if(a==='hid'){ emit('hid'); homeSay('info','🔍 '+G.hidden(S)); }
 });
 if(!P){
-  $('startBtn').onclick=()=>{ S.begun=true; S.start=Date.now(); S.running=true; $('startBtn').style.display='none'; $('endBtn').style.display='';
+  $('startBtn').onclick=()=>{ S.begun=true; document.body.classList.remove('nostart'); S.start=Date.now(); S.running=true; $('startBtn').style.display='none'; $('endBtn').style.display='';
     homeSay('info', resultHTML({msg:G.startMsg||'<b>시작</b> 카드를 펼치세요.', open:['시작']})); };
 
   $('pauseBtn').onclick=()=>{ if(!S.begun) return; if(S.running){ S.acc+=Date.now()-S.start; S.running=false; $('pauseBtn').textContent='▶'; } else { S.start=Date.now(); S.running=true; $('pauseBtn').textContent='❚❚'; } };
@@ -221,7 +221,7 @@ setInterval(save, 1000); window.addEventListener('pagehide', save);
   if(!d || Date.now()-d.t > 3*3600000) return;
   ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
   if(P){ flow=d.flow||0; Object.assign(got, d.got||{}); paintBadges(); glowNow(); }
-  else { S.begun=true; S.running=!!d.running; if(S.running) S.start=Date.now(); else $('pauseBtn').textContent='▶';
+  else { S.begun=true; document.body.classList.remove('nostart'); S.running=!!d.running; if(S.running) S.start=Date.now(); else $('pauseBtn').textContent='▶';
     $('startBtn').style.display='none'; $('endBtn').style.display=''; }
   homeSay('info','💾 하던 곳부터 이어서 해요. (새로고침 전 기록을 불러왔어요)<small><a href="#" id="resetGame" style="color:#7a1d10;font-weight:900">처음부터 다시 하기</a></small>');
   const r=$('resetGame'); r.onclick=e=>{ e.preventDefault(); if(r.dataset.sure){ saveOff=true; try{ localStorage.removeItem(KEY); }catch(_){} location.reload(); } else { r.dataset.sure=1; r.textContent='정말 처음부터? 한 번 더 누르세요'; } };

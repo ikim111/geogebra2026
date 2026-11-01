@@ -23,7 +23,7 @@ body{font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;color:#f3e6
  display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#2b3547,#0c1220);--c:#b8954c;--d:#2a1d08;box-shadow:0 0 0 3px var(--c),0 0 0 5px var(--d),0 6px 14px rgba(0,0,0,.6);transition:transform .12s}
 .btn:active{transform:translate(-50%,-50%) scale(.93)}
 .btn i{font-style:normal;font-size:calc(var(--D)*.06);line-height:1}.btn span{font-size:calc(var(--D)*.025);font-weight:800;margin-top:3px;white-space:nowrap}
-.btn.g{--c:#43a047;--d:#0b2a0c;background:radial-gradient(circle at 35% 30%,#66bb6a,#2e7d32 70%)}.btn.y{--c:#f9a825;--d:#3a2800;background:radial-gradient(circle at 35% 30%,#ffd54f,#f9a825 70%);color:#3b2a12}.btn.p{--c:#ab47bc;--d:#2b0b30}.btn.r{--c:#e53935;--d:#330909}
+.btn.g{--c:#43a047;--d:#0b2a0c;background:radial-gradient(circle at 35% 30%,#43a047,#1b5e20 70%)}.btn.y{--c:#f9a825;--d:#3a2800;background:radial-gradient(circle at 35% 30%,#ffd54f,#f9a825 70%);color:#3b2a12}.btn.p{--c:#ab47bc;--d:#2b0b30}.btn.r{--c:#e53935;--d:#330909}
 .side{width:min(460px,90vw)}
 .sc{position:relative;padding:18px 22px;border-radius:8px;color:#3b2a12;background:linear-gradient(180deg,#f3e2b6,#e6cf96);box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 0 26px rgba(120,80,20,.35);font-size:clamp(17px,1.9vw,23px);line-height:1.55;min-height:96px}
 .sc b{color:#7a1d10}.sc small{display:block;margin-top:8px;font-size:.78em;color:#6b5330}
@@ -106,3 +106,6 @@ body.practice{background:radial-gradient(ellipse at 35% 40%,rgba(255,220,140,.18
 .guide{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff6dc;border:2px dashed #c9a55a;font-size:.86em;color:#3b2a12}
 .chip.kr{width:auto;min-width:36px;padding:0 9px;border-radius:18px;font:900 15px "Noto Sans KR",sans-serif}
 .sc small a{display:inline-block;padding:14px 6px;margin:-14px -6px}
+
+.res .bd:not(.on){color:#5e4d26;border-color:#9c8550;background:rgba(255,255,255,.35)}
+body.nostart .rg .btn{opacity:.4;filter:grayscale(.7)}
