@@ -2,7 +2,7 @@
 const {chromium}=require('playwright');const N=process.argv[2];
 const PLAN={2:[['mach','37',{dial:8}],['mach','59',{dial:9}],['mach','27',{pt:[8,6]}],['mach','18',{dial:13}],['code','83','1810'],['code','48','3012']],
             3:[['code','52','0014'],['mach','36',{dial:24}],['code','75','2010'],['mach','28',{dial:19}],['mach','45',{dial:21}],['code','57','0708'],['mach','49',{dial:7}]]};
-const WRONG={2:[['mach','37',{dial:4},'풍덩'],['code','1215','9칸'],['mach','27',{pt:[4,6]},'꺾어'],['mach','18',{dial:17},'더했'],['mach','59',{dial:13},'그림자'],['code','3112','2배'],['code','0012','cm']],
+const WRONG={2:[['mach','37',{dial:4},'풍덩'],['code','1215','9칸'],['mach','27',{pt:[4,6]},'꺾어'],['mach','18',{dial:17},'더했'],['mach','59',{dial:13},'그림자'],['code','3112','2배'],['code','0012','나머지 각']],
              3:[['code','0024','더해요'],['code','2020','순서가 없'],['code','0108','모두 뒷면'],['mach','36',{dial:16},'4 × 4'],['mach','28',{dial:38},'1/2'],['mach','45',{dial:12},'다른 경우'],['mach','49',{dial:10},'더해요']]};
 (async()=>{const b=await chromium.launch();let bad=0;const T=(n,ok,i='')=>{console.log(ok?'✅':'❌',n,i);if(!ok)bad++};
 for(const [w,h,tag] of [[1368,912,'Surface'],[390,844,'폰'],[800,1280,'세로']]){
