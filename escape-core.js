@@ -112,7 +112,7 @@ function win(r){ homeSay('ok', resultHTML(r)); show('home'); }
 $('padOk').onclick=()=>{
   const v=buf; if(!v) return;
   if(padMode==='code'){
-    if(v.length<4){ sub('padMsg','info','4자리를 모두 넣으세요.'); return; }
+    if(v.length<4){ sub('padMsg','info','자물쇠는 네 칸을 모두 채워야 열려요. 세 자리 이하인 수는 앞을 0으로 채워요. (예: 75 → 0075)'); return; }
     const hit = Object.entries(G.codes||{}).find(([n,c])=> c.code===v);
     if(hit){ S.solved[hit[0]]=1; emit('code', hit[0]); win(hit[1].ok); return; }
     const why = (G.wrongCodes||{})[v] || '이 비밀번호로 열리는 자물쇠가 없어요.';
