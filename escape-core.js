@@ -140,6 +140,8 @@ $('padOk').onclick=()=>{
 let mState=null;
 function gridSvg(M){ const u=46, ox=34, oy=M.ymax*u+36, W=M.xmax*u+74, H=oy+30;
   let s=`<svg class="grid" viewBox="0 0 ${W} ${H}">`;
+  if(M.river!=null){ const ry=oy-M.river*u; s+=`<rect x="0" y="0" width="${W}" height="${ry-6}" fill="#7fbfe3"/><path d="M0,${ry-6} q${W/8},-8 ${W/4},0 t${W/4},0 t${W/4},0 t${W/4},0 V${ry+4} H0Z" fill="#a8d4ee"/><rect x="0" y="${ry-4}" width="${W}" height="8" fill="#d9c08a"/><rect x="0" y="${ry+4}" width="${W}" height="${H-ry}" fill="#f3dfae"/><text x="${W-60}" y="${Math.max(24,ry-18)}" font-size="20" font-weight="900" fill="#1f5f8a">강</text><text x="${W-104}" y="${ry+24}" font-size="14" font-weight="800" fill="#7a1d10">강가 길</text>`; }
+  if(M.boat) s+=`<g transform="translate(${ox-6},${oy+4})"><path d="M-22,-6 h30 l-6,10 h-18z" fill="#8d5a2b" stroke="#3b2a12" stroke-width="1.5"/><line x1="0" y1="-6" x2="0" y2="-34" stroke="#5d4037" stroke-width="4"/></g>`;
   for(let i=0;i<=M.xmax;i++) s+=`<line x1="${ox+i*u}" y1="${oy}" x2="${ox+i*u}" y2="${oy-M.ymax*u}" stroke="#c7ad7a"/><text x="${ox+i*u-4}" y="${oy+20}" font-size="14" fill="#5a4116">${i}</text>`;
   for(let j=0;j<=M.ymax;j++) s+=`<line x1="${ox}" y1="${oy-j*u}" x2="${ox+M.xmax*u}" y2="${oy-j*u}" stroke="#c7ad7a"/><text x="${ox-22}" y="${oy-j*u+5}" font-size="14" fill="#5a4116">${j}</text>`;
   if(M.poly) s+=`<polyline points="${M.poly.map(p=>(ox+p[0]*u)+','+(oy-p[1]*u)).join(' ')}" fill="rgba(122,29,16,.08)" stroke="#7a1d10" stroke-width="3"/>`;

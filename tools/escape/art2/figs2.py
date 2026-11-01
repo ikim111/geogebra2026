@@ -180,7 +180,12 @@ def side81():
 def journal41c():
     s = pen(11, 24, '절벽 높이 재기', 6) + pen(11, 34, '거울을 땅에 놓고', 5) + pen(11, 42, '뒤로 물러서다가', 5) + pen(11, 50, '꼭대기가 거울에', 5) + pen(11, 58, '보이는 곳에 섰다.', 5)
     s += pen(11, 70, '높이 =', 5.4) + '<ellipse cx="32" cy="68.5" rx="9" ry="4" fill="#6b5a44" opacity=".5"/><ellipse cx="35" cy="70.5" rx="5" ry="2.4" fill="#6b5a44" opacity=".4"/>'
-    s += pen(60.5, 67, '3m', 4.6, 'middle') + pen(74, 67, '24m', 4.6, 'middle')
+    ink = '#3b2412'
+    def dim(x1, x2, y, t):
+        return (f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{ink}" stroke-width=".45"/>'
+                f'<line x1="{x1}" y1="{y-1.3}" x2="{x1}" y2="{y+1.3}" stroke="{ink}" stroke-width=".45"/><line x1="{x2}" y1="{y-1.3}" x2="{x2}" y2="{y+1.3}" stroke="{ink}" stroke-width=".45"/>'
+                + pen((x1+x2)/2, y+4.6, t, 4.4, 'middle'))
+    s += dim(55.5, 66, 62.5, '3m') + dim(66, 78.5, 62.5, '24m')
     return s
 def notebook66c():
     s = pen(10, 24, '닮음 표시', 6.4) + pen(10, 36, 'SSS 닮음 = 1', 5.4) + pen(10, 46, 'SAS 닮음 = 2', 5.4) + pen(10, 56, 'AA 닮음 = 3', 5.4) + pen(10, 66, '닮지 않음 = 0', 5.4)
