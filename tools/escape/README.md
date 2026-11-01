@@ -21,3 +21,8 @@
 - `art/texts.py`: 카드에 실제로 들어가는 제목·문장
 - `art/build_art.py`: 그림·번호 태그 위치(SPEC), 겹쳐 그리는 SVG(OVER), 규칙 카드, 뒷면, 자르는 선
 - `art/topdf.js`: PDF 만들기 / `art/audit.js`: 글 넘침·금지어 검사 / `art/crop.py`: 2×2 그림 자르기
+
+## 2회 그림 카드 (2026-11-01)
+- 그림: ChatGPT '그림 > 그림체 통일 요청' 방에서 2×2로 그려 받음(방탈출2_A~L.png, 선생님 다운로드 폴더). 잘라 둔 그림 묶음은 `방탈출_그림_2회.zip`(다운로드 폴더).
+- 풀어서 `/tmp/claude-0/escape/art2/`에 두고: `cd tools/escape/art2 && python3 build_art2.py 2` → `node topdf2.js out/방탈출2회_카드.html 결과.pdf`
+- 번호 태그 위치·숨은 번호·그림 위 글자는 `art2/layout2.json`, 카드 글은 `rounds/r2.py`.

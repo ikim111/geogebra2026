@@ -106,7 +106,7 @@ teacher = f"""<div class="sheet"><h1>{R.EP} — 선생님 정답표</h1>
 <h2>4. 치우기</h2><table><tr><th>이 카드를 펼치면</th><th>치울 카드</th></tr>{dis}</table>
 <h2>5. 준비</h2><p>· A4 <b>양면 인쇄 — 긴 쪽 넘김</b>, 배율 100%. 점선대로 잘라 모둠당 1세트.<br>· 카드는 번호가 보이게 뒷면으로 쌓아 두고 <b>시작 카드만</b> 펼쳐요. 그림 속 번호가 보이면 그 카드를 찾아 펼쳐요.<br>· 디벗은 모둠당 1대. 처음 하는 반은 연습(escape0)부터.<br>· 이 정답표는 선생님만 가지고 계세요.</p></div>"""
 css = open(os.path.join(HERE, '..', 'print', 'build.py'), encoding='utf-8').read().split("css='''")[1].split("'''")[0]
-css += '.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}'
+css += '.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}.note{margin-top:1.5mm;padding:1mm 1.5mm;background:#f5ead0;font-size:7.5pt;line-height:1.5}.note.L{text-align:right}'
 pages = ''
 L = R.CARDS
 for i in range(0, len(L), 9):
