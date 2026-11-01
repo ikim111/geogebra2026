@@ -39,7 +39,7 @@ FONTLINKS = ''.join(f'<link rel="stylesheet" href="file://{FONT}{p}">' for p in 
 FIT = '<script>document.fonts.ready.then(()=>{for(const c of document.querySelectorAll(".cap")){let f=3.05;const tx=c.querySelector(".tx");while(c.scrollHeight>c.clientHeight+1&&f>2.1){f-=.1;tx.style.fontSize=f+"mm"}}})</script>'
 def back(c):
     lab = c[0]; small = ' s' if re.search('[가-힣]', lab) else ''
-    return f'<div class="card bk2"><img src="{ART}aback.jpg"><div class="bv"></div><div class="bw{small}">{H.escape(lab)}</div></div>'
+    return f'<div class="card bk2"><img src="/tmp/claude-0/escape/art2/aback_blue.jpg"><div class="bv"></div><div class="bw{small}">{H.escape(lab)}</div></div>'
 NOTE = '.tag.Y{background:#3b2412!important}.tag.Y:before{content:"";position:absolute;inset:.45mm;background:#fbf3dc;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}.tag.Y:after{content:"";position:absolute;inset:1mm;background:var(--t);clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}.tag.Y i{z-index:2}.tag{box-shadow:0 0 0 .55mm #fbf3dc,0 0 0 .85mm #3b2412!important}.tag.Y{box-shadow:none!important}.note{position:absolute;z-index:3;font-family:"Gowun Dodum",sans-serif;font-size:2.35mm;line-height:5.2mm;color:#2b1a0a;white-space:nowrap;background:rgba(238,222,182,.96);padding:.8mm 1.2mm;top:12%}.note.L{right:34%;text-align:right}.note.R{left:42%}'
 def front2(c):
     m = re.search(r'<div class="note (L|R)">.*?</div>', c[4], re.S)
