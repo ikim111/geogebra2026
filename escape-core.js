@@ -155,9 +155,9 @@ function openMach(n){ const M=(G.mach||{})[n];
     const one=(id,lab,unit)=>`<div style="text-align:center"><div class="sub" style="margin:0 0 8px">${lab}</div><div class="lock" style="display:inline-block"><div class="slots"><div class="sl mono" id="${id}" style="width:auto;padding:0 14px;min-width:120px">0${unit}</div></div></div><div class="drow" style="margin-top:12px;justify-content:center">${[-10,-1,1,10].filter(d=>unit==='°'||Math.abs(d)==1).map(d=>`<button class="k" data-w="${id}" data-d="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}</div></div>`;
     $('mBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:26px">${one('dA',M.l1,'°')}${one('dM',M.l2,'m')}</div>`;
     $('mBody').querySelectorAll('[data-w]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; if(b.dataset.w==='dA'){ mState.a=(mState.a+d+360)%360; $('dA').textContent=mState.a+'°'; } else { mState.m=Math.max(0,Math.min(30,mState.m+d)); $('dM').textContent=mState.m+'m'; } }); }
-  else { $('mBody').innerHTML=`<div class="dial"><div class="dialface"><div class="dialin"><div class="needle" id="needle"></div><div id="dval" class="mono">0°</div></div></div><div class="drow"><button class="k" data-d="-10">−10</button><button class="k" data-d="-1">−1</button><button class="k" data-d="1">+1</button><button class="k" data-d="10">+10</button></div></div>`;
-    const upd=()=>{ $('dval').textContent=mState.a+'°'; $('needle').style.transform=`rotate(${mState.a}deg)`; }; upd();
-    $('mBody').querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{ mState.a=(mState.a + +b.dataset.d + 360)%360; upd(); }); }
+  else { $('mBody').innerHTML=`<div class="dial${M.unit?' nu':''}"><div class="dialface"><div class="dialin">${M.unit?'':'<div class="needle" id="needle"></div>'}<div id="dval" class="mono">0${M.unit||'°'}</div></div></div><div class="drow"><button class="k" data-d="-10">−10</button><button class="k" data-d="-1">−1</button><button class="k" data-d="1">+1</button><button class="k" data-d="10">+10</button></div></div>`;
+    const upd=()=>{ $('dval').innerHTML=mState.a+(M.unit?'<small>'+M.unit+'</small>':'°'); if(!M.unit) $('needle').style.transform=`rotate(${mState.a}deg)`; }; upd();
+    $('mBody').querySelectorAll('[data-d]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; mState.a = M.unit ? Math.max(0,Math.min(M.max||99, mState.a+d)) : (mState.a+d+360)%360; upd(); }); }
   show('mach'); }
 $('mOk').onclick=()=>{ const M=G.mach[mState.n]; let r;
   if(M.type==='dial2') r=M.check(mState.a, mState.m);
