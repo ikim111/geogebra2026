@@ -15,19 +15,27 @@ FIG = eval('{' + FIGS)
 def figfor(c):
     f = FIG.get(c[6], '') if len(c) > 6 else ''
     return re.sub(r'<text x="186"[^<]*</text>', '', f) if c[6:7] and c[6].startswith('p') and c[6] != 'pairs' else f
-cards = [(c[0], c[1], c[2], c[3], c[4] + figfor(c)) for c in R.CARDS]
-DIS = R.DIS; T = {}; TALL = {'시작', '53', '90', '41', '48', '73', '37', '18', '61'}
+LAY = json.load(open(os.path.join(HERE, f'layout{N}.json'), encoding='utf-8'))
+PYK = {k for k, v in LAY.items() if v.get('py')}
+cards = [(c[0], c[1], c[2], c[3], LAY.get(c[0], {}).get('cap') or (c[4] + ('' if c[0] in PYK else figfor(c)))) for c in R.CARDS]
+DIS = R.DIS; T = {}; TALL = set()
 g = {'re': re, 'os': os, 'math': math, 'H': H, 'cards': cards, 'DIS': DIS, 'ART': ART, 'T': T, 'TALL': TALL}
 exec('TYPE={' + body, g)
-LAY = json.load(open(os.path.join(HERE, f'layout{N}.json'), encoding='utf-8'))
 g['SPEC'] = {k: (IMG + v.get('img', f'a{k}.jpg'), [(g['tagkind'](t[0]), t[0], t[1], t[2]) for t in v.get('tags', [])]) for k, v in LAY.items()}
 g['HID'] = {k: (v['hid'][0], v['hid'][1], v['hid'][2]) for k, v in LAY.items() if 'hid' in v}
 g['OVER'] = {k: g['SV'](v['over']) for k, v in LAY.items() if v.get('over','') not in ('','note')}; g['ETCH'] = set(); g['SVGART'] = {k for k, v in LAY.items() if v.get('svgart')}; g['DROP'] = set()
+import figs2
+for k, v in LAY.items():
+    if v.get('py'):
+        f = v['py']
+        fn, _, arg = f.partition(':')
+        g['OVER'][k] = g['SV'](figs2.pair(arg, (12, 30, 72, 78) if arg == 'AA' else (12, 27, 86, 78)) if fn == 'pair' else (getattr(figs2, fn)(arg) if arg else getattr(figs2, fn)()))
+g['ETCH'] = set(g['HID'])
 g['PANEL'] = {k for k, v in LAY.items() if v.get('panel')}
 # front()는 ART+img로 그림을 찾으니 절대경로를 그대로 쓰게 바꿈
 g['ART'] = ''
 FONT = '/tmp/claude-0/escape/fonts/'
-FONTLINKS = ''.join(f'<link rel="stylesheet" href="file://{FONT}{p}">' for p in ['fontsource-hahmlet-5.3.0/package/700.css', 'fontsource-hahmlet-5.3.0/package/800.css', 'fontsource-gowun-dodum-5.3.0/package/400.css'])
+FONTLINKS = ''.join(f'<link rel="stylesheet" href="file://{FONT}{p}">' for p in ['fontsource-hahmlet-5.3.0/package/700.css', 'fontsource-hahmlet-5.3.0/package/800.css', 'fontsource-gowun-dodum-5.3.0/package/400.css', 'fontsource-nanum-pen-script-5.3.0/package/index.css'])
 FIT = '<script>document.fonts.ready.then(()=>{for(const c of document.querySelectorAll(".cap")){let f=3.05;const tx=c.querySelector(".tx");while(c.scrollHeight>c.clientHeight+1&&f>2.1){f-=.1;tx.style.fontSize=f+"mm"}}})</script>'
 def back(c):
     lab = c[0]; small = ' s' if re.search('[가-힣]', lab) else ''
@@ -35,6 +43,7 @@ def back(c):
 NOTE = '.note{position:absolute;z-index:3;font-family:"Gowun Dodum",sans-serif;font-size:2.35mm;line-height:5.2mm;color:#2b1a0a;white-space:nowrap;background:rgba(238,222,182,.96);padding:.8mm 1.2mm;top:12%}.note.L{right:34%;text-align:right}.note.R{left:42%}'
 def front2(c):
     m = re.search(r'<div class="note (L|R)">.*?</div>', c[4], re.S)
+    if m and c[0] in PYK: return g['front']((c[0], c[1], c[2], c[3], c[4].replace(m.group(0), '')))
     if not m: return g['front'](c)
     f = g['front']((c[0], c[1], c[2], c[3], c[4].replace(m.group(0), '')))
     return f.replace('<div class="art">', '<div class="art">' + m.group(0), 1)
