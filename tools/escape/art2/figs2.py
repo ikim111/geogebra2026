@@ -13,7 +13,7 @@ def place(P, ox, oy, s):   # 수학 좌표 → 화면 (y 뒤집기)
 def poly(P, w=1.2, col=INK):
     return f'<polygon points="{" ".join(f"{x:.1f},{y:.1f}" for x,y in P)}" fill="none" stroke="{col}" stroke-width="{w}" stroke-linejoin="round"/>'
 def mid(p, q): return ((p[0]+q[0])/2, (p[1]+q[1])/2)
-def side_label(p, q, t, cen, fs=6, off=4.2):
+def side_label(p, q, t, cen, fs=5.6, off=5):
     m = mid(p, q); dx, dy = m[0]-cen[0], m[1]-cen[1]; d = math.hypot(dx, dy) or 1
     return f'<text x="{m[0]+dx/d*off:.1f}" y="{m[1]+dy/d*off+fs*0.35:.1f}" text-anchor="middle" font-size="{fs}" {PEN} fill="{INK}">{t}</text>'
 def arc(v, p, q, r=4.5, t='', fs=5.2):
@@ -21,16 +21,19 @@ def arc(v, p, q, r=4.5, t='', fs=5.2):
     d = (a2-a1) % (2*math.pi)
     if d > math.pi: a1, a2 = a2, a1; d = 2*math.pi-d
     x1, y1 = v[0]+r*math.cos(a1), v[1]+r*math.sin(a1); x2, y2 = v[0]+r*math.cos(a2), v[1]+r*math.sin(a2)
-    am = a1 + d/2; tx, ty = v[0]+(r+4.6)*math.cos(am), v[1]+(r+4.6)*math.sin(am)
+    am = a1 + d/2; tx, ty = v[0]+(r+5.2)*math.cos(am), v[1]+(r+5.2)*math.sin(am)
     s = f'<path d="M{x1:.1f},{y1:.1f} A{r},{r} 0 0 1 {x2:.1f},{y2:.1f}" fill="none" stroke="{INK}" stroke-width=".6"/>'
     return s + (f'<text x="{tx:.1f}" y="{ty+fs*0.35:.1f}" text-anchor="middle" font-size="{fs}" {PEN} fill="{INK}">{t}</text>' if t else '')
 def cen(P): return (sum(x for x,_ in P)/3, sum(y for _,y in P)/3)
+def carve(svg, light='#f3e6cc'):
+    return f'<g transform="translate(.35,.45)" opacity=".75">{svg.replace(INK, light)}</g><g opacity=".9">{svg}</g>'
+STONE = "font-family='Hahmlet' font-weight='800'"
 def pair(kind, box=(14, 14, 86, 74)):
     """돌판 위 삼각형 한 쌍. box=(x0,y0,x1,y1) 안에 왼쪽 작은 것·오른쪽 큰 것"""
     x0, y0, x1, y1 = box; W = x1-x0; out = ''
     if kind == 'AA':
         L = tri_angles(40, 60); R = tri_angles(60, 80)
-        specs = [(L, 1.0, [(0,40),(1,60)]), (R, 1.25, [(0,60),(1,80)])]
+        specs = [(L, 1.0, [(0,40),(1,60)]), (R, 1.15, [(0,60),(1,80)])]
     elif kind == 'N':
         specs = [(tri_sides(4, 3, 2), 1.0, None, ['4','3','2']), (tri_sides(9, 6, 4), 1.0, None, ['9','6','4'])]
     elif kind == 'SSS':
@@ -45,22 +48,23 @@ def pair(kind, box=(14, 14, 86, 74)):
     k = None
     raw = [sp[0] for sp in specs]
     if kind == 'AA': raw = [[(x*sp[1], y*sp[1]) for x,y in sp[0]] for sp in specs]
-    wsum = sum(ext(P)[0] for P in raw); hmax = max(ext(P)[1] for P in raw)
-    s = min((W-9*(len(raw)-1)-8)/wsum, (y1-y0-10)/hmax)
-    cx = x0 + (W - wsum*s - 9*(len(raw)-1))/2
+    half = (W - 10) / 2; H = y1 - y0 - 8
+    cx0 = [x0 + 2, x0 + 2 + half + 6]
     for i, P in enumerate(raw):
         w, h = ext(P); mnx = min(p[0] for p in P)
-        Q = place([(x-mnx, y) for x, y in P], cx, y0 + (y1-y0 + hmax*s)/2, s); cx += w*s + 9
+        si = min(half / w, H / h) * (0.72 if i == 0 and kind != 'AA' else 1.0)
+        Q = place([(x-mnx, y) for x, y in P], cx0[i] + (half - w*si)/2, y0 + 4 + (H + h*si)/2, si)
         C = cen(Q); out += poly(Q)
         sp = specs[i]
         if kind == 'AA':
             for vi, deg in sp[2]:
-                o = [j for j in range(3) if j != vi]; out += arc(Q[vi], Q[o[0]], Q[o[1]], t=f'{deg}°')
+                o = [j for j in range(3) if j != vi]; out += arc(Q[vi], Q[o[0]], Q[o[1]], r=3.6)
+                v = Q[vi]; out += f'<text x="{v[0]:.1f}" y="{v[1] + 6.5:.1f}" text-anchor="middle" font-size="5" {PEN} fill="{INK}">{deg}°</text>'
         elif kind in ('N', 'SSS'):
             labs = sp[3]; out += side_label(Q[0], Q[1], labs[0], C) + side_label(Q[1], Q[2], labs[1], C) + side_label(Q[2], Q[0], labs[2], C)
         else:
-            labs = sp[3]; out += side_label(Q[0], Q[1], labs[0], C) + side_label(Q[2], Q[0], labs[1], C) + arc(Q[0], Q[1], Q[2], r=4, t='50°')
-    return out
+            labs = sp[3]; out += side_label(Q[0], Q[1], labs[0], C) + side_label(Q[2], Q[0], labs[1], C, off=6.5) + arc(Q[0], Q[1], Q[2], r=6, t='50°', fs=4.4)
+    return carve(out.replace(PEN, STONE))
 
 def pen(x, y, t, fs=4.2, anchor='start', col='#2b1a0a', rot=0):
     r = f' transform="rotate({rot} {x} {y})"' if rot else ''
@@ -70,20 +74,20 @@ def journal41():
     g = '#3a3a3a'; s = ''
     s += pen(17, 37, '절벽 높이 재기', 5) + pen(17, 44.5, '거울을 땅에 놓고', 4.3) + pen(17, 51, '꼭대기가 거울에', 4.3) + pen(17, 57.5, '보이는 곳에 섰다.', 4.3)
     s += pen(17, 65, '높이 =', 4.6) + '<ellipse cx="35" cy="63.5" rx="7.5" ry="3.4" fill="#6b5a44" opacity=".55"/><ellipse cx="38" cy="65" rx="4" ry="2" fill="#6b5a44" opacity=".4"/>'
-    k = 1.05; x0 = 51.5; gy = 60; mx = x0 + 3*k; cx = mx + 24*k; top = gy - 12*k*1.6
-    s += f'<line x1="50" y1="{gy}" x2="{cx+3}" y2="{gy}" stroke="{g}" stroke-width=".7"/>'
-    s += f'<rect x="{cx:.1f}" y="{top:.1f}" width="3" height="{gy-top:.1f}" fill="#bbb" fill-opacity=".35" stroke="{g}" stroke-width=".7"/>'
-    ey = gy - 4
-    s += f'<circle cx="{x0}" cy="{ey-1.2:.1f}" r="1.1" fill="none" stroke="{g}" stroke-width=".6"/><line x1="{x0}" y1="{ey:.1f}" x2="{x0}" y2="{gy}" stroke="{g}" stroke-width=".7"/>'
-    s += f'<rect x="{mx-1.4:.1f}" y="{gy-.7}" width="2.8" height=".9" fill="#3a6ea5"/>'
-    s += f'<polyline points="{x0+.8},{ey-1.2:.1f} {mx:.1f},{gy-.6} {cx:.1f},{top:.1f}" fill="none" stroke="#3a6ea5" stroke-width=".7" stroke-dasharray="1.4 .9"/>'
-    s += pen((x0+mx)/2, gy+5, '3m', 4.4, 'middle') + pen((mx+cx)/2, gy+5, '24m', 4.6, 'middle') + pen(mx+1, gy-2.5, '거울', 3.6, 'start')
+    k = 1.1; x0 = 49.5; gy = 61; mx = x0 + 3*k; cx = mx + 24*k; top = gy - 12*k; ey = gy - 1.5*k
+    s += f'<line x1="48" y1="{gy}" x2="{cx+3}" y2="{gy}" stroke="{g}" stroke-width=".7"/>'
+    s += f'<rect x="{cx:.1f}" y="{top:.1f}" width="2.6" height="{gy-top:.1f}" fill="#bbb" fill-opacity=".35" stroke="{g}" stroke-width=".7"/>'
+    s += f'<circle cx="{x0}" cy="{ey-.5:.1f}" r=".55" fill="none" stroke="{g}" stroke-width=".45"/><line x1="{x0}" y1="{ey:.1f}" x2="{x0}" y2="{gy}" stroke="{g}" stroke-width=".6"/>'
+    s += f'<rect x="{mx-1.2:.1f}" y="{gy-.6}" width="2.4" height=".8" fill="#3a6ea5"/>'
+    s += f'<polyline points="{x0},{ey:.1f} {mx:.1f},{gy-.3} {cx:.1f},{top:.1f}" fill="none" stroke="#3a6ea5" stroke-width=".7" stroke-dasharray="1.4 .9"/>'
+    # 같은 각 표시
+    s += f'<path d="M{mx-2.2:.1f},{gy} A2.2,2.2 0 0 1 {mx-1.5:.1f},{gy-1.4:.1f}" fill="none" stroke="#7a1d10" stroke-width=".5"/><path d="M{mx+2.2:.1f},{gy} A2.2,2.2 0 0 0 {mx+2:.1f},{gy-1.0:.1f}" fill="none" stroke="#7a1d10" stroke-width=".5"/>'
+    s += pen((x0+mx)/2, gy+5, '3m', 4.4, 'middle') + pen((mx+cx)/2, gy+5, '24m', 4.6, 'middle') + pen(mx, gy+9.5, '거울', 3.6, 'middle')
     return s
 def notebook66():
-    s = pen(13, 36, '닮음 표시', 4.8) + pen(13, 44, 'SSS 닮음 = 1', 4.0) + pen(13, 50.5, 'SAS 닮음 = 2', 4.0) + pen(13, 57, 'AA 닮음 = 3', 4.0) + pen(13, 63.5, '닮지 않음 = 0', 4.0)
-    s += pen(44, 36, '— 측량대', 3.6)
-    s += '<g fill="none" stroke="#3b2412" stroke-width=".5"><polygon points="45,58 55,58 48,50"/><polygon points="59,62 74,62 63.5,50"/></g>' + pen(58, 46, '닮은 꼴 찾기!', 3.4)
-    return s
+    t = pen(13, 37, '닮음 표시', 5) + pen(13, 45, 'SSS 닮음 = 1', 4.3) + pen(13, 52, 'SAS 닮음 = 2', 4.3) + pen(13, 59, 'AA 닮음 = 3', 4.3) + pen(13, 66, '닮지 않음 = 0', 4.3)
+    t += '<g fill="none" stroke="#3b2412" stroke-width=".55"><polygon points="46,58 56,58 49,50"/><polygon points="60,62 75,62 64.5,50"/></g>'
+    return f'<g transform="rotate(-2.5 40 50)">{t}</g>'
 
 NOTE = ["뒤따라오는 동|료에게: 나는", "돌문 번호를 알|아내 먼저 간다.", "작은 문 열쇠는 가|짜와 섞어 묻었다.", "진짜는 바위 뒤 그|을음 자국에 맞춰라.",
         "배를 묶은 말뚝(O)|에 10걸음 밧줄을", "매고 팽팽히 당겨, 밧|줄 끝이 강가 길에", "닿는 곳을 파|라. — 검은 갈매기"]
@@ -96,8 +100,8 @@ def note_half(side):
     return s
 def rock48():
     s = ''
-    for x, sym in zip([18, 35, 51.3, 68], ['☀', '☾', '★', '⚓']):
-        s += f'<text x="{x}" y="35" text-anchor="middle" font-size="6" fill="#3b2412" opacity=".85">{sym}</text>'
+    for x, sym in zip([18, 35, 51.3, 68], ['&#9728;', '&#9790;', '&#9733;', '&#9875;']):
+        s += carve(f'<text x="{x}" y="35" text-anchor="middle" font-size="6.5" font-family="DejaVu Sans" fill="{INK}">{sym}&#xFE0E;</text>')
     return s
 def door83():
     A = (48, 19); B = (22, 63); C = (73, 63)
@@ -109,14 +113,14 @@ def door83():
     # 눈금 15칸
     dx, dy = B[0]-A[0], B[1]-A[1]; L = math.hypot(dx, dy); nx, ny = -dy/L, dx/L
     for k in range(1, 15):
-        P = at(A, B, k/15); s += f'<line x1="{P[0]-nx*1.2:.1f}" y1="{P[1]-ny*1.2:.1f}" x2="{P[0]+nx*1.2:.1f}" y2="{P[1]+ny*1.2:.1f}" stroke="{ink}" stroke-width=".5"/>'
+        P = at(A, B, k/15); s += f'<line x1="{P[0]:.1f}" y1="{P[1]:.1f}" x2="{P[0]+nx*1.0:.1f}" y2="{P[1]+ny*1.0:.1f}" stroke="{ink}" stroke-width=".5"/>'
     lab = lambda P, t, ox, oy: f'<text x="{P[0]+ox:.1f}" y="{P[1]+oy:.1f}" text-anchor="middle" font-family="Hahmlet" font-weight="800" font-size="4.2" fill="{ink}">{t}</text>'
     s += lab(A, 'A', 0, -2) + lab(B, 'B', -2.5, 4) + lab(C, 'C', 2.5, 4) + lab(H, 'H', -3, 1) + lab(I, 'I', 3, 1) + lab(F, 'F', -3, 1) + lab(G, 'G', 3, 1)
     for (P, Q), t in [((A, H), '5칸'), ((H, F), '4칸'), ((F, B), '6칸')]:
-        m = at(P, Q, .5); s += pen(m[0]-7.5, m[1]+1, t, 4.0, 'middle', col='#5a1a0a')
+        m = at(P, Q, .5); s += pen(m[0]-6.5, m[1]+1.5, t, 5.2, 'middle', col='#3b1206')
     for P, Q in [(H, I), (F, G), (B, C)]:
         m = at(P, Q, .5); s += f'<path d="M{m[0]-1:.1f},{m[1]-1:.1f} L{m[0]+.6:.1f},{m[1]} L{m[0]-1:.1f},{m[1]+1:.1f}" fill="none" stroke="{ink}" stroke-width=".5"/>'
-    s += '<rect x="74" y="31" width="23" height="7" rx="1.5" fill="#3b2412" opacity=".8"/><text x="85.5" y="36" text-anchor="middle" font-size="3.8" font-family="Hahmlet" font-weight="800" fill="#ffe9a8">FG▢▢·HI▢▢</text>'
+    s += carve(f'<text x="86" y="41.5" text-anchor="middle" font-size="3.6" font-family="Hahmlet" font-weight="800" fill="{INK}">FG▢▢·HI▢▢</text>')
     return s
 
 def slab33():
@@ -141,12 +145,17 @@ def slab33():
     return s + lab(A, 'A', -3.5, -1) + lab(B, 'B', -3.5, 4) + lab(C, 'C', 3, 4) + lab(M, 'M', 3.5, -1) + lab(N, 'N', -1, 5.5)
 def side81():
     ink = '#ffe9a8'; s = ''
-    T = (25, 31); K = (55, 42); W = 70
-    for y in (36, 47):
-        s += f'<line x1="{T[0]}" y1="{T[1]}" x2="{W}" y2="{T[1] + (y-31)*1.5:.1f}" stroke="{ink}" stroke-width=".5" stroke-dasharray="1.4 1" opacity=".9"/>'
+    T = (21.5, 31.5); K1 = (47, 41.5); K2 = (48, 52.5); W = 67
+    def hit(K): return T[1] + (K[1]-T[1])*(W-T[0])/(K[0]-T[0])
+    y1, y2 = hit(K1), hit(K2)
+    for K, y in ((K1, y1), (K2, y2)):
+        s += f'<line x1="{T[0]}" y1="{T[1]}" x2="{W}" y2="{y:.1f}" stroke="{ink}" stroke-width=".5" stroke-dasharray="1.4 1" opacity=".9"/>'
+    s += f'<line x1="{W}" y1="{y1:.1f}" x2="{W}" y2="{y2:.1f}" stroke="#111" stroke-width="2.4" opacity=".75"/>'
     def dim(x1, x2, y, t):
         return (f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{ink}" stroke-width=".7"/><line x1="{x1}" y1="{y-1.5}" x2="{x1}" y2="{y+1.5}" stroke="{ink}" stroke-width=".7"/>'
                 f'<line x1="{x2}" y1="{y-1.5}" x2="{x2}" y2="{y+1.5}" stroke="{ink}" stroke-width=".7"/>' + pen((x1+x2)/2, y-1.8, t, 6, 'middle', col=ink))
-    s += dim(T[0], K[0], 84, '2뼘') + dim(T[0], W, 13, '3뼘')
-    s += pen(T[0], 47, '횃불걸이', 4.8, 'middle', col=ink) + pen(K[0], 35, '열쇠걸이', 4.8, 'middle', col=ink) + pen(W+7, 52, '벽', 5.4, 'middle', col=ink)
+    for x in (T[0], K1[0]+.5, W):
+        s += f'<line x1="{x}" y1="14" x2="{x}" y2="25" stroke="{ink}" stroke-width=".35" stroke-dasharray="1 1" opacity=".7"/>'
+    s += dim(T[0], K1[0]+.5, 19, '2뼘') + dim(T[0], W, 12, '3뼘')
+    s += pen(T[0], 42, '횃불걸이', 4.6, 'middle', col=ink) + pen(K1[0]+9, 46, '열쇠', 4.6, 'start', col=ink) + pen(W+3, 76, '벽', 5.2, 'start', col=ink) + pen(W+3, 61, '그림자', 4.2, 'start', col=ink)
     return s

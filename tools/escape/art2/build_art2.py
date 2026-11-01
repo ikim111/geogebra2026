@@ -29,7 +29,7 @@ for k, v in LAY.items():
     if v.get('py'):
         f = v['py']
         fn, _, arg = f.partition(':')
-        g['OVER'][k] = g['SV'](figs2.pair(arg, (12, 30, 72, 78) if arg == 'AA' else (12, 27, 86, 78)) if fn == 'pair' else (getattr(figs2, fn)(arg) if arg else getattr(figs2, fn)()))
+        g['OVER'][k] = g['SV'](figs2.pair(arg, (12, 30, 74, 76) if arg == 'AA' else (14, 30, 88, 80)) if fn == 'pair' else (getattr(figs2, fn)(arg) if arg else getattr(figs2, fn)()))
 g['ETCH'] = set(g['HID'])
 g['PANEL'] = {k for k, v in LAY.items() if v.get('panel')}
 # front()는 ART+img로 그림을 찾으니 절대경로를 그대로 쓰게 바꿈
@@ -62,6 +62,7 @@ cut = f'''<style>.sheet{{display:grid!important;grid-template-columns:repeat(3,{
 .sheet>.card{{zoom:{Z};outline:none!important}}.cut{{position:absolute;z-index:50;pointer-events:none}}.cut.v{{width:0;border-left:.35mm dashed #333}}.cut.h{{height:0;border-top:.35mm dashed #333}}</style>'''
 cutjs = f'''<script>for(const s of document.querySelectorAll('.sheet')){{const W={W},H={Hh},L=(210-3*W)/2,T=(297-3*H)/2;for(let i=0;i<=3;i++){{const d=document.createElement('div');d.className='cut v';d.style.cssText=`left:${{L+i*W}}mm;top:${{T-5}}mm;height:${{3*H+10}}mm`;s.appendChild(d)}}for(let j=0;j<=3;j++){{const d=document.createElement('div');d.className='cut h';d.style.cssText=`top:${{T+j*H}}mm;left:${{L-5}}mm;width:${{3*W+10}}mm`;s.appendChild(d)}}}}</script>'''
 h = f'<html><head><meta charset="utf-8">{FONTLINKS}<style>{css}</style>{cut}</head><body>{pages}{teacher}{FIT}{cutjs}</body></html>'
+for sym in '☀☾★⚓': h = h.replace(sym, f'<span style="font-family:DejaVu Sans;color:#3b2412">{sym}&#xFE0E;</span>')
 h = re.sub(r',\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)', '', h)
 h = re.sub(r'box-shadow:\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)\s*;?', '', h)
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)

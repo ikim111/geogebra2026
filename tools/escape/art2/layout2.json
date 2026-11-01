@@ -64,10 +64,10 @@
 "img": "a59b.jpg"
 },
 "46": {
-"img": "a46c.jpg"
+"img": "a46d.jpg"
 },
 "55": {
-"img": "a55c.jpg"
+"img": "a55d.jpg"
 },
 "53": {
 "tags": [
@@ -103,7 +103,9 @@
 "py": "journal41"
 },
 "15": {},
-"18": {},
+"18": {
+"img": "a18b.jpg"
+},
 "65": {
 "img": "a65b.jpg",
 "py": "note_half:L"
@@ -261,7 +263,7 @@
 ]
 },
 "81": {
-"img": "a81b.jpg",
+"img": "a81c.jpg",
 "py": "side81"
 },
 "84": {},
