@@ -1,7 +1,7 @@
 # 방탈출 「붉은 나침반」 카드 만들기 도구
 
 학생 화면(escape0.html, escape1.html, escape-core.js/css)은 저장소 맨 위에 있고, 여기에는 **종이 카드 PDF를 만드는 프로그램과 검사용 시뮬레이션**이 있어요.
-자세한 규칙·순서는 스킬 `escape-room`에 있어요.
+자세한 규칙·순서는 스킬 `escape-room`에 있어요. 검토는 `검토기준표_플레이.md`(48점 채점표)와 `검토기준표_카드디자인.md`로 해요.
 
 ## 다시 쓰려면 (새 작업 공간)
 1. `bash tools/escape/restore.sh` 를 실행해요. 이 폴더를 `/tmp/claude-0/escape/`로 복사하고 글꼴을 받아요.

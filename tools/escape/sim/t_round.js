@@ -1,9 +1,9 @@
 // 2·3회 화면 끝까지 풀기 + 오답 + 화면 크기 점검: node t_round.js 2
 const {chromium}=require('playwright');const N=process.argv[2];
-const PLAN={2:[['code','37','0800'],['mach','59',{dial:10}],['mach','27',{pt:[8,6]}],['mach','18',{dial:13}],['code','83','1520']],
-            3:[['code','52','0014'],['mach','36',{dial:24}],['code','75','2010'],['mach','28',{dial:2}],['code','57','0708']]};
-const WRONG={2:[['code','0008','cm'],['code','1510','2 : 3'],['mach','27',{pt:[4,6]},'꺾어'],['mach','18',{dial:17},'더했'],['mach','59',{dial:15},'그림자']],
-             3:[['code','0024','더해요'],['code','2020','순서가 없'],['code','0108','모두 뒷면'],['mach','36',{dial:16},'4 × 4'],['mach','28',{dial:4},'1/2']]};
+const PLAN={2:[['code','37','0800'],['mach','59',{dial:10}],['mach','27',{pt:[8,6]}],['code','41','1200'],['mach','18',{dial:15}],['code','83','1520'],['code','48','3012']],
+            3:[['code','52','0014'],['mach','36',{dial:24}],['code','75','2010'],['mach','28',{dial:7}],['mach','45',{dial:10}],['code','57','0708'],['code','49','0310']]};
+const WRONG={2:[['code','0008','cm'],['code','1510','2 : 3'],['mach','27',{pt:[4,6]},'꺾어'],['mach','18',{dial:21},'더했'],['mach','59',{dial:15},'그림자'],['code','3112','2배'],['code','0012','cm']],
+             3:[['code','0024','더해요'],['code','2020','순서가 없'],['code','0108','모두 뒷면'],['mach','36',{dial:16},'4 × 4'],['mach','28',{dial:14},'1/2'],['mach','45',{dial:6},'다른 경우'],['code','0103','세 개 중']]};
 (async()=>{const b=await chromium.launch();let bad=0;const T=(n,ok,i='')=>{console.log(ok?'✅':'❌',n,i);if(!ok)bad++};
 for(const [w,h,tag] of [[1368,912,'Surface'],[390,844,'폰'],[800,1280,'세로']]){
 const p=await b.newPage({viewport:{width:w,height:h}});const errs=[];p.on('pageerror',e=>errs.push(e.message));

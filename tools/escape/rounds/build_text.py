@@ -17,6 +17,12 @@ FIG = {
 <circle cx="104" cy="60" r="2.5"/><text x="96" y="73">C</text><circle cx="125" cy="60" r="2.5"/><text x="129" y="58">D</text>
 <circle cx="125" cy="74" r="2.5"/><text x="129" y="84">E</text>
 <text x="52" y="72" font-size="9">12m</text><text x="104" y="86" font-size="9">3m</text><text x="131" y="71" font-size="9">2m</text></svg>''',
+ 'mirror': '''<svg width="170" height="92" viewBox="0 0 170 92" font-size="8.5" font-weight="700">
+<line x1="0" y1="80" x2="170" y2="80" stroke="#000"/><rect x="125" y="20" width="14" height="60" fill="#bbb" stroke="#000"/>
+<line x1="15" y1="72.5" x2="15" y2="80" stroke="#000" stroke-width="2.5"/><circle cx="15" cy="72.5" r="2" fill="#000"/>
+<polyline points="15,72.5 25,80 125,20" fill="none" stroke="#1565c0" stroke-dasharray="3 2"/>
+<rect x="21" y="79" width="8" height="2.5" fill="#1565c0"/><text x="19" y="70" font-size="8">거울</text>
+<text x="0" y="66">1.5m</text><text x="14" y="90">2m</text><text x="70" y="90">16m</text><text x="141" y="52">절벽</text></svg>''',
  'tri': '''<svg width="200" height="120" viewBox="0 0 200 120" font-size="10" font-weight="700">
 <polygon points="100,8 20,110 180,110" fill="none" stroke="#000" stroke-width="1.5"/>
 <line x1="60" y1="59" x2="140" y2="59" stroke="#000" stroke-dasharray="3 2"/><line x1="46.7" y1="76" x2="153.3" y2="76" stroke="#000"/>
