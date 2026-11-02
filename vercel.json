@@ -11,6 +11,9 @@
     },
     "api/report-evidence.js": {
       "maxDuration": 60
+    },
+    "api/report-review.js": {
+      "maxDuration": 60
     }
   }
 }
