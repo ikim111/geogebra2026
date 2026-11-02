@@ -103,3 +103,17 @@
       .observe(document.body, { subtree:true, childList:true, attributes:true, attributeFilter:['disabled'] });
   }
 })();
+
+/* 새로고침해도 보던 쪽 그대로 (2026-11-02 선생님 요청: 7.1 복사기 5쪽 보다가 새로고침하면 1쪽으로 돌아가서 불편)
+   쪽 번호를 이 기기에 활동마다 기억했다가, 다시 열면 그 쪽을 보여 준다. 교사 미리보기는 그대로. */
+(function(){try{
+  if(typeof showPage!=='function' || typeof pages==='undefined') return;
+  if(new URLSearchParams(location.search).get('preview')) return;
+  var K='ggbPage:'+location.pathname, orig=showPage;
+  window.showPage=function(i){ orig(i); try{ localStorage.setItem(K, String(currentPage)); }catch(e){} };
+  var saved=null; try{ saved=parseInt(localStorage.getItem(K),10); }catch(e){}   // 열 때 값을 먼저 읽어 둠(시작할 때 1쪽으로 덮어쓰기 전에)
+  var go=function(){ if(saved>0 && saved<pages.length) window.showPage(saved); };
+  var app=document.getElementById('appScreen');
+  if(app && app.style.display==='block') go();
+  else if(typeof startApp==='function'){ var o=startApp; window.startApp=function(p){ o(p); go(); }; }
+}catch(e){}})();
