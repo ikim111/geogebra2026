@@ -12,7 +12,7 @@
 - **이 파일은 Claude가 스스로 고쳐 둔다.** 선생님이 새 규칙이나 결정(디자인 색, 작업 방식, 하지 말 것 등)을 말하거나 바꾸면, 따로 시키지 않아도 그 작업을 커밋할 때 이 파일도 함께 고치고 "CLAUDE.md에도 적어 뒀어요"라고 한 줄 알린다. 한 번만 쓰는 지시는 적지 않는다.
 - **자세한 요청은 들은 즉시 `요청기록.md`에 적는다**(긴 대화는 요약되며 잊힌다). "전에 말한 거" 질문에는 이 파일을 먼저 보고 답하고, "까먹었다"고 하지 않는다(2026-11-02).
 - **만든 파일(PDF 등)은 채팅에 보낼 때마다 학교 원드라이브 `내 파일/09. Claude` 폴더에도 `날짜_파일이름`으로 올린다**(창 위로 올려 찾지 않게, 2026-11-02).
-  방법: 크롬에서 그 폴더를 열고(선생님 학교 계정 로그인돼 있음) 페이지에 숨은 file input을 만들어 file_upload(스크래치패드 경로, 10MB 이하) → SharePoint REST `_api/contextinfo` 다이제스트로 `GetFolderByServerRelativeUrl(...)/Files/add` 호출. 10MB가 넘으면 나눠 올린다.
+  방법 ①(먼저): 맥북 원드라이브 동기화 폴더 `/Users/gimhyeongjun/Library/CloudStorage/OneDrive-신도림중학교/09. Claude`가 연결돼 있으면 `/mnt/user-data/outputs/`에 두고 device_commit_files로 넣는다(30MB까지, 자동 동기화). ② 안 되면 크롬에서 폴더를 열어 숨은 file input + SharePoint REST `Files/add`(10MB까지). ③ 둘 다 안 되면 못 올린 파일 이름을 알린다.
 
 ## 고친 뒤 배포 순서
 1. `node tools/check.js` — 문법 검사 + 학생 화면 32개 휴대폰 폭·글상자 잘림 점검. ❌가 있으면 고치고 다시.
