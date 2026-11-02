@@ -23,6 +23,20 @@ for (const f of fs.readdirSync(ROOT).filter(f => f.endsWith('.js'))) check(path.
 for (const f of fs.readdirSync(path.join(ROOT, 'api')).filter(f => f.endsWith('.js'))) check(path.join(ROOT, 'api', f), 'api/' + f);
 console.log(`1) 문법 검사: html ${htmls.length}개 + js 끝`);
 
+// 1-2) 파일 이름 검사 (2026-11-02): 맥에서 GitHub 웹으로 올리면 한글이 풀어쓴 꼴(NFD)로 들어가
+//   같은 이름 파일이 둘이 되고, 맥에서 clone할 때 "이름이 겹친다" 경고가 난다.
+try {
+  const names = execFileSync('git', ['-c', 'core.precomposeunicode=false', 'ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+  const seen = new Map();
+  for (const n of names) {
+    if (n !== n.normalize('NFC')) fail('한글이 풀어쓴 꼴인 파일 이름(모아쓴 꼴로 바꾸기):', n.normalize('NFC'));
+    const k = n.normalize('NFC').toLowerCase();
+    if (seen.has(k)) fail('맥에서 겹치는 파일 이름:', n.normalize('NFC'), '↔', seen.get(k).normalize('NFC'));
+    else seen.set(k, n);
+  }
+  console.log(`1-2) 파일 이름 검사: ${names.length}개 끝`);
+} catch (e) { console.log('⚠️ git이 없어 파일 이름 검사는 건너뜀'); }
+
 // 2)·3) 화면 점검
 let pw; try { pw = require('playwright'); } catch (e) { console.log('⚠️ playwright가 없어 화면 점검(2·3)은 건너뜀'); finish(); return; }
 (async () => {
