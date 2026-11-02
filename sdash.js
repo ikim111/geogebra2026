@@ -115,5 +115,5 @@
   var go=function(){ if(saved>0 && saved<pages.length) window.showPage(saved); };
   var app=document.getElementById('appScreen');
   if(app && app.style.display==='block') go();
-  else if(typeof startApp==='function'){ var o=startApp; window.startApp=function(p){ o(p); go(); }; }
+  else if(typeof startApp==='function'){ var o=startApp; window.startApp=function(){ var r=o.apply(this, arguments); go(); return r; }; }
 }catch(e){}})();
