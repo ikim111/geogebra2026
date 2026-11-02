@@ -61,7 +61,7 @@
   const TYPE_OF = { student1:'think', student5:'think', student11:'think', student13:'think', student15:'think', student21:'think', student31:'think', student32:'think', student34:'think', student35:'think', student36:'think',
     student2:'explore', student3:'explore', student4:'explore', student16:'explore', student17:'explore',
     student0:'talk', student6:'talk', student12:'talk', student14:'talk', student22:'talk', student23:'talk', student39:'talk', student40:'talk',
-    student7:'pa', studentpa1:'pa', studentpa2:'pa', studentpa3:'pa' };
+    student7:'pa', studentpa1:'pa', studentpa2:'pa', studentpa3:'pa', studentpa4:'pa' };
   const pg = (location.pathname.match(/(student[a-z]*\d+)\.html$/) || [])[1], ty = TYPES[TYPE_OF[pg]];
   if(ty){
     const [lab, c, soft] = ty, txt = c === '#f9a825' ? '#9a6700' : c;

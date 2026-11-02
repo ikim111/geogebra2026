@@ -239,6 +239,7 @@ const SECTIONS = [
         {n:23, label:3, title:'8.3. 확률의 기본 성질 의사소통 - 말 속에서 확률 찾기', file:'student23.html'},
         {n:24, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ① 질문·계획·자료 탐구', file:'studentpa2.html'},
         {n:25, label:'📝', title:'수행평가 - 확률 탐구 글쓰기 ② 보고서 제출', file:'studentpa3.html'},
+        {n:26, label:'📊', title:'수행평가 - 확률 탐구 글쓰기 ③ 점수 확인하기', file:'studentpa4.html'},
         {n:93, label:'🔗', title:'8. 경우의 수와 확률 (Snorkl)', external:true, url:'https://student.snorkl.app/zjgcy8'},
         {n:94, label:'🔗', title:'8단원 마무리하기 (Snorkl)', external:true, url:'https://student.snorkl.app/mtsrde'}
       ]}
@@ -283,7 +284,7 @@ function saveProfile(p){
 /* 🏷 활동 종류 색(2026-10-27 선생님 분류): 활동 칸 왼쪽 줄 — sdash.js의 활동 화면 색과 같게 */
 const TYPE_COLOR = { think:'#1565c0', explore:'#00897b', talk:'#d81b60', pa:'#f9a825' };
 const TYPE_BY_N = {1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',
-  2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa',8:'pa',24:'pa',25:'pa'};
+  2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa',8:'pa',24:'pa',25:'pa',26:'pa'};
 /* 🏷 2026-10-28 활동 제목 두 줄: "8.2. 확률의 뜻 생각열기 - 동전을 …" → 윗줄(작게) "8.2 확률의 뜻 · 생각열기" + 아랫줄(크게) 질문.
    " - "가 없는 제목은 그대로 한 줄. 종류 이름은 그 종류 색 글씨로. */
 function fillTitle2(el, text, color){

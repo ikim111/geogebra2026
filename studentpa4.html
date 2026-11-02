@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26. 확률 탐구 글쓰기 ③ 점수 확인하기</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🎓</text></svg>">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --ai:#7b1fa2; --line:#d5d9de; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;padding:0;color:#222;line-height:1.6;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;gap:10px;align-items:center;}
+  #unitTitleBar{flex:1;font-size:13.5px;font-weight:bold;color:#fff;background:#1a237e;border-radius:8px;padding:7px 14px;text-align:center;}
+  #stickyBar a{flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 30px;}
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a237e;padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.25);text-align:center;font-size:14px;}
+  .gate-card h1{font-size:18px;margin:0 0 12px;color:#1a237e;}
+  #appScreen{display:none;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card h2{font-size:17px;margin:0 0 4px;}
+  .muted{color:#777;font-size:13px;}
+  .big{font-size:34px;font-weight:bold;color:#1a237e;}
+  .item{border-top:1px solid #eceef3;padding:10px 0 6px;}
+  .item h4{margin:0 0 4px;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
+  .ck{display:flex;gap:6px;margin:3px 0;font-size:14px;}
+  .ck .o{color:var(--green);font-weight:bold;flex:none;width:18px;} .ck .x{color:var(--red);font-weight:bold;flex:none;width:18px;}
+  .ai-line{border-left:5px solid var(--ai);}
+  .row{display:flex;gap:8px;margin:7px 0;}
+  .tag{flex:none;font-size:12px;font-weight:bold;color:#fff;border-radius:10px;padding:1px 8px;height:fit-content;}
+  .btn{border:1px solid #ccc;background:#fff;border-radius:8px;padding:6px 14px;min-height:44px;cursor:pointer;font-family:inherit;font-size:14px;}
+  .rep{border:1px solid #ef9a9a;background:#fff;color:var(--red);border-radius:8px;padding:4px 12px;min-height:44px;cursor:pointer;font-size:13.5px;font-family:inherit;}
+  .sec{margin-top:12px;} .sec b{display:block;font-size:14px;color:#1a237e;}
+  .sec p{margin:4px 0 0;white-space:pre-wrap;word-break:break-word;font-size:14.5px;}
+</style>
+</head>
+<body>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <h1>26. 확률 탐구 글쓰기 ③ 점수 확인하기</h1>
+    <div id="gateMsg">불러오는 중…</div>
+    <a href="student.html" style="display:inline-block;margin-top:14px;font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (예시 내용이에요)</div>
+  <div id="stickyBar"><a href="student.html" title="과제 목록으로">🏠</a><div id="unitTitleBar">26. 확률 탐구 글쓰기 ③ 점수 확인하기</div></div>
+  <div class="wrap">
+    <div class="card" id="scoreCard"></div>
+    <div class="card ai-line" id="reviewCard" style="display:none;"></div>
+    <div class="card" id="reportCard"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   26. 확률 탐구 글쓰기 ③ 점수 확인하기 (2026-11-02 선생님 요청, 시안 승인)
+   2부(__prob33)의 내 기록을 읽기만 한다 — 아무것도 저장하지 않는다.
+   - 점수: 항목마다 선생님이 고친 점수(teacherGrade)가 있으면 그것, 없으면 AI 점수(aiGrade.scores). AI 채점 이유 문장은 보여 주지 않는다.
+   - ○✕: teacherChecks가 있으면 그것, 없으면 AI ○✕ (tpa3의 aiChecksOf와 같게: 자료 0점이면 모두 ✕).
+   - 보고서 피드백: aiReview(tpa3의 📝 보고서 피드백). 없으면 상자를 숨긴다.
+   단원 열기는 교사 목차에서(rooms/{반}__access/units/26).
+   ============================================================ */
+const PREVIEW_MODE = new URLSearchParams(location.search).get('preview') === '1';
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const REPORT_SUFFIX = '__prob33';   // 2부 보고서 기록(studentpa3·tpa3와 같음)
+const UNIT_NO = 26;
+const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
+const SCORE_MAX = 15;
+const CHECK_LABELS = {   // tpa3의 CHECK_LABELS와 같게
+  question: ['탐구 질문을 썼다', '확률을 구하는 질문이다', '예측형·비교선택형 질문이다'],
+  data: ['자료 1이 탐구 질문에 맞다', '자료 2가 질문에 맞고 자료 1과 다른 정보다', '확률 계산에 필요한 수치를 모두 얻을 수 있다'],
+  analysis: ['자료 1의 수치를 본론에 활용했다', '자료 2의 수치를 본론에 활용했다', '분자·분모를 올바르게 정했다', '분수·소수로 올바르게 계산했다'],
+  logic: ['서론 150자 이상', '본론 500자 이상', '결론 150자 이상', '확률값의 뜻을 알맞게 해석했다', '결론에 탐구 질문의 답이 있다'] };
+const CHECK_KEY = { question:'qchecks', data:'dchecks', analysis:'achecks', logic:'lchecks' };
+const $ = id => document.getElementById(id);
+const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sanitize = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
+const isNum = v => typeof v==='number' && isFinite(v);
+
+function checksOf(s, k){
+  const n = CHECK_LABELS[k].length, t = s.teacherChecks && s.teacherChecks[k];
+  if(typeof t==='string' && t.length===n) return t;
+  const ai = s.aiGrade, c = ai ? String(ai[CHECK_KEY[k]]||'') : '';
+  if(c.length !== n) return '';
+  if(k==='data' && ai.scores && ai.scores.data===0) return 'XXX';
+  return c;
+}
+function paintScore(s){
+  const tg = s.teacherGrade || {}, ai = (s.aiGrade && s.aiGrade.scores) || {};
+  const items = CRITERIA.map(c=>({ ...c, v: isNum(tg[c.k]) ? tg[c.k] : (isNum(ai[c.k]) ? ai[c.k] : null) }));
+  if(items.every(it=> it.v==null)){ $('scoreCard').innerHTML = '<h2>📊 내 점수</h2><div class="muted">아직 점수가 정해지지 않았어요. 선생님이 채점을 마치면 여기에 보여요.</div>'; return; }
+  const total = items.reduce((a,it)=> a + (it.v||0), 0);
+  let h = `<h2>📊 내 점수</h2><div><span class="big">${total}</span> / ${SCORE_MAX}점</div><div class="muted">선생님이 확인한 최종 점수예요.</div>`;
+  items.forEach((it,i)=>{
+    const ck = checksOf(s, it.k);
+    h += `<div class="item"><h4><span>${i+1}. ${it.name}</span><span>${it.v==null?'-':it.v} / ${it.max}점</span></h4>`
+      + (ck ? CHECK_LABELS[it.k].map((t,j)=>`<div class="ck"><span class="${ck[j]==='O'?'o':'x'}">${ck[j]==='O'?'○':'✕'}</span><span>${esc(t)}</span></div>`).join('') : '')
+      + '</div>';
+  });
+  $('scoreCard').innerHTML = h;
+}
+function paintReview(r){
+  const box = $('reviewCard');
+  if(!r || !r.good){ box.style.display = 'none'; return; }
+  const row = (tag, col, body) => `<div class="row"><span class="tag" style="background:${col}">${tag}</span><span>${body}</span></div>`;
+  let h = `<h2>📝 보고서 피드백</h2><div class="muted">점수와 상관없이, 탐구를 더 좋게 만드는 방법이에요. AI라서 틀릴 수 있으니 내 글과 비교해 보세요.</div>`;
+  if(r.goal) h += `<div style="color:#555;margin:6px 0;">🎯 내 글의 질문: ${esc(r.goal)}</div>`;
+  h += row('잘된 점', '#2e7d32', esc(r.good));
+  (r.fixes||[]).forEach(f=>{ h += row('보완할 점', '#e65100', esc(f.text) + (f.how ? `<div style="margin-top:3px;">👉 ${esc(f.how)}</div>` : '')); });
+  if(r.next) h += row('생각해 볼 질문', '#1565c0', esc(r.next));
+  h += `<div style="text-align:right;margin-top:8px;"><button type="button" class="rep" id="rvWrong">🚩 AI가 틀린 것 같아요</button></div>`;
+  box.innerHTML = h; box.style.display = 'block';
+  $('rvWrong').onclick = ()=>{
+    if(!window.reportOpen){ alert('신고 창을 불러오지 못했어요. 새로고침 후 다시 눌러 주세요.'); return; }
+    window.reportOpen({ kind:'ai', unit:'수행평가3부 보고서 피드백', fb:{ good:[r.good], fix:(r.fixes||[]).map(f=> f.text + (f.how ? ' → '+f.how : '')), a:r.next||'' } });
+  };
+}
+let repOpen = false;
+function paintReport(d){
+  d = d || {};
+  const str = x => typeof x==='string' ? x : '';
+  const srcs = (Array.isArray(d.sources) ? d.sources : Object.values(d.sources||{})).map(x=> x && str(x.name).trim()).filter(Boolean);
+  let h = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h2>📄 내 보고서</h2><button type="button" class="btn" id="repToggle">${repOpen?'접기':'펼치기'}</button></div><div class="muted">제출한 글을 읽기만 할 수 있어요.</div>`;
+  if(repOpen){
+    if(!(str(d.title)||str(d.intro)||str(d.body)||str(d.concl))) h += '<div class="muted" style="margin-top:8px;">쓴 글이 없어요.</div>';
+    else [['제목',d.title],['서론',d.intro],['본론',d.body],['결론',d.concl]].forEach(([n,t])=>{ if(str(t).trim()) h += `<div class="sec"><b>${n}</b><p>${esc(t)}</p></div>`; });
+    if(srcs.length) h += `<div class="sec"><b>자료</b><p>${srcs.map((x,i)=>`${i+1}. ${esc(x)}`).join('\n')}</p></div>`;
+  }
+  $('reportCard').innerHTML = h;
+  $('repToggle').onclick = ()=>{ repOpen = !repOpen; paintReport(d); };
+}
+function showApp(s){
+  $('gateScreen').style.display = 'none'; $('appScreen').style.display = 'block';
+  paintScore(s); paintReview(s.aiReview); paintReport(s.data);
+}
+
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  showApp({
+    data:{ title:'(예시) 2027년 기아와 삼성 중 누가 더 자주 이길까?', intro:'(예시) 학생이 쓴 서론이 여기에 보여요.', body:'(예시) 본론', concl:'(예시) 결론', sources:[{name:'KBO 기록실'}] },
+    aiGrade:{ scores:{question:3,data:2,analysis:3,logic:4}, qchecks:'OOO', dchecks:'OXO', achecks:'OOOX', lchecks:'OOOXO' },
+    aiReview:{ goal:'2027년 기아와 삼성 중 누가 더 자주 이길까요?', good:'(예시) 삼성이 2026년에만 잘한 것인지 보려고 2025년 기록도 비교했어요.', fixes:[{text:'(예시) 다른 팀과 한 경기 기록만으로는 맞대결 결과를 알 수 없어요.', how:'두 팀이 서로 맞붙은 경기의 승·무·패를 찾아 비교해 보세요.'}], next:'(예시) 맞대결 기록을 비교하면 무엇이 달라질까요?' }
+  });
+} else {
+  (function init(){
+    let p = null; try{ p = JSON.parse(localStorage.getItem('ggb_profile_v1')||'null'); }catch(e){}
+    if(!(p && p.classNo && p.name)){ $('gateMsg').innerHTML = '⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>과제 목록에서 먼저 입력해 주세요.'; return; }
+    try{
+      if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.auth().signInAnonymously().then(async ()=>{
+        const db = firebase.database(), cls = sanitize(p.classNo);
+        const open = (await db.ref('rooms/'+cls+'__access/units/'+UNIT_NO).once('value')).val() === true;
+        if(!open){ $('gateMsg').innerHTML = '🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어 주시면 볼 수 있어요.'; return; }
+        const ref = db.ref('rooms/'+cls+REPORT_SUFFIX+'/students/'+sanitize(p.number)+'_'+sanitize(p.name));
+        const parts = ['data','aiGrade','teacherGrade','teacherChecks','aiReview'];
+        const vals = await Promise.all(parts.map(k=> ref.child(k).once('value').then(sn=> sn.val()).catch(()=> null)));
+        const s = {}; parts.forEach((k,i)=> s[k] = vals[i]);
+        showApp(s);
+      }).catch(()=>{ $('gateMsg').textContent = '연결하지 못했어요. 새로고침해 보세요.'; });
+    }catch(e){ $('gateMsg').textContent = '연결하지 못했어요. 새로고침해 보세요.'; }
+  })();
+}
+</script>
+<script src="report.js"></script>
+<script src="sdash.js"></script>
+</body>
+</html>
