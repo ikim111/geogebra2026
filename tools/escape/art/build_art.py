@@ -156,11 +156,8 @@ if __name__=='__main__':
 if __name__=='__main__':
     p=ART+'out/cards_art.html';h=open(p,encoding='utf-8').read()
     # CUTLAYOUT: 프린터 여백 확보 + 또렷한 점선
-    Z=.93;W=round(70*Z,2);H=round(99*Z,2)
-    h=h.replace('</head>',f'''<style>.sheet{{display:grid!important;grid-template-columns:repeat(3,{W}mm)!important;grid-auto-rows:{H}mm!important;gap:0!important;width:210mm!important;height:297mm!important;padding:{(297-3*H)/2:.2f}mm 0 0 0!important;justify-content:center!important;align-content:start!important;position:relative}}
-.sheet>.card{{zoom:{Z};outline:none!important}}.cut{{position:absolute;z-index:50;pointer-events:none}}.cut.v{{width:0;border-left:.35mm dashed #333}}.cut.h{{height:0;border-top:.35mm dashed #333}}
-.cut.v:before,.cut.h:before{{content:"";position:absolute;inset:0;border:inherit;border-color:rgba(255,255,255,.85);transform:translate(.35mm,.35mm)}}</style></head>''')
-    h=h.replace('</body>',f'''<script>for(const s of document.querySelectorAll('.sheet')){{const W={W},H={H},L=(210-3*W)/2,T=(297-3*H)/2;for(let i=0;i<=3;i++){{const d=document.createElement('div');d.className='cut v';d.style.cssText=`left:${{L+i*W}}mm;top:${{T-5}}mm;height:${{3*H+10}}mm`;s.appendChild(d)}}for(let j=0;j<=3;j++){{const d=document.createElement('div');d.className='cut h';d.style.cssText=`top:${{T+j*H}}mm;left:${{L-5}}mm;width:${{3*W+10}}mm`;s.appendChild(d)}}}}</script></body>''')
+    import sys,os;sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..'));from cutlayout import cut_css_js
+    _c,_j=cut_css_js('#2b2418');h=h.replace('</head>',_c+'</head>');h=h.replace('</body>',_j+'</body>')
     h=re.sub(r',\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)','',h)
     h=re.sub(r'box-shadow:\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)\s*;?','',h)
     h=re.sub(r'filter:drop-shadow\([^)]*\)','',h)

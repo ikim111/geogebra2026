@@ -57,11 +57,8 @@ for i in range(0, len(cards), 9):
 tx = open(os.path.join(HERE, '..', 'rounds', 'out', f'방탈출{N}회_글카드.html'), encoding='utf-8').read()
 teacher = tx[tx.index('<div class="sheet"><h1>'):tx.rindex('</body>')].replace('<div class="sheet">', '<div class="tsheet">', 1)
 css = g['CSS'] + NOTE + '.tsheet{padding:10mm 12mm;font-size:9pt;page-break-before:always}.tsheet table{border-collapse:collapse;width:100%;font-size:7.5pt;margin-bottom:6px}.tsheet td,.tsheet th{border:1px solid #999;padding:3px;vertical-align:top}.tsheet h2{font-size:11pt;margin:10px 0 4px}'
-Z = .9; G = 4; W = round(70*Z, 2); Hh = round(99*Z, 2)   # G: 카드 사이 틈(mm) — 양면 인쇄가 밀려도 흰 줄이 안 생기게
-GW = 3*W + 2*G; GH = 3*Hh + 2*G; L0 = (210-GW)/2; T0 = (297-GH)/2
-cut = f'''<style>.sheet{{display:grid!important;grid-template-columns:repeat(3,{W}mm)!important;grid-auto-rows:{Hh}mm!important;gap:{G}mm!important;width:210mm!important;height:297mm!important;box-sizing:border-box!important;padding:{T0:.2f}mm 0 0 0!important;justify-content:center!important;align-content:start!important;position:relative}}
-.sheet>.card{{zoom:{Z};outline:none!important;position:relative;z-index:1}}.sheet>.bleed{{position:absolute;z-index:0;left:{L0-G/2:.2f}mm;top:{T0-G/2:.2f}mm;width:{GW+G:.2f}mm;height:{GH+G:.2f}mm;background:#14223a}}.cut{{position:absolute;z-index:50;pointer-events:none}}.cut.v{{width:0;border-left:.3mm dashed #888}}.cut.h{{height:0;border-top:.3mm dashed #888}}</style>'''
-cutjs = f'''<script>for(const s of document.querySelectorAll('.sheet')){{const b=document.createElement('div');b.className='bleed';s.prepend(b);const W={W},H={Hh},G={G},L={L0:.3f},T={T0:.3f};if(s.querySelector('.bk2'))continue;const xs=[L-G/2,L+W+G/2,L+2*W+1.5*G,L+3*W+2.5*G],ys=[T-G/2,T+H+G/2,T+2*H+1.5*G,T+3*H+2.5*G];for(const x of xs){{const d=document.createElement('div');d.className='cut v';d.style.cssText=`left:${{x}}mm;top:${{ys[0]-4}}mm;height:${{ys[3]-ys[0]+8}}mm`;s.appendChild(d)}}for(const y of ys){{const d=document.createElement('div');d.className='cut h';d.style.cssText=`top:${{y}}mm;left:${{xs[0]-4}}mm;width:${{xs[3]-xs[0]+8}}mm`;s.appendChild(d)}}}}</script>'''
+import sys as _s; _s.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
+cut, cutjs = cut_css_js('#14223a')
 h = f'<html><head><meta charset="utf-8">{FONTLINKS}<style>{css}</style>{cut}</head><body>{pages}{teacher}{FIT}{cutjs}</body></html>'
 for sym in '☀☾★⚓': h = h.replace(sym, f'<span style="font-family:DejaVu Sans;color:#3b2412">{sym}&#xFE0E;</span>')
 h = re.sub(r',\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)', '', h)
