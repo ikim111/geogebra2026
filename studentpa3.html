@@ -250,7 +250,6 @@
       </ol>
     </div>
     <div id="aiFbPanel" style="display:none;"></div>
-    <div id="aiRvPanel" style="display:none;"></div>
     <div id="taskContainer">
 
 <section class="task" id="task-r1" data-task-id="1">
@@ -730,8 +729,7 @@ const RT = {
     this.studentRef.onDisconnect().update({ online:false, lastActive: firebase.database.ServerValue.TIMESTAMP });
     this.db.ref('rooms/' + this.sanitize(room) + PREP_SUFFIX + '/students/' + this.studentKey + '/data').once('value')
       .then(snap=> renderPrep(snap.val())).catch(()=> renderPrep(null));
-    this.studentRef.child('aiGrade').on('value', sg=>{ FBV.g = sg.val() || null; paintAiFb(); });
-    this.studentRef.child('aiReview').on('value', sr=>{ FBV.rv = sr.val() || null; paintAiFb(); });   // 📝 보고서 피드백(2026-11-02)   // 👀 AI 1차 피드백
+    this.studentRef.child('aiGrade').on('value', sg=>{ FBV.g = sg.val() || null; paintAiFb(); });   // 👀 AI 1차 피드백
     this.studentRef.child('fbShowMe').on('value', sn=>{ FBV.me = !!sn.val(); paintAiFb(); });   // 👀 결석생에게만 피드백 보여 주기
     this.studentRef.child('pass2').on('value', sn=>{ this._p2 = sn.val() || null; this._p2Done = false; this.applyClassState(); });   // 🎫 결석생 이용권
     this.studentRef.child('spell').on('value', sp=>{ const v = sp.val() || {}; SPELL.day = v.day||''; SPELL.n = +v.n||0; SPELL.total = +v.total||0; paintSpell(); });
@@ -1027,29 +1025,8 @@ function paintPass2(endAt){
   const tick = ()=>{ const left = +bar.dataset.end - (Date.now() + (RT._tOff||0)); if(left <= 0){ RT.applyClassState(); return; } const m = Math.floor(left/60000), sec = Math.floor(left/1000)%60; document.getElementById('p2Left').textContent = m+'분 '+String(sec).padStart(2,'0')+'초'; };
   tick(); if(!__p2Tick) __p2Tick = setInterval(tick, 1000);
 }
-/* 📝 2026-11-02 보고서 피드백(점수 없음) — AI 1차 피드백과 같은 공개 설정을 따르고, 그 아래 따로 상자로 보여 준다 */
-function paintAiRv(){
-  const box = document.getElementById('aiRvPanel'); if(!box) return;
-  const r = FBV.rv;
-  if(!(FBV.show || FBV.me) || !r || !r.good){ box.style.display = 'none'; return; }
-  const e = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const row = (tag, col, body) => `<div style="display:flex;gap:8px;margin:6px 0;"><span style="flex:none;font-size:12px;font-weight:bold;color:#fff;background:${col};border-radius:10px;padding:1px 8px;height:fit-content;">${tag}</span><span>${body}</span></div>`;
-  let h = `<b style="font-size:16px;">📝 보고서 피드백</b><div style="font-size:12.5px;color:#666;margin:4px 0 6px;">점수와 상관없이, 탐구를 더 좋게 만드는 방법이에요. AI라서 틀릴 수 있으니 내 글과 비교해 보세요.</div>`;
-  if(r.goal) h += `<div style="color:#555;margin:4px 0;">🎯 내 글의 질문: ${e(r.goal)}</div>`;
-  h += row('잘된 점','#2e7d32', e(r.good));
-  (r.fixes||[]).forEach(f=>{ h += row('보완할 점','#e65100', e(f.text) + (f.how ? `<div style="margin-top:3px;">👉 ${e(f.how)}</div>` : '')); });
-  if(r.next) h += row('생각해 볼 질문','#1565c0', e(r.next));
-  h += `<div style="text-align:right;margin-top:8px;"><button type="button" id="aiRvWrong" style="border:1px solid #ef9a9a;background:#fff;color:#c62828;border-radius:8px;padding:4px 12px;min-height:44px;cursor:pointer;font-size:13.5px;">🚩 AI가 틀린 것 같아요</button></div>`;
-  box.innerHTML = h;
-  box.style.cssText = 'display:block;background:#fff;border:1px solid #d5d8e0;border-left:5px solid #7b1fa2;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14.5px;line-height:1.55;';
-  document.getElementById('aiRvWrong').onclick = ()=>{
-    if(!window.reportOpen){ alert('신고 창을 불러오지 못했어요. 새로고침 후 다시 눌러 주세요.'); return; }
-    window.reportOpen({ kind:'ai', unit:'수행평가2부 보고서 피드백', fb:{ good:[r.good], fix:(r.fixes||[]).map(f=>f.text+(f.how?' → '+f.how:'')), a:r.next||'' } });
-  };
-}
 const FB_ITEMS = [['question','탐구 질문'],['data','자료 수집'],['analysis','자료 분석'],['logic','글의 논리']];
 function paintAiFb(){
-  paintAiRv();
   const box = document.getElementById('aiFbPanel'); if(!box) return;
   const g = FBV.g, fb = g && g.fb;
   if(!(FBV.show || FBV.me) || !fb){ box.style.display = 'none'; return; }

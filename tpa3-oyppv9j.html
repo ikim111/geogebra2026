@@ -711,14 +711,14 @@ function gradeBoxHTML(key, s){
   return h;
 }
 /* 📝 2026-11-02 보고서 피드백(채점과 따로, 점수 없음): /api/report-review → students/{key}/aiReview = {goal, good, fixes:[{stage,text,how,quote}], next, design, hash, ts, model}
-   학생에게 보이는 것은 AI 1차 피드백과 같은 공개 버튼(control/fbShow, 학생별 fbShowMe)을 따른다 */
+   2026-11-02 선생님 요청: 👀 공개(2부)에는 채점 기준 피드백만 — 이 피드백은 학생에게 보이지 않고, 나중에 3부 점수 확인하기 화면에서 보여 준다 */
 var reviewPending = new Set();
 var reviewBulkRunning = false;
 function reviewBoxHTML(key, s){
   if(!hasReport(s)) return '';
   const r = s.aiReview, pending = reviewPending.has(key);
   const when = r && r.ts ? new Date(r.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  let h = `<div class="gr-box rv-box"><div class="gr-hd"><span>📝 보고서 피드백 <span class="note">점수와 별개 · 학생 공개는 👀 버튼을 따라요${when?' · '+esc(when):''}</span></span>
+  let h = `<div class="gr-box rv-box"><div class="gr-hd"><span>📝 보고서 피드백 <span class="note">점수와 별개 · 학생에게는 안 보여요(3부 점수 확인하기에서 보여 줄 예정)${when?' · '+esc(when):''}</span></span>
     <button class="gr-ai" data-review-ai="${esc(key)}" ${pending?'disabled':''}>${pending ? '📝 받는 중… (10~40초)' : (r ? '↻ 다시 받기' : '📝 보고서 피드백 받기')}</button></div>`;
   if(!r) return h + '</div>';
   if(r.hash && r.hash !== repHash(s)) h += `<div class="gr-warn">⚠️ 피드백을 받은 뒤에 학생이 글을 고쳤어요. "다시 받기"를 눌러 보세요.</div>`;
@@ -761,7 +761,7 @@ function paintReviewBtn(){
 }
 document.getElementById('reviewBulkBtn').addEventListener('click', async ()=>{
   const t = reviewTargetKeys(), keys = t.keys; if(!keys.length) return;
-  if(!confirm(`${t.checked?'체크한':'글을 쓴'} 학생 ${keys.length}명의 보고서 피드백(점수 없음)을 받을까요?\n(한 번에 6명씩 처리해요. 학생에게는 👀 공개를 켰을 때만 보여요)`)) return;
+  if(!confirm(`${t.checked?'체크한':'글을 쓴'} 학생 ${keys.length}명의 보고서 피드백(점수 없음)을 받을까요?\n(한 번에 6명씩 처리해요. 학생에게는 아직 안 보여요)`)) return;
   reviewBulkRunning = true; paintReviewBtn();
   const st = document.getElementById('gradeBulkStatus');
   let ok=0, fail=[], i=0;
