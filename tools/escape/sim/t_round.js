@@ -1,9 +1,9 @@
 // 2·3회 화면 끝까지 풀기 + 오답 + 화면 크기 점검: node t_round.js 2
 const {chromium}=require('playwright');const N=process.argv[2];
 const PLAN={2:[['mach','37',{dial:8}],['mach','59',{dial:9}],['mach','27',{pt:[8,6]}],['mach','18',{dial:13}],['code','83','1810'],['code','48','3012']],
-            3:[['code','52','0014'],['mach','36',{dial:24}],['code','75','2010'],['mach','28',{dial:19}],['mach','45',{dial:21}],['code','57','0708'],['mach','49',{dial:7}]]};
+            3:[['code','52','1214'],['mach','36',{wh:24}],['mach','28',{cnt:19}],['mach','45',{dial:21}],['code','57','1516'],['code','75','2025'],['mach','49',{pick:['4','8','12','16','20','7','14']}]]};
 const WRONG={2:[['mach','37',{dial:4},'풍덩'],['code','1215','9칸'],['mach','27',{pt:[4,6]},'꺾어'],['mach','18',{dial:17},'더했'],['mach','59',{dial:13},'그림자'],['code','3112','2배'],['code','0012','나머지 각']],
-             3:[['code','0024','더해요'],['code','2020','순서가 없'],['code','0108','모두 뒷면'],['mach','36',{dial:16},'4 × 4'],['mach','28',{dial:38},'1/2'],['mach','45',{dial:12},'다른 경우'],['mach','49',{dial:10},'더해요']]};
+             3:[['mach','36',{wh:16},'4 × 4'],['mach','28',{cnt:38},'1/2'],['mach','45',{dial:12},'다른 경우'],['mach','49',{pick:['4','8','12','16','20']},'7의 배수'],['mach','49',{pick:['4','9']},'아닌 카드']]};
 (async()=>{const b=await chromium.launch();let bad=0;const T=(n,ok,i='')=>{console.log(ok?'✅':'❌',n,i);if(!ok)bad++};
 for(const [w,h,tag] of [[1368,912,'Surface'],[390,844,'폰'],[800,1280,'세로']]){
 const p=await b.newPage({viewport:{width:w,height:h}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
@@ -12,11 +12,14 @@ const pad=async(sel,v)=>{await p.click(sel);for(const k of v)await p.click(`#key
 const mach=async(n,a)=>{await pad('#b_machine',n);await p.waitForTimeout(120);
   if(a.pt)await p.click(`.pt[data-x="${a.pt[0]}"][data-y="${a.pt[1]}"]`);
   if(a.dial!==undefined){for(const k of String(a.dial))await p.click(`#mKeys button:text-is("${k}")`);}
+  if(a.pick)for(const k of a.pick)await p.click(`.pk[data-k="${k}"]`);
+  if(a.cnt!==undefined){for(let i=0;i<Math.floor(a.cnt/5);i++)await p.click('[data-c="5"]');for(let i=0;i<a.cnt%5;i++)await p.click('[data-c="1"]');}
+  if(a.wh!==undefined){const d=String(a.wh).padStart(2,'0');for(let i=0;i<d.length;i++)for(let j=0;j<+d[i];j++)await p.click(`[data-wi="${i}"][data-wd="1"]`);}
   await p.click('#mOk');};
 await p.goto(`file:///home/claude/geogebra2026/escape${N}.html`);await p.waitForTimeout(300);await p.click('#startBtn');
 for(const wr of WRONG[N]){ if(wr[0]==='code'){await pad('#b_code',wr[1]);T(tag+' 오답 '+wr[1],(await p.textContent('#padMsg')).includes(wr[2]));await back();}
   else {await mach(wr[1],wr[2]);T(tag+' 오답 기계'+wr[1],(await p.textContent('#mMsg')).includes(wr[3]),(await p.textContent('#mMsg')).slice(0,40));await back();} }
-if(tag==='Surface'){await pad('#b_machine',N==2?'59':'36');await p.waitForTimeout(150);T('단위 표시',/m|가지/.test(await p.textContent('#mSl')),await p.textContent('#mSl'));
+if(tag==='Surface'){await pad('#b_machine',N==2?'59':'45');await p.waitForTimeout(150);T('단위 표시',/m|가지/.test(await p.textContent('#mSl')),await p.textContent('#mSl'));
   await p.click('#mOk');T('빈 답은 벌점 없이 안내',(await p.textContent('#mMsg')).includes('먼저'));
   for(const k of '9999')await p.click(`#mKeys button:text-is("${k}")`);T('자리 수 제한',(await p.textContent('#mSl')).replace(/\D/g,'').length<=3,await p.textContent('#mSl'));
   await p.screenshot({path:`/tmp/claude-0/escape/review/r${N}_dial.png`});await back();}

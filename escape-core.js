@@ -168,7 +168,7 @@ function openMach(n){ const M=(G.mach||{})[n];
   else if(M.type==='pick'){ mState.sel=new Set();
     const C=M.cols, head=M.colHead?`<div class="pkh"></div>${M.colHead.map(h=>`<div class="pkh">${h}</div>`).join('')}`:'';
     let cells=''; M.items.forEach((it,i)=>{ if(M.rowHead && i%C===0) cells+=`<div class="pkh">${M.rowHead[i/C]}</div>`; cells+=`<button class="pk" data-k="${it.k}">${it.l||''}</button>`; });
-    $('mBody').innerHTML=`${M.top?`<div class="pktop">${M.top}</div>`:''}<div class="pkgrid" style="grid-template-columns:${M.rowHead?'auto ':''}repeat(${C},1fr)">${head}${cells}</div><div class="pkn" id="pkn">켠 칸 0개</div>`;
+    $('mBody').innerHTML=`<div class="pkwrap"><div class="pkin">${M.top?`<div class="pktop">${M.top}</div>`:''}<div class="pkgrid" style="grid-template-columns:${M.rowHead?'auto ':''}repeat(${C},1fr)">${head}${cells}</div></div></div><div class="pkn" id="pkn">${M.cnt||'켠 칸'} 0개</div>`;
     $('mBody').querySelectorAll('.pk').forEach(b=> b.onclick=()=>{ const k=b.dataset.k; if(mState.sel.has(k)){ mState.sel.delete(k); b.classList.remove('on'); } else { mState.sel.add(k); b.classList.add('on'); } $('pkn').textContent=(M.cnt||'켠 칸')+' '+mState.sel.size+'개'; }); }
   else if(M.type==='count'){ mState.a=0;
     const upd=()=>{ $('cntv').innerHTML=M.show(mState.a); };
