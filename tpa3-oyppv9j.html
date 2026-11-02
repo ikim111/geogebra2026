@@ -144,6 +144,11 @@
   .gr-box{margin-top:12px;border:1px solid #b2dfdb;background:#f3fbfa;border-radius:8px;padding:10px 12px;}
   .gr-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;color:#00695c;font-size:13.5px;}
   .gr-hd .note{font-weight:normal;font-size:12px;color:#777;}
+  .rv-box{margin-top:12px;border:1px solid #d5d8e0;border-left:5px solid #7b1fa2;background:#fff;border-radius:8px;padding:10px 12px;font-size:13px;}
+  .rv-box .gr-hd{color:#6a1b9a;}
+  .rv-goal{color:#555;margin:6px 0;}
+  .rv-stage{font-size:11px;border:1px solid #bbb;border-radius:5px;padding:0 5px;margin-right:4px;color:#555;}
+  .rv-how{margin-top:3px;} .rv-quote{margin-top:2px;color:#888;font-size:12px;}
   button.gr-ai{background:#6a1b9a;color:#fff;font-weight:bold;padding:6px 12px;font-size:12.5px;}
   button.gr-ai:disabled{background:#a7d3cd;cursor:not-allowed;}
   .gr-warn{font-size:12.5px;color:#e65100;margin-top:6px;}
@@ -410,6 +415,7 @@
         <div class="gr-head"><b>📊 AI 채점</b><span><b id="grAi" class="big">0</b> / <span id="grTot">0</span>명 완료 · 교사 수정 <b id="grOv">0</b>명 · 평균 <b id="grAvg">-</b></span></div>
         <div class="gr-acts">
           <button class="gr-ai" id="gradeBulkBtn" disabled>🤖 AI 채점</button>
+          <button class="gr-ai" id="reviewBulkBtn" disabled title="채점과 따로, 점수 없이 탐구 설계·해석을 짚어 주는 피드백 — 체크한 학생이 있으면 그 학생만, 없으면 아직 안 받았거나 받은 뒤 글을 고친 학생">📝 보고서 피드백</button>
           <button class="gr-ai" id="fbShowBtn" style="background:#1565c0;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
           <span style="flex:1"></span>
@@ -611,7 +617,7 @@ function activityDetailHTML(s, id, key){
       ${x.files.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">${x.files.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}" style="display:inline-flex;align-items:center;gap:4px;border:1px solid #cfd8dc;border-radius:6px;padding:2px 6px;font-size:12px;color:#1565c0;text-decoration:none;">${/^image\//.test(f.type)?`<img src="${esc(f.url)}" style="height:120px;max-width:200px;object-fit:contain;background:#f5f7f9;border-radius:4px;">`:'📄'}<span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.name||'파일')}</span></a>`).join('')}</div>`:'<div style="font-size:12px;color:#e65100;">(스크린샷 없음 — 자료로 안 셈)</div>'}</li>`).join('') + '</ol>'
     : '<div class="v none">(비어 있음)</div>');
   h += '</div>';
-  return h + (key ? gradeBoxHTML(key, s) : '');
+  return h + (key ? gradeBoxHTML(key, s) + reviewBoxHTML(key, s) : '');
 }
 /* 요약 패널 */
 function renderAggregate(){
@@ -704,6 +710,67 @@ function gradeBoxHTML(key, s){
   h += `<div class="gr-total">${g.overridden?`<span style="font-size:12px;color:#00695c;">선생님 수정 ${g.overridden}개</span>`:''}합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}점${g.any && !g.complete ? ' <span style="font-size:12px;color:#e65100;">(일부 항목 미채점)</span>' : ''}</div></div>`;
   return h;
 }
+/* 📝 2026-11-02 보고서 피드백(채점과 따로, 점수 없음): /api/report-review → students/{key}/aiReview = {goal, good, fixes:[{stage,text,how,quote}], next, design, hash, ts, model}
+   학생에게 보이는 것은 AI 1차 피드백과 같은 공개 버튼(control/fbShow, 학생별 fbShowMe)을 따른다 */
+var reviewPending = new Set();
+var reviewBulkRunning = false;
+function reviewBoxHTML(key, s){
+  if(!hasReport(s)) return '';
+  const r = s.aiReview, pending = reviewPending.has(key);
+  const when = r && r.ts ? new Date(r.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  let h = `<div class="gr-box rv-box"><div class="gr-hd"><span>📝 보고서 피드백 <span class="note">점수와 별개 · 학생 공개는 👀 버튼을 따라요${when?' · '+esc(when):''}</span></span>
+    <button class="gr-ai" data-review-ai="${esc(key)}" ${pending?'disabled':''}>${pending ? '📝 받는 중… (10~40초)' : (r ? '↻ 다시 받기' : '📝 보고서 피드백 받기')}</button></div>`;
+  if(!r) return h + '</div>';
+  if(r.hash && r.hash !== repHash(s)) h += `<div class="gr-warn">⚠️ 피드백을 받은 뒤에 학생이 글을 고쳤어요. "다시 받기"를 눌러 보세요.</div>`;
+  if(r.goal) h += `<div class="rv-goal">🎯 이 글의 질문: ${esc(r.goal)}</div>`;
+  if(r.good) h += `<div class="fb-row good"><span class="fb-tag">잘된 점</span><span>${esc(r.good)}</span></div>`;
+  (r.fixes||[]).forEach(f=>{ h += `<div class="fb-row fix"><span class="fb-tag">보완할 점</span><span>${f.stage?`<span class="rv-stage">${esc(f.stage)}</span>`:''}${esc(f.text)}${f.how?`<div class="rv-how">👉 ${esc(f.how)}</div>`:''}${f.quote?`<div class="rv-quote">“${esc(f.quote)}”</div>`:''}</span></div>`; });
+  if(r.next) h += `<div class="fb-row ask"><span class="fb-tag">생각해 볼 질문</span><span>${esc(r.next)}</span></div>`;
+  return h + '</div>';
+}
+async function requestReview(key){
+  const s = allStudents[key];
+  if(!s || !hasReport(s) || reviewPending.has(key)) return false;
+  reviewPending.add(key); refreshAI();
+  try{
+    const res = await fetch('/api/report-review', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || !j.good) throw new Error(j.error || ('HTTP '+res.status));
+    const r = { goal: j.goal||'', good: j.good||'', fixes: j.fixes||[], next: j.next||'', design: !!j.design, hash: repHash(s), ts: Date.now(), model: j.model||'' };
+    await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiReview').set(r);
+    if(allStudents[key]) allStudents[key].aiReview = r;
+    return true;
+  }catch(err){
+    throw new Error(`${s.name||key}: ${err.message||err}`);
+  }finally{
+    reviewPending.delete(key); refreshAI();
+  }
+}
+function reviewTargetKeys(){
+  const ck = [...(checkedKeys||[])].filter(k=> allStudents[k] && hasReport(allStudents[k]));
+  if(ck.length) return { keys: ck, checked: true };
+  return { keys: Object.keys(allStudents).filter(k=>{ const s = allStudents[k]; return s && hasReport(s) && (!s.aiReview || s.aiReview.hash !== repHash(s)); }), checked: false };
+}
+function paintReviewBtn(){
+  const btn = document.getElementById('reviewBulkBtn'); if(!btn) return;
+  const t = reviewTargetKeys(), n = t.keys.length;
+  const anyDone = Object.values(allStudents||{}).some(x=> x && x.aiReview);
+  btn.textContent = reviewBulkRunning ? '📝 피드백 받는 중…' : (n===0 && anyDone ? '✅ 보고서 피드백 모두 받음' : (t.checked ? `📝 체크한 ${n}명 보고서 피드백` : `📝 보고서 피드백 ${n}명`));
+  btn.disabled = n===0 || reviewBulkRunning;
+  btn.classList.toggle('done', n===0 && anyDone && !reviewBulkRunning);
+}
+document.getElementById('reviewBulkBtn').addEventListener('click', async ()=>{
+  const t = reviewTargetKeys(), keys = t.keys; if(!keys.length) return;
+  if(!confirm(`${t.checked?'체크한':'글을 쓴'} 학생 ${keys.length}명의 보고서 피드백(점수 없음)을 받을까요?\n(한 번에 6명씩 처리해요. 학생에게는 👀 공개를 켰을 때만 보여요)`)) return;
+  reviewBulkRunning = true; paintReviewBtn();
+  const st = document.getElementById('gradeBulkStatus');
+  let ok=0, fail=[], i=0;
+  const worker = async ()=>{ while(i<keys.length){ const k=keys[i++]; try{ if(await requestReview(k)) ok++; }catch(err){ fail.push(err.message); } st.textContent = `보고서 피드백 받는 중… ${ok+fail.length}/${keys.length}`; } };
+  await Promise.all(Array.from({length:6}, worker));
+  reviewBulkRunning = false; paintReviewBtn(); renderGrid();
+  st.textContent = `완료: ${ok}명 보고서 피드백` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 받아요)` : '');
+  if(fail.length) console.warn('보고서 피드백 실패:', fail);
+});
 async function requestGrade(key){
   const s = allStudents[key];
   if(!s || !hasReport(s) || gradePending.has(key)) return false;
@@ -792,6 +859,7 @@ function renderGradePanel(){
   { const t = document.getElementById('grTot'); if(t) t.textContent = Object.values(allStudents||{}).filter(x=> x && hasReport(x)).length; }
   btn.disabled = n===0 || gradeBulkRunning;
   btn.classList.toggle('done', n===0 && anyGraded && !gradeBulkRunning);
+  paintReviewBtn();
 }
 document.getElementById('gradeBulkBtn').addEventListener('click', async ()=>{
   const keys = gradeEligibleKeys(); if(!keys.length) return;
@@ -847,14 +915,15 @@ function refreshAI(){ renderAggregate(); renderGradePanel(); renderTeacherView()
 document.addEventListener('click', async e=>{
   if(!e.target.closest) return;
   // 📊 채점 상자: 점수 숫자 / ↺ AI 점수로 / 🤖 AI 채점
-  const gs = e.target.closest('[data-gs]'), gr = e.target.closest('[data-gr]'), ga = e.target.closest('[data-grade-ai]');
-  if(gs || gr || ga){
+  const gs = e.target.closest('[data-gs]'), gr = e.target.closest('[data-gr]'), ga = e.target.closest('[data-grade-ai]'), gv = e.target.closest('[data-review-ai]');
+  if(gs || gr || ga || gv){
     e.stopPropagation(); e.preventDefault();
     try{
       if(gs) await setTeacherScore(gs.dataset.gs, gs.dataset.gc, parseInt(gs.dataset.gv,10));
       else if(gr) await setTeacherScore(gr.dataset.gr, gr.dataset.gc, null);
+      else if(gv){ await requestReview(gv.dataset.reviewAi); renderGrid(); }
       else { const k = ga.dataset.gradeAi; await requestGrade(k); renderGrid(); }
-    }catch(err){ alert('채점하지 못했어요.\n'+(err.message||err)+'\n\n잠시 후 다시 눌러 보세요.'); }
+    }catch(err){ alert((gv?'보고서 피드백을 받지':'채점하지')+' 못했어요.\n'+(err.message||err)+'\n\n잠시 후 다시 눌러 보세요.'); }
     return;
   }
 }, true);
@@ -1107,6 +1176,7 @@ function toggleCheckAll(checked){
   renderGrid();
 }
 function updateDeleteBtn(){
+  paintReviewBtn();   // 📝 체크한 학생 수에 맞춰 보고서 피드백 버튼 글자도 바꾼다
   const btn=document.getElementById('deleteSelectedBtn');
   if(!btn) return;
   btn.disabled = checkedKeys.size===0;
