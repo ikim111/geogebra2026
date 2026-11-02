@@ -411,7 +411,7 @@ function taskAggregateHTML(id){
   if(id===6){ const done = ss.filter(d=>d.sortChecked);
     const rows = Object.keys(CARD_NAME).map(k=>({label:`${CARD_NAME[k]} (${CARD_SIM[k]?'닮음':'아님'}) 맞힘`, n: done.filter(d=>d.sort && ((d.sort[k]==='sim')===CARD_SIM[k])).length, answer:true}));
     return box(`카드 정렬 — 확인한 학생 ${done.length}명`, done.length ? barsHTML(rows, done.length) : '아직 없어요.'); }
-  if(id===7){ const done = ss.filter(d=>d.compChecked); const dr = Object.values(allStudents).filter(x=>x&&x.data&&arrOf(x.data.strokes).length);
+  if(id===7){ const done = ss.filter(d=>d.compChecked); const dr = Object.values(allStudents).filter(x=>x&&x.data&&arrOf(x.data.strokes).length).sort((a,b)=>(+a.number||0)-(+b.number||0));
     const gal = box(`반 전체 그림 (${dr.length}명)`, dr.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;">${dr.map(x=>`<div style="text-align:center;font-size:12px;color:#555;">${miniDraw(x.data, 110)}<div>${esc(String(x.number||''))}번 ${esc(x.name||'')}</div></div>`).join('')}</div>` : '아직 없어요.');
     const rows = [0,1,2,3].map(i=>({label:`컴퓨터 ${i+1} 고름 (${[true,false,true,true][i]?'닮음':'아님'})`, n: done.filter(d=>arrOf(d.comp)[i]).length, answer:[true,false,true,true][i]}));
     return gal + box(`컴퓨터 고르기 — 확인한 학생 ${done.length}명 (정답 1·3·4)`, done.length ? barsHTML(rows, done.length) : '아직 없어요.'); }
