@@ -113,3 +113,16 @@ body.nostart .rg .btn{opacity:.4;filter:grayscale(.7)}
 
 .mnum{display:flex;flex-direction:column;align-items:center;gap:18px}.mnum .slots{align-items:center}.mnum .un{font-size:34px;font-weight:700;color:#ffe9a8;margin-left:6px}
 .sl.wide{width:auto;min-width:clamp(150px,18vw,220px);padding:0 18px;letter-spacing:6px}.sl .ph{font-size:.4em;letter-spacing:0;color:#5b6886;font-family:sans-serif}
+
+/* 프롤로그·에필로그(2026-11-02 선생님 요청: 시작 전 이야기 읽기, 끝난 뒤 뒷이야기) */
+.prolog{font-size:.92em;line-height:1.6;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed rgba(122,29,16,.4);white-space:pre-line}.prolog-end{white-space:pre-line;font-size:.95em}
+/* 손으로 만지는 기계 (pick·count·wheels) */
+.pktop{text-align:center;font-weight:800;color:#fbe9b7;margin-bottom:8px}
+.pkgrid{display:grid;gap:6px;width:min(560px,100%);margin:0 auto}
+.pkh{display:flex;align-items:center;justify-content:center;font-weight:900;color:#fbe9b7;font-size:15px;min-height:28px}
+.pk{min-height:44px;border-radius:8px;border:2px solid #b8903f;background:#fbf3dc;color:#3b2a12;font-weight:800;font-size:16px;font-family:inherit;cursor:pointer}
+.pk.on{background:#f9a825;border-color:#fff3c4;box-shadow:0 0 12px #ffd54f}
+.pkn{text-align:center;margin-top:10px;color:#fbe9b7;font-weight:800}
+.cnt{display:flex;flex-direction:column;align-items:center;gap:16px}.cntv{background:#fbf3dc;color:#3b2a12;border-radius:12px;padding:16px 22px;font-size:20px;font-weight:800;text-align:center;min-width:260px;line-height:1.6}
+.whs{display:flex;gap:18px;justify-content:center}.wh{display:flex;flex-direction:column;align-items:center;gap:8px}.whv{width:84px;height:96px;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;background:#fbf3dc;color:#3b2a12;border-radius:12px;border:3px solid #b8903f}
+.wh .k{width:84px;height:56px;min-height:56px;border-radius:12px;font-size:24px}.cnt .k{min-width:64px;min-height:56px;font-size:20px}

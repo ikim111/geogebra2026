@@ -5,7 +5,7 @@ N = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 R = importlib.import_module('r' + N)
 COL = {'grey':('#757575','장소·단서'),'red':('#d32f2f','빨강 물건'),'blue':('#1976d2','파랑 물건'),
-       'green':('#2e7d32','⚙️ 기계'),'yellow':('#f9a825','🔒 자물쇠'),'pen':('#5d4037','⏳ 벌점'),'start':('#1a237e','시작')}
+       'green':('#2e7d32','⚙️ 기계'),'yellow':('#f9a825','🔒 자물쇠'),'pen':('#5d4037','⏳ 벌점'),'start':('#1a237e','시작'),'story':('#6d4c41','📜 이야기')}
 cards = {c[2]: c for c in R.CARDS}
 FIG = {
  'river': '''<svg width="170" height="96" viewBox="0 0 170 96" font-size="10" font-weight="700">
@@ -50,6 +50,7 @@ def vis(c):
     return '' if not t else '<div class="vis">' + ''.join(f'<span><b>{n}</b> {H.escape(cards[str(n)][3])}</span>' for n in t) + '</div>'
 def front(c):
     bl, t, n, title, body = c[:5]; col, lab = COL[t]
+    if t == 'story': n = '📜'
     fig = FIG.get(c[6], '') if len(c) > 6 else ''
     body = body.replace('<div class="hid">', '<div class="hid">')
     d = R.DIS.get(bl, '')
@@ -57,13 +58,15 @@ def front(c):
     return f'<div class="card"><div class="band" style="background:{col}"><span class="no">{H.escape(n)}</span><span class="lab">{lab}</span></div><div class="ti">{title}</div><div class="bd">{body}{fig}{vis(c)}</div>{dis}<div class="ft">나침반 시리즈 {N}회</div></div>'
 def back(c):
     bl = c[0]; fs = '18pt' if len(bl) > 3 else '30pt'
+    if c[1] == 'story': return f'<div class="card bk"><div class="bt">{R.EP.split(" · ")[0]}</div><div class="bn" style="font-size:16pt">📜 먼저 읽어요</div><div class="bt2">{N}회</div></div>'
     return f'<div class="card bk"><div class="bt">{R.EP.split(" · ")[0]}</div><div class="bn" style="font-size:{fs}">{H.escape(bl)}</div><div class="bt2">{N}회</div></div>'
 # 화면 설정에서 정답·오답 안내 뽑기
 html = os.path.join(HERE, '..', '..', '..', f'escape{N}.html')
 js = r"""const fs=require('fs');const h=fs.readFileSync(process.argv[1],'utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/);const window={};eval(m[1]);const G=window.EG;
 const o={codes:G.codes,mach:{},wrong:G.wrongCodes,hints:G.hints,same:G.hintSame||{},pens:G.pens||{},end:G.endCard};
 for(const[k,M]of Object.entries(G.mach)){let ans=null,open=[],wr=[],cnt={};const tr=[];
- if(M.type==='grid'){for(let x=0;x<=(M.xmax||12);x++)for(let y=0;y<=(M.ymax||12);y++)tr.push([[x,y],`(${x}, ${y})`])}else{for(let a=0;a<=(M.max||360);a++)tr.push([[a],a+(M.unit||'°')])}
+ const lb=t=>{const v=t[0];return Array.isArray(v)?(v.length>8?v.length+'칸 ('+(M.ansNote||'')+')':v.join(', ')+(M.unit?' '+M.unit:'')):v+(M.unit||'')};
+ if(M.tries){for(const t of M.tries)tr.push([t,lb(t)])}else if(M.type==='grid'){for(let x=0;x<=(M.xmax||12);x++)for(let y=0;y<=(M.ymax||12);y++)tr.push([[x,y],`(${x}, ${y})`])}else{for(let a=0;a<=(M.max||360);a++)tr.push([[a],a+(M.unit||'°')])}
  for(const[t,l]of tr){const r=M.check(...t);if(r.ok){ans=l;open=r.open}else{cnt[r.msg]=(cnt[r.msg]||0)+1;wr.push([l,r.msg])}}
  o.mach[k]={t:M.t,s:M.s,ans,open,wrong:wr.filter(([l,m])=>cnt[m]<=2)}}
 console.log(JSON.stringify(o));"""
@@ -108,7 +111,7 @@ teacher = f"""<div class="sheet"><h1>{R.EP} — 선생님 정답표</h1>
 css = open(os.path.join(HERE, '..', 'print', 'build.py'), encoding='utf-8').read().split("css='''")[1].split("'''")[0]
 css += '.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}.note{margin-top:1.5mm;padding:1mm 1.5mm;background:#f5ead0;font-size:7.5pt;line-height:1.5}.note.L{text-align:right}'
 pages = ''
-L = R.CARDS
+L = ([('이야기','story','이야기',R.PROLOGUE[0],R.PROLOGUE[1],[])] if hasattr(R,'PROLOGUE') else []) + list(R.CARDS)  # 이야기 카드는 맨 앞(2026-11-02)
 for i in range(0, len(L), 9):
     g = L[i:i+9]
     pages += '<div class="page">' + ''.join(front(c) for c in g) + '</div>'

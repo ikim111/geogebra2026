@@ -10,8 +10,8 @@ js = r'''const fs=require('fs');const h=fs.readFileSync(process.argv[1],'utf8');
 const window={};eval(m[1]);const G=window.EG;const o={kinds:G.kinds,codes:{},mach:{},hints:Object.keys(G.hints),same:G.hintSame||{},end:G.endCard};
 for(const[k,c]of Object.entries(G.codes))o.codes[k]={code:c.code,open:c.ok.open,clear:c.ok.clear};
 const tries={grid:[],dial:[]};for(let x=0;x<=12;x++)for(let y=0;y<=12;y++)tries.grid.push([x,y]);for(let a=0;a<360;a++)tries.dial.push([a]);
-for(const[k,M]of Object.entries(G.mach)){let ok=[];const T=M.type==='dial2'?[]:tries[M.type==='img'?'grid':M.type];
- if(M.type==='dial2'){for(let a=0;a<360;a++)for(let b=0;b<=30;b++){const r=M.check(a,b);if(r.ok)ok.push({in:[a,b],open:r.open,clear:r.clear})}}
+for(const[k,M]of Object.entries(G.mach)){let ok=[];const T=M.tries||(M.type==='dial2'?[]:tries[M.type==='img'?'grid':M.type]);
+ if(M.type==='dial2'&&!M.tries){for(let a=0;a<360;a++)for(let b=0;b<=30;b++){const r=M.check(a,b);if(r.ok)ok.push({in:[a,b],open:r.open,clear:r.clear})}}
  else for(const t of T){const r=M.check(...t);if(r.ok)ok.push({in:t,open:r.open,clear:r.clear})}
  o.mach[k]=ok}
 console.log(JSON.stringify(o));'''

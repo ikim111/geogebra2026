@@ -24,7 +24,7 @@ document.body.insertAdjacentHTML('afterbegin', `
   <div class="side">
     <div class="ttl serif" style="margin-bottom:${P?12:26}px">${ttl}</div>
     ${P?'<div class="badges" id="badges"></div><div class="sc" id="homeMsg">'+(G.intro||'')+'</div><button class="startbtn" id="endBtn" style="margin-top:14px">🏁 탈출 (마지막 카드 번호)</button>':
-      `<div class="sc" id="homeMsg">모둠이 모두 모이면 <b>항해 시작</b>을 누르세요.<small>누르는 순간 시간이 흘러요. 처음이면 <a href="${G.practiceUrl||'escape0.html'}" style="color:#7a1d10;font-weight:900">연습부터 →</a></small></div>
+      `<div class="sc" id="homeMsg">${G.prologue?'<div class="prolog">📜 '+G.prologue+'</div>':''}모둠이 모두 모이면 <b>항해 시작</b>을 누르세요.<small>누르는 순간 시간이 흘러요. 처음이면 <a href="${G.practiceUrl||'escape0.html'}" style="color:#7a1d10;font-weight:900">연습부터 →</a></small></div>
        <button class="startbtn" id="startBtn">⚓ 항해 시작</button>
        <div class="stat"><div>벌점<b class="mono" id="sPen">0</b></div><div>틀린 답<b class="mono" id="sWrong">0</b></div><div>힌트<b class="mono" id="sHint">0</b></div></div>
        <button class="startbtn" id="endBtn" style="display:none">🏁 탈출 (마지막 카드 번호)</button>
@@ -54,6 +54,7 @@ document.body.insertAdjacentHTML('afterbegin', `
 <div class="scr" id="done">
   <div class="ttl serif" style="text-align:center;margin-bottom:26px"><div class="ep">${G.series||"붉은 나침반"} · ${G.ep}</div><div class="nm">${P?'훈련 끝!':'탈출 성공!'}</div></div>
   <div class="res"><div class="seal serif">${P?'수료':'탈출'}</div><h2 class="serif">${P?'훈련 일지':'항해 일지'}</h2><div class="st" id="stars"></div><div id="resTb"></div></div>
+  ${G.epilogue?`<div class="sc prolog-end" style="width:min(560px,100%);margin-top:20px">📜 ${G.epilogue}</div>`:''}
   <div class="sc" style="width:min(560px,100%);margin-top:20px">${G.reflect||''}</div>
   ${G.next?`<a class="startbtn" style="display:block;width:min(560px,100%);text-align:center;line-height:64px;text-decoration:none" href="${G.next.url}">${G.next.label}</a>`:''}
 </div>
@@ -113,7 +114,7 @@ function win(r){ homeSay('ok', resultHTML(r)); show('home'); }
 $('padOk').onclick=()=>{
   const v=buf; if(!v) return;
   if(padMode==='code'){
-    if(v.length<4){ sub('padMsg','info','자물쇠는 네 칸을 모두 채워야 열려요. 세 자리 이하인 수는 앞을 0으로 채워요. (예: 75 → 0075)'); return; }
+    if(v.length<4){ sub('padMsg','info','자물쇠는 네 칸을 모두 채워야 열려요.'); return; }
     const hit = Object.entries(G.codes||{}).find(([n,c])=> c.code===v);
     if(hit){ S.solved[hit[0]]=1; emit('code', hit[0]); win(hit[1].ok); return; }
     const why = (G.wrongCodes||{})[v] || '이 비밀번호로 열리는 자물쇠가 없어요.';
@@ -163,6 +164,20 @@ function openMach(n){ const M=(G.mach||{})[n];
     const one=(id,lab,unit)=>`<div style="text-align:center"><div class="sub" style="margin:0 0 8px">${lab}</div><div class="lock" style="display:inline-block"><div class="slots"><div class="sl mono" id="${id}" style="width:auto;padding:0 14px;min-width:120px">0${unit}</div></div></div><div class="drow" style="margin-top:12px;justify-content:center">${[-10,-1,1,10].filter(d=>unit==='°'||Math.abs(d)==1).map(d=>`<button class="k" data-w="${id}" data-d="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}</div></div>`;
     $('mBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:26px">${one('dA',M.l1,'°')}${one('dM',M.l2,'m')}</div>`;
     $('mBody').querySelectorAll('[data-w]').forEach(b=> b.onclick=()=>{ const d=+b.dataset.d; if(b.dataset.w==='dA'){ mState.a=(mState.a+d+360)%360; $('dA').textContent=mState.a+'°'; } else { mState.m=Math.max(0,Math.min(30,mState.m+d)); $('dM').textContent=mState.m+'m'; } }); }
+  /* 2026-11-02 손으로 만지는 기계(선생님 요청, Unlock 기계처럼): pick=칸 눌러 켜기, count=개수 넣고 빼기, wheels=숫자 바퀴 돌리기 */
+  else if(M.type==='pick'){ mState.sel=new Set();
+    const C=M.cols, head=M.colHead?`<div class="pkh"></div>${M.colHead.map(h=>`<div class="pkh">${h}</div>`).join('')}`:'';
+    let cells=''; M.items.forEach((it,i)=>{ if(M.rowHead && i%C===0) cells+=`<div class="pkh">${M.rowHead[i/C]}</div>`; cells+=`<button class="pk" data-k="${it.k}">${it.l||''}</button>`; });
+    $('mBody').innerHTML=`${M.top?`<div class="pktop">${M.top}</div>`:''}<div class="pkgrid" style="grid-template-columns:${M.rowHead?'auto ':''}repeat(${C},1fr)">${head}${cells}</div><div class="pkn" id="pkn">켠 칸 0개</div>`;
+    $('mBody').querySelectorAll('.pk').forEach(b=> b.onclick=()=>{ const k=b.dataset.k; if(mState.sel.has(k)){ mState.sel.delete(k); b.classList.remove('on'); } else { mState.sel.add(k); b.classList.add('on'); } $('pkn').textContent=(M.cnt||'켠 칸')+' '+mState.sel.size+'개'; }); }
+  else if(M.type==='count'){ mState.a=0;
+    const upd=()=>{ $('cntv').innerHTML=M.show(mState.a); };
+    $('mBody').innerHTML=`<div class="cnt"><div class="cntv" id="cntv"></div><div class="drow">${(M.steps||[-5,-1,1,5]).map(d=>`<button class="k" data-c="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}</div></div>`;
+    $('mBody').querySelectorAll('[data-c]').forEach(b=> b.onclick=()=>{ mState.a=Math.max(0,Math.min(M.max||99,mState.a+(+b.dataset.c))); upd(); }); upd(); }
+  else if(M.type==='wheels'){ const D=M.digits||2; mState.w=Array(D).fill(0);
+    const upd=()=>{ mState.w.forEach((v,i)=> $('wh'+i).textContent=v); mState.a=+mState.w.join(''); };
+    $('mBody').innerHTML=`<div class="whs">${mState.w.map((v,i)=>`<div class="wh"><button class="k" data-wi="${i}" data-wd="1" aria-label="올리기">▲</button><div class="whv mono" id="wh${i}">0</div><button class="k" data-wi="${i}" data-wd="-1" aria-label="내리기">▼</button></div>`).join('')}</div>${M.cap?`<div class="pkn">${M.cap}</div>`:''}`;
+    $('mBody').querySelectorAll('[data-wi]').forEach(b=> b.onclick=()=>{ const i=+b.dataset.wi; mState.w[i]=(mState.w[i]+(+b.dataset.wd)+10)%10; upd(); }); upd(); }
   else if(M.unit){ const D=String(M.max||99).length; mState.buf='';
     const pnt=()=>{ $('mSl').innerHTML=`<div class="sl wide mono${mState.buf?'':' e'}">${mState.buf||'<span class=ph>답</span>'}</div><div class="un">${M.unit}</div>`; mState.a=parseInt(mState.buf||'0'); };
     $('mBody').innerHTML=`<div class="mnum"><div class="lock"><div class="slots" id="mSl"></div></div><div class="kp" id="mKeys"></div></div>`;
@@ -174,6 +189,8 @@ function openMach(n){ const M=(G.mach||{})[n];
   show('mach'); }
 $('mOk').onclick=()=>{ const M=G.mach[mState.n]; let r;
   if(M.type==='dial2') r=M.check(mState.a, mState.m);
+  else if(M.type==='pick'){ if(!mState.sel.size){ sub('mMsg','info','먼저 칸을 눌러 켜세요.'); return; } r=M.check([...mState.sel]); }
+  else if(M.type==='count'||M.type==='wheels') r=M.check(mState.a);
   else if(M.type==='grid' || M.type==='img'){ if(mState.x===null){ sub('mMsg','info','먼저 점을 하나 고르세요.'); return; } r=M.check(mState.x, mState.y); }
   else { if(M.unit && !mState.buf){ sub('mMsg','info','먼저 숫자를 넣으세요.'); return; } r=M.check(mState.a); }
   if(r.ok){ S.solved[mState.n]=1; emit('mach', mState.n); win(r); }
