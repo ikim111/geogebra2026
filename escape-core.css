@@ -86,8 +86,8 @@ svg.grid{width:100%;display:block;border-radius:10px;background:linear-gradient(
 .chip.R{background:#c62828;border-radius:6px;transform:rotate(45deg);width:30px;height:30px}.chip.R i{transform:rotate(-45deg)}
 .chip.Gr{background:#2e7d32;border-radius:7px}.chip.Y{background:#f9a825;color:#3b2a12;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);box-shadow:none}
 .chip.P{background:#5d4037}
-.dz{display:inline-flex;gap:6px;vertical-align:middle;flex-wrap:wrap}.dz span{position:relative;width:32px;height:32px;border-radius:50%;background:#e9e2cf;color:#555;font:900 14px/32px "Consolas",monospace;text-align:center}
-.dz span:after{content:"";position:absolute;left:-2px;right:-2px;top:15px;height:2.5px;background:#c62828;transform:rotate(-35deg)}
+.dz{display:inline-flex;gap:6px;vertical-align:middle;flex-wrap:wrap}.dz span{isolation:isolate;text-shadow:0 0 1px #e9e2cf,0 0 1px #e9e2cf,0 0 2px #e9e2cf,0 0 2px #e9e2cf;color:#1f1f1f!important;position:relative;width:32px;height:32px;border-radius:50%;background:#e9e2cf;color:#555;font:900 14px/32px "Consolas",monospace;text-align:center}
+.dz span:after{z-index:-1;content:"";position:absolute;left:-2px;right:-2px;top:15px;height:2.5px;background:#c62828;transform:rotate(-35deg)}
 .row2{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #b99a62;font-size:.82em}
 .row2 .sp{flex:1}.lost{color:#b71c1c;font-weight:900}
 /* 연습 튜토리얼 */
