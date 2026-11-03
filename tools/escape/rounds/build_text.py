@@ -44,7 +44,11 @@ FIG = {
 <circle cx="100" cy="35" r="12" fill="#eee" stroke="#000"/><text x="90" y="38">광장</text>
 <circle cx="182" cy="35" r="12" fill="#eee" stroke="#000"/><text x="171" y="38">보물</text>
 <path d="M30,31 Q59,15 88,31 M30,35 L88,35 M30,39 Q59,55 88,39" fill="none" stroke="#000"/>
-<path d="M112,29 Q141,9 170,29 M112,33 Q141,25 170,33 M112,37 Q141,45 170,37 M112,41 Q141,61 170,41" fill="none" stroke="#000"/></svg>'''}
+<path d="M112,29 Q141,9 170,29 M112,33 Q141,25 170,33 M112,37 Q141,45 170,37 M112,41 Q141,61 170,41" fill="none" stroke="#000"/><g font-size="8"><text x="52" y="22">🔥</text><text x="52" y="33">🔥</text><text x="52" y="54">🔥</text><text x="134" y="17">🔥</text><text x="134" y="29">🔥</text><text x="134" y="43">🔥</text><text x="134" y="57">🔥</text></g></svg>''',
+ 'stone': '''<svg width="200" height="54" viewBox="0 0 200 54" font-weight="700"><rect x="1" y="1" width="198" height="52" rx="6" fill="#eee" stroke="#000"/>
+<text x="10" y="34" font-size="15">🔥</text><rect x="32" y="14" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="54" y="14" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="88" y="34" font-size="15">🔥+⛵</text><rect x="136" y="14" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="158" y="14" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>''',
+ 'frac': '''<svg width="120" height="76" viewBox="0 0 120 76"><rect x="1" y="1" width="118" height="74" rx="8" fill="#eee" stroke="#000"/><rect x="38" y="5" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="62" y="5" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><line x1="30" y1="38" x2="90" y2="38" stroke="#000" stroke-width="3"/><rect x="38" y="45" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="62" y="45" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>''',
+ 'clock': '''<svg width="140" height="52" viewBox="0 0 140 52" font-weight="700"><rect x="1" y="1" width="138" height="50" rx="8" fill="#263238" stroke="#000"/><rect x="14" y="12" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="38" y="12" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="64" y="33" font-size="20" fill="#ffca28">:</text><rect x="80" y="12" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><rect x="104" y="12" width="20" height="26" rx="3" fill="#fff" stroke="#000" stroke-width="1.5"/><text x="34" y="47" font-size="7" fill="#ffca28">시</text><text x="100" y="47" font-size="7" fill="#ffca28">분</text></svg>'''}
 def vis(c):
     t = c[5]
     return '' if not t else '<div class="vis">' + ''.join(f'<span><b>{n}</b> {H.escape(cards[str(n)][3])}</span>' for n in t) + '</div>'
@@ -81,35 +85,27 @@ def wrongs_for(k):
 lock_wrong = {}
 for code, msg in G['wrong'].items(): lock_wrong.setdefault('lock', []).append((code, msg))
 rows = ''
-for scene, k, math, clue in R.FLOW:
+# 2026-11-03 선생님 요청: 정답표는 한 장, 큰 글씨로 '카드 / 정답 / 펼치기 → 치우기'만(힌트·오답 안내는 디벗 화면에 있으니 뺌)
+rows = ''
+for i, (scene, k, math, clue) in enumerate(R.FLOW, 1):
     if k in G['codes']:
-        c = G['codes'][k]; ans = f'<b>{c["code"]}</b> → {", ".join(c["ok"]["open"])}'; kind = '🔒'
+        c = G['codes'][k]; ans = c['code']; opn = c['ok']['open']; kind = '🔒'
     elif k in G['mach']:
-        m = G['mach'][k]; ans = f'<b>{m["ans"]}</b> → {", ".join(m["open"])}'; kind = '⚙️'
+        m = G['mach'][k]; ans = str(m['ans']).strip('[]').replace("'", ''); opn = m['open']; kind = '⚙️'
     else:
-        ans = f'<b>{k}</b> = ' + k.split('+')[0] if '+' in k else k; kind = '➕'
-        a, b = k.split('+'); ans = f'<b>{int(a)+int(b)}</b>'
-    title = cards[k][3] if k in cards else ''
-    rows += f'<tr><td>{scene}</td><td>{kind} {k} {title}</td><td>{ans}</td><td>{math}</td><td>{clue}</td></tr>'
-hrows = ''
-for scene, k, math, clue in R.FLOW:
-    kk = k.split('+')[0]
-    hrows += f'<tr><td>{k}</td>{hint3(kk)}<td style="font-size:7pt">{wrongs_for(k)}</td></tr>'
-lw = '<br>'.join(f'<b>{a}</b>: {strip(b)}' for a, b in G['wrong'].items())
-pens = ''.join(f'<tr><td>{n} {strip(cards[n][4]).split("⏳")[0][:40]}</td><td>{p.get("m",1)}분</td><td>{strip(p.get("msg",""))}</td></tr>' for n, p in G['pens'].items())
-dis = ''.join(f'<tr><td>{a} {cards[a][3]}</td><td>{b}</td></tr>' for a, b in R.DIS.items())
-combo = ' · '.join(f'{r}+{b}={v}' + (' (⏳)' if cards[str(v)][1]=='pen' else '') for (r, b), v in R.COMBOS.items())
-teacher = f"""<div class="sheet"><h1>{R.EP} — 선생님 정답표</h1>
-<p>🔗 디벗: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습: <a href="https://geogebra2026.vercel.app/escape0.html">escape0.html</a> · 제한 45분 · 카드 {len(R.CARDS)}장 · 탈출 번호 <b>{G['end']}</b></p>
-<h2>1. 풀이 흐름 (이 순서로 풀려요)</h2><table><tr><th>장면</th><th>카드</th><th>정답 → 펼칠 카드</th><th>쓰는 수학</th><th>필요한 단서</th></tr>{rows}</table>
-<p>합치기(빨강 + 파랑): {combo}. 그 밖의 합은 해당 카드가 없어요.</p>
-<h2>2. 힌트 3단계와 디벗 오답 안내</h2><table><tr><th>카드</th><th>힌트 1</th><th>힌트 2</th><th>정답 힌트</th><th>기계 오답 → 디벗 안내 (−1분)</th></tr>{hrows}</table>
-<p style="font-size:7.5pt"><b>자물쇠 오답 → 디벗 안내 (−1분)</b><br>{lw}</p>
-<h2>3. 벌점 카드</h2><table><tr><th>카드</th><th>잃는 시간</th><th>디벗에 뜨는 설명</th></tr>{pens}</table>
-<h2>4. 치우기</h2><table><tr><th>이 카드를 펼치면</th><th>치울 카드</th></tr>{dis}</table>
-<h2>5. 준비</h2><p>· A4 <b>양면 인쇄 — 긴 쪽 넘김</b>, 배율 100%. 점선대로 잘라 모둠당 1세트.<br>· 카드는 번호가 보이게 뒷면으로 쌓아 두고 <b>시작 카드만</b> 펼쳐요. 그림 속 번호가 보이면 그 카드를 찾아 펼쳐요.<br>· 디벗은 모둠당 1대. 처음 하는 반은 연습(escape0)부터.<br>· 이 정답표는 선생님만 가지고 계세요.</p></div>"""
+        a, b = k.split('+'); ans = str(int(a) + int(b)); opn = [ans]; kind = '➕'
+    names = ' + '.join(f'{x} {cards[x][3]}' for x in k.split('+'))
+    dis = ' · '.join(f'{o} → 치우기 {R.DIS[o]}' if o in R.DIS else f'{o}' for o in opn)
+    rows += f'<tr><td>{i}</td><td>{kind} {names}</td><td class="big">{ans}</td><td>{dis}{'' if math=='—' else '<div class="sm">'+math+'</div>'}</td></tr>'
+pens = ' · '.join(f'{n}({p.get("m",1)}분)' for n, p in G['pens'].items())
+combo = ' · '.join(f'{r}+{b}={v}' + (' ⏳' if cards[str(v)][1]=='pen' else '') for (r, b), v in R.COMBOS.items())
+teacher = f"""<div class="sheet ts"><h1>{R.EP} — 선생님 정답표</h1>
+<p>🔗 디벗: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습 escape0 · 45분 · 카드 {len(R.CARDS)}장 · 🏁 탈출 번호 <b class="bl">{G['end']}</b></p>
+<table><tr><th>#</th><th>카드</th><th>정답</th><th>펼치기 → 치우기 <small>(아래: 쓰는 수학)</small></th></tr>{rows}</table>
+<p>⏳ 벌점 카드(그 카드만 치움): {pens}<br>➕ 합치기: {combo} — 그 밖의 합은 카드가 없어요.</p>
+<p class="sm">준비: A4 양면 인쇄(긴 쪽 넘김, 100%) → 점선대로 잘라 모둠당 1세트 · 이야기 카드를 맨 위, 시작 카드만 펼쳐 둠 · 디벗 모둠당 1대 · 힌트와 오답 안내는 디벗 화면에 나와요.</p></div>"""
 css = open(os.path.join(HERE, '..', 'print', 'build.py'), encoding='utf-8').read().split("css='''")[1].split("'''")[0]
-css += '.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}.note{margin-top:1.5mm;padding:1mm 1.5mm;background:#f5ead0;font-size:7.5pt;line-height:1.5}.note.L{text-align:right}'
+css += '.ts{font-size:12pt}.ts table{width:100%}.ts td,.ts th{font-size:12pt;padding:2mm}.ts td.big{font-size:18pt;font-weight:bold;color:#1565c0;white-space:nowrap}.ts .bl{color:#1565c0;font-size:15pt}.ts .sm{font-size:9pt;color:#555}.hid{position:static;display:inline-block;margin-left:2mm;font-size:6.5pt;color:#999}.dis{position:absolute;left:2.5mm;right:2.5mm;bottom:5mm}.bd svg{max-height:30mm}.note{margin-top:1.5mm;padding:1mm 1.5mm;background:#f5ead0;font-size:7.5pt;line-height:1.5}.note.L{text-align:right}'
 pages = ''
 L = ([('이야기','story','이야기',R.PROLOGUE[0],R.PROLOGUE[1],[])] if hasattr(R,'PROLOGUE') else []) + list(R.CARDS)  # 이야기 카드는 맨 앞(2026-11-02)
 for i in range(0, len(L), 9):
