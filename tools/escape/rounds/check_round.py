@@ -39,7 +39,7 @@ for k, oks in G['mach'].items():
             if sorted(ok['clear']) != dis(o): bad.append(f'기계 {k}: 화면 치우기 {ok["clear"]} ≠ 카드 {o}의 표시 {dis(o)}')
 for (r, b), res in R.COMBOS.items():
     res = str(res)
-    if cards[res][1] != 'pen' and cards[res][1] not in ('grey', 'green', 'yellow'): bad.append(f'합 {r}+{b}={res} 종류 이상')
+    if cards[res][1] != 'pen' and cards[res][1] not in ('grey', 'green', 'yellow') and res not in getattr(R, 'COMBO_ITEM', set()): bad.append(f'합 {r}+{b}={res} 종류 이상')   # COMBO_ITEM: 합쳐서 나오는 물건(예: 불 붙은 횃불, 2026-11-03)
     if r + b != int(res): bad.append(f'합 계산 틀림 {r}+{b}')
     if cards[res][1] == 'pen' and dis(res): bad.append(f'벌점 {res}에 버리기 표시가 있음')
 # 3) 빨강+파랑 전수
@@ -68,11 +68,11 @@ for _ in range(60):
     for (r, b), res in sorted(R.COMBOS.items(), key=lambda kv: cards[str(kv[1])][1] != 'pen'):  # 함정 먼저 (함께 놓이는 때가 있는지)
         if str(r) in table and str(b) in table: open_(str(res), f'{r}+{b}')
     for k, c in G['codes'].items():
-        if k in table and k not in solved:
+        if k in table and k not in solved and all(x in seen for x in getattr(R, 'NEED', {}).get(k, [])):   # NEED: 그 자물쇠의 단서 카드가 나온 뒤에만 풂(2026-11-03)
             solved.add(k)
             for o in c['open']: open_(o, f'자물쇠 {k} {c["code"]}')
     for k, oks in G['mach'].items():
-        if k in table and k not in solved and oks:
+        if k in table and k not in solved and oks and all(x in seen for x in getattr(R, 'NEED', {}).get(k, [])):
             solved.add(k)
             for o in oks[0]['open']: open_(o, f'기계 {k} {oks[0]["in"]}')
 miss = [n for n in cards if n not in seen]
