@@ -60,7 +60,7 @@ k = '<div class="sheet ts"><h1>' if '<div class="sheet ts"><h1>' in tx else '<di
 teacher = tx[tx.index(k):tx.rindex('</body>')].replace(k[:-4], '<div class="tsheet ts">', 1)
 css = g['CSS'] + NOTE + '.tsheet{padding:10mm 12mm;font-size:9pt;page-break-before:always}.tsheet table{border-collapse:collapse;width:100%;font-size:7.5pt;margin-bottom:6px}.tsheet td,.tsheet th{border:1px solid #999;padding:3px;vertical-align:top}.tsheet h2{font-size:11pt;margin:10px 0 4px}.ts{font-size:12pt}.ts td,.ts th{font-size:12pt!important;padding:2mm!important}.ts td.big{font-size:18pt!important;font-weight:bold;color:#1565c0;white-space:nowrap}.ts .bl{color:#1565c0;font-size:15pt}.ts .sm{font-size:9pt;color:#555}'
 import sys as _s; _s.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
-cut, cutjs = cut_css_js('#14223a')
+cut, cutjs = cut_css_js('#f4dfc1')
 h = f'<html><head><meta charset="utf-8">{FONTLINKS}<style>{css}</style>{cut}</head><body>{pages}{teacher}{FIT}{cutjs}</body></html>'
 for sym in '☀☾★⚓': h = h.replace(sym, f'<span style="font-family:DejaVu Sans;color:#3b2412">{sym}&#xFE0E;</span>')
 h = re.sub(r',\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)', '', h)

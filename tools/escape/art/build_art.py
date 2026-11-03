@@ -158,7 +158,7 @@ if __name__=='__main__':
     p=ART+'out/cards_art.html';h=open(p,encoding='utf-8').read()
     # CUTLAYOUT: 프린터 여백 확보 + 또렷한 점선
     import sys,os;sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..'));from cutlayout import cut_css_js
-    _c,_j=cut_css_js('#14223a');h=h.replace('</head>',_c+'</head>');h=h.replace('</body>',_j+'</body>')
+    _c,_j=cut_css_js('#f4dfc1');h=h.replace('</head>',_c+'</head>');h=h.replace('</body>',_j+'</body>')
     h=re.sub(r',\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)','',h)
     h=re.sub(r'box-shadow:\s*0 [\d.]+mm [\d.]+mm rgba\(0,0,0,[\d.]+\)\s*;?','',h)
     h=re.sub(r'filter:drop-shadow\([^)]*\)','',h)
