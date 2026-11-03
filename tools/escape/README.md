@@ -26,3 +26,9 @@
 - 그림: ChatGPT '그림 > 그림체 통일 요청' 방에서 2×2로 그려 받음(방탈출2_A~L.png, 선생님 다운로드 폴더). 잘라 둔 그림 묶음은 `방탈출_그림_2회.zip`(다운로드 폴더).
 - 풀어서 `/tmp/claude-0/escape/art2/`에 두고: `cd tools/escape/art2 && python3 build_art2.py 2` → `node topdf2.js out/방탈출2회_카드.html 결과.pdf`
 - 번호 태그 위치·숨은 번호·그림 위 글자는 `art2/layout2.json`, 카드 글은 `rounds/r2.py`.
+
+## 3회 그림 카드 (2026-11-03)
+- 그림: 같은 ChatGPT 방에서 2×2로 9장(방탈출3_A~I.png) + 숙소 다시(J60, 그물침대 5개). 프롬프트는 `art3/prompts3.md`, 잘라 둔 그림과 원본 묶음은 `방탈출_그림_3회.zip`(다운로드 폴더).
+- 풀어서 `/tmp/claude-0/escape/art3/`에 두고: `cd tools/escape/art2 && python3 build_art2.py 3` → `node topdf2.js "$PWD/out/방탈출3회_카드.html" out/방탈출3회_카드.pdf`
+- 번호 위치·숨은 번호(23은 저울 주머니 위)·겹쳐 그린 것(11 동굴 길, 52 🔥 표시, 49 숫자 1~30)·줄인 카드 글은 `art2/layout3.json`.
+- 1회 CSS(c3.html)가 없으면 2회 카드 html의 <style>로 되살릴 수 있다.
