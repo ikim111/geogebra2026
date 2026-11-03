@@ -202,6 +202,7 @@
   .ai-agg button.ai-toggle.off{background:#9e9e9e;}
   .ai-agg .st{font-size:12.5px;}
   .ck-edit span{cursor:pointer;user-select:none;} .ck-edit span:hover{filter:brightness(.93);} .ck-edit span.tc{outline:2px solid #ff9800;outline-offset:1px;}
+  .ck-edit span.un,.rb-b.un{outline:2px dashed #ff9800;outline-offset:1px;} .un-tag{color:#e65100 !important;font-weight:bold;} .un-ok{margin-left:4px;font-size:12px;min-height:28px;padding:0 8px;border:1px solid #2e7d32;color:#2e7d32;background:#fff;border-radius:6px;cursor:pointer;} .un-ban{border:2px solid #ff9800;color:#e65100;border-radius:8px;padding:4px 8px;font-weight:bold;font-size:13px;margin-bottom:2px;} .un-cnt{color:#e65100;font-weight:bold;font-size:12px;margin-right:2px;}
   .gr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px;}
 
   /* 🖥 2026-10-29 보고서 창: 왼쪽 학생 글 · 오른쪽 채점(채점기준표) — 따로 스크롤 */
@@ -780,7 +781,7 @@ async function requestGrade(key){
     const j = await res.json().catch(()=>({}));
     if(!res.ok || !j.scores) throw new Error(j.error || ('HTTP '+res.status));
     const g = { scores: j.scores, reasons: j.reasons || {}, fb: j.fb || null, qchecks: j.qchecks || '', dchecks: j.dchecks || '', qtype: '', achecks: j.achecks || '', lchecks: j.lchecks || '', first: j.first || '', status: j.status || '', statusReason: j.statusReason || '',
-      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0, xq: j.xq || null, goodSrc: (j.goodSrc!=null ? j.goodSrc : null) };
+      total: j.total, hash: repHash(s), ts: Date.now(), model: j.model || '', rv: j.rv || 0, xq: j.xq || null, goodSrc: (j.goodSrc!=null ? j.goodSrc : null), unsure: j.unsure || null };
     await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade').set(g);
     if(allStudents[key]) allStudents[key].aiGrade = g;
     requestEvidence(key).catch(err=> console.warn('근거 문장 실패', err));   // 🔎 2026-10-29 ○✕마다 근거 문장(뒤에서)
@@ -795,6 +796,15 @@ async function requestGrade(key){
 function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== n) return '';
   if(k==='data' && ai.scores && ai.scores.data===0) return 'XXX';   // 인정되는 자료가 없어 0점이면 ○✕도 모두 ✕로(점수와 맞게)
   return c; }
+/* 🔍 2026-11-03 AI가 두 번 채점해 ○✕가 달랐던 칸(aiGrade.unsure) — 선생님이 ○✕를 누르거나 '이대로 맞아요'를 누르면(aiGrade/unsureOk) 사라진다 */
+function unsureAt(s, k, i){ const ai = s && s.aiGrade; return !!(ai && ai.unsure && String(ai.unsure[k]||'')[i]==='1' && !(ai.unsureOk && ai.unsureOk[k+i])); }
+function unsureCount(s){ return Object.keys(CHECK_LABELS).reduce((n,k)=> n + CHECK_LABELS[k].filter((_,i)=> unsureAt(s,k,i)).length, 0); }
+function unsureTag(key, s, k, i){ const a = aiChecksOf(s, k); if(!unsureAt(s,k,i) || !a) return ''; const one = a[i]==='O'?'○':'✕', two = a[i]==='O'?'✕':'○';
+  return `<div class="xq un-tag">🔍 AI 1회 ${one} · 2회 ${two} — 확인 필요 <button type="button" class="un-ok" data-unok="${esc(key)}" data-unk="${k}" data-uni="${i}">✔ 이대로 맞아요</button></div>`; }
+async function markUnsureOk(key, k, i){ const s = allStudents[key]; if(!s || !s.aiGrade) return; if(!s.aiGrade.unsureOk) s.aiGrade.unsureOk = {};
+  if(s.aiGrade.unsureOk[k+i]) return; s.aiGrade.unsureOk[k+i] = true; refreshAI(); renderGrid();
+  await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade/unsureOk/'+k+i).set(true); }
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-unok]'); if(!b) return; e.preventDefault(); e.stopPropagation(); markUnsureOk(b.dataset.unok, b.dataset.unk, +b.dataset.uni).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); }, true);
 function checksOf(s, k){ const t = s && s.teacherChecks && s.teacherChecks[k]; return (typeof t==='string' && t.length===CHECK_LABELS[k].length) ? t : aiChecksOf(s, k); }
 function scoreFromChecks(k, c){ const n = [...c].filter(x=>x==='O').length; return (k==='question' && c[0]==='X') ? 0 : n; }
 /* 🔎 2026-10-29 ○✕마다 근거 문장: aiGrade/ev = {question:[...], ..., ck:{question:'OOX',...}} — 만든 때의 ○✕(ck)와 지금이 같은 칸만 보여 준다 */
@@ -815,13 +825,16 @@ function ckEditHTML(key, s, it){
   const c = checksOf(s, it.k), a = aiChecksOf(s, it.k); if(!c) return '';
   const ai = s.aiGrade || {}, xq = (ai.xq && ai.xq[it.k]) || [];
   const noSrc = it.k==='data' && ai.scores && ai.scores.data===0 && String(ai.dchecks||'').includes('O') && !(s.teacherChecks && s.teacherChecks.data);
-  return `<div class="gr-q ck-edit">${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${(()=>{ if(it.k==='logic' && i<3){ const r = repOf(s), n = countChars([r.intro,r.body,r.concl][i]); return `<div class="xq ev-n">↳ ${n.toLocaleString()}자</div>`; }
-      const q = evQuote(s, it.k, i) || (c[i]==='X' && a[i]==='X' ? xq[i] : ''); return q ? `<div class="xq ${c[i]==='O'?'ev-o':''}" data-evq="${esc(q)}" title="누르면 왼쪽 글에서 찾아요">↳ 근거: ${esc(q)}</div>` : ''; })()}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
+  const un = CHECK_LABELS[it.k].filter((_,i)=> unsureAt(s, it.k, i)).length;
+  return `<div class="gr-q ck-edit">${un?`<div class="un-ban">🔍 AI가 두 번 채점했는데 다르게 본 항목 ${un}개 — 확인해 주세요</div>`:''}${CHECK_LABELS[it.k].map((t,i)=>`<span class="${c[i]==='O'?'o':'x'}${a && c[i]!==a[i]?' tc':''}${unsureAt(s, it.k, i)?' un':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${a && c[i]!==a[i]?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${c[i]==='O'?'○':'✕'} ${esc(t)}</span>${(()=>{ if(it.k==='logic' && i<3){ const r = repOf(s), n = countChars([r.intro,r.body,r.concl][i]); return `<div class="xq ev-n">↳ ${n.toLocaleString()}자</div>`; }
+      const ut = unsureTag(key, s, it.k, i);
+      const q = evQuote(s, it.k, i) || (c[i]==='X' && a[i]==='X' ? xq[i] : ''); return ut + (q ? `<div class="xq ${c[i]==='O'?'ev-o':''}" data-evq="${esc(q)}" title="누르면 왼쪽 글에서 찾아요">↳ 근거: ${esc(q)}</div>` : ''); })()}`).join('')}${(()=>{ const tg = s.teacherGrade && s.teacherGrade[it.k]; return (tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) ? `<div class="xq" style="color:#e65100;">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요. ○✕를 눌러 맞추거나 위의 ↺ AI 점수로를 눌러 주세요.</div>` : ''; })()}${noSrc?`<div class="xq" style="color:#c62828;">⚠ 인정되는 자료가 없어 모두 ✕예요(출처 이름·링크·첨부가 모두 있어야 인정). 학생 자료가 맞으면 ✕를 눌러 ○로 바꿔 주세요.</div>`:''}<small>눌러서 ○✕를 고치면 점수도 바뀌어요${it.k==='question'?' (1번이 ✕면 0점)':''}</small></div>`;
 }
 async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체크박스의 toggleCheck와 겹쳐서 ○✕를 눌러도 안 바뀌던 문제 → 이름 바꿈
   const s = allStudents[key]; if(!s) return;
   const cur = checksOf(s, k), a = aiChecksOf(s, k); if(!cur) return;
   const nx = cur.slice(0,i) + (cur[i]==='O'?'X':'O') + cur.slice(i+1);
+  if(unsureAt(s, k, i)) markUnsureOk(key, k, i).catch(err=> console.warn('확인 표시 저장 실패', err));   // 🔍 ○✕를 눌렀으면 확인한 것으로(2026-11-03)
   const base = db.ref('rooms/'+currentRoomKey+'/students/'+key);
   if(!s.teacherChecks) s.teacherChecks = {}; if(!s.teacherGrade) s.teacherGrade = {};
   // ⚡ 2026-10-29: 화면을 먼저 바꾸고(바로 반응) 저장은 뒤에서 — 저장에 실패하면 되돌린다
@@ -1481,6 +1494,8 @@ function renderGrid(){
     nameText.textContent=' '+displayName(item.key, s.name, s.number)+' ';
     if(s.submitted){ nameText.style.color='var(--green)'; nameText.style.fontWeight='bold'; }
     tdName.appendChild(nameText);
+    const unN = unsureCount(s);
+    if(unN){ const u=document.createElement('span'); u.className='un-cnt'; u.title='AI가 두 번 채점해 다르게 본 항목 — 확인 필요'; u.textContent='🔍'+unN; tdName.appendChild(u); }
     if(s.submitted){
       const sc=document.createElement('span'); sc.className='submit-check'; sc.title='제출 완료'; sc.textContent='✅';
       tdName.appendChild(sc);
@@ -1622,7 +1637,7 @@ function rubricTableHTML(key, s){
         if(q){ evc = `<span data-evq="${esc(q)}">"${esc(q)}"</span>`; cls = v==='O' ? 'ok' : 'no'; }
         else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
         else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
-      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${evc}</td></tr>`;
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}</td></tr>`;
     });
     const tg = s.teacherGrade && s.teacherGrade[it.k];
     if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
