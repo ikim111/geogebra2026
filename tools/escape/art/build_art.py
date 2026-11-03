@@ -83,7 +83,7 @@ CSS+='''.tall .art{height:50mm}.tall .cap{top:54mm}.rl{min-height:6.4mm;display:
 .bk2 .bw{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26mm;height:26mm;border-radius:50%;background:radial-gradient(circle at 45% 40%,#fbf3dc,#ead6a4);box-shadow:0 0 0 1.2mm #c9a55a,0 0 0 1.9mm #3a2a0e,0 1.5mm 4mm rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;color:#3b2a12;font:800 12mm "Hahmlet",serif}
 .bk2 .bw.s{font-size:9mm;letter-spacing:-.4mm}
 .tag.Y{color:#3b2a12!important}
-.no{left:3.2mm!important;top:2.6mm!important}.dis{top:1.4mm!important;right:3.4mm!important}
+.no{left:3.2mm!important;top:2.6mm!important}.dis{top:1.4mm!important;right:3.4mm!important}.bk2 .bw{top:46.3%!important;width:19mm!important;height:19mm!important;background:#fbf6ea!important;box-shadow:0 0 0 .6mm #3e2818!important;color:#3e2818!important;font-size:10.5mm!important}.bk2 .bw.s{font-size:7mm!important;letter-spacing:-.3mm}.bk2 .bv{display:none}/* 2026-11-03 새 뒷면(아이보리 잉크 선 나침반, 번호 동그라미 19mm) */
 .bk2.pk .bw{background:radial-gradient(circle at 45% 40%,#ffffff,#dcdcdc)!important;box-shadow:0 0 0 1.2mm #a9a9a9,0 0 0 1.9mm #333,0 1.5mm 4mm rgba(0,0,0,.6)!important;color:#2b2b2b!important}
 .rulebox{position:absolute;left:3mm;right:3mm;top:15mm;bottom:3mm;border-radius:1.6mm;padding:2.2mm 2.8mm;color:#3b2a12;background:linear-gradient(180deg,#f3e2b6,#e6cf96);font-family:"Gowun Dodum",sans-serif;font-size:3mm;line-height:1.3;overflow:hidden}.rulebox .ti{font-size:4mm!important;margin-bottom:.5mm}
 .rt{border-collapse:collapse;width:100%;margin-top:1.5mm;font-size:3mm}.rl2{font-size:3mm}.rt td{padding:.6mm 0;vertical-align:middle;border-bottom:.2mm dashed #b99a62}
@@ -130,7 +130,8 @@ def front(c):
     return f'<div class="card {cls}{" tall" if bl in TALL else ""}"><div class="stripe"></div>{"<div class=tico>"+ic+"</div>" if ic else ""}<div class="no {nocls}">{H.escape(n)}</div>{"<div class=dis>"+d+"</div>" if d else ""}{art}<div class="cap"><div class="ti">{ti}</div><div class="tx">{clean(body)}{extra}</div></div></div>'
 def back(c):
     bl=c[0];p=bl.startswith('연습') or bl=='규칙';lab=('연습' if bl=='연습 시작' else bl.replace('연습 ','')) if bl.startswith('연습') else bl
-    img=ART+'aback.jpg'
+    img=ART+('aback_practice.jpg' if p and os.path.exists(ART+'aback_practice.jpg') else 'aback.jpg')   # 2026-11-03 새 뒷면: 연습·규칙은 바늘을 칠하지 않은(갈색 잉크) 나침반, 본게임은 빨간 바늘
+    p=p and not os.path.exists(ART+'aback_practice.jpg')   # 새 뒷면이 있으면 세피아 필터는 쓰지 않음
     small=' s' if re.search('[가-힣]',lab) else ''
     return f'<div class="card bk2"><img src="{img}"{" style=\"filter:sepia(.9) saturate(1.3) brightness(1.25) contrast(.9)\"" if p else ""}><div class="bv"></div><div class="bw{small}">{H.escape(lab)}</div></div>'
 if __name__=='__main__':
