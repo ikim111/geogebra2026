@@ -39,6 +39,7 @@ const PROMPT = `너는 중학교 2학년 확률·통계 탐구 보고서를 채�
 [✕ 근거 — 선생님 검토용]
 - xquotes: 위 체크 항목 중 "X"로 판단한 것마다 하나씩 쓴다. id는 q1~q3(탐구 질문), d1~d3(자료 수집), a1~a4(자료 분석), l4·l5(글의 논리)이다.
 - quote: 그렇게 판단한 근거가 되는 학생 글을 40자 이내로 그대로 옮긴다(따옴표 없이). 근거가 '내용이 없음'이면 "(해당 내용 없음)"이라고 쓰고, 어디에 없는지 짧게 덧붙인다(예: "(결론에 질문의 답 없음)").
+- why: 왜 X인지 선생님이 바로 알 수 있게 40자 이내 한 문장. 숫자가 틀렸으면 맞는 값까지 쓴다(예: "32승 2무 36패를 더하면 70인데 분모를 71로 씀", "156/276=56.5%인데 56%로 씀")(2026-11-04 선생님 요청: ✕ 이유를 매번 묻지 않게).
 - "O"인 항목은 쓰지 않는다.
 
 [항목마다 쓰는 것]
@@ -78,7 +79,7 @@ const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'report_asse
   type: 'object', additionalProperties: false, required: ['qchecks', 'dchecks', 'achecks', 'lchecks', 'xquotes', ...Object.keys(CRITERIA), 'first', 'status', 'statusReason'],
   properties: Object.assign({ qchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, dchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
     achecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, lchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
-    xquotes: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'quote'], properties: { id: { type: 'string', enum: ['q1','q2','q3','d1','d2','d3','a1','a2','a3','a4','l4','l5'] }, quote: { type: 'string' } } } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
+    xquotes: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'quote', 'why'], properties: { id: { type: 'string', enum: ['q1','q2','q3','d1','d2','d3','a1','a2','a3','a4','l4','l5'] }, quote: { type: 'string' }, why: { type: 'string' } } } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
     { first: { type: 'string' }, status: { type: 'string', enum: ['ok', 'check', 'need'] }, statusReason: { type: 'string' } }) } } };
 // 탐구 질문 점수 = 3항목((1) 질문을 씀 = 기본 1점, (2) 확률 질문, (3) 형태) O 개수, (1)이 X면 0 — 2026-10-12 간소화(다른 선생님 제안)
 const qScore = q => q[0] === 'X' ? 0 : q.filter(x => x === 'O').length;
@@ -125,8 +126,8 @@ module.exports = async (req, res) => {
     total += sc;
   }
   // ✕ 근거 문장: {question:['','',''], data:[...], analysis:[4], logic:[5]} (O이거나 근거 없으면 '')
-  const XQ = { q: ['question', 0], d: ['data', 0], a: ['analysis', 0], l: ['logic', -1] }, xq = { question: ['', '', ''], data: ['', '', ''], analysis: ['', '', '', ''], logic: ['', '', '', '', ''] };
-  (Array.isArray(j.xquotes) ? j.xquotes : []).forEach(x => { const m = /^([qdal])(\d)$/.exec(String(x && x.id || '')); if (!m) return; const [k] = XQ[m[1]], i = +m[2] - 1; if (xq[k][i] !== undefined) xq[k][i] = String(x.quote || '').replace(/\*\*/g, '').trim().slice(0, 80); });
+  const XQ = { q: ['question', 0], d: ['data', 0], a: ['analysis', 0], l: ['logic', -1] }, xq = { question: ['', '', ''], data: ['', '', ''], analysis: ['', '', '', ''], logic: ['', '', '', '', ''] }, xw = JSON.parse(JSON.stringify(xq));
+  (Array.isArray(j.xquotes) ? j.xquotes : []).forEach(x => { const m = /^([qdal])(\d)$/.exec(String(x && x.id || '')); if (!m) return; const [k] = XQ[m[1]], i = +m[2] - 1; if (xq[k][i] !== undefined) { xq[k][i] = String(x.quote || '').replace(/\*\*/g, '').trim().slice(0, 80); xw[k][i] = String(x.why || '').replace(/\*\*/g, '').trim().slice(0, 80); } });
   if (!goodSrc) { xq.data = ['(인정되는 자료 없음 — 출처 이름·링크·첨부가 모두 있어야 해요)', '', '']; }
   // 1회·2회 ○✕ 비교: 항목마다 '1'(다름)·'0'(같음). 글자 수 (1)~(3)은 프로그램이 세므로 늘 같다. 인정 자료가 없으면 자료 수집은 프로그램이 정하므로 비교하지 않는다.
   let unsure = null;
@@ -137,6 +138,6 @@ module.exports = async (req, res) => {
     unsure = { question: diff(qchecks, q2, 3), data: goodSrc ? diff(dchecks, d2, 3) : '000', analysis: diff(achecks, a2, 4), logic: '000' + diff(lchecks, l2, 2) };
   }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model, unsure });
 };
