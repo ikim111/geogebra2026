@@ -658,6 +658,9 @@ const SCORE_MAX = 15;
 const gradePending = new Set();
 let gradeBulkRunning = false;
 const isNum = v => typeof v === 'number' && isFinite(v);
+/* 2026-11-04 선생님 요청: 채점 기준을 바꾼 뒤(3-(3) 분모 완화)에도 예전 기준 점수가 '모두 채점됨'으로 보이지 않게, 이 시각 전에 채점한 학생도 다시 채점 대상으로 센다. 기준을 또 바꾸면 이 시각을 고친다. */
+const RUBRIC_TS = Date.parse('2026-11-04T09:30:00+09:00');
+const isOldRubric = g => !!(g.ai && (+g.ai.ts||0) < RUBRIC_TS);
 function gradeOf(s){
   const ai = (s && s.aiGrade && s.aiGrade.scores) ? s.aiGrade : null;
   const tg = (s && s.teacherGrade) || {};
@@ -680,6 +683,7 @@ function gradeBoxHTML(key, s){
     <button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점·피드백 받는 중… (10~40초)' : (g.ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button></div>`;
   if(g.ai && !g.ai.fb) h += `<div class="gr-warn" style="color:#888;">예전 방식으로 채점된 결과예요(피드백 없음). "다시 받기"를 누르면 점수와 피드백을 함께 받아요.</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "AI 다시 채점"을 눌러 보세요.</div>`;
+  else if(isOldRubric(g)) h += `<div class="gr-warn">⚠️ 채점 기준이 바뀌기 전(11/4)에 채점했어요. "AI 다시 채점"을 눌러 보세요.</div>`;
   if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
   h += '<div class="gr-grid">';
   g.items.forEach((it, ii)=>{
@@ -857,7 +861,7 @@ async function setTeacherScore(key, c, v){
   refreshAI(); renderGrid();
 }
 /* 일괄 채점 대상: 제출했고, 아직 AI 채점 전이거나 채점 뒤 글을 고친 학생 */
-function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb); }); }
+function gradeEligibleKeys(){ return Object.keys(allStudents).filter(k=>{ const s=allStudents[k]||{}; const g=gradeOf(s); return hasReport(s) && !gradePending.has(k) && (!g.ai || g.stale || !g.ai.fb || isOldRubric(g)); }); }
 function renderGradePanel(){
   const panel = document.getElementById('gradePanel'); if(!panel) return;
   panel.style.display = currentRoomKey ? 'block' : 'none';
@@ -868,7 +872,8 @@ function renderGradePanel(){
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
   const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
-  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 글을 쓴 학생 모두 채점됨' : `🤖 미채점 ${n}명 AI 채점`; btn.title = '글을 쓴 학생 중(제출 여부 무관 — 2026-10-29) 아직 채점 안 했거나, 채점 뒤 글을 고친 학생';
+  const nOld = gradeEligibleKeys().filter(k=> isOldRubric(gradeOf(allStudents[k]||{}))).length;
+  btn.textContent = (n===0 && anyGraded && !gradeBulkRunning) ? '✅ 글을 쓴 학생 모두 채점됨' : (nOld ? `🤖 새 기준으로 ${n}명 다시 채점` : `🤖 미채점 ${n}명 AI 채점`); btn.title = '글을 쓴 학생 중(제출 여부 무관 — 2026-10-29) 아직 채점 안 했거나, 채점 뒤 글을 고쳤거나, 채점 기준이 바뀌기 전(2026-11-04)에 채점한 학생';
   { const t = document.getElementById('grTot'); if(t) t.textContent = Object.values(allStudents||{}).filter(x=> x && hasReport(x)).length; }
   btn.disabled = n===0 || gradeBulkRunning;
   btn.classList.toggle('done', n===0 && anyGraded && !gradeBulkRunning);
