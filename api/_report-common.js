@@ -177,7 +177,7 @@ function parseReport(raw) {
     `[결론]\n${concl || none}\n\n` +
     `[자료 출처] (글자 수에 포함하지 않음)\n${sources.length ? sources.map((x, i) => `${i + 1}. ${x.name || '(이름 없음)'}${x.link ? ' — ' + x.link : ' (링크 없음)'}${x.banned ? `  ← 프로그램 판단: ${x.banned}(자료로 인정하지 않음)` : (x.missing ? `  ← 프로그램 판단: ${x.missing}(자료로 세지 않음)` : '  ← 프로그램 판단: 인정되는 자료')}${x.files ? ` [첨부 파일 ${x.files}개]` : ' [첨부 파일 없음]'}`).join('\n') : none}\n\n` +
     `(참고 — 프로그램이 센 글자 수, 띄어쓰기 포함: 서론 ${counts.intro}자, 본론 ${counts.body}자, 결론 ${counts.concl}자, 서론+본론+결론 합계 ${counts.total}자)`;
-  return { empty: !intro && !body && !concl, counts, report, sources };
+  return { empty: !title && !intro && !body && !concl && !sources.length, counts, report, sources };   // 2026-11-04: 제목(질문)만 쓰고 낸 학생도 채점되게(7반 12번)
 }
 
 /* OpenAI Chat Completions 호출. 추론 모델이면 추론을 '낮음'으로(빠르고 싸게). opts.effort로 바꿀 수 있다(2부 채점은 'medium').
