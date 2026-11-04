@@ -105,6 +105,15 @@
   .teacher-col{margin-top:16px;}
   .teacher-col-title{font-size:12.5px;font-weight:bold;color:#666;margin:4px 2px 8px;}
   .text-answer-list{display:flex;flex-direction:column;gap:10px;}
+  /* 2026-11-04 학생 번호 바로가기(시안 승인) */
+  .tv-jump{position:sticky;top:0;z-index:5;background:#fff;border:1px solid #dde1ee;border-radius:12px;padding:8px 10px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .tv-jump .tj-l{font-size:12px;color:#888;width:100%;}
+  .tv-jump button{position:relative;min-width:44px;height:44px;border:1.5px solid #1565c0;border-radius:10px;background:#fff;color:#1565c0;font-weight:bold;font-size:15px;cursor:pointer;padding:0 6px;}
+  .tv-jump button.on{background:#1565c0;color:#fff;}
+  .tv-jump button.no{border:1.5px dashed #bbb;color:#bbb;}
+  .tv-jump button small{position:absolute;left:0;right:0;bottom:1px;font-size:10px;color:#e65100;line-height:1;}
+  .tv-jump button.on small{color:#ffe0b2;}
+  #tdmPick{height:40px;font-size:14px;border:1.5px solid #1565c0;border-radius:10px;padding:0 8px;color:#1565c0;font-weight:bold;background:#fff;max-width:180px;}
   .text-answer-item{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:10px 14px;}
   .text-answer-item .ta-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
   .text-answer-item .ta-name{font-weight:bold;font-size:13px;color:#222;}
@@ -466,6 +475,7 @@
       </div>
       <div class="teacher-col">
         <div class="teacher-col-title">✏️ 학생 보고서 전체 (🤖 AI 채점·피드백을 받고 점수를 고칠 수 있어요 · ● 지금 보는 중)</div>
+        <div id="tvJump" class="tv-jump"></div>
         <div id="teacherTextWrap" class="text-answer-list"></div>
       </div>
     </div>
@@ -1674,8 +1684,9 @@ function tdmOrder(){ return Object.keys(allStudents).filter(k=> hasReport(allStu
 function paintTdmNav(){
   const nav = document.getElementById('tdmNav'); if(!nav) return;
   const o = tdmOrder(), i = o.indexOf(tdmKey);
-  nav.innerHTML = i < 0 ? '' : `<button type="button" class="tdm-nav" data-tdm-go="${i-1}" ${i<=0?'disabled':''}>◀ 이전 학생</button><button type="button" class="tdm-nav" data-tdm-go="${i+1}" ${i>=o.length-1?'disabled':''}>다음 학생 ▶</button>`;
+  nav.innerHTML = i < 0 ? '' : `<button type="button" class="tdm-nav" data-tdm-go="${i-1}" ${i<=0?'disabled':''}>◀ 이전 학생</button><select id="tdmPick" title="학생 바로 고르기">${o.map((k,j)=>{ const st=allStudents[k]||{}; return `<option value="${j}" ${j===i?'selected':''}>${esc(st.number||'?')}번 ${esc(st.name||'')}</option>`; }).join('')}</select><button type="button" class="tdm-nav" data-tdm-go="${i+1}" ${i>=o.length-1?'disabled':''}>다음 학생 ▶</button>`;
 }
+document.addEventListener('change', e=>{ if(!e.target || e.target.id!=='tdmPick') return; const k = tdmOrder()[+e.target.value]; if(k) openTaskDetail(k, allStudents[k], TASK_IDS[0]); });   // 2026-11-04 번호 고르기
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-tdm-go]'); if(!b || b.disabled) return; const k = tdmOrder()[+b.dataset.tdmGo]; if(k) openTaskDetail(k, allStudents[k], TASK_IDS[0]); });
 function openTaskDetail(key, s, taskId){
   const t = TASK_LABELS.find(x=>x.id===taskId);
@@ -1817,12 +1828,13 @@ function renderTeacherView(){
   }
   const list = keys.map(k=>({key:k, student:allStudents[k]||{}}))
     .sort((a,b)=> byNumber(a.student, b.student));
+  renderTvJump(list);
   list.forEach(item=>{
     const s = item.student;
     const done = taskDone(s, selectedTaskId);
     const val = taskValue(s, selectedTaskId);
     const isLive = s.currentTaskId===selectedTaskId;
-    const box=document.createElement('div'); box.className='text-answer-item'; box.style.cursor='pointer';
+    const box=document.createElement('div'); box.className='text-answer-item'; box.style.cursor='pointer'; box.id='tv-'+item.key; box.style.scrollMarginTop='130px';
     const head=document.createElement('div'); head.className='ta-head';
     const nameWrap=document.createElement('span');
     const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
@@ -1841,6 +1853,19 @@ function renderTeacherView(){
     textWrap.appendChild(box);
   });
 }
+
+/* 2026-11-04 선생님 요청: 교사용 뷰 번호 바로가기 — 번호를 누르면 그 학생 글로 내려간다. 점선 = 글 안 씀, ↻ = 다시 채점 필요 */
+let tvJumpKey = null;
+function renderTvJump(list){
+  const el = document.getElementById('tvJump'); if(!el) return;
+  if(!list.length){ el.style.display='none'; return; } el.style.display='';
+  el.innerHTML = '<div class="tj-l">번호를 누르면 그 학생 글로 바로 내려가요 · 점선 = 글 안 씀 · <span style="color:#e65100">↻</span> = 다시 채점 필요</div>' + list.map(({key, student:s})=>{
+    const has = hasReport(s), g = gradeOf(s), re = has && (!g.ai || g.stale || isOldRubric(g));
+    return `<button type="button" data-tvj="${esc(key)}" class="${has?'':'no'}${key===tvJumpKey?' on':''}" title="${esc(displayName(key, s.name, s.number))}">${esc(s.number||'?')}${re?'<small>↻</small>':''}</button>`; }).join('');
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-tvj]'); if(!b) return;
+  tvJumpKey = b.dataset.tvj; document.querySelectorAll('#tvJump button').forEach(x=> x.classList.toggle('on', x===b));
+  const box = document.getElementById('tv-'+tvJumpKey); if(box) box.scrollIntoView({block:'start', behavior:'smooth'}); });
 
 /* ---------- 탭 전환 ---------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
