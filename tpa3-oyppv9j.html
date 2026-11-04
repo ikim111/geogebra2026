@@ -106,13 +106,13 @@
   .teacher-col-title{font-size:12.5px;font-weight:bold;color:#666;margin:4px 2px 8px;}
   .text-answer-list{display:flex;flex-direction:column;gap:10px;}
   /* 2026-11-04 학생 번호 바로가기(시안 승인) */
-  .tv-jump{position:sticky;top:0;z-index:5;background:#fff;border:1px solid #dde1ee;border-radius:12px;padding:8px 10px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-  .tv-jump .tj-l{font-size:12px;color:#888;width:100%;}
-  .tv-jump button{position:relative;min-width:44px;height:44px;border:1.5px solid #1565c0;border-radius:10px;background:#fff;color:#1565c0;font-weight:bold;font-size:15px;cursor:pointer;padding:0 6px;}
+  .tv-jump{position:sticky;top:0;z-index:5;background:#fff;border:1px solid #dde1ee;border-radius:8px;padding:4px 8px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;} /* 2026-11-04 v2: 한 줄로 작게(가리는 화면 줄임) */
+  .tv-jump .tj-l{font-size:12px;color:#888;margin-right:4px;white-space:nowrap;}
+  .tv-jump button{position:relative;min-width:30px;height:28px;border:1px solid #1565c0;border-radius:6px;background:#fff;color:#1565c0;font-weight:bold;font-size:12.5px;cursor:pointer;padding:0 4px;}
   .tv-jump button.on{background:#1565c0;color:#fff;}
-  .tv-jump button.no{border:1.5px dashed #bbb;color:#bbb;}
-  .tv-jump button small{position:absolute;left:0;right:0;bottom:1px;font-size:10px;color:#e65100;line-height:1;}
-  .tv-jump button.on small{color:#ffe0b2;}
+  .tv-jump button.no{border:1px dashed #bbb;color:#bbb;}
+  .tv-jump button small{position:absolute;top:-6px;right:-4px;font-size:10px;color:#e65100;background:#fff;border-radius:6px;line-height:1;}
+  
   #tdmPick{height:40px;font-size:14px;border:1.5px solid #1565c0;border-radius:10px;padding:0 8px;color:#1565c0;font-weight:bold;background:#fff;max-width:180px;}
   .text-answer-item{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:10px 14px;}
   .text-answer-item .ta-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
@@ -1834,7 +1834,7 @@ function renderTeacherView(){
     const done = taskDone(s, selectedTaskId);
     const val = taskValue(s, selectedTaskId);
     const isLive = s.currentTaskId===selectedTaskId;
-    const box=document.createElement('div'); box.className='text-answer-item'; box.style.cursor='pointer'; box.id='tv-'+item.key; box.style.scrollMarginTop='130px';
+    const box=document.createElement('div'); box.className='text-answer-item'; box.style.cursor='pointer'; box.id='tv-'+item.key; box.style.scrollMarginTop='50px';
     const head=document.createElement('div'); head.className='ta-head';
     const nameWrap=document.createElement('span');
     const name=document.createElement('span'); name.className='ta-name'; name.textContent=displayName(item.key,s.name,s.number);
@@ -1859,7 +1859,8 @@ let tvJumpKey = null;
 function renderTvJump(list){
   const el = document.getElementById('tvJump'); if(!el) return;
   if(!list.length){ el.style.display='none'; return; } el.style.display='';
-  el.innerHTML = '<div class="tj-l">번호를 누르면 그 학생 글로 바로 내려가요 · 점선 = 글 안 씀 · <span style="color:#e65100">↻</span> = 다시 채점 필요</div>' + list.map(({key, student:s})=>{
+  el.title = '번호를 누르면 그 학생 글로 바로 내려가요 · 점선 = 글 안 씀 · ↻ = 다시 채점 필요';
+  el.innerHTML = '<span class="tj-l">바로가기</span>' + list.map(({key, student:s})=>{
     const has = hasReport(s), g = gradeOf(s), re = has && (!g.ai || g.stale || isOldRubric(g));
     return `<button type="button" data-tvj="${esc(key)}" class="${has?'':'no'}${key===tvJumpKey?' on':''}" title="${esc(displayName(key, s.name, s.number))}">${esc(s.number||'?')}${re?'<small>↻</small>':''}</button>`; }).join('');
 }
