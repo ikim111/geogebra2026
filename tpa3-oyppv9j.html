@@ -1337,8 +1337,8 @@ function printPageHTML(st, roomName){
   </section>`;
 }
 const PRINT_CSS = `@page{size:A4;margin:0;}
-  .pg{padding:10mm 12mm;width:210mm;}
-  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.6;color:#1a1a1a;margin:0;word-break:keep-all;}
+  .pg{padding:10mm 12mm;width:210mm;overflow:hidden;}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10pt;line-height:1.6;color:#1a1a1a;margin:0;word-break:keep-all;overflow-wrap:anywhere;} /* 2026-11-04: 'oooo…'처럼 띄어쓰기 없는 긴 글이 쪽 밖으로 나가 반 전체가 작게 인쇄되던 문제 */
   .pg{page-break-after:always;} .pg:last-child{page-break-after:auto;}
   header{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #1a237e;padding-bottom:5px;margin-bottom:8px;}
   .who{font-size:15pt;font-weight:bold;color:#1a237e;} .meta{font-size:8.5pt;color:#666;}
@@ -2092,7 +2092,7 @@ document.addEventListener('click', e=>{
   else if(t.id === 'bpShow'){ bestShowI = 0; bestShowPaint(); }
   else if(t.dataset.bs){ if(t.dataset.bs === 'x') document.getElementById('bestShow').style.display = 'none'; else { bestShowI += +t.dataset.bs; bestShowPaint(); } }
   else if(t.id === 'bpPrint'){ const ps = bestPicks(); const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 우수작</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10.5pt;line-height:1.65;color:#1a1a1a;word-break:keep-all;}
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(currentRoomName)}반 우수작</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:10.5pt;line-height:1.65;color:#1a1a1a;word-break:keep-all;overflow-wrap:anywhere;}
       .pg{width:210mm;padding:12mm 14mm;page-break-after:always;border-top:6px solid #f9a825;} .pg:last-child{page-break-after:auto;} .hd{font-size:13pt;font-weight:bold;color:#1a237e;margin-bottom:4px;}
       .lk{background:#fff8e1;border-radius:6px;padding:5px 9px;margin:4px 0;} h2{font-size:14pt;margin:6px 0;color:#1a237e;} h3{font-size:10.5pt;color:#9a6700;margin:8px 0 2px;} p{margin:0 0 3px;text-indent:.6em;} .src{font-size:9pt;color:#555;} .q{background:#e3f2fd;border-radius:6px;padding:6px 9px;margin-top:8px;}</style></head><body>
       ${ps.map((k,i)=> bestPageHTML(k, i, true).replace('<div class="pg">', `<div class="pg"><div class="hd">⭐ ${esc(currentRoomName)}반 우수작 ${'①②③'[i]}</div>`)).join('')}
@@ -2194,7 +2194,7 @@ document.addEventListener('click', async e=>{
   else if(t.dataset.gbView){ const [room, key] = t.dataset.gbView.split('|'), w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; }
     const s = await gbStudent(room, key); w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${gbName(room, s)}</title><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;line-height:1.7;padding:0 16px;} h3{color:#9a6700;margin:14px 0 4px;} .lk{background:#fff8e1;padding:6px 10px;border-radius:6px;}</style></head><body>${gbPageHTML(s, 0, gbName(room, s), '', false)}</body></html>`); w.document.close(); }
   else if(t.id === 'gbPrint'){ const w = window.open('', '_blank'); if(!w){ alert('팝업이 막혀 있어요.'); return; } const ps = await gbPicksLoaded();
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>학년 우수작</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10pt;line-height:1.55;}
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>학년 우수작</title><style>@page{size:A4;margin:0;} *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;} body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:10pt;line-height:1.55;overflow-wrap:anywhere;}
       .pg{width:210mm;padding:12mm 14mm;page-break-after:always;border-top:6px solid #f9a825;} .pg:last-child{page-break-after:auto;} .hd{font-size:13pt;font-weight:bold;color:#1a237e;margin-bottom:4px;}
       .lk{background:#fff8e1;border-radius:6px;padding:5px 9px;margin:4px 0;} h2{font-size:14pt;margin:6px 0;color:#1a237e;} h3{font-size:10.5pt;color:#9a6700;margin:8px 0 2px;} p{margin:0 0 3px;text-indent:.6em;} .src{font-size:9pt;color:#555;}</style></head><body>
       ${ps.map((p,i)=> gbPageHTML(p.s, i, '', gbLook(p), true).replace('<div class="pg">', `<div class="pg"><div class="hd">🏆 학년 우수작 ${i+1} · ${GB_TAG[p.slot]}</div>`)).join('')}
