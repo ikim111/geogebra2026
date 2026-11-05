@@ -927,7 +927,10 @@ function renderSide(id){
       <div class="g-msg">${(!c.cong || CONG_PICK[id]) ? '' : ok ? `<span class="ok">✅ ${g.after}<br>△A′B′C′ ≡ △DEF 이므로 <b>△ABC ∽ △DEF (${g.name})</b></span>` : '<span class="bad">작도할 때 무엇을 같게 만들었는지(변? 각?) 떠올려 보세요.</span>'}</div>`
       + (id===4 && ok ? '<div class="note" style="margin-top:4px;">두 각이 같으면 밑변을 몇 배로 하든 같은 모양이 돼요. 그래서 각 두 개만 같으면 닮음이에요.</div>' : '');
     const zb = cg.querySelector('.zb'); if(zb) zb.addEventListener('click', ()=>{ if(isLocked() || c.zoom) return; c.zoom = true; CMP_ANIM[id] = 'zoom'; RENDER[id](); CHECK[id]({now:true}); });
-    const ovb = cg.querySelector('.ovb'); if(ovb) ovb.addEventListener('click', ()=>{ if(isLocked() || !c.zoom || c.ov) return; c.ov = true; CMP_ANIM[id] = 'ov'; RENDER[id](); CHECK[id]({now:true}); });
+    const ovb = cg.querySelector('.ovb'); if(ovb) ovb.addEventListener('click', ()=>{ if(isLocked() || !c.zoom) return;
+      /* 2026-11-05 학생 요청: 겹친 뒤 한 번 더 누르면 겹치기 전으로 돌아가고, 또 누르면 다시 겹침(보기만 바뀜, 완료 기록 c.ov는 그대로) */
+      if(c.ov){ CMP_SEP[id] = !CMP_SEP[id]; CMP_ANIM[id] = CMP_SEP[id] ? null : 'ov'; RENDER[id](); return; }
+      c.ov = true; CMP_SEP[id] = false; CMP_ANIM[id] = 'ov'; RENDER[id](); CHECK[id]({now:true}); });
     cg.querySelectorAll('.pickc button').forEach(b=> b.addEventListener('click', ()=>{ if(isLocked() || !c.ov || c.cong===g.cong) return; CONG_PICK[id] = b.dataset.v; renderSide(id); }));   // 고르기만 하고
     const ckb = cg.querySelector('.ckb'); if(ckb) ckb.addEventListener('click', ()=>{ if(isLocked() || !c.ov || !CONG_PICK[id] || c.cong===g.cong) return; c.cong = CONG_PICK[id]; CONG_PICK[id] = ''; if(c.cong!==g.cong) c.cmiss++; renderSide(id); CHECK[id]({now:true}); });   // 「확인」을 눌러야 채점
   } else cg.innerHTML = '';
@@ -989,10 +992,11 @@ function ovSVG(id){
 /* 겹쳐 보기 화면(2026-10-21 바꿈): 노란 △ABC(세 변·세 각) → 「확대하기」로 2배 △A′B′C′ → 「겹치기」로 파란 △DEF 위에 옮긴다. 작도에서 같게 만든 부분은 빨간색 */
 const CMP_ANIM = {}, CONG_PICK = {};
 function cmpBtns(id){ const c = C_(id);
-  return `<div class="cmprow"><button type="button" class="zb sbtn"${c.zoom||isLocked()?' disabled':''}>🔍 확대하기 (2배)</button><button type="button" class="ovb sbtn"${(!c.zoom||c.ov||isLocked())?' disabled':''}>⧉ 겹치기</button></div>`
-    + `<div class="ovmsg ok" style="min-height:20px;">${c.ov ? '딱 겹쳐요! △A′B′C′과 △DEF는 합동이에요.' : c.zoom ? '△ABC를 2배로 확대한 △A′B′C′이에요. 이제 「겹치기」를 눌러 보세요.' : ''}</div>`; }
+  return `<div class="cmprow"><button type="button" class="zb sbtn"${c.zoom||isLocked()?' disabled':''}>🔍 확대하기 (2배)</button><button type="button" class="ovb sbtn"${(!c.zoom||isLocked())?' disabled':''}>${c.ov && !CMP_SEP[id] ? '↩ 겹치기 전으로' : c.ov ? '⧉ 다시 겹치기' : '⧉ 겹치기'}</button></div>`
+    + `<div class="ovmsg ok" style="min-height:20px;">${c.ov && CMP_SEP[id] ? '겹치기 전 모습이에요. 「다시 겹치기」를 누르면 또 겹쳐요.' : c.ov ? '딱 겹쳐요! △A′B′C′과 △DEF는 합동이에요.' : c.zoom ? '△ABC를 2배로 확대한 △A′B′C′이에요. 이제 「겹치기」를 눌러 보세요.' : ''}</div>`; }
+const CMP_SEP = {};   // 겹친 뒤 다시 떨어뜨려 보는 중인지(보기 전용, 저장 안 함)
 function cmpBoard(id){
-  const c = C_(id), s = 11, LB = [22, 140], RB = [262, 140], RD = '#c62828', mk = CMP_MARK[id];
+  const c0 = C_(id), c = Object.assign({}, c0, {ov: c0.ov && !CMP_SEP[id]}), s = 11, LB = [22, 140], RB = [262, 140], RD = '#c62828', mk = CMP_MARK[id];
   const T2 = [[5, 5*Math.sqrt(3)], [0,0], [16,0]], T1 = T2.map(p=>[p[0]/2, p[1]/2]);   // A, B, C
   const Q = (p, o) => [o[0] + p[0]*s, o[1] - p[1]*s], QS = (p,o) => Q(p,o).map(v=>v.toFixed(1)).join(',');
   const AN = {a: deg(T0.A), b: '60°', c: deg(T0.C)};
