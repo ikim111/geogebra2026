@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방탈출 안내 — 교사 화면</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="escape-guide.js"></script>
+<style>
+  body{margin:0;background:#eef0f6;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#222}
+  .head{background:#1a237e;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .head a{color:#c5cae9;text-decoration:none;min-height:44px;display:flex;align-items:center}
+  .head b{font-size:16px}
+  .rounds{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .rounds button{min-height:44px;padding:0 14px;border-radius:10px;border:2px solid #fff;background:transparent;color:#fff;font-weight:bold;font-size:14px}
+  .rounds button.on{background:#1565c0;border-color:#1565c0}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 16px}
+  .bar{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 12px;margin-top:10px;flex-wrap:wrap}
+  .btn{min-height:44px;padding:0 18px;border-radius:10px;border:2px solid #1565c0;background:#fff;color:#1565c0;font-weight:bold;font-size:15px;cursor:pointer}
+  .btn.p{background:#1565c0;color:#fff}
+  .btn.g{background:#2e7d32;border-color:#2e7d32;color:#fff;margin-left:auto}
+  .btn:disabled{border:2px dashed #b0b6bb;background:#fff;color:#9aa0a6;cursor:default}
+  .live{font-size:13px;color:#2e7d32;font-weight:bold}
+  .why{font-size:12.5px;color:#777}
+  #slide{max-width:calc((100vh - 190px)*16/9);margin:0 auto}
+  .bar{max-width:calc((100vh - 190px)*16/9);margin-left:auto;margin-right:auto}
+  .note{font-size:13px;color:#555;margin:8px 2px}
+</style></head><body>
+<div class="head"><a id="backLink" href="mgmt-9x3k7f2p.html">← 목차</a><b id="hd">🧭 방탈출 안내</b>
+  <div class="rounds" id="rounds"></div></div>
+<div class="wrap">
+  <div id="slide"></div>
+  <div class="bar"><button class="btn" id="prev">◀ 이전</button><button class="btn p" id="next">다음 ▶</button>
+    <span class="live" id="live">● 연결 중…</span><span class="why" id="why"></span>
+    <button class="btn g" id="go" disabled>🚀 시작!</button></div>
+  <div class="note">← → 방향키로도 넘길 수 있어요. 학생 디벗은 이 화면을 그대로 따라가고, [🚀 시작!]을 누르면 모두 게임 화면으로 바뀌어요.<br>잘못 눌렀으면 다시 「다음/이전」을 누르면 시작 신호가 꺼져요(이미 게임으로 넘어간 디벗은 그대로예요).</div>
+</div>
+<script>
+(function(){
+  const q = new URLSearchParams(location.search), classNo = q.get('classNo') || '';
+  if(classNo) document.getElementById('backLink').href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(classNo);
+  EGUIDE.css();
+  const $ = id => document.getElementById(id);
+  let round = Math.max(0, Math.min(3, parseInt(q.get('round')||'0',10)||0)), page = 0, ref = null, viewers = {};
+  const paint = () => {
+    const R = EGUIDE.ROUNDS[round], N = EGUIDE.count(round);
+    $('hd').textContent = `🧭 ${classNo ? classNo + '반 · ' : ''}${R.series} 안내`;
+    $('slide').innerHTML = EGUIDE.html(round, page);
+    $('rounds').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.r === round));
+    $('prev').disabled = page === 0; $('next').disabled = page >= N-1;
+    const last = page >= N-1; $('go').disabled = !last; $('why').textContent = last ? '' : '👉 마지막 장에서 시작할 수 있어요';
+    const n = Object.values(viewers).filter(v => v && +v.r === round).length;
+    $('live').textContent = ref ? `● 학생 디벗 ${n}대가 같이 보는 중` : (classNo ? '● 연결 중…' : '● 반을 고르지 않아 학생 화면과 연결되지 않아요');
+  };
+  const send = go => { if(ref) ref.child('guide').set({round, page, go: go ? firebase.database.ServerValue.TIMESTAMP : 0}); };
+  const move = p => { const N = EGUIDE.count(round); page = Math.max(0, Math.min(N-1, p)); paint(); send(false); };
+  $('rounds').innerHTML = [0,1,2,3].map(r => `<button data-r="${r}">${r ? r + '회 ' + EGUIDE.ROUNDS[r].series : '연습'}</button>`).join('');
+  $('rounds').querySelectorAll('button').forEach(b => b.onclick = () => { round = +b.dataset.r; page = 0; paint(); send(false); });
+  $('prev').onclick = () => move(page-1); $('next').onclick = () => move(page+1);
+  $('go').onclick = () => { if(!confirm('학생 디벗을 모두 게임 화면으로 넘길까요? 넘어가면 시간이 흐르기 시작해요.')) return; send(true); $('why').textContent = '✅ 시작 신호를 보냈어요'; };
+  addEventListener('keydown', e => { if(e.key === 'ArrowRight' || e.key === 'PageDown') move(page+1); if(e.key === 'ArrowLeft' || e.key === 'PageUp') move(page-1); });
+  paint();
+  if(!classNo) return;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(EGUIDE.FB);
+    firebase.auth().signInAnonymously().then(() => {
+      ref = firebase.database().ref('rooms/' + EGUIDE.room(classNo));
+      ref.child('viewers').on('value', s => { viewers = s.val() || {}; paint(); });
+      send(false); paint();   // 교사 화면을 열면 지금 장(시작 신호 꺼짐)으로 맞춤
+    }).catch(() => { $('live').textContent = '⚠️ 연결 안 됨 — TV 화면으로만 안내하세요'; });
+  }catch(e){ $('live').textContent = '⚠️ 연결 안 됨 — TV 화면으로만 안내하세요'; }
+})();
+</script>
+<script src="tdash.js"></script>
+</body></html>

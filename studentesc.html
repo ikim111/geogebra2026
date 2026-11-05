@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방탈출 안내 — 모둠 디벗</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="escape-guide.js"></script>
+<style>
+  body{margin:0;background:#0d1257;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;min-height:100vh;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px}
+  .top a{color:#c5cae9;text-decoration:none;min-height:44px;display:flex;align-items:center}
+  .top .who{margin-left:auto;opacity:.75;font-size:13px}
+  .wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 16px 16px;max-width:1200px;width:100%;margin:0 auto;box-sizing:border-box}
+  #slide{width:100%;max-width:calc((100vh - 150px)*16/9);margin:0 auto}
+  .follow{text-align:center;font-size:14px;padding:10px 0;opacity:.85}
+  .pv{display:flex;gap:10px;justify-content:center;padding-top:8px}
+  .pv button{min-height:44px;padding:0 18px;border-radius:10px;border:2px solid #fff;background:transparent;color:#fff;font-weight:bold;font-size:15px}
+  .go{display:none;margin:12px auto 0;min-height:52px;padding:0 26px;border-radius:12px;border:0;background:#2e7d32;color:#fff;font-weight:bold;font-size:17px}
+</style></head><body>
+<div class="top"><a id="backLink" href="student.html">← 목차</a><span class="who" id="who"></span></div>
+<div class="wrap"><div id="slide"></div><div class="follow" id="follow">📡 선생님 화면을 기다리는 중…</div>
+  <div class="pv" id="pv" style="display:none"><button id="pPrev">◀ 이전</button><button id="pNext">다음 ▶</button></div>
+  <button class="go" id="goBtn">🚀 게임 화면으로</button></div>
+<script>
+(function(){
+  const q = new URLSearchParams(location.search), round = Math.max(0, Math.min(3, parseInt(q.get('round')||'0',10)||0));
+  const preview = q.get('preview') === '1', R = EGUIDE.ROUNDS[round], N = EGUIDE.count(round);
+  const classNo = q.get('classNo') || '';
+  document.title = `방탈출 안내 — ${R.series}`;
+  document.getElementById('who').textContent = classNo ? `${classNo}반 · ${R.series}` : R.series;
+  EGUIDE.css();
+  let page = 0; const $ = id => document.getElementById(id);
+  const show = p => { page = Math.max(0, Math.min(N-1, p)); $('slide').innerHTML = EGUIDE.html(round, page); };
+  const toGame = () => { location.href = R.game + '?go=1'; };
+  $('goBtn').onclick = toGame;
+  show(0);
+  if(preview || !classNo){   // 👀 교사 미리보기: 혼자 넘겨 보기(기록·연결 없음)
+    $('follow').textContent = '👀 미리보기 — 수업에서는 선생님 화면을 따라 넘어가요';
+    $('pv').style.display = 'flex'; $('pPrev').onclick = () => show(page-1); $('pNext').onclick = () => show(page+1);
+    return;
+  }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(EGUIDE.FB);
+    firebase.auth().signInAnonymously().then(cred => {
+      const db = firebase.database(), base = 'rooms/' + EGUIDE.room(classNo);
+      const me = db.ref(base + '/viewers/' + cred.user.uid);
+      db.ref('.info/connected').on('value', s => { if(s.val()){ me.onDisconnect().remove(); me.set({t: firebase.database.ServerValue.TIMESTAMP, r: round}); } });
+      db.ref(base + '/guide').on('value', s => {
+        const g = s.val() || {};
+        if(+g.round !== round){ show(0); $('follow').textContent = '📡 선생님이 안내를 시작하면 화면이 같이 넘어가요'; return; }
+        show(+g.page || 0); $('follow').textContent = `📡 선생님 화면을 따라가요 · ${page+1} / ${N}`;
+        if(g.go && Date.now() - (+g.go) < 3*3600e3){ $('follow').textContent = '🚀 출발! 게임 화면으로 넘어가요…'; $('goBtn').style.display = 'block'; setTimeout(toGame, 800); }
+      });
+    }).catch(() => { $('follow').textContent = '⚠️ 연결이 안 돼요. 선생님 화면(TV)을 보세요.'; $('goBtn').style.display = 'block'; });
+  }catch(e){ $('follow').textContent = '⚠️ 연결이 안 돼요. 선생님 화면(TV)을 보세요.'; $('goBtn').style.display = 'block'; }
+})();
+</script>
+<script src="sdash.js"></script>
+</body></html>

@@ -243,6 +243,15 @@ const SECTIONS = [
         {n:93, label:'🔗', title:'8. 경우의 수와 확률 (Snorkl)', external:true, url:'https://student.snorkl.app/zjgcy8'},
         {n:94, label:'🔗', title:'8단원 마무리하기 (Snorkl)', external:true, url:'https://student.snorkl.app/mtsrde'}
       ]}
+  ]},
+  /* 🧭 2026-11-05 방탈출 보드게임: 시작 전 안내(선생님 화면을 실시간으로 따라감) → 선생님이 [시작!] 누르면 그 회차 게임으로 */
+  { chapter:'🧭 방탈출 보드게임', groups:[
+      { title:'', items:[
+        {n:50, label:1, title:'연습 · 규칙 익히기 - 선원 훈련소', file:'studentesc.html', q:'round=0', color:'#8d6e63'},
+        {n:51, label:2, title:'제1회 · 붉은 나침반 - 찢어진 지도', file:'studentesc.html', q:'round=1', color:'#d32f2f'},
+        {n:52, label:3, title:'제2회 · 푸른 나침반 - 강을 건너, 동굴로', file:'studentesc.html', q:'round=2', color:'#1565c0'},
+        {n:53, label:4, title:'제3회 · 황금 나침반 - 동굴 속 보물 방', file:'studentesc.html', q:'round=3', color:'#f9a825'}
+      ]}
   ]}
 ];
 
@@ -305,6 +314,8 @@ function buildTaskLink(t, profile, opts){
   a.className='task-link';
   a.dataset.n = t.n;
   if(TYPE_BY_N[t.n]) a.style.borderLeft = '6px solid ' + TYPE_COLOR[TYPE_BY_N[t.n]];
+  if(t.color) a.style.borderLeft = '6px solid ' + t.color;   // 🧭 방탈출: 회차 색(나침반 바늘 색)
+  if(t.q) a.dataset.q = t.q;
   const num=document.createElement('span'); num.className='num'; num.textContent=t.label;
   const title=document.createElement('span'); title.className='title'; fillTitle2(title, t.title, TYPE_COLOR[TYPE_BY_N[t.n]]);
   const why=document.createElement('small'); why.className='lockwhy'; why.textContent = t.n===25 ? '🔒 수업 시간(시작 5분 전)에 열려요' : '🔒 선생님이 열어 주면 들어갈 수 있어요'; title.appendChild(why);
@@ -320,7 +331,7 @@ function buildTaskLink(t, profile, opts){
   } else {
     const params = new URLSearchParams({classNo:profile.classNo, number:profile.number||'', name:profile.name});
     // 실제 목적지는 항상 데이터셋에 저장해두고, 잠금 여부가 확인된 뒤에만 href로 옮긴다.
-    a.dataset.href = BASE_URL + t.file + '?' + params.toString();
+    a.dataset.href = BASE_URL + t.file + '?' + (t.q ? t.q + '&' : '') + params.toString();
   }
   if(opts && opts.alwaysOpen){
     unlockTaskLink(a);
@@ -693,7 +704,7 @@ document.getElementById('fixGo').addEventListener('click', async ()=>{
     const pv = { classNo:'5', number:'0', name:'미리보기' };
     document.getElementById('viewClass').textContent = pv.classNo; document.getElementById('viewNumber').textContent = pv.number; document.getElementById('viewName').textContent = pv.name;
     buildTaskLinks(pv);
-    document.querySelectorAll('.task-link').forEach(a=>{ if(!a.dataset.external && a.dataset.href){ a.dataset.href = a.dataset.href.split('?')[0] + '?preview=1'; } unlockTaskLink(a); if(a.dataset.n==='25'){ lockTaskLink(a); } });
+    document.querySelectorAll('.task-link').forEach(a=>{ if(!a.dataset.external && a.dataset.href){ a.dataset.href = a.dataset.href.split('?')[0] + '?preview=1' + (a.dataset.q ? '&' + a.dataset.q : ''); } unlockTaskLink(a); if(a.dataset.n==='25'){ lockTaskLink(a); } });
     const ab = document.querySelector('.acct-btns'); if(ab) ab.style.display = 'none';
     const tc = document.querySelector('.top-card'); if(tc) tc.insertAdjacentHTML('beforeend','<div style="margin-top:8px;font-size:12.5px;color:#e65100;">👀 미리보기 화면이에요 — 기록은 저장되지 않아요</div>');
     document.getElementById('page1').style.display='none'; document.getElementById('page2').style.display='block';

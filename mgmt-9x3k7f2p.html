@@ -265,6 +265,15 @@ const SECTIONS = [
         {n:93, label:'🔗', title:'8. 경우의 수와 확률 (Snorkl)', external:true, url:'https://student.snorkl.app/zjgcy8'},
         {n:94, label:'🔗', title:'8단원 마무리하기 (Snorkl)', external:true, url:'https://student.snorkl.app/mtsrde'}
       ]}
+  ]},
+  /* 🧭 2026-11-05 방탈출 보드게임: 시작 전 안내(선생님 화면을 실시간으로 따라감) → 선생님이 [시작!] 누르면 그 회차 게임으로 */
+  { chapter:'🧭 방탈출 보드게임', groups:[
+      { title:'', items:[
+        {n:50, label:1, title:'연습 · 규칙 익히기 - 선원 훈련소', file:'tesc-r8k2w.html', q:'round=0', color:'#8d6e63'},
+        {n:51, label:2, title:'제1회 · 붉은 나침반 - 찢어진 지도', file:'tesc-r8k2w.html', q:'round=1', color:'#d32f2f'},
+        {n:52, label:3, title:'제2회 · 푸른 나침반 - 강을 건너, 동굴로', file:'tesc-r8k2w.html', q:'round=2', color:'#1565c0'},
+        {n:53, label:4, title:'제3회 · 황금 나침반 - 동굴 속 보물 방', file:'tesc-r8k2w.html', q:'round=3', color:'#f9a825'}
+      ]}
   ]}
 ];
 
@@ -375,6 +384,7 @@ function buildUnitRow(u){
       2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa'};
     const f = String(u.file||''), m = /^t(\d+)-/.exec(f), ty = /^tpa/.test(f) ? 'pa' : (m ? TN[+m[1]] : null);
     if(ty) a.style.borderLeft = '6px solid ' + TC[ty];
+    if(u.color) a.style.borderLeft = '6px solid ' + u.color;   // 🧭 방탈출 회차 색
   }
 
   if(u.external){
@@ -387,7 +397,7 @@ function buildUnitRow(u){
   } else {
     // from=mgmt: 학생과 함께 쓰는 페이지(resultpa1.html 등)가 "관리 페이지에서 열렸다"는 걸 알고
     // 홈 버튼을 이 관리 페이지로 돌려보내는 데 쓴다(teacherN.html은 이 값을 무시한다).
-    a.href = BASE_URL + u.file + '?classNo=' + encodeURIComponent(currentRoom) + '&from=mgmt';
+    a.href = BASE_URL + u.file + '?' + (u.q ? u.q + '&' : '') + 'classNo=' + encodeURIComponent(currentRoom) + '&from=mgmt';
     arrow.textContent = '›';
   }
 

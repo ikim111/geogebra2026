@@ -254,5 +254,8 @@ setInterval(save, 1000); window.addEventListener('pagehide', save);
   homeSay('info','💾 하던 곳부터 이어서 해요. (새로고침 전 기록을 불러왔어요)<small><a href="#" id="resetGame" style="color:#7a1d10;font-weight:900">처음부터 다시 하기</a></small>');
   const r=$('resetGame'); r.onclick=e=>{ e.preventDefault(); if(r.dataset.sure){ saveOff=true; try{ localStorage.removeItem(KEY); }catch(_){} location.reload(); } else { r.dataset.sure=1; r.textContent='정말 처음부터? 한 번 더 누르세요'; } };
   tick(); })();
+/* 🚀 2026-11-05: 안내 화면(studentesc.html)에서 선생님이 [시작!]을 누르면 ?go=1로 들어와 바로 시간이 흐른다(이어 하던 게임은 그대로) */
+if(!P && !S.begun && /[?&]go=1/.test(location.search)){ const sb=$('startBtn'); if(sb) sb.click(); }
+if(/[?&]go=1/.test(location.search)) try{ history.replaceState(null,'',location.pathname); }catch(e){}
 window.__S=S; window.__got=got;
 })();
