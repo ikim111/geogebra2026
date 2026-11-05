@@ -251,7 +251,7 @@
   @media (min-width:900px){
     .g1grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"board ref" "board side";grid-template-rows:auto 1fr;gap:10px 18px;align-items:start;}
     .g1grid .g-ref{grid-area:ref;} .g1grid .g-board{grid-area:board;width:auto;} .g1grid .g-side{grid-area:side;}
-    .g1grid #r1{height:100px;} .g1grid #g1{height:max(280px,calc(100vh - 400px));}
+    .g1grid .g-ref svg{height:100px;} .g1grid .g-board svg{height:var(--bh,360px);}
      .g1grid .found{padding-top:6px;padding-bottom:6px;}
     .g1grid .drawrow{margin:6px 0 2px;} .g1grid .found{margin-top:6px;} .g1grid .refcap{margin:0 0 2px;}
   }
@@ -370,8 +370,9 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">2 SSS 닮음 작도</span><span class="badge pending" id="badge-a2">미완료</span></div>
     <h2>세 변을 2배로 — 컴퍼스로 △DEF 작도하기</h2>
-    <div class="g-layout">
-      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r2" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g2" viewBox="0 0 460 320" class="board"></svg></div>
+    <div class="g-layout g1grid">
+      <div class="g-ref"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r2" viewBox="0 -12 460 150" class="board ref"></svg></div>
+      <div class="g-board"><div class="refcap def">✏️ 내가 작도할 도형 △DEF</div><svg id="g2" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps2"></ol>
         <div class="ctl" id="ctl2"></div>
@@ -402,8 +403,9 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">4 SAS 닮음 작도</span><span class="badge pending" id="badge-a4">미완료</span></div>
     <h2>두 변을 2배로, 끼인각은 그대로 — △DEF 작도하기</h2>
-    <div class="g-layout">
-      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r3" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g3" viewBox="0 0 460 320" class="board"></svg></div>
+    <div class="g-layout g1grid">
+      <div class="g-ref"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r3" viewBox="0 -12 460 150" class="board ref"></svg></div>
+      <div class="g-board"><div class="refcap def">✏️ 내가 작도할 도형 △DEF</div><svg id="g3" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps3"></ol>
         <div class="ctl" id="ctl3"></div>
@@ -434,8 +436,9 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">6 AA 닮음 작도</span><span class="badge pending" id="badge-a6">미완료</span></div>
     <h2>두 각을 그대로 — △DEF 작도하기</h2>
-    <div class="g-layout">
-      <div class="g-board"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r4" viewBox="0 -12 460 150" class="board ref"></svg><div class="refcap">✏️ 내가 작도할 도형 △DEF</div><svg id="g4" viewBox="0 0 460 320" class="board"></svg></div>
+    <div class="g-layout g1grid">
+      <div class="g-ref"><div class="refcap">📐 원래 도형 △ABC</div><svg id="r4" viewBox="0 -12 460 150" class="board ref"></svg></div>
+      <div class="g-board"><div class="refcap def">✏️ 내가 작도할 도형 △DEF</div><svg id="g4" viewBox="0 0 460 320" class="board"></svg></div>
       <div class="g-side">
         <ol class="steps" id="steps4"></ol>
         <div class="ctl" id="ctl4"></div>
@@ -727,6 +730,7 @@ function refreshAll(opts){
   $('progressFill').style.width = (done/TASKS.length*100)+'%';
   updateNavButtons();
   if(!(opts && opts.noSave)){ (opts && opts.now) ? RT.pushProgress() : RT.pushProgressDebounced(); }
+  if(typeof fitPage==="function"){ clearTimeout(fitPage._r); fitPage._r = setTimeout(fitPage, 60); }   // 글이 늘어나도 한 화면에 맞게
 }
 
 
@@ -882,6 +886,7 @@ const HINT1 = [
 ];
 let hintStep = 0, hintGroup = -1;
 $('hintBtn').addEventListener('click', ()=>{
+  setTimeout(fitPage, 30);
   const f = state.p1.found, gi = HINT1.findIndex(g=>g.ks.some(k=>!f.includes(k)));
   const box = $('hint1'); box.style.display = '';
   if(gi < 0){ box.innerHTML = '💡 최소 조건을 모두 찾았어요!'; return; }
@@ -1124,6 +1129,22 @@ const pages = [...document.querySelectorAll('#taskContainer > .task'), document.
 let currentPage = 0;
 function pageTaskNum(idx){ const p = pages[idx]; if(!p) return null; const n = parseInt(p.dataset.taskId, 10); return isNaN(n) ? null : n; }
 function taskIdToPageIdx(n){ return pages.findIndex(p=> parseInt(p.dataset.taskId,10)===n); }
+/* 📐 2026-11-05 선생님 요청: 태블릿 한 화면에 들어오게 — 넓은 화면(900px 이상)에서만.
+   ① 보이는 페이지의 큰 판(△DEF·겹쳐 보기) 높이를 남은 화면 높이에 맞추고(240~520px)
+   ② 그래도 아래가 넘치면 카드 전체를 조금 줄인다(최소 0.78배). */
+function fitPage(){
+  const sec = pages[currentPage]; if(!sec) return;
+  sec.style.zoom = '';
+  if(innerWidth < 900){ document.documentElement.style.removeProperty('--bh'); return; }
+  const nav = $('pagerNav'), navH = nav ? nav.offsetHeight : 0;
+  const big = sec.querySelector('.g1grid .g-board svg, .g-layout.one-col .g-board svg');
+  if(big){ const top = big.getBoundingClientRect().top + scrollY, h = Math.round(Math.max(240, Math.min(520, innerHeight - navH - top - 24)));
+    if(big.closest('.g1grid')) document.documentElement.style.setProperty('--bh', h + 'px'); else big.style.maxHeight = h + 'px'; }
+  const card = sec.querySelector('.card'); if(!card) return;
+  const bottom = card.getBoundingClientRect().bottom + scrollY, room = innerHeight - navH - 8;
+  if(bottom > room){ const top = card.getBoundingClientRect().top + scrollY, z = Math.max(0.78, (room - top) / (bottom - top)); if(z < 1) sec.style.zoom = z.toFixed(3); }
+}
+addEventListener('resize', ()=>{ clearTimeout(fitPage._t); fitPage._t = setTimeout(fitPage, 120); });
 function showPage(idx){
   currentPage = Math.max(0, Math.min(pages.length-1, idx));
   pages.forEach((p,i)=>{ p.style.display = (i===currentPage) ? '' : 'none'; });
@@ -1132,6 +1153,7 @@ function showPage(idx){
   window.scrollTo(0,0);
   updateNavButtons();
   onShowPage(pageTaskNum(currentPage));
+  requestAnimationFrame(fitPage);
 }
 function clampToPacing(){
   if(RT.minTaskId==null && RT.maxTaskId==null) return;
