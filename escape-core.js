@@ -236,7 +236,7 @@ function finish(){
   const f=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
   if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="badges" style="justify-content:center;margin:12px 0 4px">'+G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join('')+'</div>'; show('done'); return; }
   const ms=elapsed(), min=ms/60000;
-  let st=min<=30?5:min<=35?4:min<=40?3:min<=45?2:1; st=Math.max(0, st-Math.floor(S.hint/4));
+  const L=G.limitMin||45; let st=min<=L-15?5:min<=L-10?4:min<=L-5?3:min<=L?2:1;   // 2026-11-06: 제한 시간(40분)에 맞춰 5분씩(25·30·35·40분) st=Math.max(0, st-Math.floor(S.hint/4));
   $('stars').innerHTML='★'.repeat(st)+'<em>'+'★'.repeat(5-st)+'</em>';
   $('resTb').innerHTML=`<div class="ln"><span>걸린 시간 · 힌트</span><b class="mono">${f(ms)} · ${S.hint}번</b></div><div class="ln"><span>벌점으로 잃은 시간</span><b class="mono">${S.pen}분 (${S.pen}번)</b></div><div class="ln"><span>틀린 답으로 잃은 시간</span><b class="mono">${S.wrong}분 (${S.wrong}번)</b></div>`;
   show('done'); }
@@ -256,6 +256,21 @@ setInterval(save, 1000); window.addEventListener('pagehide', save);
   tick(); })();
 /* 🚀 2026-11-05: 안내 화면(studentesc.html)에서 선생님이 [시작!]을 누르면 ?go=1로 들어와 바로 시간이 흐른다(이어 하던 게임은 그대로) */
 if(!P && !S.begun && /[?&]go=1/.test(location.search)){ const sb=$('startBtn'); if(sb) sb.click(); }
+/* ⏹↺ 2026-11-06: 안내 화면에서 ?classNo=로 들어오면 선생님 화면의 [게임 끝내기]·[처음으로]를 따른다(rooms/{반}__escape/guide.end·reset) */
+const ESC_Q = new URLSearchParams(location.search), ESC_C = ESC_Q.get('classNo') || (()=>{ try{ return sessionStorage.getItem('escCls')||''; }catch(e){ return ''; } })(), ESC_R = ESC_Q.get('round') || '';
+if(ESC_C){ try{ sessionStorage.setItem('escCls', ESC_C); }catch(e){} }
 if(/[?&]go=1/.test(location.search)) try{ history.replaceState(null,'',location.pathname); }catch(e){}
+if(ESC_C && !P){
+  const T0 = Date.now(), FB = { apiKey:'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI', authDomain:'brojuntest.firebaseapp.com', databaseURL:'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'brojuntest' };
+  const room = (String(ESC_C).trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x') + '__escape';
+  const load = src => new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+  const V = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  (window.firebase ? Promise.resolve() : load(V+'firebase-app-compat.js').then(()=>Promise.all([load(V+'firebase-auth-compat.js'), load(V+'firebase-database-compat.js')])))
+  .then(()=>{ if(!firebase.apps.length) firebase.initializeApp(FB); return firebase.auth().signInAnonymously(); })
+  .then(()=>{ let done=false; firebase.database().ref('rooms/'+room+'/guide').on('value', s=>{ const g=s.val()||{}; if(done) return;
+      if(+g.reset > T0){ done=true; saveOff=true; try{ localStorage.removeItem(KEY); }catch(e){} location.href='studentesc.html?round='+encodeURIComponent(ESC_R||g.round||0)+'&classNo='+encodeURIComponent(ESC_C); return; }
+      if(+g.end > T0 && S.begun && !$('done').classList.contains('on')){ done=true; finish(); const seal=document.querySelector('#done .seal'); if(seal) seal.textContent='종료'; }
+    }); }).catch(()=>{});
+}
 window.__S=S; window.__got=got;
 })();

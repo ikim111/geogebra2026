@@ -105,7 +105,7 @@ for i, (scene, k, math, clue) in enumerate(R.FLOW, 1):
 pens = ' · '.join(f'{n}({p.get("m",1)}분)' for n, p in G['pens'].items())
 combo = ' · '.join(f'{r}+{b}={v}' + (' ⏳' if cards[str(v)][1]=='pen' else '') for (r, b), v in R.COMBOS.items())
 teacher = f"""<div class="sheet ts"><h1>{R.EP} — 선생님 정답표</h1>
-<p>🔗 디벗: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습 escape0 · 45분 · 카드 {len(R.CARDS)}장 · 🏁 탈출 번호 <b class="bl">{G['end']}</b></p>
+<p>🔗 디벗: <a href="https://geogebra2026.vercel.app/escape{N}.html">geogebra2026.vercel.app/escape{N}.html</a> · 연습 escape0 · 40분 · 카드 {len(R.CARDS)}장 · 🏁 탈출 번호 <b class="bl">{G['end']}</b></p>
 <table><tr><th>#</th><th>카드</th><th>정답</th><th>펼치기 → 치우기 <small>(아래: 쓰는 수학)</small></th></tr>{rows}</table>
 <p>⏳ 벌점 카드(그 카드만 치움): {pens}<br>➕ 합치기: {combo} — 그 밖의 합은 카드가 없어요.</p>
 <p class="sm">준비: A4 양면 인쇄(긴 쪽 넘김, 100%) → 점선대로 잘라 모둠당 1세트 · 이야기 카드를 맨 위, 시작 카드만 펼쳐 둠 · 디벗 모둠당 1대 · 힌트와 오답 안내는 디벗 화면에 나와요.</p></div>"""

@@ -6,11 +6,11 @@
 const ROUNDS = {
   0:{ep:'연습', series:'선원 훈련소', title:'규칙 익히기', color:'#8d6e63', game:'escape0.html', min:0,
      story:'붉은 나침반 선원 훈련소에 온 걸 환영해! 진짜 모험에 나가기 전에 카드 보는 법을 익혀 보자.'},
-  1:{ep:'제1회', series:'붉은 나침반', title:'찢어진 지도', color:'#d32f2f', game:'escape1.html', min:45,
+  1:{ep:'제1회', series:'붉은 나침반', title:'찢어진 지도', color:'#d32f2f', game:'escape1.html', min:40,
      story:'할아버지가 떠난 뒤 처음 연 다락방. 책상 위에 붉은 나침반 하나. "우리 집안의 보물 지도는 찢어서 숨겨 두었단다." 창밖에서 검은 갈매기가 지켜보고 있다!'},
-  2:{ep:'제2회', series:'푸른 나침반', title:'강을 건너, 동굴로', color:'#1565c0', game:'escape2.html', min:45,
+  2:{ep:'제2회', series:'푸른 나침반', title:'강을 건너, 동굴로', color:'#1565c0', game:'escape2.html', min:40,
      story:'붉은 나침반이 가리킨 곳은 강 건너 절벽 위 동굴. "두 번째 나침반은 푸른빛이다." 길가에 검은 깃털이… 검은 갈매기 해적단이 벌써 지나갔다!'},
-  3:{ep:'제3회', series:'황금 나침반', title:'동굴 속 보물 방', color:'#f9a825', game:'escape3.html', min:45,
+  3:{ep:'제3회', series:'황금 나침반', title:'동굴 속 보물 방', color:'#f9a825', game:'escape3.html', min:40,
      story:'푸른 나침반이 멈춘 곳은 절벽 아래 깊은 동굴. "세 번째 나침반은 황금빛이다." 횃불이 꺼지기 전에 해적단보다 먼저 보물 방에 닿아라!'}
 };
 const BACKS = [['#8d6e63','연습'],['#d32f2f','1회'],['#1565c0','2회'],['#f9a825','3회']];

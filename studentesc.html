@@ -31,7 +31,7 @@
   EGUIDE.css();
   let page = 0; const $ = id => document.getElementById(id);
   const show = p => { page = Math.max(0, Math.min(N-1, p)); $('slide').innerHTML = EGUIDE.html(round, page); };
-  const toGame = () => { location.href = R.game + '?go=1'; };
+  const toGame = () => { location.href = R.game + '?go=1' + (classNo ? '&classNo=' + encodeURIComponent(classNo) + '&round=' + round : ''); };   // 2026-11-06: 반을 넘겨 선생님의 끝내기·처음으로를 따르게
   $('goBtn').onclick = toGame;
   show(0);
   if(preview || !classNo){   // 👀 교사 미리보기: 혼자 넘겨 보기(기록·연결 없음)
@@ -45,8 +45,10 @@
       const db = firebase.database(), base = 'rooms/' + EGUIDE.room(classNo);
       const me = db.ref(base + '/viewers/' + cred.user.uid);
       db.ref('.info/connected').on('value', s => { if(s.val()){ me.onDisconnect().remove(); me.set({t: firebase.database.ServerValue.TIMESTAMP, r: round}); } });
+      const T0 = Date.now();
       db.ref(base + '/guide').on('value', s => {
         const g = s.val() || {};
+        if(+g.reset > T0){ try{ localStorage.removeItem('escape:/' + R.game.replace(/\.html$/,'')); }catch(e){} }   // 2026-11-06 [↺ 처음으로]: 하던 게임 기록 지우기
         if(+g.round !== round){ show(0); $('follow').textContent = '📡 선생님이 안내를 시작하면 화면이 같이 넘어가요'; return; }
         show(+g.page || 0); $('follow').textContent = `📡 선생님 화면을 따라가요 · ${page+1} / ${N}`;
         if(g.go && Date.now() - (+g.go) < 3*3600e3){ $('follow').textContent = '🚀 출발! 게임 화면으로 넘어가요…'; $('goBtn').style.display = 'block'; setTimeout(toGame, 800); }
