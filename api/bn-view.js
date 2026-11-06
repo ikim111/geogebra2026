@@ -125,7 +125,8 @@ module.exports = async (req, res) => {
   try {
     // ---- 선생님: 현재 상태 확인
     if (b.admin !== undefined) {
-      if (!bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
+      // 2026-11-06 선생님 결정: 교사용 보기(bnt, view:true)는 관리 비밀번호 없이 읽기만 허용. 반 목록 저장(saveMap·채점본 올리기)은 그대로 비밀번호가 있어야 함.
+      if (!(b.view === true && !b.saveMap) && !bnAdminOk(b.admin)) { await sleep(1000); res.status(403).json({ error: '관리 비밀번호가 맞지 않아요.' }); return; }
       // 반 목록 저장(bna 관리 화면이 합친 전체 목록을 보낸다) — 2026-10-25 Blob 대신 여기로
       if (b.saveMap) {
         const m = b.saveMap;
