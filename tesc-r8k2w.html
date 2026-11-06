@@ -35,6 +35,7 @@
 <div class="pick" id="pick" style="display:none"><h3>들어갈 반을 누르세요</h3><div class="g" id="pickG"></div></div>
 <div class="wrap" id="main">
   <div class="rounds" id="rounds"></div>
+  <div style="text-align:center;margin-top:8px"><a class="btn" id="gameLink" href="escape0.html" target="_blank" style="display:inline-flex;align-items:center;text-decoration:none">🎮 이 회차 게임 화면 바로 열기 (새 탭)</a></div>
   <div id="slide"></div>
   <div class="bar"><button class="btn" id="prev">◀ 이전</button><button class="btn p" id="next">다음 ▶</button>
     <button class="btn r" id="end" disabled>⏹ 게임 끝내기</button><button class="btn" id="reset">↺ 처음으로</button><button class="btn g" id="go" disabled>🚀 시작!</button></div>
@@ -53,6 +54,7 @@
     $('hd').textContent = `🧭 방탈출 보드게임 안내${classNo ? ' · ' + classNo + '반' : ''}`;
     $('slide').innerHTML = EGUIDE.html(round, page);
     $('rounds').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.r === round));
+    $('gameLink').href = R.game; $('gameLink').textContent = `🎮 ${round ? round + '회' : '연습'} 게임 화면 바로 열기 (새 탭)`;   // 2026-11-06 선생님: 교사 화면에서 게임으로 바로
     $('prev').disabled = page === 0; $('next').disabled = page >= N-1;
     const last = page >= N-1; $('go').disabled = !last; $('why').textContent = last ? '' : '👉 마지막 장에서 시작할 수 있어요';
     const n = Object.values(viewers).filter(v => v && +v.r === round).length;
