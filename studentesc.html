@@ -6,19 +6,22 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="escape-guide.js"></script>
 <style>
-  body{margin:0;background:#0d1257;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;min-height:100vh;display:flex;flex-direction:column}
-  .top{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px}
-  .top a{color:#c5cae9;text-decoration:none;min-height:44px;display:flex;align-items:center}
-  .top .who{margin-left:auto;opacity:.75;font-size:13px}
-  .wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 16px 16px;max-width:1200px;width:100%;margin:0 auto;box-sizing:border-box}
-  #slide{width:100%;max-width:calc((100vh - 150px)*16/9);margin:0 auto}
-  .follow{text-align:center;font-size:14px;padding:10px 0;opacity:.85}
+  /* 2026-11-06 다른 학생 활동 화면과 같게(시안 승인): 연한 회색 바탕, 남색 머리줄(🏠·종류 칩·제목), 흰 카드 + 회차 색 위 띠 */
+  body{margin:0;background:#f5f6f8;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#222;min-height:100vh;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#1a237e;color:#fff;font-size:15px}
+  .top a{background:#fff;color:#1a237e;text-decoration:none;min-width:44px;min-height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .top .chip{background:#1565c0;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:bold;white-space:nowrap}
+  .top .who{font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:14px 16px 16px;max-width:1200px;width:100%;margin:0 auto;box-sizing:border-box}
+  .card{background:#fff;border-radius:14px;border-top:6px solid var(--rc,#1a237e);box-shadow:0 1px 3px rgba(0,0,0,.08);padding:14px;width:100%;max-width:calc((100vh - 170px)*16/9 + 28px);margin:0 auto;box-sizing:border-box}
+  #slide{width:100%}
+  .follow{text-align:center;font-size:14px;padding:10px 0 0;color:#555}
   .pv{display:flex;gap:10px;justify-content:center;padding-top:8px}
-  .pv button{min-height:44px;padding:0 18px;border-radius:10px;border:2px solid #fff;background:transparent;color:#fff;font-weight:bold;font-size:15px}
+  .pv button{min-height:44px;padding:0 18px;border-radius:10px;border:2px solid #1565c0;background:#fff;color:#1565c0;font-weight:bold;font-size:15px}
   .go{display:none;margin:12px auto 0;min-height:52px;padding:0 26px;border-radius:12px;border:0;background:#2e7d32;color:#fff;font-weight:bold;font-size:17px}
 </style></head><body>
-<div class="top"><a id="backLink" href="student.html">← 목차</a><span class="who" id="who"></span></div>
-<div class="wrap"><div id="slide"></div><div class="follow" id="follow">📡 선생님 화면을 기다리는 중…</div>
+<div class="top"><a id="backLink" href="student.html" title="목차로">🏠</a><span class="chip">🧭 방탈출</span><span class="who" id="who"></span></div>
+<div class="wrap"><div class="card" id="card"><div id="slide"></div><div class="follow" id="follow">📡 선생님 화면을 기다리는 중…</div></div>
   <div class="pv" id="pv" style="display:none"><button id="pPrev">◀ 이전</button><button id="pNext">다음 ▶</button></div>
   <button class="go" id="goBtn">🚀 게임 화면으로</button></div>
 <script>
@@ -27,7 +30,8 @@
   const preview = q.get('preview') === '1', R = EGUIDE.ROUNDS[round], N = EGUIDE.count(round);
   const classNo = q.get('classNo') || '';
   document.title = `방탈출 안내 — ${R.series}`;
-  document.getElementById('who').textContent = classNo ? `${classNo}반 · ${R.series}` : R.series;
+  document.getElementById('who').textContent = `${R.ep || '연습'} · ${R.series}${R.title ? ' - ' + R.title : ''}${classNo ? ' · ' + classNo + '반' : ''}`;
+  if(R.color) document.getElementById('card').style.setProperty('--rc', R.color);
   EGUIDE.css();
   let page = 0; const $ = id => document.getElementById(id);
   const show = p => { page = Math.max(0, Math.min(N-1, p)); $('slide').innerHTML = EGUIDE.html(round, page); };
