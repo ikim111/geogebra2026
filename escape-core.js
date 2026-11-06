@@ -269,7 +269,10 @@ if(ESC_C && !P){
   .then(()=>{ if(!firebase.apps.length) firebase.initializeApp(FB); return firebase.auth().signInAnonymously(); })
   .then(()=>{ let done=false; firebase.database().ref('rooms/'+room+'/guide').on('value', s=>{ const g=s.val()||{}; if(done) return;
       if(+g.reset > T0){ done=true; saveOff=true; try{ localStorage.removeItem(KEY); }catch(e){} location.href='studentesc.html?round='+encodeURIComponent(ESC_R||g.round||0)+'&classNo='+encodeURIComponent(ESC_C); return; }
-      if(+g.end > T0 && S.begun && !$('done').classList.contains('on')){ done=true; finish(); const seal=document.querySelector('#done .seal'); if(seal) seal.textContent='종료'; }
+      if(+g.end > T0 && S.begun && !$('done').classList.contains('on')){ done=true; finish(); const D=$('done'), q=sel=>D.querySelector(sel);
+        if(q('.nm')) q('.nm').textContent='시간 종료';   // 선생님이 끝냄: 탈출 성공·별·결말 이야기는 숨기고 기록만
+        if(q('.seal')) q('.seal').textContent='종료'; const st=$('stars'); if(st) st.innerHTML='<div style="font-size:15px;color:#7a1d10;font-weight:bold">⏹ 선생님이 게임을 끝냈어요 · 푼 자물쇠·기계 '+Object.keys(S.solved||{}).length+'개</div>';
+        D.querySelectorAll('.prolog-end, a.startbtn').forEach(x=>x.style.display='none'); }
     }); }).catch(()=>{});
 }
 window.__S=S; window.__got=got;
