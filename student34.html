@@ -1028,7 +1028,7 @@ function rulerSVG(n){ const r = rulerPair(n); if(!r) return ''; const [o, p, t] 
   return leg(t, '#546e7a', 'stroke-dasharray="7 4"', 0, 22) + leg(p, '#1565c0', '', 0, 0); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ruler]'); if(!b) return; const n = +b.dataset.ruler;
   if(RULER.has(n)) RULER.delete(n); else RULER.add(n); b.classList.toggle('on', RULER.has(n)); b.textContent = RULER.has(n) ? '📏 길이 숨기기' : '📏 길이 재기'; renderHole(n); });
-function addRulerBtns(){ [1,2,3,4,5,6,7,8].forEach(n => { const kc = $('kc'+n); if(!kc || $('rb'+n)) return; const b = document.createElement('button'); b.type = 'button'; b.className = 'ruler-btn'; b.id = 'rb'+n; b.dataset.ruler = n; b.textContent = '📏 길이 재기'; b.title = '중심에서 공·홀까지 가로·세로 몇 칸인지 보여 줘요'; kc.after(b); }); }
+function addRulerBtns(){ [4,5,6].forEach(n => {   /* 2026-11-06 선생님: 3페이지(홀 2)는 빼고 4·5·6페이지(홀 3·4·5)에만 */ const kc = $('kc'+n); if(!kc || $('rb'+n)) return; const b = document.createElement('button'); b.type = 'button'; b.className = 'ruler-btn'; b.id = 'rb'+n; b.dataset.ruler = n; b.textContent = '📏 길이 재기'; b.title = '중심에서 공·홀까지 가로·세로 몇 칸인지 보여 줘요'; kc.after(b); }); }
 /* 비율·치기 조작판 */
 function renderCtrl(n){
   const box = $('kc'+n); if(!box) return;
