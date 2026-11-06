@@ -140,6 +140,9 @@
   .ok{color:var(--green);font-weight:bold;} .bad{color:var(--warn);font-weight:bold;}
   .sbtn{border:1px solid #c5cad1;background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink2);}
   .sbtn:hover{border-color:var(--blue);color:var(--blue);}
+  /* 📏 2026-11-06 길이 재기(선생님 요청): 흰 바탕+파란 테두리, 켜면 파랑으로 채움 */
+  .ruler-btn{min-height:44px;border:2px solid var(--blue);background:#fff;color:var(--blue);border-radius:10px;padding:0 14px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;margin-top:8px;}
+  .ruler-btn.on{background:var(--blue);color:#fff;}
   .big-question{font-size:18px;font-weight:bold;background:#fff8e1;border-left:5px solid #f0a500;padding:12px 16px;border-radius:6px;margin:4px 0 12px;}
   .lbl{font-weight:bold;margin:10px 0 4px;font-size:15px;}
   /* 골프판 */
@@ -1006,9 +1009,26 @@ function renderHole(n){
     if(H.pickO && !o) s += `<text x="${px(BW/2)}" y="${py(BH)-(-16)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#c62828">👆 모눈의 교점을 눌러 중심을 놓으세요</text>`;
   }
   if(H.np && canMoveC()){ const C2 = holeC(n); s += `<g class="hdrag"><circle cx="${px(C2[0])}" cy="${py(C2[1])}" r="18" fill="rgba(253,216,53,.25)" stroke="#f9a825" stroke-width="2" stroke-dasharray="4 3"/><text x="${px(C2[0])}" y="${py(C2[1])+32}" text-anchor="middle" font-size="12" font-weight="bold" fill="#e65100">끌어서 옮기기</text></g>`; }
+  if(RULER.has(n)) s += rulerSVG(n);
   svg.innerHTML = s;
   svg.classList.toggle('pick', !!H.pickO);
 }
+/* 📏 2026-11-06 길이 재기: 중심→공(파랑), 중심→홀(회색 점선)의 가로·세로 칸 수를 보여 준다 — 길이의 비를 스스로 찾게 */
+const RULER = new Set();
+function rulerPair(n){ const H = HOLES[n];
+  if(DUAL(n)) return [H.o1, H.p, holeB(n)];
+  if(TWO(n)) return [H.a, H.b, holeB(n)];
+  const o = oOf(n); return o ? [o, H.p, H.h] : null; }
+function rulerSVG(n){ const r = rulerPair(n); if(!r) return ''; const [o, p, t] = r;
+  const leg = (q, col, dash, off, off2) => { const dx = q[0]-o[0], dy = q[1]-o[1]; if(!dx && !dy) return '';
+    const y0 = o[1] + off, lab = (x, y, txt) => `<rect x="${x-30}" y="${y-11}" width="60" height="20" rx="6" fill="#fff" stroke="${col}"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="12" font-weight="bold" fill="${col}">${txt}</text>`;
+    return `<polyline points="${px(o[0])},${py(y0)} ${px(q[0])},${py(y0)} ${px(q[0])},${py(q[1])}" fill="none" stroke="${col}" stroke-width="3" ${dash}/>`
+      + (dx ? lab((px(o[0])+px(q[0]))/2, Math.max(12, Math.min(368, py(y0) + (dy >= 0 ? 1 : -1) * (16 + off2))), `가로 ${Math.abs(dx)}칸`) : '')
+      + (dy ? lab(px(q[0]) + (dx >= 0 ? 36 : -36), (py(y0)+py(q[1]))/2, `세로 ${Math.abs(dy)}칸`) : ''); };
+  return leg(t, '#546e7a', 'stroke-dasharray="7 4"', 0, 22) + leg(p, '#1565c0', '', 0, 0); }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ruler]'); if(!b) return; const n = +b.dataset.ruler;
+  if(RULER.has(n)) RULER.delete(n); else RULER.add(n); b.classList.toggle('on', RULER.has(n)); b.textContent = RULER.has(n) ? '📏 길이 숨기기' : '📏 길이 재기'; renderHole(n); });
+function addRulerBtns(){ [1,2,3,4,5,6,7,8].forEach(n => { const kc = $('kc'+n); if(!kc || $('rb'+n)) return; const b = document.createElement('button'); b.type = 'button'; b.className = 'ruler-btn'; b.id = 'rb'+n; b.dataset.ruler = n; b.textContent = '📏 길이 재기'; b.title = '중심에서 공·홀까지 가로·세로 몇 칸인지 보여 줘요'; kc.after(b); }); }
 /* 비율·치기 조작판 */
 function renderCtrl(n){
   const box = $('kc'+n); if(!box) return;
@@ -1323,7 +1343,7 @@ function onShowPage(taskId){ renderScore(); if(taskId===9){ renderRecap(); paint
 
 function renderAll(){ [1,2,3,4,5,6,7,8].forEach(n=>{ renderCtrl(n); renderHole(n); }); renderSols(); renderNP(); [5,6,7].forEach(paintQ); paintQ8(); paintSum(); }
 function initActivity(){
-  initGame(); renderAll();
+  initGame(); addRulerBtns(); renderAll();
   [1,2,3,4].forEach(n=> checkHole(n, {noSave:true})); [5,6,7].forEach(n=> checkQ(n, {noSave:true})); checkQ8({noSave:true}); check9({noSave:true});
 }
 const arr = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
@@ -1345,7 +1365,7 @@ function restoreData(d){
   aifbRestore(d);
   const oldSum = !d.t9 && typeof d.t8==='string';
   state.shared[9] = !!(d.shared && d.shared[oldSum?8:9]); state.seen[9] = !!(d.seen && d.seen[oldSum?8:9]) || state.shared[9];
-  initGame(); renderAll(); renderScore();
+  initGame(); addRulerBtns(); renderAll(); renderScore();
   [1,2,3,4].forEach(n=> checkHole(n, {noSave:true})); [5,6,7].forEach(n=> checkQ(n, {noSave:true})); checkQ8({noSave:true}); check9({noSave:true});
 }
 
