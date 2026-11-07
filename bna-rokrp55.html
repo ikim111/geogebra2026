@@ -98,7 +98,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;
 let blobUpload = null;
 function loadBlob(){
   if (blobUpload) return blobUpload;
-  return blobUpload = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'lib/blob-client.js'; sc.onload = () => ok(window.VercelBlobUpload); sc.onerror = () => { blobUpload = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
+  return blobUpload = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'lib/fb-upload.js'; sc.onload = () => ok(window.FbUpload); sc.onerror = () => { blobUpload = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
 }
 async function put(path, data, type){
   const upload = await loadBlob();

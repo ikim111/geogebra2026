@@ -439,12 +439,12 @@ function renderSources(){
   box.querySelectorAll('[data-fadd]').forEach(b=> b.addEventListener('click', ()=> pickFiles(+b.dataset.fadd)));
   paintSrcOk();
 }
-/* 파일 올리기: 사진은 긴 쪽 2000px·JPEG로 줄여서, PDF는 그대로 Vercel Blob에 올린다(api/blob-upload.js가 토큰을 준다) */
+/* 파일 올리기: 사진은 긴 쪽 2000px·JPEG로 줄여서, PDF는 그대로 Firebase 저장소에 올린다(lib/fb-upload.js, 2026-11-07) */
 let blobLib = null;
 function loadBlobLib(){
-  if(window.VercelBlobUpload) return Promise.resolve(window.VercelBlobUpload);
+  if(window.FbUpload) return Promise.resolve(window.FbUpload);
   if(blobLib) return blobLib;
-  return blobLib = new Promise((ok, no)=>{ const sc = document.createElement('script'); sc.src = 'lib/blob-client.js'; sc.onload = ()=> ok(window.VercelBlobUpload); sc.onerror = ()=>{ blobLib = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
+  return blobLib = new Promise((ok, no)=>{ const sc = document.createElement('script'); sc.src = 'lib/fb-upload.js'; sc.onload = ()=> ok(window.FbUpload); sc.onerror = ()=>{ blobLib = null; no(new Error('업로드 도구를 불러오지 못했어요.')); }; document.head.appendChild(sc); });
 }
 function shrinkImage(file){
   return new Promise(resolve=>{

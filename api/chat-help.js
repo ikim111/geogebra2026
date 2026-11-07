@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   const message = S(b.message, 2000);
   if (!message) { res.status(400).json({ error: '질문이 비어 있습니다.' }); return; }
   // 📷 사진 첨부(2026-10-23): 학생 화면이 Vercel Blob에 올린 사진 주소만 받는다
-  const image = (typeof b.image === 'string' && /^https:\/\/[\w.-]+\.public\.blob\.vercel-storage\.com\//.test(b.image)) ? b.image.slice(0, 500) : '';
+  const image = (typeof b.image === 'string' && (/^https:\/\/[\w.-]+\.public\.blob\.vercel-storage\.com\//.test(b.image) || /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/brojuntest\.firebasestorage\.app\/o\//.test(b.image))) ? b.image.slice(0, 800) : '';
   const w = (b.work && typeof b.work === 'object') ? b.work : {};
   const srcs = (Array.isArray(w.sources) ? w.sources : []).filter(x => x && (x.site || x.what)).map(x => S(x.site, 80) || S(x.what, 80)).join(', ');
   const system = `너는 중학교 2학년 학생이 확률 탐구 글쓰기(수행평가)를 준비할 때 돕는 "AI 도우미"이다.
