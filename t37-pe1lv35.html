@@ -279,6 +279,7 @@
             <span><i style="background:#ffb300;"></i>진행중 (열어봤지만 미완료)</span>
             <span><i class="error"></i>입력함 (확인 필요)</span>
             <span><i style="background:var(--green);"></i>완료</span>
+            <span><i style="background:#ef6c00;"></i>넘어갔지만 AI 보완 남음</span>
             <span><i class="locked"></i>속도조절로 제한된 화면</span>
           </div>
           <table id="grid">
@@ -369,6 +370,21 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 function fmtInt(n){ return Number(n).toLocaleString('ko-KR'); }
 const arrOf = v => Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : []);
 const CATN = {in:'삼각형 안쪽', up:'A 위쪽', down:'BC 아래쪽'};
+/* AI 피드백 통과 표시 (2026-11-10 선생님 요청): 마지막으로 받은 AI 피드백에 보완할 점(fix)이 남아 있으면 '보완 남음'.
+   요약뷰 표에서는 완료했지만 보완 남은 칸을 주황으로, 교사용 뷰에서는 카드에 표시 + 위에 번호·이름 목록 */
+const AI_FIELD = {3:'aiFb'};
+function aiStateOf(s, id){ const f = AI_FIELD[id]; if(!f) return 0; const v = ((s&&s.data)||{})[f];
+  const a = (Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : [])).filter(e=>e && !e.skip);
+  if(!a.length) return 0; return (a[a.length-1].fix||[]).length ? 2 : 1; }
+function aiBadListInsert(textWrap, list, aggBox){
+  if(!AI_FIELD[selectedTaskId]) return;
+  const bad = list.filter(it=>aiStateOf(it.student, selectedTaskId)===2);
+  const div = document.createElement('div'); div.className = 'ai-bad-list';
+  div.innerHTML = bad.length ? `<b>! AI 보완 남은 학생 ${bad.length}명</b> <span class="note">(누르면 그 학생으로)</span><br>` + bad.map(it=>`<a href="#" data-k="${esc(it.key)}">${esc(displayName(it.key, it.student.name, it.student.number))}</a>`).join('') : '<b class="ok">✓ AI 보완 남은 학생 없음</b>';
+  div.querySelectorAll('a').forEach(a=>a.addEventListener('click', e=>{ e.preventDefault(); const el = document.getElementById('ta-'+a.dataset.k); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }));
+  const host = aggBox && aggBox.parentNode ? aggBox.querySelector('.aggbox') || aggBox : null;
+  if(host) host.appendChild(div); else textWrap.insertBefore(div, textWrap.firstChild);
+}
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
@@ -861,8 +877,8 @@ function renderGrid(){
 
       const td=document.createElement('td');
       const cell=document.createElement('span');
-      cell.className = ['cell', stateClass, (cur?'current':''), (locked?'locked':'')].filter(Boolean).join(' ');
-      cell.title = `활동 ${t.id}: ${t.label} — ${stateLabel}${lockedLabel}`;
+      cell.className = ['cell', stateClass, (done2 && aiStateOf(s,t.id)===2 ? 'aibad' : ''), (cur?'current':''), (locked?'locked':'')].filter(Boolean).join(' ');
+      cell.title = `활동 ${t.id}: ${t.label} — ${stateLabel}${done2 && aiStateOf(s,t.id)===2 ? ' (AI 보완 남음)' : ''}${lockedLabel}`;
       cell.textContent = isError ? '!' : '';
       cell.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, t.id); });
       td.appendChild(cell);
@@ -1075,6 +1091,8 @@ function renderTeacherView(){
       nameWrap.appendChild(live);
     }
     const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
+    const aiS = aiStateOf(s, selectedTaskId); if(aiS){ const ab=document.createElement('span'); ab.className='ta-ai '+(aiS===1?'ok':'bad'); ab.textContent = aiS===1 ? '✓ AI 통과' : '! AI 보완 남음'; nameWrap.appendChild(ab); }
+    box.id = 'ta-'+item.key;
     head.appendChild(nameWrap); head.appendChild(status);
     box.appendChild(head);
     const detail=document.createElement('div');
@@ -1083,6 +1101,7 @@ function renderTeacherView(){
     box.addEventListener('click', ()=> openTaskDetail(item.key, s, selectedTaskId));
     textWrap.appendChild(box);
   });
+  aiBadListInsert(textWrap, list, aggBox);
 }
 
 /* ---------- 탭 전환 ---------- */

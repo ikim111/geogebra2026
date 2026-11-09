@@ -66,6 +66,13 @@
   .td-pace, #stagePanel{border-left:5px solid #1565c0!important;}
   #aiReqBox, #ai22Panel, #aiAgg, #gradePanel{border-left:5px solid #7b1fa2!important;}
   #aggPanel{border-left:5px solid #f9a825!important;}
+  /* AI 피드백 통과 표시 (2026-11-10): 완료했지만 AI 보완 남은 칸은 주황, 교사용 뷰 카드 표시와 번호·이름 목록 */
+  .cell.done.aibad{background:#ef6c00!important;}
+  .ta-ai{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:700;color:#fff;vertical-align:1px;}
+  .ta-ai.ok{background:#2e7d32;} .ta-ai.bad{background:#ef6c00;}
+  .ai-bad-list{margin-top:8px;font-size:14px;line-height:1.9;}
+  .ai-bad-list b{color:#e65100;} .ai-bad-list b.ok{color:#2e7d32;} .ai-bad-list .note{color:#888;font-size:12.5px;}
+  .ai-bad-list a{display:inline-block;margin-right:10px;color:#e65100;font-weight:700;text-decoration:underline;}
   `;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
