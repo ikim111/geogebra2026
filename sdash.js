@@ -117,3 +117,20 @@
   if(app && app.style.display==='block') go();
   else if(typeof startApp==='function'){ var o=startApp; window.startApp=function(){ var r=o.apply(this, arguments); go(); return r; }; }
 }catch(e){}})();
+
+/* 복사·붙여넣기 막기 (2026-11-09 선생님 요청: 친구가 공유한 답을 복사해 그대로 붙여 쓰는 일이 있어서 모든 학생 화면에서 막음)
+   복사·잘라내기·붙여넣기·끌어다 놓기·오른쪽 클릭 메뉴를 막고, 막을 때 주황 안내를 잠깐 보여 준다. */
+(function(){try{
+  var tip=null, tm=0;
+  function say(){
+    if(!tip){ tip=document.createElement('div');
+      tip.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;background:#fff3e0;color:#e65100;border:2px solid #ef6c00;border-radius:10px;padding:10px 16px;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.15);max-width:90vw;text-align:center;';
+      tip.textContent='✋ 복사·붙여넣기는 쓸 수 없어요. 내 생각을 직접 써 보세요.'; document.body.appendChild(tip); }
+    tip.style.display='block'; clearTimeout(tm); tm=setTimeout(function(){ tip.style.display='none'; }, 2200);
+  }
+  function stop(e){ e.preventDefault(); e.stopPropagation(); say(); return false; }
+  ['copy','cut','paste','contextmenu'].forEach(function(t){ document.addEventListener(t, stop, true); });
+  document.addEventListener('drop', function(e){ var d=e.dataTransfer; if(d && d.files && d.files.length) return; stop(e); }, true);  // 사진 파일 끌어 올리기는 그대로
+  document.addEventListener('dragstart', function(e){ var n=e.target; if(n && n.nodeName!=='IMG' && !(n.closest && n.closest('svg'))) stop(e); }, true);
+  document.addEventListener('beforeinput', function(e){ if(/^insertFrom(Paste|Drop)/.test(e.inputType||'')) stop(e); }, true);
+}catch(e){}})();
