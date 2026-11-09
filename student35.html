@@ -1149,6 +1149,7 @@ const KIND = {9:'sum', w:'why'};
 function renderFriends(n){
   const box = $('fr'+n); if(!box) return;
   if(!state.seen[n]){ box.innerHTML = ''; return; }
+  if(!state.shared[n]){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">✏️ 내 글을 고치는 동안에는 친구들의 생각이 가려져요. 다 고치고 「📤 다시 공유」를 누르면 다시 보여요.</div>'; return; }  // 2026-11-09 선생님 요청: 고치는 동안 친구 답을 보고 베끼지 않게
   const all = shareOf(KIND[n]), me = RT.studentKey;
   const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
   if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }

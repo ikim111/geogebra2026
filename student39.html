@@ -469,7 +469,11 @@
   <div class="card">
     <div class="act-head"><span class="act-tag">7 규칙 설명하기</span><span class="badge pending" id="badge-a7">미완료</span></div>
     <h2>□EFGH의 모양은 □ABCD의 무엇이 결정할까?</h2>
-    <table class="rtab" id="rtab4"></table>
+    <div class="g-layout">
+      <div class="g-board"><svg id="g7" viewBox="0 0 360 400" class="board"></svg>
+        <div class="row"><button type="button" class="sbtn" id="rst7">↺ 처음 모양</button></div></div>
+      <div class="g-side"><div class="now" id="now7"></div><table class="rtab" id="rtab4"></table></div>
+    </div>
     <div class="big-question">□ABCD의 두 대각선의 <b>길이가 같으면</b> □EFGH는 <b>마름모</b>, 두 대각선이 <b>수직이면</b> □EFGH는 <b>직사각형</b>이 돼요. 왜 그럴까요? 화면 2에서 찾은 <b>EF ∥ AC, EF = ½AC</b>를 이용해 설명해 보세요.</div>
     <textarea id="t4" placeholder="EF와 HG는 AC의 절반, EH와 FG는 BD의 절반이므로 AC = BD이면 …"></textarea>
     <div class="aifb" id="aifb39b"></div>
@@ -926,10 +930,19 @@ function render2(){
   $('g2').innerHTML = h;
   $('now2').innerHTML = measHTML(Q, s.ac, s.bd) + (!s.ac && !s.bd ? '<br><span class="note">👇 아래 버튼으로 대각선을 그어 보세요.</span>' : '');
   $('ac2').classList.toggle('on', s.ac); $('bd2').classList.toggle('on', s.bd);
+  render7();
 }
 dragOn($('g2'), (k, p)=>{ if(!moveQ(k, p)) return false; render2(); return true; }, moved=>{ if(moved){ render1(); refreshAll({}); } });
 $('ac2').addEventListener('click', ()=>{ state.s1.ac = !state.s1.ac; render2(); refreshAll({}); });
 $('bd2').addEventListener('click', ()=>{ state.s1.bd = !state.s1.bd; render2(); refreshAll({}); });
+/* 화면 7 그림판 (2026-11-09 선생님 요청: 7쪽에 그림이 없어 설명하기 어려움) — 화면 1·2와 같은 □ABCD를 쓰고, 대각선 AC·BD는 늘 보인다 */
+function render7(){
+  const Q = state.s1.Q; let h = grid() + quadFig(Q, {ac:true, bd:true});
+  if(!isLocked()) Q.forEach((p,i)=>{ h += handle(p, i); });
+  $('g7').innerHTML = h; $('now7').innerHTML = measHTML(Q, true, true);
+}
+dragOn($('g7'), (k, p)=>{ if(!moveQ(k, p)) return false; render7(); return true; }, moved=>{ if(moved){ render1(); render2(); refreshAll({}); } });
+$('rst7').addEventListener('click', ()=>{ if(isLocked()) return; state.s1.Q = Q0.map(p=>p.slice()); render1(); render2(); refreshAll({}); });
 function check2(opts){ state.t2 = $('t2').value;
   setWhy(2, '✅ 완료! '+NEXT, '이유를 쓰고 「🤖 AI 피드백 받기」와 「📤 답변 공유」를 누르면 다음으로 넘어갈 수 있어요.'); paintShare(2); renderFriends(2); refreshAll(opts); }
 $('t2').addEventListener('input', ()=>check2());
@@ -1011,6 +1024,7 @@ $('t4').addEventListener('input', ()=>check4());
 function renderFriends(n){
   const box = $('fr'+n); if(!box) return;
   if(!state.seen[n]){ box.innerHTML = ''; return; }
+  if(!state.shared[n]){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">✏️ 내 글을 고치는 동안에는 친구들의 생각이 가려져요. 다 고치고 「📤 다시 공유」를 누르면 다시 보여요.</div>'; return; }  // 2026-11-09 선생님 요청: 고치는 동안 친구 답을 보고 베끼지 않게
   const all = shareOf(KIND[n]), me = RT.studentKey;
   const keys = Object.keys(all).filter(k=>all[k]).sort((a,b)=>(b===me)-(a===me));
   if(!keys.length){ box.innerHTML = '<h4>👥 친구들의 생각</h4><div class="note">아직 공유한 친구가 없어요. 잠시 후 다시 보여요.</div>'; return; }
