@@ -218,3 +218,20 @@
     });
   }
 })();
+
+/* 🔔 AI 피드백 기회 요청 알림 소리 (2026-11-10 선생님 요청): 요청한 학생 수가 늘면 '딩동' 한 번.
+   처음 열었을 때 이미 있던 요청에는 울리지 않는다. 브라우저 규칙상 화면을 한 번이라도 누른 뒤부터 소리가 난다. */
+(function(){try{
+  let ctx = null, last = null;
+  const unlock = ()=>{ try{ ctx = ctx || new (window.AudioContext||window.webkitAudioContext)(); if(ctx.state==='suspended') ctx.resume(); }catch(e){} };
+  ['pointerdown','keydown'].forEach(t=>document.addEventListener(t, unlock, {capture:true}));
+  const ding = ()=>{ try{ unlock(); if(!ctx) return; const t0 = ctx.currentTime;
+    [[880,0],[660,0.22]].forEach(([f,d])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t0+d); g.gain.exponentialRampToValueAtTime(0.35,t0+d+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+d+0.5);
+      o.connect(g); g.connect(ctx.destination); o.start(t0+d); o.stop(t0+d+0.55); }); }catch(e){} };
+  const count = ()=>{
+    const a = document.getElementById('aiReqBox'); if(a){ const m = a.textContent.match(/요청한 학생\s*(\d+)\s*명/); if(m) return +m[1]; }
+    const b = document.getElementById('acReqBadge'); if(b){ if(b.style.display==='none') return 0; const m = b.textContent.match(/(\d+)/); if(m) return +m[1]; }
+    return null; };
+  setInterval(()=>{ const n = count(); if(n===null) return; if(last!==null && n>last) ding(); last = n; }, 1500);
+}catch(e){}})();
