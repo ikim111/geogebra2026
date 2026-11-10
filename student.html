@@ -86,7 +86,14 @@
   .ordBtn{border:1px solid #f0a500;background:#fff;color:#8d5a00;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:4px;}
   .ordBtn.item{background:#fff3cd;font-weight:bold;}
   .ordBtn:disabled{opacity:.45;cursor:default;}
-  .ordPanel{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .ordPanel{margin-top:6px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;}
+  .ordGrp{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .ordGrp b{color:#8d5a00;}
+  .qb{width:44px;height:44px;border:1px solid #f0a500;background:#fff;color:#8d5a00;border-radius:8px;font-size:20px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .qb:disabled{opacity:.4;cursor:default;}
+  .qn{min-width:24px;text-align:center;font-weight:bold;font-size:16px;}
+  .ordGo{background:#1565c0;color:#fff;border:0;border-radius:8px;padding:0 14px;height:44px;font-weight:bold;font-size:14px;cursor:pointer;font-family:inherit;}
+  .ordGo:disabled{background:#f1f2f4;color:#aaa;border:1px dashed #d5d8dd;cursor:default;}
   /* 2026-10-27 목차 정리 */
   .top-card .who{display:inline-block;background:#e8eaf6;color:#1a237e;border-radius:16px;padding:4px 14px;font-size:15px;margin-top:4px;}
   .top-card .acct-btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px;}
@@ -425,13 +432,16 @@ function applyAccessAndCompletion(profile){
    주문은 ORDER_CLASSES 반에서만 보인다(전체 반, 단 자리배치표가 입력된 반만). */
 const ORDER_CLASSES = ['1','2','3','4','5','6','7','8','9','10','11','12'];   // 자리배치표가 없는 반은 어차피 점수 칸 자체가 안 보인다
 const esc = v => String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ORDER_ITEMS = { jelly:{label:'🍬 망고젤리 1개', cost:1}, point:{label:'⭐ 상점 1점', cost:10} };
+const ORDER_ITEMS = { jelly:{label:'🍬 망고젤리 1개', cost:1, name:'🍬 망고젤리', unit:'개'}, point:{label:'⭐ 상점 1점', cost:10, name:'⭐ 상점', unit:'점'} };
+/* 신청 1건에 여러 개·섞어서 (2026-11-10 선생님 요청): 새 신청은 items:{jelly:3, point:1}, 예전 신청은 item 하나 */
+const orderLabel = r => { if(r && r.items) return Object.entries(ORDER_ITEMS).filter(([k])=>+r.items[k]>0).map(([k,it])=>it.name+' '+(+r.items[k])+it.unit).join(' + ');
+  const it = ORDER_ITEMS[r && r.item]; return it ? it.label : String((r && r.item) || ''); };
 function showMyPresentScore(profile){
   const box = document.getElementById('myScore'); if(!box) return;
   const no = parseInt(profile.number, 10); if(!no) return;
   const base = firebase.database().ref('rooms/'+sanitize(profile.classNo)+'__present20');
   const canOrder = ORDER_CLASSES.includes(String(profile.classNo).trim());
-  let resetAt = 0, seated = false, events = null, requests = {}, open = false, busy = false, note = '';
+  let resetAt = 0, seated = false, events = null, requests = {}, open = false, busy = false, note = '', qty = {jelly:0, point:0};
   const myReqs = () => Object.entries(requests).map(([id,r])=>({...r,id})).filter(r=>r && +r.no===no).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const balance = () => { let total = 0; Object.values(events || {}).forEach(e=>{ if(!e || e.voided || (+e.createdAt||0) <= resetAt) return; Object.values(e.awards || {}).forEach(a=>{ if(a && +a.no === no) total += +a.points || 0; }); }); return total; };
   const paint = () => {
@@ -440,10 +450,12 @@ function showMyPresentScore(profile){
     const total = balance(), pend = myReqs().find(r=>r.status==='pending'), last = myReqs().find(r=>r.status!=='pending' && (Date.now()-(+r.decidedAt||0)) < 6*3600*1000);
     let h = `🎤 내 발표 점수 <b>${total}</b>점`;
     if(canOrder){
-      if(pend) h += ` <span class="sub">· ${esc(ORDER_ITEMS[pend.item]?ORDER_ITEMS[pend.item].label:pend.item)} 신청 중 — 선생님 확인을 기다려요</span> <button class="ordBtn" data-ord="cancel" ${busy?'disabled':''}>신청 취소</button>`;
+      if(pend) h += ` <span class="sub">· ${esc(orderLabel(pend))} 신청 중 — 선생님 확인을 기다려요</span> <button class="ordBtn" data-ord="cancel" ${busy?'disabled':''}>신청 취소</button>`;
       else h += ` <button class="ordBtn" data-ord="open" ${busy?'disabled':''}>🛒 주문</button>`;
-      if(!pend && last) h += ` <span class="sub">· 지난 신청(${esc(ORDER_ITEMS[last.item]?ORDER_ITEMS[last.item].label:last.item)}): ${last.status==='approved'?'✅ 승인됨 — 선생님께 받아 가세요':'❌ 거절됨'}</span>`;
-      if(open && !pend) h += `<div class="ordPanel">${Object.entries(ORDER_ITEMS).map(([k,it])=>`<button class="ordBtn item" data-ord="${k}" ${total<it.cost||busy?'disabled':''}>${it.label} (${it.cost}점)</button>`).join('')}<button class="ordBtn" data-ord="close">닫기</button><div class="sub">신청하면 선생님이 확인한 뒤 점수가 빠져요. 남은 점수 ${total}점</div></div>`;
+      if(!pend && last) h += ` <span class="sub">· 지난 신청(${esc(orderLabel(last))}): ${last.status==='approved'?'✅ 승인됨 — 선생님께 받아 가세요':'❌ 거절됨'}</span>`;
+      if(open && !pend){ const sum = Object.entries(ORDER_ITEMS).reduce((a,[k,it])=>a+qty[k]*it.cost, 0);
+        h += `<div class="ordPanel">` + Object.entries(ORDER_ITEMS).map(([k,it])=>`<span class="ordGrp"><b>${it.name}</b><button class="qb" data-ord="-${k}" ${qty[k]<=0||busy?'disabled':''} aria-label="${it.name} 빼기">−</button><span class="qn">${qty[k]}</span><button class="qb" data-ord="+${k}" ${sum+it.cost>total||busy?'disabled':''} aria-label="${it.name} 더하기">＋</button></span>`).join('')
+          + `<span class="ordGrp"><span class="sub">= <b>${sum}점</b> (남는 점수 ${total-sum}점)</span><button class="ordGo" data-ord="go" ${sum<=0||sum>total||busy?'disabled':''}>🛒 신청하기</button><button class="ordBtn" data-ord="close">닫기</button></span></div><div class="sub">망고젤리 1개 = 1점, 상점 1점 = 10점 · 선생님이 확인한 뒤 점수가 빠져요.</div>`; }
       if(note) h += `<div class="sub">${esc(note)}</div>`;
     }
     box.innerHTML = h;
@@ -451,16 +463,21 @@ function showMyPresentScore(profile){
   box.addEventListener('click', async e=>{
     const b = e.target.closest('[data-ord]'); if(!b || busy) return;
     const k = b.dataset.ord; note = '';
-    if(k==='open'){ open = true; paint(); return; }
+    if(k==='open'){ open = true; qty = {jelly:0, point:0}; paint(); return; }
+    if(k[0]==='+' || k[0]==='-'){ const key = k.slice(1), it = ORDER_ITEMS[key]; if(!it) return; const sum = Object.entries(ORDER_ITEMS).reduce((a,[kk,x])=>a+qty[kk]*x.cost, 0);
+      if(k[0]==='+'){ if(sum+it.cost <= balance()) qty[key]++; } else if(qty[key]>0) qty[key]--; paint(); return; }
     if(k==='close'){ open = false; paint(); return; }
     if(k==='cancel'){ const r = myReqs().find(x=>x.status==='pending'); if(!r) return; busy = true; paint();
       try{ await base.child('requests/'+r.id).update({status:'cancelled', decidedAt: firebase.database.ServerValue.TIMESTAMP}); }catch(err){ note = '취소하지 못했어요: '+err.message; }
       busy = false; paint(); return; }
-    const it = ORDER_ITEMS[k]; if(!it) return;
-    if(balance() < it.cost){ note = '점수가 모자라요.'; paint(); return; }
+    if(k!=='go') return;
+    const items = {}; let cost = 0; Object.entries(ORDER_ITEMS).forEach(([kk,it])=>{ if(qty[kk]>0){ items[kk] = qty[kk]; cost += qty[kk]*it.cost; } });
+    if(cost<=0){ note = '개수를 골라 주세요.'; paint(); return; }
+    if(balance() < cost){ note = '점수가 모자라요.'; paint(); return; }
     if(myReqs().find(x=>x.status==='pending')){ note = '이미 신청 중이에요.'; paint(); return; }
+    const ks = Object.keys(items);
     busy = true; paint();
-    try{ await base.child('requests').push({ no, name: String(profile.name||'').trim(), item: k, cost: it.cost, status:'pending', createdAt: firebase.database.ServerValue.TIMESTAMP }); open = false; }
+    try{ await base.child('requests').push({ no, name: String(profile.name||'').trim(), item: ks.length===1 ? ks[0] : 'mix', items, cost, status:'pending', createdAt: firebase.database.ServerValue.TIMESTAMP }); open = false; }
     catch(err){ note = '신청하지 못했어요: '+err.message; }
     busy = false; paint();
   });
