@@ -32,6 +32,7 @@
 - `student.html` 학생 목차(반·번호·이름 로그인 → 활동 목록), `mgmt-*.html` 교사 목차(반 선택 → 단원 열기/잠그기).
 - 활동 하나 = 학생 화면 `studentN.html` + 교사 대시보드 `tN-xxxxxxx.html` (주소 뒤 글자는 학생이 못 찾게 붙인 것).
 - 2부 교사 화면(tpa3)의 우수 글 칸 이름: **⭐ 반 우수작**(반별 3편) / **🏆 학년 우수작**(1~12반, `rooms/__gradeBest/prob33`, 세 선생님 공유). '잘 쓴 글'이라고 부르지 않는다(2026-10-29).
+- 2부 채점표에서 ○✕를 고치면 메모 칸이 열린다(`students/{key}/teacherMemo/{항목_번호}={t,ts}`, 작성자 없이 날짜·시간만, 학생에게 안 보임). AI 채점 상자의 [📝 고친 칸 목록]에 반 전체가 모인다(2026-11-12).
 - 2부 보고서 피드백(점수 없음, `api/report-review.js` → `students/{key}/aiReview`): 2부 👀 공개에는 넣지 않고(채점 기준 피드백만) 나중에 3부 점수 확인하기 화면에서 보여 준다(2026-11-02).
 - 수행평가: `studentpa1/pa2/pa3.html` ↔ `tpa1/tpa2/tpa3-*.html` (pa2 = 확률 탐구 글쓰기 ① 1부, pa3 = ② 2부 보고서, pa4 = ③ 3부 점수 확인하기 — 26번, 읽기만, 교사 화면은 tpa3).
 - 방탈출: `escape-core.js/css`(엔진) + `escape0.html`(연습)·`escape1.html`(1회). 카드 PDF 만들기 도구는 `tools/escape/`(README), 카드 그림 zip은 선생님 맥북 다운로드 폴더. 스킬 `escape-room`.
