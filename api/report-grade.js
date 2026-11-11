@@ -108,6 +108,26 @@ const PROMPT = `너는 중학교 2학년 확률·통계 탐구 보고서를 채�
 const arr = { type: 'array', items: { type: 'string' } };
 const item = { type: 'object', additionalProperties: false, required: ['score', 'reason', 'good', 'fix', 'ask'],
   properties: { score: { type: 'integer' }, reason: { type: 'string' }, good: arr, fix: arr, ask: arr } };
+// (2026-11-11 선생님 요청 — OpenAI 판정을 Claude 검토와 같게) ✕ 검토 단계: 채점 뒤 ✕ 칸만 모아 한 번 더 "그 번호 줄에 분명히 해당하는가"를 묻는다. 아니면 O로.
+const CODE_BLOCK = (() => { const a = PROMPT.indexOf('[X 줄 번호표'), b = PROMPT.indexOf('[✕ 근거 — 선생님 검토용]'); return a >= 0 && b > a ? PROMPT.slice(a, b).trim() : ''; })();
+const VERIFY_PROMPT = `너는 중학교 2학년 확률 탐구 보고서 채점을 검토하는 선생님이다. 다른 채점자가 아래 칸들을 ✕로 판정했다. 칸마다 그 ✕가 [채점 기준]과 [X 줄 번호표]의 그 번호 줄에 '분명히' 해당하는지만 다시 본다.
+- 판단 원칙(세 선생님 협의): 너그럽게 본다. 해당하는지 애매하거나, 학생 글을 너그럽게 읽으면 맞는 뜻으로 볼 수 있으면 keep=false(✕를 취소 → ○).
+- 실수는 그 칸에서만 깎는다: 그 ✕의 진짜 이유가 다른 칸에서 볼 일(예: 2-(3)인데 계산 실수·짐작값·사건 범위 문제, 3-(3)인데 옮겨 적기·오타·순서만 거꾸로)이면 keep=false.
+- 학생 글에 근거가 분명히 있고 그 번호 줄에 그대로 맞으면 keep=true.
+- 판정 예시를 우선 따른다.
+
+` + rubricText() + `
+
+` + CODE_BLOCK + `
+
+[검토할 ✕ 칸]
+{{칸들}}
+
+[학생 보고서]
+{{학생보고서}}`;
+const VERIFY_FORMAT = { type: 'json_schema', json_schema: { name: 'x_verify', strict: true, schema: { type: 'object', additionalProperties: false, required: ['checks'],
+  properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'keep', 'reason'], properties: { id: { type: 'string' }, keep: { type: 'boolean' }, reason: { type: 'string' } } } } } } } };
+const CELL_NAME = { q1: '1-(1)', q2: '1-(2)', q3: '1-(3)', d1: '2-(1)', d2: '2-(2)', d3: '2-(3)', a1: '3-(1)', a2: '3-(2)', a3: '3-(3)', a4: '3-(4)', l4: '4-(4)', l5: '4-(5)' };
 const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'report_assess', strict: true, schema: {
   type: 'object', additionalProperties: false, required: ['qchecks', 'dchecks', 'achecks', 'lchecks', 'xquotes', ...Object.keys(CRITERIA), 'first', 'status', 'statusReason'],
   properties: Object.assign({ qchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, dchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
@@ -166,6 +186,22 @@ module.exports = async (req, res) => {
     }
     j.xquotes = merged;
   }
+  // ✕ 검토 단계(켜기: 요청 body.verify === true 또는 환경변수 REPORT_VERIFY=1)
+  let verify = null;
+  if (req.body && (req.body.verify === true) || process.env.REPORT_VERIFY === '1') {
+    const KEYS = [['qchecks', 'q', 1], ['dchecks', 'd', 1], ['achecks', 'a', 1], ['lchecks', 'l', 4]];
+    const xs = [];
+    KEYS.forEach(([k, p, base]) => (Array.isArray(j[k]) ? j[k] : []).forEach((v, i) => { if (v !== 'X') return; const id = p + (i + base); const q = (j.xquotes || []).find(e => e && e.id === id) || {}; xs.push({ id, k, i, line: q.line || '', quote: q.quote || '', why: q.why || '' }); }));
+    if (xs.length) {
+      const list = xs.map(x => `- id=${x.id} (${CELL_NAME[x.id]}) 번호 ${x.line} · 근거 "${x.quote}" · 이유: ${x.why}`).join('\n');
+      const vr = await callOpenAI(VERIFY_PROMPT.replace('{{칸들}}', () => list).replace('{{학생보고서}}', () => rep.report), { maxTokens: 8000, responseFormat: VERIFY_FORMAT, effort: 'medium' });
+      const vj = vr.ok ? parseJSON(vr.text) : null;
+      if (vj && Array.isArray(vj.checks)) {
+        verify = [];
+        xs.forEach(x => { const c = vj.checks.find(e => e && e.id === x.id); if (c && c.keep === false) { j[x.k][x.i] = 'O'; j.xquotes = (j.xquotes || []).filter(e => e.id !== x.id); verify.push({ id: x.id, reason: String(c.reason || '').slice(0, 120) }); } });
+      }
+    }
+  }
   const scores = {}, reasons = {}, fb = {};
   let total = 0;
   const ox0 = (a, n) => Array.isArray(a) && a.length ? Array.from({ length: n }, (_, i) => a[i] === 'O' || a[i] === '○' ? 'O' : 'X') : null;
@@ -202,6 +238,6 @@ module.exports = async (req, res) => {
     unsure = { question: split('qchecks', 3), data: goodSrc ? split('dchecks', 3) : '000', analysis: split('achecks', 4), logic: '000' + split('lchecks', 2) };
   }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 5, runs: runs.length, flips: runs.map(x => x._flips || 0), scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 5, runs: runs.length, flips: runs.map(x => x._flips || 0), verify, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model, unsure });
 };
