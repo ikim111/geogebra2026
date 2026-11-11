@@ -95,11 +95,35 @@ module.exports = async (req, res) => {
   // 2부 채점은 정확도가 중요해서 생각 수준을 '중간'으로(1부 피드백·도우미는 '낮음' 그대로) — 선생님 결정 2026-10-11
   // (2026-11-03 선생님 결정) 같은 글도 AI가 채점할 때마다 조금씩 달라서 두 번 채점한다. 점수는 1회 결과로 쓰고, 2회와 ○✕가 다른 항목은 unsure로 알려 교사 화면에 🔍 확인 필요로 보인다.
   const opt = { maxTokens: 12000, responseFormat: RESPONSE_FORMAT, effort: 'medium' };
+  // (2026-11-11 선생님 결정) 2번 채점해서 ○✕가 모두 같으면 그대로, 다른 칸이 있으면 3번째를 해서 칸마다 다수결(2:1)로 정한다.
+  // unsure = 판정이 갈렸던 칸(다수결로 정했지만 교사 화면에 🔍로 알림).
   const [r, r2] = await Promise.all([callOpenAI(prompt, opt), callOpenAI(prompt, opt)]);
   if (!r.ok) { res.status(r.status).json({ error: r.error, detail: r.detail }); return; }
   const j = parseJSON(r.text);
   if (!j) { res.status(502).json({ error: 'AI 채점 결과를 해석하지 못했어요.', raw: String(r.text).slice(0, 500) }); return; }
   const j2 = r2.ok ? parseJSON(r2.text) : null;   // 2회가 실패하면 1회 결과만 쓴다(unsure 없음)
+  const oxN = (a, n, loose) => Array.isArray(a) && a.length ? Array.from({ length: n }, (_, i) => a[i] === 'O' || (loose && a[i] === '○') ? 'O' : 'X') : null;
+  const sig = x => x ? [oxN(x.qchecks, 3, true), oxN(x.dchecks, 3), oxN(x.achecks, 4), oxN(x.lchecks, 2)].map(v => v ? v.join('') : '-').join('|') : '';
+  let runs = [j].concat(j2 ? [j2] : []);
+  if (j2 && sig(j) !== sig(j2)) {
+    const r3 = await callOpenAI(prompt, opt); const j3 = r3.ok ? parseJSON(r3.text) : null;
+    if (j3) runs.push(j3);
+  }
+  const runsRaw = runs.map(x => ({ qchecks: oxN(x.qchecks, 3, true), dchecks: oxN(x.dchecks, 3), achecks: oxN(x.achecks, 4), lchecks: oxN(x.lchecks, 2) }));   // 다수결로 바꾸기 전 원래 판정(갈린 칸 표시용)
+  if (runs.length >= 3) {   // 칸마다 다수결: 첫 결과(j)의 ○✕를 다수결 값으로 바꾸고, ✕ 근거는 그 칸을 ✕로 본 결과에서 가져온다
+    const keys = [['qchecks', 3, true, 'q'], ['dchecks', 3, false, 'd'], ['achecks', 4, false, 'a'], ['lchecks', 2, false, 'l']];
+    const xqAll = runs.map(x => (Array.isArray(x.xquotes) ? x.xquotes : []));
+    const merged = [];
+    for (const [k, n, loose, p] of keys) {
+      const arrs = runs.map(x => oxN(x[k], n, loose)).filter(Boolean);
+      if (!arrs.length) continue;
+      const fin = Array.from({ length: n }, (_, i) => arrs.filter(v => v[i] === 'O').length * 2 > arrs.length ? 'O' : 'X');
+      j[k] = fin;
+      fin.forEach((v, i) => { if (v !== 'X') return; const id = p + (p === 'l' ? i + 4 : i + 1);
+        for (let ri = 0; ri < runs.length; ri++) { const a = oxN(runs[ri][k], n, loose); if (!a || a[i] !== 'X') continue; const q = xqAll[ri].find(x => x && x.id === id); if (q) { merged.push(q); break; } } });
+    }
+    j.xquotes = merged;
+  }
   const scores = {}, reasons = {}, fb = {};
   let total = 0;
   const ox0 = (a, n) => Array.isArray(a) && a.length ? Array.from({ length: n }, (_, i) => a[i] === 'O' || a[i] === '○' ? 'O' : 'X') : null;
@@ -131,13 +155,11 @@ module.exports = async (req, res) => {
   if (!goodSrc) { xq.data = ['(인정되는 자료 없음 — 출처 이름·링크·첨부가 모두 있어야 해요)', '', '']; }
   // 1회·2회 ○✕ 비교: 항목마다 '1'(다름)·'0'(같음). 글자 수 (1)~(3)은 프로그램이 세므로 늘 같다. 인정 자료가 없으면 자료 수집은 프로그램이 정하므로 비교하지 않는다.
   let unsure = null;
-  if (j2) {
-    const diff = (x, y, n) => Array.from({ length: n }, (_, i) => (x && y && x[i] !== y[i]) ? '1' : '0').join('');
-    const q2 = ox0(j2.qchecks, 3), d2 = Array.isArray(j2.dchecks) && j2.dchecks.length ? [0, 1, 2].map(i => j2.dchecks[i] === 'O' ? 'O' : 'X') : null;
-    const a2 = ox(j2.achecks, 4), l2 = ox(j2.lchecks, 2);
-    unsure = { question: diff(qchecks, q2, 3), data: goodSrc ? diff(dchecks, d2, 3) : '000', analysis: diff(achecks, a2, 4), logic: '000' + diff(lchecks, l2, 2) };
+  if (runs.length >= 2) {   // 판정이 하나라도 갈린 칸 = '1'
+    const split = (k, n) => { const arrs = runsRaw.map(x => x[k]).filter(Boolean); return Array.from({ length: n }, (_, i) => arrs.length > 1 && new Set(arrs.map(v => v[i])).size > 1 ? '1' : '0').join(''); };
+    unsure = { question: split('qchecks', 3), data: goodSrc ? split('dchecks', 3) : '000', analysis: split('achecks', 4), logic: '000' + split('lchecks', 2) };
   }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 3, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 4, runs: runs.length, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model, unsure });
 };

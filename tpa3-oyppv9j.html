@@ -798,9 +798,12 @@ document.getElementById('reviewBulkBtn').addEventListener('click', async ()=>{
   st.textContent = `완료: ${ok}명 보고서 피드백` + (fail.length ? ` · 실패 ${fail.length}명(다시 누르면 실패한 학생만 다시 받아요)` : '');
   if(fail.length) console.warn('보고서 피드백 실패:', fail);
 });
+/* 🔒 2026-11-11 결과 고정: 새 채점 방식(rv 4: 2번 + 갈리면 3번째 다수결)으로 채점했고 그 뒤 글이 그대로면 다시 받지 않는다 */
+function gradeFrozen(s){ const ai = s && s.aiGrade; return !!(ai && (ai.rv||0) >= 4 && ai.hash && ai.hash === repHash(s)); }
 async function requestGrade(key){
   const s = allStudents[key];
   if(!s || !hasReport(s) || gradePending.has(key)) return false;
+  if(gradeFrozen(s)) return false;   // (2026-11-11 선생님 요청) 같은 글은 같은 결과 — 글이 바뀌지 않았으면 다시 채점하지 않는다
   gradePending.add(key); refreshAI();
   try{
     const res = await fetch('/api/report-grade', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(repOf(s)) });
@@ -826,7 +829,7 @@ function aiChecksOf(s, k){ const ai = s && s.aiGrade, n = CHECK_LABELS[k].length
 function unsureAt(s, k, i){ const ai = s && s.aiGrade; return !!(ai && ai.unsure && String(ai.unsure[k]||'')[i]==='1' && !(ai.unsureOk && ai.unsureOk[k+i])); }
 function unsureCount(s){ return Object.keys(CHECK_LABELS).reduce((n,k)=> n + CHECK_LABELS[k].filter((_,i)=> unsureAt(s,k,i)).length, 0); }
 function unsureTag(key, s, k, i){ const a = aiChecksOf(s, k); if(!unsureAt(s,k,i) || !a) return ''; const one = a[i]==='O'?'○':'✕', two = a[i]==='O'?'✕':'○';
-  return `<div class="xq un-tag">🔍 AI 1회 ${one} · 2회 ${two} — 확인 필요 <button type="button" class="un-ok" data-unok="${esc(key)}" data-unk="${k}" data-uni="${i}">✔ 이대로 맞아요</button></div>`; }
+  return `<div class="xq un-tag">🔍 AI 판정이 갈렸어요 (다수결 ${one}) — 확인 필요 <button type="button" class="un-ok" data-unok="${esc(key)}" data-unk="${k}" data-uni="${i}">✔ 이대로 맞아요</button></div>`; }
 async function markUnsureOk(key, k, i){ const s = allStudents[key]; if(!s || !s.aiGrade) return; if(!s.aiGrade.unsureOk) s.aiGrade.unsureOk = {};
   if(s.aiGrade.unsureOk[k+i]) return; s.aiGrade.unsureOk[k+i] = true; refreshAI(); renderGrid();
   await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/aiGrade/unsureOk/'+k+i).set(true); }
@@ -1675,7 +1678,8 @@ function makeEvidence(key){ if(evPending.has(key)) return; evPending.add(key); r
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ev-make]'); if(!b) return; e.preventDefault(); e.stopPropagation(); makeEvidence(b.dataset.evMake); }, true);
 function rubricTableHTML(key, s){
   const g = gradeOf(s), ai = g.ai, pending = gradePending.has(key), can = hasReport(s) && !pending;
-  const btn = `<button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점 중… (10~40초)' : (ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button>`;
+  const fz = gradeFrozen(s);
+  const btn = fz ? `<span class="rb-note" title="같은 글은 같은 결과가 나오도록 고정했어요. 학생이 글을 고치면 다시 받을 수 있어요.">🔒 채점 고정 (글이 바뀌면 다시)</span>` : `<button class="gr-ai" data-grade-ai="${esc(key)}" ${can?'':'disabled'}>${pending ? '🤖 채점 중… (20~90초)' : (ai ? '🤖 다시 받기' : '🤖 AI 채점·피드백 받기')}</button>`;
   let h = `<div class="gr-box rb"><div class="rb-hd"><b>📊 AI 채점표</b><span class="rb-tot">합계 <b>${g.any ? g.total : '-'}</b> / ${SCORE_MAX}${g.overridden?` <small>· 선생님 수정 ${g.overridden}개</small>`:''}</span>${btn}</div>`;
   if(g.stale) h += `<div class="gr-warn">⚠️ AI 채점 뒤에 학생이 글을 고쳤어요. "다시 받기"를 눌러 보세요.</div>`;
   if(!s.submitted && hasReport(s)) h += `<div class="gr-warn" style="color:#888;">아직 제출 전이에요(지금 쓴 글로 채점돼요).</div>`;
