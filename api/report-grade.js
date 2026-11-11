@@ -36,8 +36,41 @@ const PROMPT = `너는 중학교 2학년 확률·통계 탐구 보고서를 채�
 - lchecks: [채점 기준] 4번의 (4) 확률값의 뜻을 알맞게 해석, (5) 결론에 질문에 대한 답 — 이 순서로 2개를 "O"·"X"로 판단한 배열(2개). (4)는 학생이 구한 값을 기준으로 [채점 기준] 4번 (4)의 순서표를 ①부터 차례로 보고 정한다(2026-11-11). 확률값 없이 횟수·건수만 비교했으면(예: "사망자 수가 더 많다") X(2026-11-03 선생님 결정).
   (1)~(3) 글자 수는 프로그램이 센다. logic.score는 프로그램이 다시 계산한다.
 
+[X 줄 번호표 — X를 줄 때 반드시 하나를 line에 쓴다 (2026-11-11 선생님 요청: 같은 글은 같은 결과, Claude 검토와 같게)]
+- 칸마다 아래 번호 중 하나에 '분명히' 해당할 때만 X다. 해당하는 번호가 없으면 그 칸은 O다(프로그램이 번호를 검사해서, 그 칸에 없는 번호로 X를 주면 O로 바꾼다).
+- q1 Q1: 제목·서론에 알아볼 질문이 없음
+- q2 Q2: 확률을 구하는 질문이 아님(관계가 있는지·방법·원인을 묻는 질문)
+- q3 Q3: "~할 확률은 얼마일까" 꼴도 "A와 B 중 어느 쪽 확률이 높을까" 꼴도 아님
+- d1 D1: 자료 1이 탐구 질문과 다른 주제 / D0: 인정되는 자료가 아님(블로그·첨부 없음 등)
+- d2 D2a: 자료 2가 없음 / D2b: 자료 1과 출처·내용이 모두 같음(같은 사이트의 같은 기록을 다시 낸 것 포함) / D2c: 자료 2가 질문과 다른 주제 / D0
+- d3 D3a: 질문에 답하는 확률 계산에 쓴 수치 중, 올린 자료 이름·설명과도 관계없는 바깥 수치가 있음 / D3b: 인정되는 자료가 2개 미만 / D3c: 본론에 계산에 쓴 수치가 하나도 없음(빈 본론·뜻 없는 글자)
+  (계산 실수·짐작값·사건 범위·옮겨 적기·확률값 없음은 d3의 X 이유가 아니다 — 3번에서 본다)
+- a1 A1: 자료 1에서 왔다고 볼 수 있는 수치·기록·사실이 본론에 하나도 없음(계산에 안 쓰였어도 본론에 있으면 O)
+- a2 A2: 자료 2에서 왔다고 볼 수 있는 수치·기록·사실이 본론에 하나도 없음(자료 2가 없음 포함)
+- a3 A3-1~A3-6: [채점 기준] 3번 (3) 순서표의 ①~⑥ (⑦은 O)
+- a4 A4-1~A4-5: [채점 기준] 3번 (4) 순서표의 ①~⑤ (⑥은 O)
+- l4 L4-1~L4-5: [채점 기준] 4번 (4) 순서표의 ①~⑤ / L4-6: ⑥의 어느 것도 없음
+- l5 L5a: 결론(또는 본론 끝)에서 질문에 대한 답을 읽을 수 없음 / L5b: 맞는 답과 값과 거꾸로 된 답이 섞여 있음
+
+[판정 예시 — 2026-11-11 원문 검토로 정한 것(학생 이름·숫자는 바꿈)]
+- 2-(3) O: 질문에 답하는 계산의 수(사망자 수)는 올린 자료에서 왔고, 숫자가 빠진 문장·계산 실수가 있음 → 계산 문제는 3번에서만.
+- 2-(3) O: 본 질문의 계산은 자료 수치이고, 덧붙인 다른 해 비교 수치 하나만 출처가 흐림.
+- 2-(3) O: 자료 이름이 '흡연 사망 확률'이고 본론에 그 내용인 19.6%를 씀.
+- 2-(2) X(D2b): 자료 1·2가 같은 사이트의 같은 팀 홈·원정 기록.
+- 3-(1) O: 자료 1(구별 피해 금액 기록)의 내용으로 '건당 피해 금액이 크다'고 판단함 — 계산에 안 쓰였어도 활용.
+- 3-(3) X(A3-1): 분모 수 없이 자료에 나온 '사망률 34.6%'만 옮겨 씀.
+- 3-(3) X(A3-2): '1.5~3배라고 하니 평균 2배로 보자'처럼 학생이 어림한 값을 식에 넣음.
+- 3-(3) O(⑦): 고른 수는 맞고 다른 문장에서 숫자를 잘못 옮겨 씀 → 3-(4)에서만.
+- 3-(3) O(⑦): 분모를 30일로 할지 31일로 할지 같은 작은 차이, 학생이 '분자 일부가 분모 밖일 수도 있다'고 한계로 적은 것.
+- 3-(4) X(A4-3): 값 80%는 맞지만 '10 나누기 8'이라고 거꾸로 씀.
+- 3-(4) O: 31.775를 버려서 31로 씀(마지막 자리 1 차이).
+- 4-(4) X(L4-3): 확률값 없이 두 사고 건수의 비 0.8만 비교함.
+- 4-(4) X(L4-1): "28퍼센트가 나온다"처럼 값만 다시 씀.
+- 4-(4) O: 값을 0.1%로 잘못 썼지만 "1000번 중 1번꼴, 꼭 일어나는 건 아니다"라고 풀어 씀(표기는 3-(4)에서만).
+- 4-(5) O: 돌려 말했지만 결론에서 "10월이 가장 높다"는 답을 읽을 수 있음.
+
 [✕ 근거 — 선생님 검토용]
-- xquotes: 위 체크 항목 중 "X"로 판단한 것마다 하나씩 쓴다. id는 q1~q3(탐구 질문), d1~d3(자료 수집), a1~a4(자료 분석), l4·l5(글의 논리)이다.
+- xquotes: 위 체크 항목 중 "X"로 판단한 것마다 하나씩 쓴다. id는 q1~q3(탐구 질문), d1~d3(자료 수집), a1~a4(자료 분석), l4·l5(글의 논리)이다. line에는 [X 줄 번호표]의 번호를 쓴다(그 칸의 번호만).
 - quote: 그렇게 판단한 근거가 되는 학생 글을 40자 이내로 그대로 옮긴다(따옴표 없이). 근거가 '내용이 없음'이면 "(해당 내용 없음)"이라고 쓰고, 어디에 없는지 짧게 덧붙인다(예: "(결론에 질문의 답 없음)").
 - why: 왜 X인지 선생님이 바로 알 수 있게 40자 이내 한 문장. 숫자가 틀렸으면 맞는 값까지 쓴다(예: "32승 2무 36패를 더하면 70인데 분모를 71로 씀", "156/276=56.5%인데 56%로 씀")(2026-11-04 선생님 요청: ✕ 이유를 매번 묻지 않게).
 - "O"인 항목은 쓰지 않는다.
@@ -79,7 +112,7 @@ const RESPONSE_FORMAT = { type: 'json_schema', json_schema: { name: 'report_asse
   type: 'object', additionalProperties: false, required: ['qchecks', 'dchecks', 'achecks', 'lchecks', 'xquotes', ...Object.keys(CRITERIA), 'first', 'status', 'statusReason'],
   properties: Object.assign({ qchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, dchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
     achecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } }, lchecks: { type: 'array', items: { type: 'string', enum: ['O', 'X'] } },
-    xquotes: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'quote', 'why'], properties: { id: { type: 'string', enum: ['q1','q2','q3','d1','d2','d3','a1','a2','a3','a4','l4','l5'] }, quote: { type: 'string' }, why: { type: 'string' } } } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
+    xquotes: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'line', 'quote', 'why'], properties: { id: { type: 'string', enum: ['q1','q2','q3','d1','d2','d3','a1','a2','a3','a4','l4','l5'] }, line: { type: 'string', enum: ['Q1', 'Q2', 'Q3', 'D0', 'D1', 'D2a', 'D2b', 'D2c', 'D3a', 'D3b', 'D3c', 'A1', 'A2', 'A3-1', 'A3-2', 'A3-3', 'A3-4', 'A3-5', 'A3-6', 'A4-1', 'A4-2', 'A4-3', 'A4-4', 'A4-5', 'L4-1', 'L4-2', 'L4-3', 'L4-4', 'L4-5', 'L4-6', 'L5a', 'L5b'] }, quote: { type: 'string' }, why: { type: 'string' } } } } }, Object.fromEntries(Object.keys(CRITERIA).map(k => [k, item])),
     { first: { type: 'string' }, status: { type: 'string', enum: ['ok', 'check', 'need'] }, statusReason: { type: 'string' } }) } } };
 // 탐구 질문 점수 = 3항목((1) 질문을 씀 = 기본 1점, (2) 확률 질문, (3) 형태) O 개수, (1)이 X면 0 — 2026-10-12 간소화(다른 선생님 제안)
 const qScore = q => q[0] === 'X' ? 0 : q.filter(x => x === 'O').length;
@@ -104,9 +137,18 @@ module.exports = async (req, res) => {
   const j2 = r2.ok ? parseJSON(r2.text) : null;   // 2회가 실패하면 1회 결과만 쓴다(unsure 없음)
   const oxN = (a, n, loose) => Array.isArray(a) && a.length ? Array.from({ length: n }, (_, i) => a[i] === 'O' || (loose && a[i] === '○') ? 'O' : 'X') : null;
   const sig = x => x ? [oxN(x.qchecks, 3, true), oxN(x.dchecks, 3), oxN(x.achecks, 4), oxN(x.lchecks, 2)].map(v => v ? v.join('') : '-').join('|') : '';
+  // (2026-11-11 선생님 요청) X 줄 번호 검사: 그 칸에 없는 번호이거나 번호가 없으면 그 X는 O로 바꾼다(너그럽게·실수는 그 칸에서만을 프로그램이 지킴)
+  const XCODES = { q1: ['Q1'], q2: ['Q2'], q3: ['Q3'], d1: ['D0', 'D1'], d2: ['D0', 'D2a', 'D2b', 'D2c'], d3: ['D3a', 'D3b', 'D3c'], a1: ['A1'], a2: ['A2'],
+    a3: ['A3-1', 'A3-2', 'A3-3', 'A3-4', 'A3-5', 'A3-6'], a4: ['A4-1', 'A4-2', 'A4-3', 'A4-4', 'A4-5'], l4: ['L4-1', 'L4-2', 'L4-3', 'L4-4', 'L4-5', 'L4-6'], l5: ['L5a', 'L5b'] };
+  const validate = x => { if (!x) return x; const xq = Array.isArray(x.xquotes) ? x.xquotes : []; let flips = 0;
+    [['qchecks', 'q', 1], ['dchecks', 'd', 1], ['achecks', 'a', 1], ['lchecks', 'l', 4]].forEach(([k, p, base]) => {
+      if (!Array.isArray(x[k])) return; x[k] = x[k].map((v, i) => { if (!(v === 'X' || v === '✕')) return v; const id = p + (i + base);
+        const q = xq.find(e => e && e.id === id); if (q && (XCODES[id] || []).includes(q.line)) return v; flips++; return 'O'; }); });
+    x.xquotes = xq.filter(e => e && (XCODES[e.id] || []).includes(e.line)); x._flips = flips; return x; };
+  validate(j); if (j2) validate(j2);
   let runs = [j].concat(j2 ? [j2] : []);
   if (j2 && sig(j) !== sig(j2)) {
-    const r3 = await callOpenAI(prompt, opt); const j3 = r3.ok ? parseJSON(r3.text) : null;
+    const r3 = await callOpenAI(prompt, opt); const j3 = r3.ok ? parseJSON(r3.text) : null; if (j3) validate(j3);
     if (j3) runs.push(j3);
   }
   const runsRaw = runs.map(x => ({ qchecks: oxN(x.qchecks, 3, true), dchecks: oxN(x.dchecks, 3), achecks: oxN(x.achecks, 4), lchecks: oxN(x.lchecks, 2) }));   // 다수결로 바꾸기 전 원래 판정(갈린 칸 표시용)
@@ -160,6 +202,6 @@ module.exports = async (req, res) => {
     unsure = { question: split('qchecks', 3), data: goodSrc ? split('dchecks', 3) : '000', analysis: split('achecks', 4), logic: '000' + split('lchecks', 2) };
   }
   const status = ['ok', 'check', 'need'].includes(j.status) ? j.status : 'check';
-  res.status(200).json({ rv: 4, runs: runs.length, scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
+  res.status(200).json({ rv: 5, runs: runs.length, flips: runs.map(x => x._flips || 0), scores, reasons, fb, qchecks: qchecks ? qchecks.join('') : '', dchecks: dchecks ? (goodSrc ? dchecks.join('') : 'XXX') : '', dchecksRaw: dchecks ? dchecks.join('') : '', achecks: achecks ? achecks.join('') : '', lchecks: lchecks5.join(''), xq, xw, goodSrc, first: String(j.first || '').slice(0, 400), status, statusReason: String(j.statusReason || '').slice(0, 300),
     total, counts: rep.counts, model: r.model, unsure });
 };
