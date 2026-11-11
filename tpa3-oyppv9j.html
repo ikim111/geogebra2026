@@ -309,6 +309,7 @@
   .rg-ban .tx{flex:1;} .rg-ban b{color:#e65100;} .rg-ban .t{display:block;color:#b71c1c;font-weight:700;}
   .rg-ok{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:#2e7d32;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;}
   .rg-done{font-size:12px;color:#888;margin:4px 0 8px;} .rg-done a{color:#1565c0;text-decoration:underline;cursor:pointer;}
+  .cl-tag{display:block;margin-top:3px;font-size:11.5px;color:#7b1fa2;background:#f3e5f5;border-radius:6px;padding:2px 6px;}
   .rg-cnt{display:inline-block;margin-left:8px;background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:8px;font-size:12px;font-weight:700;padding:2px 8px;}
 </style>
 </head>
@@ -896,7 +897,7 @@ function renderGradePanel(){
   document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
   { const rg = list.map(rgInfo).filter(g=>g && g.changed), ack = rg.filter(g=>g.ack).length, tcn = rg.filter(g=>g.tcs.length && !g.ack).length;
     let el = document.getElementById('grRg'); if(!el){ el = document.createElement('span'); el.id = 'grRg'; el.className = 'rg-cnt'; const hd = document.querySelector('#gradePanel .gr-head span'); if(hd) hd.after(el); }
-    el.style.display = rg.length ? '' : 'none'; el.textContent = `🔄 재채점으로 바뀐 학생 ${rg.length}명 중 ${ack}명 확인` + (tcn ? ` · ✏️ ${tcn}명` : ''); }
+    el.style.display = rg.length ? '' : 'none'; const cln = list.filter(x=>clCount(x)).length; el.textContent = `🔄 재채점으로 바뀐 학생 ${rg.length}명 중 ${ack}명 확인` + (tcn ? ` · ✏️ ${tcn}명` : '') + (cln ? ` · 🔍 Claude와 다른 학생 ${cln}명` : ''); }
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
   const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
@@ -988,8 +989,15 @@ function rgInfo(s){
   const changed = cells.length + tcs.length > 0 || r.before.total !== r.after.total;
   return { r, cells, tcs, changed, ack: !!r.ack, before: r.before.total, after: r.after.total };
 }
+/* 🔍 2026-11-12 Claude 검토와 다른 칸: regrade1111.claude = {'analysis_2': {v:'O', why:'…'}} — 지금 판정이 Claude와 같아지면(선생님이 고치면) 사라진다 */
+function clDiff(s, k, i){ const r = s && s.regrade1111, c = r && r.claude && r.claude[k+'_'+i]; if(!c) return null; const cur = checksOf(s, k); return (cur && cur[i] && cur[i] !== c.v) ? c : null; }
+function clCount(s){ const r = s && s.regrade1111; if(!r || !r.claude) return 0; return Object.keys(r.claude).filter(x=>{ const m = /^(\w+)_(\d)$/.exec(x); return m && clDiff(s, m[1], +m[2]); }).length; }
 function rgCellCls(s, k, i){ const g = rgInfo(s); if(!g || !g.changed || g.ack) return ''; if(g.tcs.some(x=>x.k===k&&x.i===i)) return 'tc'; if(g.cells.some(x=>x.k===k&&x.i===i)) return 'ch'; return ''; }
 function rgBannerHTML(key, s){
+  const cn = clCount(s), cl = cn ? `<div class="cl-tag" style="display:inline-block;margin:4px 0 6px;">🔍 Claude 검토와 판정이 다른 칸 ${cn}개 — 칸 아래 보라 글씨를 보고 정해 주세요</div>` : '';
+  return clBanner0(key, s) + cl;
+}
+function clBanner0(key, s){
   const g = rgInfo(s); if(!g || !g.changed) return '';
   if(g.ack) return `<div class="rg-done">✓ 재채점 확인함 (${new Date(g.r.ack).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) · <a data-rg-unack="${esc(key)}">다시 보기</a></div>`;
   const ox = v => v==='O'?'O':'X';
@@ -1604,7 +1612,7 @@ function renderGrid(){
     const tdScore=document.createElement('td'); tdScore.className='score-cell';
     const gg = gradeOf(s);
     if(gg.any){
-      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' <b style="color:#e65100;">↻</b>':''}</span>` + (()=>{ const g = rgInfo(s); return (g && g.changed && !g.ack) ? `<span class="rg-badge${g.tcs.length?' tc':''}" title="11/11 협의 반영 재채점">🔄 ${g.before}→${gg.total}${g.tcs.length?' ✏️':''}</span>` : ''; })();
+      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' <b style="color:#e65100;">↻</b>':''}</span>` + (()=>{ const g = rgInfo(s); return ((g && g.changed && !g.ack) ? `<span class="rg-badge${g.tcs.length?' tc':''}" title="11/11 협의 반영 재채점">🔄 ${g.before}→${gg.total}${g.tcs.length?' ✏️':''}</span>` : '') + (clCount(s) ? `<span class="rg-badge" style="background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8" title="Claude 검토와 판정이 다른 칸">🔍${clCount(s)}</span>` : ''); })();
       tdScore.title = `${gg.total}/${SCORE_MAX}점` + (gg.overridden?` · 선생님 수정 ${gg.overridden}개`:' · AI 점수') + (gg.stale?' · 채점 뒤 글이 바뀜':'');
     } else { tdScore.textContent = '-'; tdScore.style.color='#bbb'; tdScore.title='아직 채점 전'; }
     tdScore.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); });
@@ -1702,7 +1710,7 @@ function rubricTableHTML(key, s){
         else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
         if(v==='X' && a[i]==='X' && xw[i]) evc += `<div class="rb-why">👉 ${esc(xw[i])}</div>`;   // 2026-11-04 ✕ 이유 한 줄
         else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
-      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}${rgCellCls(s, it.k, i)?' rg-'+rgCellCls(s, it.k, i):''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}${rgCellCls(s, it.k, i)==='tc'?'<span class="rg-hand">✏️</span>':''}</span>${rgCellCls(s, it.k, i)==='tc'?(()=>{ const x = rgInfo(s).tcs.find(y=>y.k===it.k&&y.i===i); return `<span class="rg-tip">선생님 ${x.from==='O'?'O':'X'} → ${x.to==='O'?'O':'X'}</span>`; })():''}`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}</td></tr>`;
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}${rgCellCls(s, it.k, i)?' rg-'+rgCellCls(s, it.k, i):''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}${rgCellCls(s, it.k, i)==='tc'?'<span class="rg-hand">✏️</span>':''}</span>${rgCellCls(s, it.k, i)==='tc'?(()=>{ const x = rgInfo(s).tcs.find(y=>y.k===it.k&&y.i===i); return `<span class="rg-tip">선생님 ${x.from==='O'?'O':'X'} → ${x.to==='O'?'O':'X'}</span>`; })():''}`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}${(()=>{ const c = clDiff(s, it.k, i); return c ? `<span class="cl-tag">🔍 Claude 검토: ${c.v==='O'?'○':'✕'} — ${esc(c.why||'')}</span>` : ''; })()}</td></tr>`;
     });
     const tg = s.teacherGrade && s.teacherGrade[it.k];
     if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
