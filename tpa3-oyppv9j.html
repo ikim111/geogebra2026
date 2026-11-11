@@ -309,6 +309,10 @@
   .rg-ban .tx{flex:1;} .rg-ban b{color:#e65100;} .rg-ban .t{display:block;color:#b71c1c;font-weight:700;}
   .rg-ok{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:#2e7d32;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;}
   .rg-done{font-size:12px;color:#888;margin:4px 0 8px;} .rg-done a{color:#1565c0;text-decoration:underline;cursor:pointer;}
+  .mm-box{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;} .mm-box input{flex:1;min-width:120px;border:1.5px solid #1565c0;border-radius:7px;padding:7px 8px;font-size:13px;font-family:inherit;} .mm-box button{white-space:nowrap;border-radius:7px;padding:7px 11px;font-size:13px;min-height:36px;cursor:pointer;font-family:inherit;} .mm-save{background:#2e7d32;color:#fff;border:none;} .mm-skip{background:#fff;color:#555;border:1.5px solid #bdbdbd;} .mm-hint{flex-basis:100%;font-size:11.5px;color:#888;}
+  .mm-show{display:block;margin-top:5px;font-size:12px;color:#666;background:#f5f5f5;border-radius:6px;padding:4px 8px;} .mm-show a{color:#1565c0;margin-left:4px;}
+  #memoListBox{margin-top:10px;font-size:13px;} #memoListBox table{border-collapse:collapse;width:100%;} #memoListBox th,#memoListBox td{border:1px solid #e3e3ea;padding:6px 8px;text-align:left;vertical-align:top;} #memoListBox th{background:#f6f6fa;color:#555;font-weight:normal;} #memoListBox tr[data-ml]{cursor:pointer;} #memoListBox tr[data-ml]:hover{background:#f5f7ff;} #memoListBox .ml-no{color:#e65100;} #memoListBox .ml-lead{color:#666;font-size:12px;margin-bottom:6px;}
+  #memoListBtn.on{background:#1565c0;color:#fff;}
   .cl-tag{display:block;margin-top:3px;font-size:11.5px;color:#7b1fa2;background:#f3e5f5;border-radius:6px;padding:2px 6px;}
   .rg-cnt{display:inline-block;margin-left:8px;background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:8px;font-size:12px;font-weight:700;padding:2px 8px;}
 </style>
@@ -442,9 +446,11 @@
           <button class="gr-ai" id="fbShowBtn" style="background:#1565c0;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
           <span style="flex:1"></span>
+          <button class="mini" id="memoListBtn" title="선생님이 ○✕를 바꾼 칸과 메모를 반 전체로 모아 봐요">📝 고친 칸 목록 <b>0</b></button>
           <button class="mini" id="exportExcelBtn">📥 엑셀</button>
           <button class="mini" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 인쇄</button>
         </div>
+        <div id="memoListBox" style="display:none;"></div>
       </div>
       <div id="spellReqBox" style="display:none;background:#fff;border:1px solid #d5d8e0;border-left:5px solid #1565c0;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:14px;"></div>
       <div id="gbPanel"></div>
@@ -872,10 +878,58 @@ async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체
   let job;
   if(nx === a){ delete s.teacherChecks[k]; delete s.teacherGrade[k]; job = Promise.all([base.child('teacherChecks/'+k).remove(), base.child('teacherGrade/'+k).remove()]); }
   else { const sc = scoreFromChecks(k, nx); s.teacherChecks[k] = nx; s.teacherGrade[k] = sc; job = Promise.all([base.child('teacherChecks/'+k).set(nx), base.child('teacherGrade/'+k).set(sc)]); }
+  { const id = key+'|'+k+'|'+i; if(nx[i] !== a[i]){ memoOpen.add(id); setTimeout(()=>{ const e = document.querySelector('[data-mm-in="'+CSS.escape(id)+'"]'); if(e) e.focus(); }, 60); } else memoOpen.delete(id); }   // 📝 2026-11-12 ○✕를 고치면 메모 칸을 연다
   refreshAI(); renderGrid();
   try{ await job; }catch(err){ if(prevC===undefined) delete s.teacherChecks[k]; else s.teacherChecks[k] = prevC; if(prevG===undefined) delete s.teacherGrade[k]; else s.teacherGrade[k] = prevG; refreshAI(); renderGrid(); throw err; }
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); e.stopPropagation();   /* 2026-10-29: 캡처 단계에서 받아 학생 카드 클릭(보고서 창 열기)으로 번지지 않게 */ toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); }, true);
+/* 📝 2026-11-12 선생님 요청: ○✕를 고칠 때 이유를 한 줄 메모로 남긴다 → students/{key}/teacherMemo/{항목_번호} = {t, ts}
+   칸 아래 회색 글씨로 보이고, AI 채점 상자의 [📝 고친 칸 목록]에 반 전체가 모인다. 학생 화면에는 보이지 않는다. 작성자는 남기지 않는다(반마다 선생님이 다름). */
+const memoOpen = new Set(), memoDraft = {};
+function memoOf(s, k, i){ const m = s && s.teacherMemo && s.teacherMemo[k+'_'+i]; return (m && m.t) ? m : null; }
+function fmtMD(ts){ if(!ts) return ''; const d = new Date(ts), z = n=> String(n).padStart(2,'0'); return `${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}`; }
+function memoHTML(key, s, k, i){
+  const id = key+'|'+k+'|'+i, m = memoOf(s, k, i);
+  if(memoOpen.has(id)){ const v = memoDraft[id]!=null ? memoDraft[id] : (m ? m.t : '');
+    return `<div class="mm-box"><input type="text" maxlength="200" data-mm-in="${esc(id)}" value="${esc(v)}" placeholder="왜 바꿨는지 한 줄"><button type="button" class="mm-save" data-mm-save="${esc(id)}">저장</button><button type="button" class="mm-skip" data-mm-skip="${esc(id)}">건너뛰기</button><span class="mm-hint">비워 둬도 돼요 · 학생에게는 안 보여요</span></div>`; }
+  return m ? `<span class="mm-show">📝 <b>메모</b> ${esc(fmtMD(m.ts))} · ${esc(m.t)}<a href="#" data-mm-edit="${esc(id)}">✎ 고치기</a></span>` : '';
+}
+async function saveMemo(id){
+  const [key, k, i] = id.split('|'), s = allStudents[key]; if(!s) return;
+  const inp = document.querySelector('[data-mm-in="'+CSS.escape(id)+'"]'), t = (inp ? inp.value : (memoDraft[id]||'')).trim().slice(0,200);
+  const ref = db.ref('rooms/'+currentRoomKey+'/students/'+key+'/teacherMemo/'+k+'_'+i);
+  const val = t ? { t, ts: Date.now() } : null;
+  await (val ? ref.set(val) : ref.remove());
+  if(!s.teacherMemo) s.teacherMemo = {}; if(val) s.teacherMemo[k+'_'+i] = val; else delete s.teacherMemo[k+'_'+i];
+  memoOpen.delete(id); delete memoDraft[id]; refreshOpenModal(); renderGradePanel();
+}
+document.addEventListener('click', e=>{
+  const t = e.target.closest && e.target.closest('[data-mm-save],[data-mm-skip],[data-mm-edit]'); if(!t) return; e.preventDefault(); e.stopPropagation();
+  if(t.dataset.mmSave){ saveMemo(t.dataset.mmSave).catch(err=> alert('메모를 저장하지 못했어요: '+(err.message||err))); return; }
+  if(t.dataset.mmSkip){ memoOpen.delete(t.dataset.mmSkip); delete memoDraft[t.dataset.mmSkip]; refreshOpenModal(); return; }
+  const id = t.dataset.mmEdit; memoOpen.add(id); refreshOpenModal(); setTimeout(()=>{ const x = document.querySelector('[data-mm-in="'+CSS.escape(id)+'"]'); if(x) x.focus(); }, 30);
+}, true);
+document.addEventListener('input', e=>{ const id = e.target && e.target.dataset && e.target.dataset.mmIn; if(id) memoDraft[id] = e.target.value; });
+document.addEventListener('keydown', e=>{ const id = e.target && e.target.dataset && e.target.dataset.mmIn; if(id && e.key==='Enter' && !e.isComposing){ e.preventDefault(); saveMemo(id).catch(err=> alert('메모를 저장하지 못했어요: '+(err.message||err))); } });
+let memoListOpen = false;
+function teacherEditedCells(){ const out = [];
+  Object.keys(allStudents).forEach(key=>{ const s = allStudents[key]||{}; if(!s.teacherChecks) return;
+    CRITERIA.forEach((cr, ci)=>{ const c = s.teacherChecks[cr.k], a = aiChecksOf(s, cr.k); if(typeof c!=='string' || !a || c.length!==a.length) return;
+      for(let i=0;i<c.length;i++) if(c[i]!==a[i]) out.push({ key, s, no: +(String(key).split('_')[0]) || +s.number || 0, cell: `${ci+1}-(${i+1})`, lab: CHECK_LABELS[cr.k][i], from: a[i], to: c[i], m: memoOf(s, cr.k, i) }); }); });
+  return out.sort((x,y)=> x.no-y.no || x.cell.localeCompare(y.cell)); }
+function renderMemoList(){
+  const btn = document.getElementById('memoListBtn'), box = document.getElementById('memoListBox'); if(!btn || !box) return;
+  const L = teacherEditedCells(); btn.innerHTML = `📝 고친 칸 목록 <b>${L.length}</b>`; btn.classList.toggle('on', memoListOpen);
+  box.style.display = memoListOpen ? '' : 'none'; if(!memoListOpen) return;
+  const ox = v=> v==='O'?'○':'✕';
+  box.innerHTML = !L.length ? '<div class="ml-lead">아직 선생님이 ○✕를 바꾼 칸이 없어요.</div>'
+    : `<div class="ml-lead">선생님이 ○✕를 바꾼 칸만 모았어요 · 줄을 누르면 그 학생 채점표가 열려요 · 메모 기능 전에 고친 칸은 '(메모 없음)'</div><table><thead><tr><th style="width:52px">번호</th><th>칸</th><th style="width:56px">바꿈</th><th>메모</th><th style="width:84px">언제</th></tr></thead><tbody>`
+      + L.map(x=>`<tr data-ml="${esc(x.key)}"><td>${x.no}번</td><td>${x.cell} ${esc(x.lab.length>14 ? x.lab.slice(0,14)+'…' : x.lab)}</td><td>${ox(x.from)}→${ox(x.to)}</td><td>${x.m ? esc(x.m.t) : '<span class="ml-no">(메모 없음)</span>'}</td><td>${x.m ? esc(fmtMD(x.m.ts)) : ''}</td></tr>`).join('') + '</tbody></table>';
+}
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('#memoListBtn')){ memoListOpen = !memoListOpen; renderMemoList(); return; }
+  const r = e.target.closest && e.target.closest('#memoListBox tr[data-ml]'); if(!r) return; const key = r.dataset.ml, s = allStudents[key]; if(!s) return;
+  selectedKey = key; renderGrid(); openTaskDetail(key, s, TASK_IDS[0]); });
 async function setTeacherScore(key, c, v){
   const s = allStudents[key]; if(!s) return;
   const ai = s.aiGrade && s.aiGrade.scores ? s.aiGrade.scores[c] : null;
@@ -895,6 +949,7 @@ function renderGradePanel(){
   const graded = list.map(gradeOf).filter(g=>g.any);
   document.getElementById('grAi').textContent = list.filter(s=>s.aiGrade&&s.aiGrade.scores).length;
   document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
+  renderMemoList();
   { const rg = list.map(rgInfo).filter(g=>g && g.changed), ack = rg.filter(g=>g.ack).length, tcn = rg.filter(g=>g.tcs.length && !g.ack).length;
     let el = document.getElementById('grRg'); if(!el){ el = document.createElement('span'); el.id = 'grRg'; el.className = 'rg-cnt'; const hd = document.querySelector('#gradePanel .gr-head span'); if(hd) hd.after(el); }
     el.style.display = rg.length ? '' : 'none'; const cln = list.filter(x=>clCount(x)).length; el.textContent = `🔄 재채점으로 바뀐 학생 ${rg.length}명 중 ${ack}명 확인` + (tcn ? ` · ✏️ ${tcn}명` : '') + (cln ? ` · 🔍 Claude와 다른 학생 ${cln}명` : ''); }
@@ -1016,7 +1071,9 @@ function refreshOpenModal(){
   const s = allStudents[tdmKey]; if(!s) return;
   const w = document.getElementById('tdmTextWrap'), sc = []; for(let e = w; e; e = e.parentElement) sc.push([e, e.scrollTop]);   // 다시 그려도 스크롤 위치 유지
   const inner = ['.tdm-l','.tdm-r'].map(q=>{ const e = w.querySelector(q); return e ? e.scrollTop : 0; });
+  const ae = document.activeElement, fm = ae && ae.dataset && ae.dataset.mmIn, fpos = fm ? ae.selectionStart : 0;   // 📝 메모를 쓰는 중에 다시 그려도 이어서 쓰게
   w.innerHTML = modalHTML(tdmKey, s) || '';
+  if(fm){ const e = w.querySelector('[data-mm-in="'+CSS.escape(fm)+'"]'); if(e){ e.focus(); try{ e.setSelectionRange(fpos, fpos); }catch(_){} } }
   sc.forEach(([e, t])=>{ if(e.scrollTop !== t) e.scrollTop = t; });
   ['.tdm-l','.tdm-r'].forEach((q,i)=>{ const e = w.querySelector(q); if(e) e.scrollTop = inner[i]; });
 }
@@ -1710,7 +1767,7 @@ function rubricTableHTML(key, s){
         else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
         if(v==='X' && a[i]==='X' && xw[i]) evc += `<div class="rb-why">👉 ${esc(xw[i])}</div>`;   // 2026-11-04 ✕ 이유 한 줄
         else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
-      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}${rgCellCls(s, it.k, i)?' rg-'+rgCellCls(s, it.k, i):''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}${rgCellCls(s, it.k, i)==='tc'?'<span class="rg-hand">✏️</span>':''}</span>${rgCellCls(s, it.k, i)==='tc'?(()=>{ const x = rgInfo(s).tcs.find(y=>y.k===it.k&&y.i===i); return `<span class="rg-tip">선생님 ${x.from==='O'?'O':'X'} → ${x.to==='O'?'O':'X'}</span>`; })():''}`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}${(()=>{ const c = clDiff(s, it.k, i); return c ? `<span class="cl-tag">🔍 Claude 검토: ${c.v==='O'?'○':'✕'} — ${esc(c.why||'')}</span>` : ''; })()}</td></tr>`;
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}${rgCellCls(s, it.k, i)?' rg-'+rgCellCls(s, it.k, i):''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}${rgCellCls(s, it.k, i)==='tc'?'<span class="rg-hand">✏️</span>':''}</span>${rgCellCls(s, it.k, i)==='tc'?(()=>{ const x = rgInfo(s).tcs.find(y=>y.k===it.k&&y.i===i); return `<span class="rg-tip">선생님 ${x.from==='O'?'O':'X'} → ${x.to==='O'?'O':'X'}</span>`; })():''}`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}${(()=>{ const c = clDiff(s, it.k, i); return c ? `<span class="cl-tag">🔍 Claude 검토: ${c.v==='O'?'○':'✕'} — ${esc(c.why||'')}</span>` : ''; })()}${memoHTML(key, s, it.k, i)}</td></tr>`;
     });
     const tg = s.teacherGrade && s.teacherGrade[it.k];
     if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
