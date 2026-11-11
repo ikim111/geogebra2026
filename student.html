@@ -189,7 +189,7 @@ function authReady(){
 try{ authReady().catch(()=>{}); }catch(e){}   // 🔌 DB 연결은 실제로 필요할 때 연다(동시 접속 한도)
 // n(단원번호) → 그 단원의 studentN.html이 쓰는 ACTIVITY_SUFFIX. 0단원(지오지브라 연습)은
 // 제출 기능이 없어서 목록에 없다 — 없는 단원은 완료뱃지를 표시하지 않는다.
-const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',38:'__sim38',39:'__sim39',40:'__sim40',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
+const ACTIVITY_SUFFIX = {1:'__isoc',2:'__perp',3:'__angbis',4:'__circum',5:'__incenter',6:'__extend',7:'__oc_practice7',8:'__assess_pa1',11:'__quad11',12:'__quad12s',13:'__quad12',14:'__quad14c',15:'__quad14',16:'__quad16',17:'__quad17',21:'__prob21',31:'__sim31',32:'__sim32c',34:'__sim34',35:'__sim35',36:'__sim36',37:'__sim37',38:'__sim38',39:'__sim39',40:'__sim40',41:'__top41',22:'__prob22',23:'__prob23',24:'__prob32',25:'__prob33'};
 // ⚠️ 새 단원(studentN.html)을 추가할 때마다 여기에도 그 단원의 ACTIVITY_SUFFIX를 꼭 넣어야 목록에 "✅ 완료"가 표시된다.
 function sanitize(s){ return (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x'; }
 
@@ -236,7 +236,8 @@ const SECTIONS = [
         {n:39, label:4, title:'7.3. 삼각형과 평행선 의사소통 - 사각형의 네 변의 중점을 연결하면?', file:'student39.html'},
         {n:35, label:5, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'student35.html'},
         {n:40, label:6, title:'7.4. 삼각형의 무게중심 의사소통 - 지워진 꼭짓점 찾기, 외심·내심·무게중심', file:'student40.html'},
-        {n:36, label:7, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'student36.html'}
+        {n:41, label:7, title:'7.4. 삼각형의 무게중심 의사소통 - 무게중심 팽이 대회', file:'student41.html'},
+        {n:36, label:8, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'student36.html'}
       ]}
   ]},
   { chapter:'VIII. 경우의 수와 확률', groups:[
@@ -300,7 +301,7 @@ function saveProfile(p){
 /* 🏷 활동 종류 색(2026-10-27 선생님 분류): 활동 칸 왼쪽 줄 — sdash.js의 활동 화면 색과 같게 */
 const TYPE_COLOR = { think:'#1565c0', explore:'#00897b', talk:'#d81b60', pa:'#f9a825' };
 const TYPE_BY_N = {1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',
-  2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa',8:'pa',24:'pa',25:'pa',26:'pa'};
+  2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk',41:'talk', 7:'pa',8:'pa',24:'pa',25:'pa',26:'pa'};
 /* 🏷 2026-10-28 활동 제목 두 줄: "8.2. 확률의 뜻 생각열기 - 동전을 …" → 윗줄(작게) "8.2 확률의 뜻 · 생각열기" + 아랫줄(크게) 질문.
    " - "가 없는 제목은 그대로 한 줄. 종류 이름은 그 종류 색 글씨로. */
 function fillTitle2(el, text, color){

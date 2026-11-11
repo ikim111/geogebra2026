@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.4. 삼각형의 무게중심 의사소통 - 무게중심 팽이 대회</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌀</text></svg>">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --navy:#1a237e; --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --line:#d5d9de; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;color:#222;line-height:1.6;}
+  #stickyBar{position:sticky;top:0;z-index:400;background:#1A1D20;border-bottom:1px solid #000;padding:8px 16px 10px;display:flex;gap:10px;align-items:center;}
+  #unitTitleBar{flex:1;font-size:13.5px;font-weight:bold;color:#fff;background:var(--navy);border-radius:8px;padding:7px 14px;text-align:center;}
+  #stickyBar a{flex:0 0 auto;font-size:16px;text-decoration:none;color:#e8eaed;background:#2a2e33;border:1px solid #444;border-radius:6px;padding:6px 10px;}
+  #previewBanner{display:none;text-align:center;font-size:12.5px;font-weight:bold;color:#0052a3;background:#e8f0fe;border-bottom:1px solid #b3d1ff;padding:8px;}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 30px;}
+  #gateScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--navy);padding:20px;}
+  .gate-card{background:#fff;border-radius:14px;padding:28px 24px;max-width:380px;width:100%;text-align:center;font-size:14px;}
+  .gate-card h1{font-size:18px;margin:0 0 12px;color:var(--navy);}
+  #appScreen{display:none;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card h2{font-size:17px;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .muted{color:#666;font-size:13.5px;}
+  .me{font-size:14px;color:#333;margin-bottom:12px;}
+  .me b{color:var(--navy);font-size:17px;}
+  .stage{display:inline-block;font-size:12.5px;font-weight:bold;color:var(--orange);background:#fff3e0;border-radius:8px;padding:2px 10px;}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .steps div{border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center;font-size:13px;}
+  .steps svg{width:100%;height:70px;display:block;}
+  details{margin-top:10px;font-size:14px;}
+  details summary{cursor:pointer;color:var(--blue);font-weight:bold;min-height:44px;display:flex;align-items:center;}
+  .rule{border-left:4px solid var(--line);padding:2px 10px;margin:6px 0;}
+  .grp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  @media(max-width:520px){ .grp{grid-template-columns:repeat(2,1fr);} }
+  .g{position:relative;border:2px solid #c4cedd;border-radius:10px;background:#fff;padding:4px;min-height:64px;cursor:pointer;font:inherit;font-size:16px;font-weight:bold;color:#172443;display:flex;flex-direction:column;align-items:stretch;gap:2px;}
+  .g img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block;background:#eee;}
+  .g .noimg{width:100%;aspect-ratio:4/3;border-radius:6px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;font-weight:normal;}
+  .g span{padding:2px 0;text-align:center;}
+  .g.sel{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .g.no{border:2px dashed #b0b8c4;color:#999;font-weight:normal;font-size:13px;cursor:not-allowed;}
+  .g.no img{opacity:.35;}
+  .g.win{border-color:#f9a825;box-shadow:0 0 0 3px #f9a825;}
+  .zoom{position:absolute;top:6px;right:6px;border:0;background:rgba(0,0,0,.45);color:#fff;border-radius:8px;min-width:44px;min-height:44px;font-size:18px;cursor:pointer;}
+  .okrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .okbtn{min-height:44px;padding:0 22px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .okbtn:disabled{background:#fff;color:#999;border:2px dashed #b0b8c4;cursor:not-allowed;}
+  .why{font-size:13px;color:#777;}
+  .lock{border:2px dashed #b0b8c4;border-radius:10px;padding:12px;color:#777;font-size:14px;}
+  .done{color:var(--green);font-weight:bold;}
+  .pickg{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .pickg button{min-width:64px;min-height:44px;border:2px solid #c4cedd;border-radius:10px;background:#fff;font:inherit;font-weight:bold;font-size:16px;cursor:pointer;}
+  #zoomBox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:900;align-items:center;justify-content:center;padding:16px;}
+  #zoomBox img{max-width:100%;max-height:90vh;border-radius:10px;}
+  #zoomBox button{position:absolute;top:12px;right:12px;min-width:44px;min-height:44px;border:0;border-radius:10px;font-size:20px;cursor:pointer;}
+  .bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px;}
+  .bar i{display:block;height:16px;background:var(--blue);border-radius:4px;}
+  .bar.w i{background:#f9a825;}
+</style>
+</head>
+<body>
+
+<div id="gateScreen">
+  <div class="gate-card">
+    <h1>7.4. 무게중심 팽이 대회</h1>
+    <div id="gateMsg">불러오는 중…</div>
+    <a href="student.html" style="display:inline-block;margin-top:14px;font-weight:bold;color:#1565c0;">← 과제 목록으로</a>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div id="previewBanner">👀 학생 화면 미리보기 모드입니다 (예시 사진 · 저장 안 됨)</div>
+  <div id="stickyBar"><a href="student.html" title="과제 목록으로">🏠</a><div id="unitTitleBar">7.4. 무게중심 팽이 대회</div></div>
+  <div class="wrap">
+    <div class="me" id="meLine"></div>
+    <div class="card" id="howCard"></div>
+    <div class="card" id="voteCard"></div>
+  </div>
+</div>
+<div id="zoomBox"><img alt="팽이 사진 크게 보기"><button type="button" aria-label="닫기">✕</button></div>
+
+<script>
+/* ============================================================
+   7.4. 무게중심 팽이 대회 (2026-11-11 선생님 요청, 시안 v2 승인 — 조 안 투표는 빼고 반 투표만)
+   저장: rooms/{반}__top41/
+     control            {stage:'make'|'r1'|'final'|'vote'|'result'}   (학생 이름·평가 정보 없음)
+     photos/{조}         {img: 작게 줄인 jpeg dataURL, ts}           (선생님이 올림, 반 투표용)
+     students/{번호_이름} {myGroup, votes:[조,조], submitted:true, ts}
+   우리 조: rooms/{반}__seat20의 teams·seats(번호만)에서 찾는다. 없으면 학생이 직접 고른다.
+   투표: 다른 조 2개(우리 조 ✋). 제출 뒤 바꾸기 가능(투표가 열려 있는 동안).
+   ============================================================ */
+const PREVIEW_MODE = new URLSearchParams(location.search).get('preview') === '1';
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__top41';
+const UNIT_NO = 41;
+const GROUPS = [1,2,3,4,5,6];
+const STAGES = { make:'✂️ 만들기', r1:'🌀 1차 대회', final:'🏆 결승', vote:'👍 반 투표', result:'🎉 결과' };
+const $ = id => document.getElementById(id);
+const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sanitize = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
+
+let st = { stage:null, photos:{}, myGroup:null, autoGroup:false, picks:[], saved:null, tally:null, busy:false, msg:'' };
+let meRef = null, profile = null;
+
+/* ---------- 만드는 순서 그림 ---------- */
+function tri(step){
+  const A=[20,150],B=[190,160],C=[120,15], m=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2];
+  const mAB=m(A,B), mBC=m(B,C), mCA=m(C,A), G=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];
+  let s = `<polygon points="${A} ${B} ${C}" fill="${step>=5?'#9ad6c8':'#FFF1DE'}" stroke="#1B2A4A" stroke-width="5" stroke-linejoin="round"/>`;
+  if(step>=3) [[A,mBC],[B,mCA],[C,mAB]].forEach(([p,q])=> s += `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="#1B2A4A" stroke-width="3" stroke-dasharray="7 5"/>`);
+  if(step>=2) [mAB,mBC,mCA].forEach(q=> s += `<circle cx="${q[0]}" cy="${q[1]}" r="8" fill="#1B2A4A"/>`);
+  if(step>=6) s += `<line x1="${G[0]}" y1="${G[1]-70}" x2="${G[0]}" y2="${G[1]+40}" stroke="#6B4423" stroke-width="9" stroke-linecap="round"/>`;
+  if(step>=4) s += `<circle cx="${G[0]}" cy="${G[1]}" r="11" fill="#C2410C" stroke="#fff" stroke-width="3"/>`;
+  return `<svg viewBox="0 -25 210 200" aria-hidden="true">${s}</svg>`;
+}
+function paintHow(){
+  const names = ['고르기','중점 3개','중선 3개','무게중심','색칠','팽이심'];
+  $('howCard').innerHTML = `<h2>✂️ 만드는 순서</h2>
+    <div class="steps">${names.map((n,i)=>`<div>${tri(i+1)}${i+1}. ${n}</div>`).join('')}</div>
+    <div class="muted" style="margin-top:6px;">세 중선이 만나는 점 = <b style="color:#C2410C">무게중심</b>. 여기에 팽이심을 꽂으면 오래 돌아요.</div>
+    <details><summary>▸ 상점 받는 방법 보기</summary>
+      <div class="rule">① 조 안 대결: 가장 오래 돌린 1명 = 대회 대표 → 상점 +1</div>
+      <div class="rule">② 결승: 대표끼리 돌려 우승한 조 → 모두 상점 +1</div>
+      <div class="rule">③ 디자인 대표: 조에서 가장 예쁜 팽이 1명 → 상점 +1</div>
+      <div class="rule">④ 반 투표: 👍가 가장 많은 조 → 모두 상점 +1 (다른 조 2개에만 투표)</div>
+    </details>`;
+}
+
+/* ---------- 반 투표 ---------- */
+function groupsShown(){ return GROUPS.filter(g=> st.photos[g] && st.photos[g].img); }
+function paintVote(){
+  const box = $('voteCard');
+  const stage = st.stage;
+  let h = `<h2>👍 반 투표 ${stage==='vote'?'<span class="stage">지금 투표 · 2개 고르기</span>':''}</h2>`;
+  if(!st.myGroup){
+    h += `<div class="muted">우리 조를 먼저 골라 주세요. (자리표에 내 자리가 없어요)</div><div class="pickg">${GROUPS.map(g=>`<button type="button" data-my="${g}">${g}조</button>`).join('')}</div>`;
+    box.innerHTML = h; box.querySelectorAll('[data-my]').forEach(b=> b.onclick = ()=> setMyGroup(+b.dataset.my)); return;
+  }
+  if(stage==='result'){ box.innerHTML = h + resultHTML(); return; }
+  if(stage!=='vote'){
+    h += `<div class="lock">🔒 선생님이 반 투표를 열면 할 수 있어요.${st.saved?`<br><span class="done">✅ 내 투표: ${st.saved.map(g=>g+'조').join(', ')}</span>`:''}</div>`;
+    box.innerHTML = h; return;
+  }
+  const gs = groupsShown();
+  h += `<div class="muted" style="margin-bottom:8px;">조마다 디자인 대표 팽이 사진을 보고 골라요. 🔍를 누르면 크게 보여요.</div><div class="grp">`;
+  gs.forEach(g=>{
+    const mine = g===st.myGroup, sel = st.picks.includes(g);
+    h += `<div class="g ${mine?'no':''} ${sel?'sel':''}" role="button" tabindex="0" data-g="${g}" aria-pressed="${sel}"><img src="${esc(st.photos[g].img)}" alt="${g}조 팽이"><span>${g}조${sel?' ✓':''}${mine?' 👉 우리 조':''}</span><button type="button" class="zoom" data-z="${g}" aria-label="${g}조 사진 크게">🔍</button></div>`;
+  });
+  h += `</div>`;
+  const n = st.picks.length, same = st.saved && st.saved.length===2 && st.saved.every(g=> st.picks.includes(g));
+  const why = n<2 ? `👉 ${2-n}개 더 골라요` : (same ? '✅ 투표했어요 (바꾸려면 다시 고르기)' : '');
+  h += `<div class="okrow"><span class="why">${why}${st.msg?' · '+esc(st.msg):''}</span><button type="button" class="okbtn" id="okBtn" ${n<2||same||st.busy?'disabled':''}>${st.saved?'투표 바꾸기':'확인하기'}</button></div>`;
+  box.innerHTML = h;
+  box.querySelectorAll('.g[data-g]').forEach(el=>{
+    const g = +el.dataset.g;
+    const act = ()=>{ if(g===st.myGroup) return; if(st.picks.includes(g)) st.picks = st.picks.filter(x=>x!==g); else if(st.picks.length<2) st.picks = [...st.picks, g]; else st.picks = [st.picks[1], g]; st.msg=''; paintVote(); };
+    el.onclick = e=>{ if(e.target.closest('.zoom')) return; act(); };
+    el.onkeydown = e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } };
+  });
+  box.querySelectorAll('[data-z]').forEach(b=> b.onclick = e=>{ e.stopPropagation(); openZoom(st.photos[+b.dataset.z].img); });
+  const ok = $('okBtn'); if(ok) ok.onclick = submitVote;
+}
+function resultHTML(){
+  const t = st.tally || {}; const gs = groupsShown().length ? groupsShown() : GROUPS;
+  const max = Math.max(1, ...gs.map(g=> t[g]||0)), top = Math.max(...gs.map(g=> t[g]||0));
+  return `<div class="muted">투표 결과예요.</div>` + gs.map(g=>`<div class="bar ${top>0&&(t[g]||0)===top?'w':''}"><span style="width:36px">${g}조</span><i style="width:${Math.round(((t[g]||0)/max)*60)}%"></i>${t[g]||0}${top>0&&(t[g]||0)===top?' 🏆':''}</div>`).join('');
+}
+function openZoom(src){ const z=$('zoomBox'); z.querySelector('img').src = src; z.style.display='flex'; }
+$('zoomBox').onclick = ()=>{ $('zoomBox').style.display='none'; };
+
+function paintMe(){
+  const p = profile || {};
+  $('meLine').innerHTML = `${esc(p.classNo||'')}반 ${esc(p.number||'')}번 · 우리 조: <b>${st.myGroup?st.myGroup+'조':'?'}</b>${st.myGroup&&!st.autoGroup?' <button type="button" id="chgG" style="border:0;background:none;color:#1565c0;font:inherit;font-size:13px;cursor:pointer;min-height:44px;">바꾸기</button>':''}${st.stage?` · 지금: <span class="stage">${STAGES[st.stage]||''}</span>`:''}`;
+  const c = $('chgG'); if(c) c.onclick = ()=>{ st.myGroup = null; paintAll(); };
+}
+function paintAll(){ paintMe(); paintVote(); }
+
+async function setMyGroup(g){
+  st.myGroup = g; st.picks = st.picks.filter(x=> x!==g);
+  if(meRef){ try{ await meRef.update({ myGroup:g, myGroupBy:'self' }); }catch(e){} }
+  paintAll();
+}
+async function submitVote(){
+  if(st.picks.length!==2 || st.picks.includes(st.myGroup)) return;
+  if(PREVIEW_MODE){ st.saved = [...st.picks]; st.msg = '미리보기라 저장은 안 돼요'; paintVote(); return; }
+  st.busy = true; paintVote();
+  try{
+    await meRef.update({ votes:[...st.picks].sort(), myGroup:st.myGroup, submitted:true, ts:firebase.database.ServerValue.TIMESTAMP });
+    st.saved = [...st.picks]; st.msg = '';
+  }catch(e){ st.msg = '저장하지 못했어요. 다시 눌러 주세요.'; }
+  st.busy = false; paintVote();
+}
+
+/* ---------- 시작 ---------- */
+function showApp(){ $('gateScreen').style.display='none'; $('appScreen').style.display='block'; paintHow(); paintAll(); }
+
+if(PREVIEW_MODE){
+  $('previewBanner').style.display = 'block';
+  profile = { classNo:'5', number:'12', name:'미리보기' };
+  const cols = ['#F2A33A','#7DD3C0','#8FA8E8','#E87896','#AAC85A','#C896E6'];
+  GROUPS.forEach((g,i)=>{ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120"><rect width="160" height="120" fill="#ece4d7"/><polygon points="30,100 130,95 85,20" fill="${cols[i]}" stroke="#283040" stroke-width="3"/><line x1="82" y1="10" x2="82" y2="105" stroke="#6e4623" stroke-width="5"/></svg>`; st.photos[g] = { img:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg) }; });
+  st.myGroup = 3; st.autoGroup = true; st.stage = 'vote';
+  showApp();
+} else {
+  (function init(){
+    let p = null; try{ p = JSON.parse(localStorage.getItem('ggb_profile_v1')||'null'); }catch(e){}
+    if(!(p && p.classNo && p.name)){ $('gateMsg').innerHTML = '⚠️ 반·번호·이름 정보를 찾을 수 없어요.<br>과제 목록에서 먼저 입력해 주세요.'; return; }
+    profile = p;
+    try{
+      if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.auth().signInAnonymously().then(async ()=>{
+        const db = firebase.database(), cls = sanitize(p.classNo), myNo = +p.number;
+        const open = (await db.ref('rooms/'+cls+'__access/units/'+UNIT_NO).once('value')).val() === true;
+        if(!open){ $('gateMsg').innerHTML = '🔒 아직 열리지 않은 단원이에요.<br>선생님이 열어 주시면 볼 수 있어요.'; return; }
+        const room = db.ref('rooms/'+cls+ACTIVITY_SUFFIX);
+        meRef = room.child('students/'+sanitize(p.number)+'_'+sanitize(p.name));
+        const [teams, seats, mine] = await Promise.all([
+          db.ref('rooms/'+cls+'__seat20/teams').once('value').then(s=>s.val()).catch(()=>null),
+          db.ref('rooms/'+cls+'__seat20/seats').once('value').then(s=>s.val()).catch(()=>null),
+          meRef.once('value').then(s=>s.val()).catch(()=>null)
+        ]);
+        const tl = Array.isArray(teams) ? teams : Object.values(teams||{});
+        const t = tl.find(x=> x && (+x.m===myNo || (x.e||[]).map(Number).includes(myNo)));
+        const sg = t && seats && seats[t.m] && +seats[t.m].g;
+        if(sg){ st.myGroup = sg; st.autoGroup = true; }
+        else if(mine && mine.myGroup){ st.myGroup = +mine.myGroup; }
+        if(mine && Array.isArray(mine.votes)){ st.saved = mine.votes.map(Number); st.picks = [...st.saved]; }
+        if(sg && (!mine || +mine.myGroup!==sg)) meRef.update({ myGroup:sg, myGroupBy:'seat' }).catch(()=>{});
+        showApp();
+        room.child('control').on('value', s=>{ const c = s.val()||{}; st.stage = c.stage||null; st.tally = c.tally||null; paintAll(); });
+        room.child('photos').on('value', s=>{ st.photos = s.val()||{}; paintVote(); });
+      }).catch(()=>{ $('gateMsg').textContent = '연결하지 못했어요. 새로고침해 보세요.'; });
+    }catch(e){ $('gateMsg').textContent = '연결하지 못했어요. 새로고침해 보세요.'; }
+  })();
+}
+</script>
+<script src="report.js"></script>
+<script src="sdash.js"></script>
+</body>
+</html>

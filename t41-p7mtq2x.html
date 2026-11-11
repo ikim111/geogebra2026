@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교사용 실시간 대시보드 — 7.4. 삼각형의 무게중심 의사소통 - 무게중심 팽이 대회</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧑‍🏫</text></svg>">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{ --navy:#1a237e; --blue:#1565c0; --green:#2e7d32; --red:#c62828; --orange:#e65100; --gold:#f9a825; --talk:#d81b60; }
+  *{box-sizing:border-box;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f6f8;margin:0;color:#222;}
+  header{background:var(--navy);color:#fff;padding:16px;text-align:center;}
+  header h1{margin:0 0 4px;font-size:19px;} header p{margin:0;font-size:12.5px;opacity:.85;}
+  .wrap{max-width:1180px;margin:0 auto;padding:14px;}
+  .panel{background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:6px solid var(--blue);}
+  .panel.gold{border-left-color:var(--gold);} .panel.talk{border-left-color:var(--talk);}
+  .panel h3{margin:0 0 10px;font-size:16px;}
+  .hint{font-size:12.5px;color:#667;margin-top:6px;}
+  button{font-family:inherit;cursor:pointer;}
+  .btn{min-height:44px;padding:0 14px;border:2px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);font-size:14px;font-weight:bold;}
+  .btn.on{background:var(--blue);color:#fff;}
+  .btn:disabled{border:2px dashed #b0b8c4;color:#999;background:#fff;cursor:not-allowed;}
+  .give{background:var(--green);border-color:var(--green);color:#fff;}
+  .give.arm{background:var(--orange);border-color:var(--orange);}
+  .btn.give.did,.btn.give.did:disabled{background:#fff;color:var(--green);border:2px solid var(--green);cursor:default;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  #teacherGateScreen{max-width:520px;margin:30px auto;background:#fff;border-radius:12px;padding:20px;}
+  #roomCode{min-height:44px;padding:0 10px;font-size:15px;border:1px solid #ccc;border-radius:8px;}
+  #teacherAppScreen{display:none;}
+  .photos{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+  .ph{border:1px solid #c9d2e3;border-radius:10px;padding:6px;text-align:center;font-size:13px;}
+  .ph.empty{border:2px dashed #b0b8c4;}
+  .ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block;}
+  .ph .ni{width:100%;aspect-ratio:4/3;border-radius:6px;background:#f4f6f8;display:flex;align-items:center;justify-content:center;color:#999;}
+  .ph label{display:inline-flex;align-items:center;justify-content:center;min-height:40px;margin-top:4px;padding:0 10px;border:2px solid var(--blue);border-radius:8px;color:var(--blue);font-weight:bold;cursor:pointer;}
+  .ph input{display:none;}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .grp{border:1px solid #c9d2e3;border-radius:10px;padding:8px;}
+  .grp.fw{border:3px solid var(--gold);background:#fffbea;}
+  .ghead{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;}
+  .ghead b{font-size:15px;}
+  .fwbtn{min-height:36px;padding:0 8px;border:2px solid var(--gold);border-radius:8px;background:#fff;color:#8a6200;font-size:12.5px;font-weight:bold;}
+  .fwbtn.on{background:var(--gold);color:#222;}
+  .seats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .five>:first-child{grid-column:span 2;}
+  .s{min-height:44px;border:1px solid #c4cedd;border-radius:8px;background:#fff;padding:4px 6px;font-size:13px;text-align:left;color:#172443;}
+  .s.r1{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .s.ds{box-shadow:inset 0 0 0 3px var(--talk);}
+  .s.empty{border:1px dashed #ccc;color:#bbb;cursor:default;}
+  .mode{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px;}
+  .bar i{display:block;height:18px;background:var(--blue);border-radius:4px;}
+  .bar.w i{background:var(--gold);}
+  .tie{color:var(--orange);font-weight:bold;font-size:13px;}
+  #msg{font-size:13px;color:var(--green);font-weight:bold;min-height:18px;}
+  #msg.err{color:var(--red);}
+  @media(max-width:760px){ .photos{grid-template-columns:repeat(3,1fr);} .board{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header><h1>교사용 실시간 대시보드 — 7.4. 무게중심 팽이 대회</h1><p>반 투표 · 대표 표시 · 상점 주기</p></header>
+
+<div id="teacherGateScreen">
+  <h3>반을 선택해 주세요</h3>
+  <div class="row"><select id="roomCode"><option value="">반 선택</option></select><button class="btn on" id="connectBtn">시작하기</button></div>
+  <div id="connStatus" class="hint"></div>
+</div>
+
+<div id="teacherAppScreen"><div class="wrap">
+  <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+    <div><b id="currentRoomLabel">-</b> <span class="hint">· 투표한 학생 <b id="votedCnt">0</b>명</span></div>
+    <div class="row"><a class="unitListLink btn" style="display:inline-flex;align-items:center;text-decoration:none;" href="mgmt-9x3k7f2p.html">📋 단원 목록</a><button class="btn" id="changeRoomBtn" type="button">반 바꾸기</button></div>
+  </div>
+  <div id="msg"></div>
+
+  <div class="panel"><h3>진행 단계 <span class="hint">(누르면 학생 화면 위에 지금 단계가 보여요)</span></h3>
+    <div class="row" id="stageRow"></div><div class="hint" id="stageHint"></div></div>
+
+  <div class="panel talk"><h3>📷 디자인 대표 사진 (반 투표용)</h3>
+    <div class="photos" id="photoBox"></div>
+    <div class="hint">휴대폰으로 이 화면을 열면 바로 카메라로 찍을 수 있어요. 사진은 작게 줄여 저장해요. 사진이 있는 조만 학생 투표 화면에 나와요.</div></div>
+
+  <div class="panel gold"><h3>자리표 · 상점 주기</h3>
+    <div class="mode" id="modeRow"></div>
+    <div class="board" id="board"></div>
+    <div class="hint" id="boardHint"></div>
+    <div class="row" style="margin-top:10px;" id="giveRow"></div>
+    <div class="hint">누르면 버튼이 주황으로 바뀌고, <b>한 번 더</b> 누르면 발표 점수판(망고젤리 점수)에 '모둠 점수'로 기록돼요. 잘못 줬으면 발표 기록 화면의 「이 기록 취소」로 되돌려요.</div></div>
+
+  <div class="panel"><h3>👍 반 투표 결과 (실시간)</h3><div id="tallyBox"></div></div>
+</div></div>
+
+<script>
+/* ============================================================
+   7.4. 무게중심 팽이 대회 — 교사 화면 (2026-11-11, 시안 v2 승인, 조 안 투표 없음)
+   rooms/{반}__top41/control {stage, tally}  ← 학생이 통째로 읽음: 이름·번호 넣지 않기
+                    /photos/{조} {img, ts}   /students/{번호_이름} {myGroup, votes, submitted}
+                    /teacher {r1:{조:번호}, design:{조:번호}, finalWin, voteWin, given:{r1,final,design,vote}}
+   상점: rooms/{반}__present20/events 에 presentation-score.js와 같은 꼴로 push (reason 'group')
+   자리: rooms/{반}__seat20 (roster·teams·seats·six) — 읽기만
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI',
+  authDomain: 'brojuntest.firebaseapp.com',
+  databaseURL: 'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'brojuntest',
+  storageBucket: 'brojuntest.firebasestorage.app',
+  messagingSenderId: '426333242398',
+  appId: '1:426333242398:web:b3ae216d5269ce13065a0f'
+};
+const ACTIVITY_SUFFIX = '__top41';
+const GROUPS = [1,2,3,4,5,6];
+const STAGES = [['make','✂️ 만들기'],['r1','🌀 1차 대회'],['final','🏆 결승'],['vote','👍 반 투표'],['result','🎉 결과 공개']];
+const GIVES = [
+  ['r1','🏅 대회 대표 상점 +1'], ['final','🏆 결승 우승 조 모두 +1'], ['design','🎨 디자인 대표 상점 +1'], ['vote','👍 반 투표 1등 조 모두 +1']
+];
+const $ = id => document.getElementById(id);
+const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sanitize = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
+const today = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
+
+let db = null, room = '', R = null, refs = [];
+let S = { roster:[], teams:[], seats:{}, six:[] }, control = {}, photos = {}, students = {}, T = {}, mode = 'r1', armed = null, armTimer = null;
+
+function populate(){ const sel=$('roomCode'); for(let i=1;i<=12;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=i+'반'; sel.appendChild(o); } }
+populate();
+
+function say(t, err){ const m=$('msg'); m.textContent=t||''; m.className = err?'err':''; }
+
+/* ---------- 조·자리 ---------- */
+const hasSeats = () => Object.keys(S.seats||{}).length > 0;
+const byNo = n => (S.roster||[]).find(x=> +x.no===+n);
+const isSix = g => (S.six||[]).includes(g);
+function setAt(g, side){ const k = Object.keys(S.seats).find(m=> +S.seats[m].g===g && S.seats[m].s===side); return k!=null ? (S.teams||[]).find(t=> +t.m===+k) : null; }
+function seatNums(g){
+  const L=setAt(g,'L'), Rt=setAt(g,'R'), ls=L?S.seats[L.m]:{}, rs=Rt?S.seats[Rt.m]:{};
+  const top = isSix(g) ? [ls.top, rs.top] : [ls.top];
+  return [...top, L&&L.m, rs.bot, ls.bot, Rt&&Rt.m];
+}
+function studentList(){   // 자리표가 없을 때: 학생이 고른 조로 묶는다
+  return Object.entries(students).map(([k,v])=>{ const m=/^(\d+)_(.*)$/.exec(k); return m && v ? {no:+m[1], name:m[2], g:+v.myGroup||0} : null; }).filter(Boolean);
+}
+function members(g){
+  if(hasSeats()) return seatNums(g).filter(n=> n!=null && byNo(n)).map(Number);
+  return studentList().filter(x=> x.g===g).map(x=> x.no);
+}
+function nameOf(n){ const x = byNo(n); if(x) return x.name; const s = studentList().find(y=> y.no===+n); return s ? s.name : ''; }
+const presentGroups = () => GROUPS.filter(g=> members(g).length || (photos[g]&&photos[g].img));
+
+/* ---------- 투표 집계 ---------- */
+function tally(){
+  const t = {}; GROUPS.forEach(g=> t[g]=0); let voters = 0;
+  Object.values(students).forEach(v=>{ if(!v || !Array.isArray(v.votes)) return; const vs=[...new Set(v.votes.map(Number))].filter(g=> g!==+v.myGroup && t[g]!=null).slice(0,2); if(vs.length){ voters++; vs.forEach(g=> t[g]++); } });
+  return { t, voters };
+}
+function voteTop(){ const {t}=tally(); const gs = GROUPS.filter(g=> photos[g]&&photos[g].img); const top = Math.max(0,...gs.map(g=>t[g])); return { top, ties: top>0 ? gs.filter(g=>t[g]===top) : [] }; }
+
+/* ---------- 그리기 ---------- */
+function paintStages(){
+  const ph = GROUPS.filter(g=> photos[g]&&photos[g].img).length;
+  $('stageRow').innerHTML = STAGES.map(([k,l])=>{
+    const dis = k==='vote' && ph<2;
+    return `<button type="button" class="btn ${control.stage===k?'on':''}" data-stage="${k}" ${dis?'disabled':''}>${l}</button>`;
+  }).join('');
+  $('stageHint').textContent = ph<2 ? '👉 반 투표는 디자인 대표 사진이 2장 이상 올라가야 열 수 있어요.' : (control.stage==='vote' ? '학생 화면에 사진 투표가 열려 있어요. 「결과 공개」를 누르면 학생도 결과를 봐요.' : '');
+  $('stageRow').querySelectorAll('[data-stage]').forEach(b=> b.onclick = ()=> setStage(b.dataset.stage));
+}
+function paintPhotos(){
+  $('photoBox').innerHTML = GROUPS.map(g=>{
+    const p = photos[g];
+    return `<div class="ph ${p&&p.img?'':'empty'}">${p&&p.img?`<img src="${esc(p.img)}" alt="${g}조">`:'<div class="ni">👉 아직 없음</div>'}<b>${g}조</b><br><label>📷 ${p&&p.img?'다시 찍기':'사진 올리기'}<input type="file" accept="image/*" capture="environment" data-ph="${g}"></label></div>`;
+  }).join('');
+  $('photoBox').querySelectorAll('input[data-ph]').forEach(inp=> inp.onchange = ()=>{ if(inp.files[0]) upload(+inp.dataset.ph, inp.files[0]); });
+}
+function paintBoard(){
+  $('modeRow').innerHTML = `<span class="hint" style="margin:0">자리를 누르면:</span>
+    <button type="button" class="btn ${mode==='r1'?'on':''}" data-mode="r1">🏅 대회 대표 표시</button>
+    <button type="button" class="btn ${mode==='design'?'on':''}" data-mode="design">🎨 디자인 대표 표시</button>`;
+  $('modeRow').querySelectorAll('[data-mode]').forEach(b=> b.onclick = ()=>{ mode=b.dataset.mode; paintBoard(); });
+  const r1 = T.r1||{}, ds = T.design||{};
+  $('board').innerHTML = [6,5,4,3,2,1].map(g=>{
+    const nums = hasSeats() ? seatNums(g) : members(g);
+    const five = hasSeats() && !isSix(g);
+    const cells = nums.map(n=>{
+      if(n==null || !nameOf(n)) return `<div class="s empty">빈자리</div>`;
+      const c = (+r1[g]===+n?' r1':'') + (+ds[g]===+n?' ds':'');
+      return `<button type="button" class="s${c}" data-g="${g}" data-n="${n}">${n} ${esc(nameOf(n))}${+r1[g]===+n?' 🏅':''}${+ds[g]===+n?' 🎨':''}</button>`;
+    }).join('') || '<div class="hint">아직 이 조 학생 없음</div>';
+    return `<div class="grp ${+T.finalWin===g?'fw':''}"><div class="ghead"><b>${g}조</b><button type="button" class="fwbtn ${+T.finalWin===g?'on':''}" data-fw="${g}">🏆 결승 우승</button></div><div class="seats ${five?'five':''}">${cells}</div></div>`;
+  }).join('');
+  $('board').querySelectorAll('.s[data-n]').forEach(b=> b.onclick = ()=> markRep(+b.dataset.g, +b.dataset.n));
+  $('board').querySelectorAll('[data-fw]').forEach(b=> b.onclick = ()=> setT('finalWin', +T.finalWin===+b.dataset.fw ? null : +b.dataset.fw));
+  $('boardHint').textContent = (hasSeats() ? '자리는 발표자리 화면의 6모둠 그대로예요.' : '⚠️ 이 반은 발표자리에 자리표가 없어서, 학생이 고른 조로 묶었어요(화면을 연 학생만 보여요).')
+    + ' 파란 칸 🏅 = 대회 대표 · 분홍 테두리 🎨 = 디자인 대표 · 금색 = 결승 우승 조. 같은 칸을 다시 누르면 지워져요.';
+  paintGive();
+}
+function plan(kind){   // 줄 상점 목록 → {awards, label, why}
+  const aw = ns => ns.map(n=>({no:+n, name:nameOf(n), points:1, reason:'group'}));
+  if(kind==='r1'){ const ns = GROUPS.map(g=> (T.r1||{})[g]).filter(n=> n!=null); return { awards:aw(ns), label:'팽이 대회 · 대회 대표', why: ns.length ? '' : '자리표에서 🏅 대표를 먼저 표시해요' }; }
+  if(kind==='design'){ const ns = GROUPS.map(g=> (T.design||{})[g]).filter(n=> n!=null); return { awards:aw(ns), label:'팽이 대회 · 디자인 대표', why: ns.length ? '' : '자리표에서 🎨 디자인 대표를 먼저 표시해요' }; }
+  if(kind==='final'){ const g = +T.finalWin; return { awards: g ? aw(members(g)) : [], label:'팽이 대회 · 결승 우승 '+g+'조', why: g ? '' : '자리표에서 🏆 결승 우승 조를 먼저 눌러요' }; }
+  if(kind==='vote'){ const g = +T.voteWin; return { awards: g ? aw(members(g)) : [], label:'팽이 대회 · 반 투표 1등 '+g+'조', why: g ? '' : '아래 투표 결과에서 1등 조를 정해요' }; }
+}
+function paintGive(){
+  const given = T.given||{};
+  $('giveRow').innerHTML = GIVES.map(([k,l])=>{
+    if(given[k]) return `<button type="button" class="btn give did" disabled style="border-style:solid">✓ ${l.replace(/ \+1|모두 \+1/,'')} 줬어요 (${given[k].n}명)</button>`;
+    const p = plan(k);
+    if(p.why) return `<button type="button" class="btn" disabled>${l}</button><span class="hint" style="margin:0">👉 ${p.why}</span>`;
+    return `<button type="button" class="btn give ${armed===k?'arm':''}" data-give="${k}">${armed===k?'한 번 더 누르면 '+p.awards.length+'명 기록':l+' ('+p.awards.length+'명)'}</button>`;
+  }).join('');
+  $('giveRow').querySelectorAll('[data-give]').forEach(b=> b.onclick = ()=> give(b.dataset.give));
+}
+function paintTally(){
+  const {t, voters} = tally(); $('votedCnt').textContent = voters;
+  const gs = GROUPS.filter(g=> photos[g]&&photos[g].img);
+  if(!gs.length){ $('tallyBox').innerHTML = '<div class="hint">사진을 올리고 반 투표를 열면 여기에 표 수가 보여요.</div>'; return; }
+  const max = Math.max(1, ...gs.map(g=>t[g])), {top, ties} = voteTop();
+  let h = gs.map(g=>`<div class="bar ${ties.includes(g)?'w':''}"><span style="width:40px">${g}조</span><i style="width:${Math.round(t[g]/max*360)}px"></i>${t[g]}${ties.includes(g)&&ties.length===1?' 🏆':''}</div>`).join('');
+  if(ties.length>1) h += `<div class="tie">⚠️ 동점(${ties.map(g=>g+'조').join(', ')}) — 1등 조를 눌러 정해요: ${ties.map(g=>`<button type="button" class="btn ${+T.voteWin===g?'on':''}" data-vw="${g}">${g}조</button>`).join(' ')}</div>`;
+  else if(ties.length===1) h += `<div class="hint">1등: <b>${ties[0]}조</b> ${+T.voteWin===ties[0]?'(상점 버튼에 반영됨)':`<button type="button" class="btn" data-vw="${ties[0]}">1등으로 정하기</button>`}</div>`;
+  $('tallyBox').innerHTML = h;
+  $('tallyBox').querySelectorAll('[data-vw]').forEach(b=> b.onclick = ()=> setT('voteWin', +b.dataset.vw));
+}
+function paint(){ paintStages(); paintPhotos(); paintBoard(); paintTally(); }
+
+/* ---------- 쓰기 ---------- */
+async function setStage(k){
+  try{
+    const upd = { stage:k };
+    if(k==='result'){ const {t}=tally(); const gs = GROUPS.filter(g=> photos[g]&&photos[g].img); const out={}; gs.forEach(g=> out[g]=t[g]); upd.tally = out; }
+    else upd.tally = null;
+    await R.child('control').update(upd); say(STAGES.find(s=>s[0]===k)[1]+' 단계로 바꿨어요');
+  }catch(e){ say('바꾸지 못했어요: '+e.message, true); }
+}
+async function setT(key, val){ try{ await R.child('teacher/'+key).set(val==null?null:val); }catch(e){ say('저장 실패: '+e.message, true); } }
+async function markRep(g, n){
+  const key = mode==='r1' ? 'r1' : 'design';
+  if((T.given||{})[key]){ say('이미 상점을 준 항목이라 바꿀 수 없어요. 발표 기록에서 취소한 뒤 바꿔요.', true); return; }
+  const cur = (T[key]||{})[g];
+  await setT(key+'/'+g, +cur===n ? null : n);
+}
+async function give(kind){
+  if((T.given||{})[kind]) return;
+  if(armed!==kind){ armed = kind; clearTimeout(armTimer); armTimer = setTimeout(()=>{ armed=null; paintGive(); }, 5000); paintGive(); return; }
+  armed = null; clearTimeout(armTimer);
+  const p = plan(kind); if(p.why || !p.awards.length) return;
+  try{
+    const ev = db.ref('rooms/'+sanitize(room)+'__present20/events').push();
+    await ev.set({ kind:'top41_'+kind, label:p.label, awards:p.awards, date:today(), createdAt:firebase.database.ServerValue.TIMESTAMP });
+    await R.child('teacher/given/'+kind).set({ id:ev.key, n:p.awards.length, ts:firebase.database.ServerValue.TIMESTAMP });
+    say(p.label+' — '+p.awards.length+'명 상점 +1 기록했어요');
+  }catch(e){ say('기록하지 못했어요: '+e.message, true); paintGive(); }
+}
+function shrink(file){
+  return new Promise((ok, no)=>{
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = ()=>{ const M = 640, k = Math.min(1, M/Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); let q = .72, d = c.toDataURL('image/jpeg', q); while(d.length > 180000 && q > .35){ q -= .1; d = c.toDataURL('image/jpeg', q); } ok(d); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); no(new Error('사진을 읽지 못했어요')); };
+    img.src = url;
+  });
+}
+async function upload(g, file){
+  say(g+'조 사진 올리는 중…');
+  try{ const d = await shrink(file); await R.child('photos/'+g).set({ img:d, ts:firebase.database.ServerValue.TIMESTAMP }); say(g+'조 사진을 올렸어요 ('+Math.round(d.length/1024)+'KB)'); }
+  catch(e){ say('사진을 올리지 못했어요: '+e.message, true); }
+}
+
+/* ---------- 연결 ---------- */
+$('connectBtn').onclick = ()=>{
+  const r = $('roomCode').value.trim(); if(!r){ $('connStatus').textContent='반을 선택해 주세요.'; return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database();
+    $('connStatus').textContent='🔄 연결 중...';
+    firebase.auth().signInAnonymously().then(()=>{
+      refs.forEach(f=> f.off()); refs = [];
+      room = r; R = db.ref('rooms/'+sanitize(r)+ACTIVITY_SUFFIX);
+      const on = (ref, fn)=>{ refs.push(ref); ref.on('value', s=>{ fn(s.val()); paint(); }); };
+      on(db.ref('rooms/'+sanitize(r)+'__seat20'), v=>{ v = v||{}; S = { roster: Array.isArray(v.roster)?v.roster:Object.values(v.roster||{}), teams: Array.isArray(v.teams)?v.teams:Object.values(v.teams||{}), seats: v.seats||{}, six: v.six||[] }; });
+      on(R.child('control'), v=>{ control = v||{}; });
+      on(R.child('photos'), v=>{ photos = v||{}; });
+      on(R.child('students'), v=>{ students = v||{}; });
+      on(R.child('teacher'), v=>{ T = v||{}; });
+      $('teacherGateScreen').style.display='none'; $('teacherAppScreen').style.display='block';
+      $('currentRoomLabel').textContent = r+'반';
+      document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(r));
+    }).catch(err=>{ $('connStatus').textContent='⚠️ 로그인 실패: '+err.message; });
+  }catch(err){ $('connStatus').textContent='⚠️ 연결 실패: '+err.message; }
+};
+$('changeRoomBtn').onclick = ()=>{ refs.forEach(f=> f.off()); refs=[]; $('teacherAppScreen').style.display='none'; $('teacherGateScreen').style.display='block'; };
+(function auto(){ const c = (new URLSearchParams(location.search).get('classNo')||'').trim(); const sel=$('roomCode'); if(c && [...sel.options].some(o=>o.value===c)){ sel.value=c; setTimeout(()=> $('connectBtn').click(), 0); } })();
+</script>
+<script src="tdash.js"></script>
+</body>
+</html>

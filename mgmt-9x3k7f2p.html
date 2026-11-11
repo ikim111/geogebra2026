@@ -251,7 +251,8 @@ const SECTIONS = [
         {n:39, label:4, title:'7.3. 삼각형과 평행선 의사소통 - 사각형의 네 변의 중점을 연결하면?', file:'t39-0av41yy.html'},
         {n:35, label:5, title:'7.4. 삼각형의 무게중심 생각열기 - 삼각형의 균형점 찾기', file:'t35-u4d6c5i.html'},
         {n:40, label:6, title:'7.4. 삼각형의 무게중심 의사소통 - 지워진 꼭짓점 찾기, 외심·내심·무게중심', file:'t40-weoe6rc.html'},
-        {n:36, label:7, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'t36-6xovj7e.html'}
+        {n:41, label:7, title:'7.4. 삼각형의 무게중심 의사소통 - 무게중심 팽이 대회', file:'t41-p7mtq2x.html'},
+        {n:36, label:8, title:'7.5. 피타고라스 정리 생각열기 - 기울어진 정사각형의 넓이', file:'t36-6xovj7e.html'}
       ]}
   ]},
   { chapter:'VIII. 경우의 수와 확률', groups:[
@@ -374,14 +375,14 @@ function buildUnitRow(u){
   const a=document.createElement('a');
   a.className='unit-link';
   const num=document.createElement('span'); num.className='num'; num.textContent=u.label;
-  const title=document.createElement('span'); title.className='title'; fillTitle2(title, u.title, (()=>{ const TC={think:'#1565c0',explore:'#00897b',talk:'#d81b60',pa:'#f9a825'}, TN={1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',2:'explore',3:'explore',4:'explore',16:'explore',17:'explore',0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk',7:'pa'}; const f=String(u.file||''), m=/^t(\d+)-/.exec(f); return /^tpa/.test(f)?TC.pa:(m&&TN[+m[1]]?TC[TN[+m[1]]]:''); })());
+  const title=document.createElement('span'); title.className='title'; fillTitle2(title, u.title, (()=>{ const TC={think:'#1565c0',explore:'#00897b',talk:'#d81b60',pa:'#f9a825'}, TN={1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',2:'explore',3:'explore',4:'explore',16:'explore',17:'explore',0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk',41:'talk',7:'pa'}; const f=String(u.file||''), m=/^t(\d+)-/.exec(f); return /^tpa/.test(f)?TC.pa:(m&&TN[+m[1]]?TC[TN[+m[1]]]:''); })());
   const arrow=document.createElement('span'); arrow.className='arrow';
   a.appendChild(num); a.appendChild(title); a.appendChild(arrow);
   row.appendChild(a);
   { // 🏷 활동 종류 색 줄(학생 목차와 같은 색) — 파일 이름(t번호-…, tpa…)으로 종류를 찾는다
     const TC = { think:'#1565c0', explore:'#00897b', talk:'#d81b60', pa:'#f9a825' };
     const TN = {1:'think',5:'think',11:'think',13:'think',15:'think',21:'think',31:'think',32:'think',34:'think',35:'think',36:'think',
-      2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk', 7:'pa'};
+      2:'explore',3:'explore',4:'explore',16:'explore',17:'explore', 0:'talk',6:'talk',12:'talk',14:'talk',22:'talk',23:'talk',39:'talk',40:'talk',41:'talk', 7:'pa'};
     const f = String(u.file||''), m = /^t(\d+)-/.exec(f), ty = /^tpa/.test(f) ? 'pa' : (m ? TN[+m[1]] : null);
     if(ty) a.style.borderLeft = '6px solid ' + TC[ty];
     if(u.color) a.style.borderLeft = '6px solid ' + u.color;   // 🧭 방탈출 회차 색
