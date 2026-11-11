@@ -299,6 +299,17 @@
 #gbPanel .tag{display:inline-block;font-size:11.5px;border:1px solid #f9a825;border-radius:10px;padding:0 7px;margin-bottom:3px;color:#9a6700;}
 #gbPanel .cls{font-size:12px;color:#888;} #gbPanel .gw{font-size:12px;color:#444;margin-top:4px;} #gbPanel .act{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
 #gbPanel .act button,#gbPanel .act select{font-size:12px;border:1px solid #1565c0;color:#1565c0;background:#fff;border-radius:6px;padding:3px 6px;max-width:100%;}
+.rg-badge{display:inline-block;margin-left:4px;background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:8px;font-size:11px;font-weight:700;padding:0 5px;white-space:nowrap;}
+  .rg-badge.tc{background:#e65100;color:#fff;border-color:#e65100;}
+  .rb-b.rg-ch{outline:3px solid #ffb74d;outline-offset:2px;}
+  .rb-b.rg-tc{outline:4px solid #e65100;outline-offset:2px;background:#fff3e0;position:relative;}
+  .rg-hand{position:absolute;top:-12px;right:-12px;background:#e65100;color:#fff;border-radius:10px;font-size:11px;padding:0 4px;line-height:16px;}
+  .rg-tip{display:block;font-size:10.5px;color:#b71c1c;font-weight:700;white-space:nowrap;margin-top:2px;}
+  .rg-ban{background:#fff3e0;border:2px solid #e65100;border-radius:8px;padding:7px 10px;font-size:12.5px;margin:6px 0 8px;line-height:1.5;display:flex;gap:10px;align-items:center;}
+  .rg-ban .tx{flex:1;} .rg-ban b{color:#e65100;} .rg-ban .t{display:block;color:#b71c1c;font-weight:700;}
+  .rg-ok{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:#2e7d32;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;cursor:pointer;}
+  .rg-done{font-size:12px;color:#888;margin:4px 0 8px;} .rg-done a{color:#1565c0;text-decoration:underline;cursor:pointer;}
+  .rg-cnt{display:inline-block;margin-left:8px;background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:8px;font-size:12px;font-weight:700;padding:2px 8px;}
 </style>
 </head>
 <body>
@@ -880,6 +891,9 @@ function renderGradePanel(){
   const graded = list.map(gradeOf).filter(g=>g.any);
   document.getElementById('grAi').textContent = list.filter(s=>s.aiGrade&&s.aiGrade.scores).length;
   document.getElementById('grOv').textContent = graded.filter(g=>g.overridden).length;
+  { const rg = list.map(rgInfo).filter(g=>g && g.changed), ack = rg.filter(g=>g.ack).length, tcn = rg.filter(g=>g.tcs.length && !g.ack).length;
+    let el = document.getElementById('grRg'); if(!el){ el = document.createElement('span'); el.id = 'grRg'; el.className = 'rg-cnt'; const hd = document.querySelector('#gradePanel .gr-head span'); if(hd) hd.after(el); }
+    el.style.display = rg.length ? '' : 'none'; el.textContent = `🔄 재채점으로 바뀐 학생 ${rg.length}명 중 ${ack}명 확인` + (tcn ? ` · ✏️ ${tcn}명` : ''); }
   document.getElementById('grAvg').textContent = graded.length ? (graded.reduce((a,g)=>a+g.total,0)/graded.length).toFixed(1)+'점' : '-';
   const n = gradeEligibleKeys().length, btn = document.getElementById('gradeBulkBtn');
   const anyGraded = Object.values(allStudents||{}).some(x=> x && x.aiGrade && x.aiGrade.scores);
@@ -957,6 +971,35 @@ document.addEventListener('click', async e=>{
   }
 }, true);
 let tdmKey = null;
+/* 🔄 2026-11-11 세 선생님 협의 반영 재채점 표시(선생님 요청·시안 승인)
+   students/{key}/regrade1111 = {before:{checks,ai,total}, after:{checks,ai,total}, tcCells:{항목:[칸 번호]}, prevTeacher, ack}
+   - 바뀐 칸(before.checks ≠ after.checks): 연한 주황 테두리. 선생님이 고쳤던 칸이 새 기준으로 바뀜(tcCells): 진한 주황 + ✏️
+   - [✓ 확인했어요]를 누르면 ack(시각)를 저장하고 표시를 숨긴다(기록은 남음, '다시 보기'로 되살림) */
+const RG_KS = ['question','data','analysis','logic'];
+function rgInfo(s){
+  const r = s && s.regrade1111; if(!r || !r.after || !r.before) return null;
+  const cells = [], tcs = [], tcMap = r.tcCells || {};
+  RG_KS.forEach((k, ki)=>{ const b = String((r.before.checks||{})[k]||''), a = String((r.after.checks||{})[k]||''), t = (tcMap[k]||[]).map(Number);
+    for(let i=0;i<Math.max(a.length,b.length);i++){ const lab = (ki+1)+'-('+(i+1)+')';
+      if(t.includes(i)) tcs.push({k, i, lab, from:b[i], to:a[i]}); else if(b[i] && a[i] && b[i]!==a[i]) cells.push({k, i, lab, from:b[i], to:a[i]}); } });
+  const changed = cells.length + tcs.length > 0 || r.before.total !== r.after.total;
+  return { r, cells, tcs, changed, ack: !!r.ack, before: r.before.total, after: r.after.total };
+}
+function rgCellCls(s, k, i){ const g = rgInfo(s); if(!g || !g.changed || g.ack) return ''; if(g.tcs.some(x=>x.k===k&&x.i===i)) return 'tc'; if(g.cells.some(x=>x.k===k&&x.i===i)) return 'ch'; return ''; }
+function rgBannerHTML(key, s){
+  const g = rgInfo(s); if(!g || !g.changed) return '';
+  if(g.ack) return `<div class="rg-done">✓ 재채점 확인함 (${new Date(g.r.ack).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}) · <a data-rg-unack="${esc(key)}">다시 보기</a></div>`;
+  const ox = v => v==='O'?'O':'X';
+  return `<div class="rg-ban"><div class="tx">🔄 <b>11/11 협의 반영 재채점: ${g.before}점 → ${g.after}점</b>${g.cells.length?' · 바뀐 칸 '+g.cells.map(x=>x.lab).join(', '):''}${g.tcs.length?`<span class="t">✏️ 선생님이 고친 칸도 바뀜: ${g.tcs.map(x=>`${x.lab} (선생님 ${ox(x.from)} → 새 기준 ${ox(x.to)})`).join(', ')}</span>`:''}</div><button type="button" class="rg-ok" data-rg-ack="${esc(key)}">✓ 확인했어요</button></div>`;
+}
+document.addEventListener('click', async e=>{
+  const a = e.target.closest && e.target.closest('[data-rg-ack],[data-rg-unack]'); if(!a) return; e.preventDefault(); e.stopPropagation();
+  const key = a.dataset.rgAck || a.dataset.rgUnack, s = allStudents[key]; if(!s || !s.regrade1111) return;
+  const v = a.dataset.rgAck ? Date.now() : null;
+  try{ await db.ref('rooms/'+currentRoomKey+'/students/'+key+'/regrade1111/ack').set(v); s.regrade1111.ack = v || undefined; if(!v) delete s.regrade1111.ack; refreshOpenModal(); renderGrid(); renderGradePanel(); }
+  catch(err){ alert('저장하지 못했어요: '+(err.message||err)); }
+}, true);
+
 function refreshOpenModal(){
   if(!tdmKey || document.getElementById('taskDetailOverlay').style.display!=='flex') return;
   const s = allStudents[tdmKey]; if(!s) return;
@@ -1558,7 +1601,7 @@ function renderGrid(){
     const tdScore=document.createElement('td'); tdScore.className='score-cell';
     const gg = gradeOf(s);
     if(gg.any){
-      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' <b style="color:#e65100;">↻</b>':''}</span>`;
+      tdScore.innerHTML = `${gg.total}<span class="src">${gg.overridden?'✏️':'AI'}${gg.stale?' <b style="color:#e65100;">↻</b>':''}</span>` + (()=>{ const g = rgInfo(s); return (g && g.changed && !g.ack) ? `<span class="rg-badge${g.tcs.length?' tc':''}" title="11/11 협의 반영 재채점">🔄 ${g.before}→${gg.total}${g.tcs.length?' ✏️':''}</span>` : ''; })();
       tdScore.title = `${gg.total}/${SCORE_MAX}점` + (gg.overridden?` · 선생님 수정 ${gg.overridden}개`:' · AI 점수') + (gg.stale?' · 채점 뒤 글이 바뀜':'');
     } else { tdScore.textContent = '-'; tdScore.style.color='#bbb'; tdScore.title='아직 채점 전'; }
     tdScore.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, TASK_IDS[0]); });
@@ -1640,6 +1683,7 @@ function rubricTableHTML(key, s){
   const ev = ai.ev, r = repOf(s);
   const evNote = !ev ? (evPending.has(key) || (ai.ts && Date.now()-ai.ts < 90000) ? '<span class="rb-note">⏳ 근거 문장 만드는 중…</span>' : `<button type="button" class="rb-mk" data-ev-make="${esc(key)}">🔎 근거 문장 만들기</button>`)
     : (evPending.has(key) ? '<span class="rb-note">⏳ 근거 다시 만드는 중…</span>' : `<button type="button" class="rb-mk" data-ev-make="${esc(key)}" title="○✕를 고친 칸은 근거가 비어요 → 다시 만들기">↻ 근거 다시 만들기</button>`);
+  h += rgBannerHTML(key, s);
   h += `<table class="rb-t"><thead><tr><th>항목</th><th>채점 기준</th><th>판정</th><th>근거 <small>(학생 글 · 누르면 왼쪽 글로)</small> ${evNote}</th></tr></thead><tbody>`;
   g.items.forEach((it, ii)=>{
     const c = checksOf(s, it.k), a = aiChecksOf(s, it.k), xq = (ai.xq && ai.xq[it.k]) || [], xw = (ai.xw && ai.xw[it.k]) || [], L = CHECK_LABELS[it.k];
@@ -1654,7 +1698,7 @@ function rubricTableHTML(key, s){
         else if(v==='X'){ evc = '<span class="rb-none">글에서 찾지 못함</span>'; cls = 'no'; }
         if(v==='X' && a[i]==='X' && xw[i]) evc += `<div class="rb-why">👉 ${esc(xw[i])}</div>`;   // 2026-11-04 ✕ 이유 한 줄
         else if(tc) evc = '<span class="rb-none">고친 판정 → ↻ 근거 다시 만들기</span>'; }
-      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}</span>`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}</td></tr>`;
+      h += `<tr class="${i===0?'rb-first':''}">${i===0?head:''}<td class="rb-c">${esc(t)}</td><td class="rb-ox">${v?`<span class="rb-b ${v==='O'?'o':'x'}${tc?' tc':''}${unsureAt(s, it.k, i)?' un':''}${rgCellCls(s, it.k, i)?' rg-'+rgCellCls(s, it.k, i):''}" data-ck="${esc(key)}" data-ckc="${it.k}" data-cki="${i}" title="눌러서 ○/✕ 바꾸기${tc?' (AI는 '+(a[i]==='O'?'○':'✕')+')':''}">${v==='O'?'○':'✕'}${rgCellCls(s, it.k, i)==='tc'?'<span class="rg-hand">✏️</span>':''}</span>${rgCellCls(s, it.k, i)==='tc'?(()=>{ const x = rgInfo(s).tcs.find(y=>y.k===it.k&&y.i===i); return `<span class="rg-tip">선생님 ${x.from==='O'?'O':'X'} → ${x.to==='O'?'O':'X'}</span>`; })():''}`:'-'}</td><td class="rb-ev ${cls}">${unsureTag(key, s, it.k, i)}${evc}</td></tr>`;
     });
     const tg = s.teacherGrade && s.teacherGrade[it.k];
     if(c && tg!=null && !(s.teacherChecks && s.teacherChecks[it.k]) && tg!==scoreFromChecks(it.k, c)) h += `<tr><td colspan="4" class="rb-warn">⚠ 숫자로 고친 점수(${tg}점)와 ○✕가 달라요 → ↺ 되돌리기를 누르거나 ○✕를 맞춰 주세요.</td></tr>`;
