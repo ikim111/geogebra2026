@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/report-grade.js": {
-      "maxDuration": 60
+      "maxDuration": 180
     },
     "api/report-best.js": {
       "maxDuration": 60
