@@ -499,7 +499,7 @@ const AIFB_SETS = {};
 const aifbList = key => (!key || key==='main') ? AIFB : (AIFB_SETS[key] || (AIFB_SETS[key] = []));
 const aifbUsed = key => aifbList(key).filter(e=>e && !e.skip).length;
 /* 마지막으로 받은 AI 피드백에 보완할 점이 없으면 통과 */
-function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length; } return false; }
+function aifbPassed(key){ const L = aifbList(key); for(let i=L.length-1;i>=0;i--){ const e=L[i]; if(e && !e.skip) return !(e.fix||[]).length || !!e.reported; } return false; }   // 🚩 2026-11-12: AI가 틀렸다고 신고한 피드백은 통과로 친다(화면마다 한 번)
 /* collectData에 넣을 추가 칸들 { aiFb_p7: [...] } */
 function aifbExtraData(){ const o = {}; Object.keys(AIFB_SETS).forEach(k=>{ o['aiFb_'+k] = AIFB_SETS[k]; }); return o; }
 /* 선생님이 기회를 더 주면 바로 반영(접속 뒤 control/aiBonus/{내 키}를 구독) */
@@ -523,6 +523,7 @@ function aifbHTML(e){
   const g = (e.good||[]).map(x=>`<div class="row good"><span class="tag">잘한 점</span><span>${aifbEsc(x)}</span></div>`).join('');
   const f = (e.fix||[]).length ? e.fix.map(x=>`<div class="row fix"><span class="tag">보완할 점</span><span>${aifbEsc(x)}</span></div>`).join('')
           : `<div class="row none"><span class="tag">보완할 점</span><span>보완할 점이 없어요 👍</span></div>`;
+  if(e.reported) return g + f + `<div class="note">🚩 AI가 틀렸다고 신고했어요. 선생님이 확인할 거예요. 다음 화면으로 넘어가도 돼요.</div>`;
   return g + f + `<div class="note">AI 피드백은 참고용이에요. 맞는 말인지 스스로 판단하고, 필요하면 내 글을 고쳐 보세요.${window.reportOpen ? ' <button type="button" class="aifb-wrong">🤔 AI가 틀린 것 같아요</button>' : ''}</div>`;
 }
 /* box: 버튼을 넣을 칸, opt: {unit, answer:()=>글, ctx:()=>참고 정보, minLen, inputs:[글을 쓰는 칸들]} */
@@ -530,7 +531,8 @@ function aifbMount(box, opt){
   const key = opt.key || 'main', L = () => aifbList(key);
   box.innerHTML = `<div class="aifb-row"><button type="button" class="aifb-btn">🤖 AI 피드백 받기</button><span class="aifb-left"></span><button type="button" class="aifb-req" style="display:none;">🙋 선생님께 기회 더 요청하기</button></div><div class="fb-out"></div>`;
   const btn = box.querySelector('.aifb-btn'), left = box.querySelector('.aifb-left'), out = box.querySelector('.fb-out'), req = box.querySelector('.aifb-req');
-  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); window.reportOpen({kind:'ai', unit: opt.unit, fb: last}); } });
+  out.addEventListener('click', e=>{ if(e.target.closest('.aifb-wrong') && window.reportOpen){ const last = L().filter(x=>x && !x.skip).pop(); if(!last || L().some(x=>x && x.reported)) return;
+    window.reportOpen({kind:'ai', unit: opt.unit, fb: last, onSent: ()=>{ last.reported = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); }}); } });   // 🚩 신고하면 이 화면은 통과(한 번만)
   req.addEventListener('click', ()=>{ if(req.disabled) return; AIFB_REQ = Date.now(); paint(); if(typeof refreshAll==='function') refreshAll({now:true}); });
   let busy = false, fails = 0;
   const paint = () => {
@@ -541,7 +543,7 @@ function aifbMount(box, opt){
     req.textContent = pending ? '⏳ 요청했어요 — 선생님이 허락하면 다시 받을 수 있어요' : '🙋 선생님께 기회 더 요청하기';
     left.textContent = busy ? '⏳ AI가 읽고 있어요…' : out_ ? `피드백을 ${mx}번 모두 받았어요. 피드백을 보고 내 글을 다듬어 보세요.`
       : short ? `글을 ${opt.minLen}자 이상 쓰면 AI 피드백을 받을 수 있어요. (남은 횟수 ${mx-n}번)` : `남은 횟수 ${mx-n}번 · 다 쓴 뒤에 받아 보세요.`;
-    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); }
+    if(!busy){ const l = L(); out.innerHTML = aifbHTML(l[l.length-1]); if(l.some(x=>x && x.reported)) out.querySelectorAll('.aifb-wrong').forEach(b=>b.remove()); }
   };
   btn.addEventListener('click', async ()=>{
     if(btn.disabled) return;

@@ -104,7 +104,7 @@
     const m = document.getElementById('rpModal'); if (!m) return;
     const ai = document.getElementById('rpAi');
     if (extra && extra.kind === 'ai') {
-      document.getElementById('rpLead').textContent = 'AI 피드백에서 어떤 점이 틀렸다고 생각하나요? 왜 그렇게 생각하는지도 적어 주세요.';
+      document.getElementById('rpLead').textContent = 'AI 피드백에서 어떤 점이 틀렸다고 생각하나요? 왜 그렇게 생각하는지도 적어 주세요.' + (extra.onSent ? ' 보내면 이 화면은 완료로 넘어가요(화면마다 한 번만).' : '');
       const f = extra.fb || {};
       ai.innerHTML = `<b>받은 AI 피드백</b>` + (f.good || []).map(g => `<div>👍 ${esc(g)}</div>`).join('') + (f.fix || []).map(g => `<div>🔧 ${esc(g)}</div>`).join('');
       ai.style.display = '';
@@ -139,6 +139,7 @@
       const d = await db();
       await d.ref('rooms/__reports/items').push(item);
       msg.style.color = '#2e7d32'; msg.textContent = '✅ 보냈어요! 알려 줘서 고마워요.';
+      if (extra && typeof extra.onSent === 'function') { try { extra.onSent(); } catch (e) {} }   // 🚩 2026-11-12 AI 피드백 신고 → 그 화면은 통과로
       document.getElementById('rpText').value = '';
       setTimeout(close, 1200);
     } catch (e) {

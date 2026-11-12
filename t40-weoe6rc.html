@@ -390,7 +390,7 @@ const SEL2N = {same:'모두 같은 직선', par:'서로 평행', pt:'한 점에�
 const AI_FIELD = {2:'aiFb_lost', 8:'aiFb'};
 function aiStateOf(s, id){ const f = AI_FIELD[id]; if(!f) return 0; const v = ((s&&s.data)||{})[f];
   const a = (Array.isArray(v) ? v : (v && typeof v==='object' ? Object.values(v) : [])).filter(e=>e && !e.skip);
-  if(!a.length) return 0; return (a[a.length-1].fix||[]).length ? 2 : 1; }
+  if(!a.length) return 0; const z = a[a.length-1]; return z.reported ? 3 : ((z.fix||[]).length ? 2 : 1); }   // 3 = 🚩 학생이 AI가 틀렸다고 신고하고 넘어감(2026-11-12)
 function aiBadListInsert(textWrap, list, aggBox){
   if(!AI_FIELD[selectedTaskId]) return;
   const bad = list.filter(it=>aiStateOf(it.student, selectedTaskId)===2);
@@ -905,8 +905,8 @@ function renderGrid(){
 
       const td=document.createElement('td');
       const cell=document.createElement('span');
-      cell.className = ['cell', stateClass, (done2 && aiStateOf(s,t.id)===2 ? 'aibad' : ''), (cur?'current':''), (locked?'locked':'')].filter(Boolean).join(' ');
-      cell.title = `활동 ${t.id}: ${t.label} — ${stateLabel}${done2 && aiStateOf(s,t.id)===2 ? ' (AI 보완 남음)' : ''}${lockedLabel}`;
+      cell.className = ['cell', stateClass, (done2 && aiStateOf(s,t.id)>=2 ? 'aibad' : ''), (cur?'current':''), (locked?'locked':'')].filter(Boolean).join(' ');
+      cell.title = `활동 ${t.id}: ${t.label} — ${stateLabel}${done2 && aiStateOf(s,t.id)===2 ? ' (AI 보완 남음)' : (done2 && aiStateOf(s,t.id)===3 ? ' (🚩 AI가 틀렸다고 신고하고 넘어감)' : '')}${lockedLabel}`;
       cell.textContent = isError ? '!' : '';
       cell.addEventListener('click', ()=>{ selectedKey=item.key; renderGrid(); openTaskDetail(item.key, s, t.id); });
       td.appendChild(cell);
@@ -1121,7 +1121,7 @@ function renderTeacherView(){
       nameWrap.appendChild(live);
     }
     const status=document.createElement('span'); status.className='ta-status '+(done?'done':'pending'); status.textContent = done?'완료':'미완료';
-    const aiS = aiStateOf(s, selectedTaskId); if(aiS){ const ab=document.createElement('span'); ab.className='ta-ai '+(aiS===1?'ok':'bad'); ab.textContent = aiS===1 ? '✓ AI 통과' : '! AI 보완 남음'; nameWrap.appendChild(ab); }
+    const aiS = aiStateOf(s, selectedTaskId); if(aiS){ const ab=document.createElement('span'); ab.className='ta-ai '+(aiS===1?'ok':'bad'); ab.textContent = aiS===1 ? '✓ AI 통과' : (aiS===3 ? '🚩 신고로 넘어감' : '! AI 보완 남음'); nameWrap.appendChild(ab); }
     box.id = 'ta-'+item.key;
     head.appendChild(nameWrap); head.appendChild(status);
     box.appendChild(head);
