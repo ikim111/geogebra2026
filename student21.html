@@ -596,11 +596,12 @@ function relDec(h, n){ const v=h/n; return isExact4(v) ? String(Math.round(v*100
 function relText(h, n){ return `${fmtInt(h)}/${fmtInt(n)} ${isExact4(h/n)?'=':'≈'} ${relDec(h,n)}`; }
 
 /* ---------- 완료 판정 (활동별) ---------- */
+/* 2026-11-12 선생님 요청: 마지막 AI 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return state.flips.length===10;
   if(id===2) return state.classTotal!==null && state.a2Answer.trim().length>=MIN_TEXT;
   if(id===3) return state.pred1000!==null && state.pred10000!==null;
-  if(id===4) return !!(state.sims[1000] && state.sims[10000]) && state.finalAnswer.trim().length>=FINAL_MIN && AIFB.length>=1;
+  if(id===4) return !!(state.sims[1000] && state.sims[10000]) && state.finalAnswer.trim().length>=FINAL_MIN && aifbPassed();
   return false;
 }
 /* 교사 화면 요약에 쓰는 한 줄 값 */

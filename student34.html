@@ -662,11 +662,12 @@ const oOf = n => HOLES[n].pickO ? state.h[n].o : HOLES[n].o;
 const imgOf = (o, p, k) => [o[0]+(p[0]-o[0])*k, o[1]+(p[1]-o[1])*k];
 const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id>=1 && id<=4) return state.h[id].done;
   if(id>=5 && id<=7) return state.h[id].done && state['q'+id].checked && state['q'+id].ok;
   if(id===8) return state.h[8].inB && state.h[8].inC && state.q8.checked && state.q8.ok && state.h[8].both;
-  if(id===9) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbList().length>=1;
+  if(id===9) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbPassed();
   return false;
 }
 function valueOf(id){

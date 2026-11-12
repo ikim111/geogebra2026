@@ -591,15 +591,16 @@ const mid = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
 const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
 function inTri(p, t){ const s = (a,b,c)=> (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]); const d1=s(t[0],t[1],p), d2=s(t[1],t[2],p), d3=s(t[2],t[0],p); return !((d1<0||d2<0||d3<0) && (d1>0||d2>0||d3>0)); }
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return state.hang.lines.every(Boolean);
   if(id===2) return state.hang.lines.every(Boolean) && state.hang.checked && state.hang.ok;
   if(id===3) return state.bal.every(b=>b.done);
   if(id===4) return state.lines6.every(Boolean) && state.c6.checked && state.c6.ok;
-  if(id===5) return state.w7.found && len(state.tw)>=MIN_TEXT && state.shared.w && aifbList('w').length>=1;
+  if(id===5) return state.w7.found && len(state.tw)>=MIN_TEXT && state.shared.w && aifbPassed('w');
   if(id===6) return state.c7.checked && state.c7.ok;
   if(id===7) return state.moves8>=3 && (r8Ok() || len(state.t8)>=MIN_TEXT);   // t8: 예전 서술형으로 이미 쓴 학생
-  if(id===8) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbList().length>=1;
+  if(id===8) return len(state.t9)>=MIN_TEXT && state.shared[9] && aifbPassed();
   return false;
 }
 function valueOf(id){

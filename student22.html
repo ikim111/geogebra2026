@@ -785,6 +785,7 @@ const batOk = () => Object.keys(BAT_CHECK).every(k=>BAT_CHECK[k](state.bat[k]));
 
 /* ---------- 완료 판정 (활동별) ---------- */
 const calc4Ok = () => outsOk() && fieldsOk();
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return splitOf(state.s1a, state.s1b).ok && len(state.s1Reason)>=MIN_TEXT;
   if(id===2) return state.sawSplit && len(state.a2Text)>=MIN_TEXT;
@@ -794,7 +795,7 @@ function isDone(id){
   if(id===6) return len(state.s5Reason)>=MIN_TEXT;
   if(id===7) return !!state.vote && len(state.voteReason)>=MIN_TEXT;
   if(id===8) return batOk();
-  if(id===9) return len(state.a8Text)>=MIN_TEXT && aifbList('p7').length>=1;
+  if(id===9) return len(state.a8Text)>=MIN_TEXT && aifbPassed('p7');
   return false;
 }
 /* 교사 화면 요약·구글 설문에 쓰는 한 줄 값 */

@@ -462,10 +462,11 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const len = s => String(s||'').trim().length;
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return state.s1.ok;
   if(id===2) return state.s2.ok;
-  if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbList().length>=1;
+  if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbPassed();
   return false;
 }
 function rowText(n){ const st = n===1 ? state.s1 : state.s2; return ROWS[n].map(([s,k])=>{ const g = f => st.v[`${s}${k}_${f}`] || '?', u = SH[s].unit; return `${SH[s].n} 1:${k} → ${g('small')}${u}, ${g('big')}${u}, 비 ${g('ratio')}`; }).join(' / '); }

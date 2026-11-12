@@ -577,11 +577,12 @@ const cross = (a,b) => a[0]*b[1]-a[1]*b[0], dot = (a,b) => a[0]*b[0]+a[1]*b[1], 
 const mid = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
 const perp = v => [-v[1], v[0]];
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return state.s1.moves>=1 && state.s1.ok;
-  if(id===2) return len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList('main').length>=1;
+  if(id===2) return len(state.t2)>=MIN_TEXT && state.shared[2] && aifbPassed('main');
   if(id>=3 && id<=6) return !!state.s2.oks[id-3];
-  if(id===7) return len(state.t4)>=MIN_TEXT && state.shared[4] && aifbList('rule').length>=1;
+  if(id===7) return len(state.t4)>=MIN_TEXT && state.shared[4] && aifbPassed('rule');
   return false;
 }
 function valueOf(id){

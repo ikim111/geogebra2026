@@ -489,10 +489,11 @@ const cross = (a,b) => a[0]*b[1]-a[1]*b[0], dot = (a,b) => a[0]*b[0]+a[1]*b[1], 
 const lerp = (p, q, t) => add(p, mul(sub(q,p), t));
 const catOf = t => t < 0 ? 'up' : t > 1 ? 'down' : 'in';
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return CATS.every(c=> state.s1.found[c.k]!=null);
   if(id===2) return state.s2.ok;
-  if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbList().length>=1;
+  if(id===3) return state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3] && aifbPassed();
   if(id===4) return state.s4.ok && state.s4.moves>=2;
   return false;
 }

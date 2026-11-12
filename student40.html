@@ -1310,13 +1310,14 @@ const H2N = [['bis','∠A의 이등분선'],['pb','BC의 수직이등분선'],['
 const have2All = () => H2N.every(([k])=> state.s2.have[k]);
 const QA = {yes:'있다', no:'없다'}, QB = {line:'한 직선 위에 있다', same:'항상 일치한다', none:'아무 관계 없다'}, SEL2 = {same:'모두 같은 직선', par:'서로 평행', pt:'한 점에서만 만남'};
 
+/* 2026-11-12 선생님 요청: AI 피드백을 받기만 해서는 완료가 아니고, 마지막 피드백에 보완할 점이 없어야(AI 통과) 완료 */
 function isDone(id){
   if(id===1) return !!state.sL.found;
-  if(id===2) return state.sL.found && len(state.tL)>=MIN_TEXT && state.shared.L && aifbList('lost').length>=1;
+  if(id===2) return state.sL.found && len(state.tL)>=MIN_TEXT && state.shared.L && aifbPassed('lost');
   if(id>=3 && id<=5) return !!state.s1.found[id-3];
   if(id===6) return state.s1.found.every(Boolean) && state.s1.ok;
   if(id===7) return have2All() && state.s2.ok;
-  if(id===8) return have2All() && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbList().length>=1;
+  if(id===8) return have2All() && state.s2.ok && len(state.t2)>=MIN_TEXT && state.shared[2] && aifbPassed();
   if(id===9){ const s = state.sP; return s.ok && s.moves>=2 && s.seen.a && s.seen.r && s.seen.o; }
   if(id===10) return state.s3.moves>=3 && state.s3.ok && len(state.t3)>=MIN_TEXT && state.shared[3];
   return false;
