@@ -156,6 +156,18 @@
   details.manual{margin-top:10px;font-size:13px;color:#666;}
   details.manual summary{cursor:pointer;}
   @media (max-width:640px){ .stg-row{flex-direction:column;} }
+  /* 📐 2026-11-12 선생님 요청: 학생이 작도한 그림을 교사 화면에서 모아 보기 */
+  .geo-panel{background:#fff;border:1px solid #e0e3ea;border-left:5px solid #1565c0;border-radius:12px;padding:12px 14px;margin:12px 0;}
+  .gp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .gp-head>b{color:#1a237e;font-size:16px;}
+  #gpTabs button{border:1.5px solid #1565c0;background:#fff;color:#1565c0;border-radius:8px;padding:7px 11px;font-size:13px;min-height:36px;cursor:pointer;font-family:inherit;}
+  #gpTabs button.on{background:#1565c0;color:#fff;} .gp-cnt{margin-left:auto;font-size:13px;color:#555;}
+  .gp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:10px;}
+  .gp-card{border:2px solid #ffcc80;border-radius:10px;padding:6px;background:#fff;cursor:zoom-in;} .gp-card.ok{border-color:#a5d6a7;}
+  .gp-card .gp-t{font-size:13px;margin-bottom:4px;} .gp-card .ok{color:#2e7d32;} .gp-card .no{color:#e65100;} .gp-card .mi{color:#888;font-size:12px;}
+  .gp-card svg, #gpBigSvg{width:100%;height:auto;display:block;pointer-events:none;}
+  .gp-empty{color:#888;font-size:13px;padding:8px 0;}
+  .gp-over{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:16px;} .gp-over.on{display:flex;}
+  .gp-big{background:#fff;border-radius:12px;padding:12px;width:min(960px,100%);} .gp-bh{display:flex;align-items:center;margin-bottom:6px;} .gp-bh b{color:#1a237e;} .gp-bh button{margin-left:auto;border:1.5px solid #bdbdbd;background:#fff;border-radius:8px;padding:7px 12px;min-height:40px;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body>
@@ -264,6 +276,12 @@
       </div>
       </details>
     </div>
+
+    <div class="geo-panel" id="geoPanel">
+      <div class="gp-head"><b>📐 학생 작도 모아 보기</b><span id="gpTabs"></span><span class="gp-cnt" id="gpCnt"></span></div>
+      <div class="gp-grid" id="gpGrid"></div>
+    </div>
+    <div class="gp-over" id="gpOver"><div class="gp-big"><div class="gp-bh"><b id="gpBigT"></b><button type="button" id="gpClose">✕ 닫기</button></div><svg id="gpBigSvg" viewBox="0 0 600 400"></svg></div></div>
 
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="summary">① 요약뷰</button>
@@ -813,6 +831,7 @@ function resetDetailPanel(){
 }
 
 function renderGrid(){
+  if(window.renderGeoPanel) window.renderGeoPanel();
   const body = document.getElementById('gridBody');
   body.textContent='';
   Array.from(checkedKeys).forEach(k=>{ if(!allStudents[k]) checkedKeys.delete(k); });
@@ -1180,6 +1199,44 @@ window.addEventListener('message', (e)=>{
     if(frame) frame.style.height = Math.max(600, e.data.height+8)+'px';
   }
 });
+</script>
+<script src="geo-board.js"></script>
+<script>
+/* 📐 학생 작도 모아 보기 — 학생 화면(student40)이 저장한 작도(snap)를 같은 작도판(geo-board.js)으로 다시 그린다. 읽기만 한다. */
+(function(){
+  const LA=[120,300], LB=[330,320], LC=[303,94], LG=[Math.round((LA[0]+LB[0]+LC[0])/3), Math.round((LA[1]+LB[1]+LC[1])/3)];
+  const G1T=[[160,70],[70,340],[530,330]];
+  const TABS=[
+    {id:'L', name:'1. 꼭짓점 C 찾기', snap:d=>d.sL&&d.sL.snap, found:d=>!!(d.sL&&d.sL.found), miss:d=>(d.sL&&d.sL.miss)||0, okT:'C 찾음',
+     cfg:()=>({points:[{label:'A',x:LA[0],y:LA[1]},{label:'B',x:LB[0],y:LB[1]},{label:'G',x:LG[0],y:LG[1]}], presetObjects:[{type:'segment',p1:'A',p2:'B'}]})},
+    ...['외심','내심','무게중심'].map((nm,i)=>({id:'S'+i, name:(i+3)+'. '+nm, snap:d=>d.s1&&d.s1.snap&&d.s1.snap[i], found:d=>!!(d.s1&&d.s1.found&&d.s1.found[i]), miss:d=>(d.s1&&d.s1.n&&d.s1.n[i])||0, okT:nm+' 찾음', missT:'시도',
+     cfg:()=>({points:G1T.map((p,j)=>({label:'ABC'[j],x:p[0],y:p[1]})), presetObjects:[{type:'polygon',ids:['A','B','C']}]})}))];
+  let tab='L', timer=0; const cache={};
+  function draw(svg, T, snap){ svg.innerHTML=''; try{ const cv=new GEO.GeoCanvas(svg, T.cfg(), ()=>{}); if(snap) GEO.restoreObjectSnapshot(cv, snap); }catch(e){ svg.outerHTML='<div class="gp-empty">그림을 그리지 못했어요</div>'; } }
+  function render(){
+    const grid=document.getElementById('gpGrid'); if(!grid || typeof GEO==='undefined') return;
+    document.getElementById('gpTabs').innerHTML = TABS.map(t=>`<button type="button" data-gpt="${t.id}" class="${t.id===tab?'on':''}">${t.name}</button>`).join(' ');
+    const T=TABS.find(t=>t.id===tab), all=(typeof allStudents==='object'&&allStudents)||{};
+    const L=Object.keys(all).map(k=>{ const s=all[k]||{}, d=s.data||{}; return {k, no:parseInt(s.number||String(k).split('_')[0],10)||0, name:s.name||'', snap:T.snap(d), f:T.found(d), m:T.miss(d)}; }).filter(x=>x.snap && ((x.snap.objects||[]).length || x.f)).sort((a,b)=>a.no-b.no);
+    document.getElementById('gpCnt').innerHTML = L.length ? `찾음 <b style="color:#2e7d32">${L.filter(x=>x.f).length}</b> · 아직 <b style="color:#e65100">${L.filter(x=>!x.f).length}</b> · 그림을 누르면 크게` : '';
+    if(!L.length){ grid.innerHTML='<div class="gp-empty">아직 이 화면에서 작도한 학생이 없어요.</div>'; return; }
+    const want=L.map(x=>x.k); [...grid.children].forEach(c=>{ if(!c.dataset.k || !want.includes(c.dataset.k)) c.remove(); });
+    L.forEach((x,ix)=>{ let c=grid.querySelector('[data-k="'+CSS.escape(x.k)+'"]');
+      if(!c){ c=document.createElement('div'); c.dataset.k=x.k; c.innerHTML='<div class="gp-t"></div><svg viewBox="0 0 600 400"></svg>'; }
+      if(grid.children[ix]!==c) grid.insertBefore(c, grid.children[ix]||null);
+      c.className='gp-card'+(x.f?' ok':'');
+      c.querySelector('.gp-t').innerHTML=`<b>${x.no}번 ${esc(x.name)}</b> <span class="${x.f?'ok':'no'}">${x.f?'✓ '+T.okT:'아직'}</span>${x.m?` <span class="mi">${T.missT||'틀림'} ${x.m}</span>`:''}`;
+      const sig=tab+'|'+JSON.stringify(x.snap); if(cache[x.k]!==sig){ cache[x.k]=sig; draw(c.querySelector('svg'), T, x.snap); } });
+  }
+  window.renderGeoPanel=()=>{ clearTimeout(timer); timer=setTimeout(render, 500); };
+  document.addEventListener('click', e=>{
+    const b=e.target.closest&&e.target.closest('[data-gpt]'); if(b){ tab=b.dataset.gpt; Object.keys(cache).forEach(k=>delete cache[k]); document.getElementById('gpGrid').innerHTML=''; render(); return; }
+    const c=e.target.closest&&e.target.closest('.gp-card'); if(c){ const T=TABS.find(t=>t.id===tab), s=allStudents[c.dataset.k]||{}, d=s.data||{};
+      document.getElementById('gpBigT').textContent=c.querySelector('.gp-t').textContent+' · '+T.name; draw(document.getElementById('gpBigSvg'), T, T.snap(d)); document.getElementById('gpOver').classList.add('on'); return; }
+    if(e.target.id==='gpClose' || e.target.id==='gpOver') document.getElementById('gpOver').classList.remove('on');
+  });
+  setInterval(()=>{ if(document.getElementById('gpGrid') && !document.getElementById('gpGrid').children.length) render(); }, 3000);
+})();
 </script>
 <script src="trash.js"></script>
 <script src="tdash.js"></script>
