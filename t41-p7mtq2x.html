@@ -20,6 +20,7 @@
   .panel{background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:6px solid var(--blue);}
   .panel.gold{border-left-color:var(--gold);} .panel.talk{border-left-color:var(--talk);}
   .panel h3{margin:0 0 10px;font-size:16px;}
+  .pt-t{border-collapse:collapse;width:100%;font-size:14px;} .pt-t th,.pt-t td{border:1px solid #e3e6ea;padding:5px 8px;text-align:center;} .pt-t th{background:#f6f7fb;font-weight:normal;color:#555;} .pt-t td.nm{text-align:left;} .pt-t td.sum{font-weight:bold;color:#1a237e;} .pt-wrap{overflow-x:auto;}
   .rf-item{border-top:1px solid #eee;padding:8px 0;font-size:14px;line-height:1.55;} .rf-item:first-child{border-top:0;} .rf-item b{color:#1a237e;} .rf-item .q{color:#777;font-size:12.5px;}
   .hint{font-size:12.5px;color:#667;margin-top:6px;}
   button{font-family:inherit;cursor:pointer;}
@@ -94,6 +95,7 @@
     <div class="hint">누르면 버튼이 주황으로 바뀌고, <b>한 번 더</b> 누르면 발표 점수판(망고젤리 점수)에 '모둠 점수'로 기록돼요. 잘못 줬으면 발표 기록 화면의 「이 기록 취소」로 되돌려요.</div></div>
 
   <div class="panel"><h3>👍 반 투표 결과 (실시간)</h3><div id="tallyBox"></div></div>
+  <div class="panel"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">⭐ 학생별 상점 (팽이 대회) <button type="button" class="btn" id="ptXlsx" style="margin-left:auto">📥 엑셀</button></h3><div id="ptBox"></div></div>
   <div class="panel"><h3>✍️ 소감 (<span id="refCnt">0</span>명 냄)</h3><div id="refBox"></div></div>
 </div></div>
 
@@ -229,6 +231,33 @@ function paintTally(){
   $('tallyBox').innerHTML = h;
   $('tallyBox').querySelectorAll('[data-vw]').forEach(b=> b.onclick = ()=> setT('voteWin', +b.dataset.vw));
 }
+/* ⭐ 2026-11-13 선생님 요청: 나중에 상점을 입력할 때 보려고 — 팽이 대회에서 준 상점(발표 점수판 events 중 kind가 top41_)을 학생별로 */
+let ptEvents = {};
+function ptRows(){
+  const cols = GIVES.map(([k])=>k), rows = {};
+  const add = (no, name)=>{ if(!no) return null; return rows[no] || (rows[no] = {no:+no, name:name||'', v:Object.fromEntries(cols.map(c=>[c,0]))}); };
+  (S.roster||[]).forEach(x=> x && add(+x.no||+x.n||0, x.name));
+  studentList().forEach(x=> add(x.no, x.name));
+  Object.values(ptEvents||{}).forEach(e=>{ const k = String(e && e.kind || ''); if(!k.startsWith('top41_')) return; const c = k.slice(6); if(!cols.includes(c)) return;
+    (e.awards||[]).forEach(a=>{ const r = add(+a.no, a.name); if(r){ r.v[c] += +a.points||0; if(!r.name) r.name = a.name||''; } }); });
+  return Object.values(rows).filter(r=> r.no>0).sort((a,b)=> a.no-b.no).map(r=> Object.assign(r, {sum: cols.reduce((t,c)=> t + r.v[c], 0)}));
+}
+const PT_NAME = {r1:'🏅 대회 대표', final:'🏆 결승 우승', design:'🎨 디자인 대표', vote:'👍 투표 1등'};
+function paintPoints(){
+  const L = ptRows(), cols = GIVES.map(([k])=>k);
+  $('ptBox').innerHTML = !L.length ? '<div class="hint">아직 학생 명단이 없어요.</div>' : `<div class="pt-wrap"><table class="pt-t"><thead><tr><th>번호</th><th>이름</th><th>합계</th>${cols.map(c=>`<th>${PT_NAME[c]}</th>`).join('')}</tr></thead><tbody>`
+    + L.map(r=>`<tr><td>${r.no}</td><td class="nm">${esc(r.name)}</td><td class="sum">${r.sum||''}</td>${cols.map(c=>`<td>${r.v[c]||''}</td>`).join('')}</tr>`).join('') + `</tbody></table></div><div class="hint">상점 버튼으로 준 것만 세요. 발표 점수판에서 기록을 지우면 여기서도 빠져요.</div>`;
+}
+const XLSX_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function ensureXLSX(){ if(window.XLSX) return Promise.resolve(); return window.__xlsxP || (window.__xlsxP = new Promise((res, rej)=>{ const sc = document.createElement('script'); sc.src = XLSX_SRC; sc.onload = res; sc.onerror = ()=>{ window.__xlsxP = null; rej(new Error('load')); }; document.head.appendChild(sc); })); }
+document.addEventListener('click', async e=>{ if(!(e.target.closest && e.target.closest('#ptXlsx'))) return;
+  try{ await ensureXLSX(); }catch(err){ $('ptBox').insertAdjacentHTML('beforeend','<div class="hint" style="color:#c62828">엑셀 기능을 불러오지 못했어요. 다시 눌러 주세요.</div>'); return; }
+  const cols = GIVES.map(([k])=>k), L = ptRows();
+  const aoa = [['번호','이름','합계', ...cols.map(c=> PT_NAME[c].replace(/^\S+\s/,''))], ...L.map(r=>[r.no, r.name, r.sum, ...cols.map(c=> r.v[c])])];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), '팽이 상점');
+  const d = new Date(), z = n=> String(n).padStart(2,'0');
+  XLSX.writeFile(wb, `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${room}반_팽이대회_상점.xlsx`);
+});
 /* ✍️ 2026-11-13 학생 소감(결과 발표 뒤, 질문 2개) */
 function paintRef(){
   const L = Object.entries(students||{}).map(([k,v])=>({no: parseInt(String(k).split('_')[0],10)||0, name: String(k).split('_').slice(1).join('_'), r: v && v.reflect})).filter(x=> x.r && (x.r.a||x.r.b)).sort((a,b)=> a.no-b.no);
@@ -236,7 +265,7 @@ function paintRef(){
   $('refBox').innerHTML = !L.length ? `<div class="hint">${control.stage==='result' ? '아직 낸 학생이 없어요.' : '단계를 [결과]로 바꾸면 학생 화면에 소감 쓰기가 열려요.'}</div>`
     : L.map(x=>`<div class="rf-item"><b>${x.no}번 ${esc(x.name)}</b><div><span class="q">① 알게 된 점</span> ${esc(x.r.a||'')}</div><div><span class="q">② 재미·어려움</span> ${esc(x.r.b||'')}</div></div>`).join('');
 }
-function paint(){ paintStages(); paintPhotos(); paintBoard(); paintTally(); paintRef(); }
+function paint(){ paintStages(); paintPhotos(); paintBoard(); paintTally(); paintRef(); paintPoints(); }
 
 /* ---------- 쓰기 ---------- */
 async function setStage(k){
@@ -295,6 +324,7 @@ $('connectBtn').onclick = ()=>{
       on(R.child('photos'), v=>{ photos = v||{}; });
       on(R.child('students'), v=>{ students = v||{}; });
       on(R.child('teacher'), v=>{ T = v||{}; });
+      on(db.ref('rooms/'+sanitize(r)+'__present20/events'), v=>{ ptEvents = v||{}; });
       $('teacherGateScreen').style.display='none'; $('teacherAppScreen').style.display='block';
       $('currentRoomLabel').textContent = r+'반';
       document.querySelectorAll('.unitListLink').forEach(a=> a.href = 'mgmt-9x3k7f2p.html?classNo=' + encodeURIComponent(r));
