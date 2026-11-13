@@ -318,6 +318,12 @@
   .tev-box{margin-top:6px;border:1.5px dashed #1565c0;border-radius:8px;padding:8px;} .tev-box .h{font-size:12px;color:#555;margin-bottom:5px;} .tev-box .got{background:#e3f2fd;border-radius:6px;padding:6px;margin-bottom:6px;font-size:13px;} .tev-box .got.none{background:#fff;color:#999;border:1px dashed #ccc;}
   .tev-box input{width:100%;box-sizing:border-box;border:1.5px solid #1565c0;border-radius:7px;padding:6px;font-size:13px;font-family:inherit;margin-bottom:6px;} .tev-box .bt{display:flex;gap:6px;justify-content:flex-end;} .tev-box .bt button{border-radius:7px;padding:6px 11px;font-size:13px;min-height:34px;cursor:pointer;font-family:inherit;}
   .tev-save{background:#2e7d32;color:#fff;border:none;} .tev-save:disabled{background:#fff;color:#999;border:1.5px dashed #b0b8c4;} .tev-cancel{background:#fff;border:1.5px solid #bdbdbd;color:#555;}
+  #rbOver{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center;padding:16px;} #rbOver.on{display:flex;}
+  #rbBox{background:#fff;border-radius:12px;width:min(980px,100%);max-height:90vh;display:flex;flex-direction:column;border-left:6px solid #f9a825;}
+  #rbBox .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #eee;} #rbBox .hd b{color:#1a237e;font-size:17px;}
+  #rbBox .hd button{border:1.5px solid #1565c0;background:#fff;color:#1565c0;border-radius:8px;padding:7px 12px;font-size:13.5px;min-height:38px;cursor:pointer;font-family:inherit;} #rbBox .hd button.on{background:#1565c0;color:#fff;} #rbBox .hd .x{margin-left:auto;border-color:#bdbdbd;color:#555;}
+  #rbBody{overflow:auto;padding:12px 16px 16px;font-size:14px;line-height:1.6;} #rbBody table{border-collapse:collapse;width:100%;} #rbBody th,#rbBody td{border:1px solid #e3e6ea;padding:6px 8px;vertical-align:top;text-align:left;} #rbBody th{background:#f6f7fb;font-weight:normal;color:#555;}
+  #rbBody td.it{white-space:nowrap;font-weight:bold;color:#1a237e;} #rbBody .x{color:#c62828;} #rbBody .o{color:#2e7d32;} #rbBody pre{white-space:pre-wrap;font-family:inherit;margin:0;font-size:13.5px;}
   .cl-tag{display:block;margin-top:3px;font-size:11.5px;color:#7b1fa2;background:#f3e5f5;border-radius:6px;padding:2px 6px;}
   .rg-cnt{display:inline-block;margin-left:8px;background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:8px;font-size:12px;font-weight:700;padding:2px 8px;}
 </style>
@@ -451,6 +457,7 @@
           <button class="gr-ai" id="fbShowBtn" style="background:#1565c0;" title="피드백이 없는 학생은 먼저 AI 채점·피드백을 받은 뒤, 잘된 점·보완할 점(점수 제외)을 학생 화면에 보여 줘요">👀 학생에게 피드백 공개</button>
           <span id="gradeBulkStatus" style="font-size:12.5px;color:#00695c;"></span>
           <span style="flex:1"></span>
+          <button class="mini" id="rubricBtn" title="2부 채점 기준표 — 요약 / 자세히">📋 채점 기준표</button>
           <button class="mini" id="memoListBtn" title="선생님이 ○✕를 바꾼 칸과 메모를 반 전체로 모아 봐요">📝 고친 칸 목록 <b>0</b></button>
           <button class="mini" id="exportExcelBtn">📥 엑셀</button>
           <button class="mini" id="printBtn" title="체크한 학생이 있으면 그 학생만, 없으면 글을 쓴 학생 전체를 1명당 1쪽으로 인쇄">🖨 인쇄</button>
@@ -889,6 +896,42 @@ async function toggleOX(key, k, i){   // 2026-10-29: 이름이 학생 선택 체
   try{ await job; }catch(err){ if(prevC===undefined) delete s.teacherChecks[k]; else s.teacherChecks[k] = prevC; if(prevG===undefined) delete s.teacherGrade[k]; else s.teacherGrade[k] = prevG; refreshAI(); renderGrid(); throw err; }
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-ck]'); if(!b) return; e.preventDefault(); e.stopPropagation();   /* 2026-10-29: 캡처 단계에서 받아 학생 카드 클릭(보고서 창 열기)으로 번지지 않게 */ toggleOX(b.dataset.ck, b.dataset.ckc, +b.dataset.cki).catch(err=> alert('저장하지 못했어요: '+(err.message||err))); }, true);
+/* 📋 2026-11-13 선생님 요청: 채점 기준표를 교사 화면에서 — 요약(아래 표, 사람이 정리) / 자세히(AI 채점에 실제 쓰는 기준 글, /api/report-rubric) */
+const RB_SUM = [
+ ['1. 탐구 질문 (3점)', [
+  ['1-(1) 탐구 질문을 썼다','제목·서론에 질문이 드러나면 ○'],
+  ['1-(2) 확률을 구하는 질문이다','확률·비율·가능성을 묻는 질문이면 ○'],
+  ['1-(3) 예측형·비교선택형 질문이다','"~할 확률은 얼마일까?" 또는 "A와 B 중 어느 쪽이 높을까?" 꼴이면 ○']]],
+ ['2. 자료 수집 (3점)', [
+  ['2-(1) 자료 1이 질문에 맞다','인정되는 출처(기사·기록 사이트·포털·백과)가 이름·링크·첨부와 함께 있고 질문과 같은 주제면 ○ · 블로그·카페·AI 답변은 인정 안 함'],
+  ['2-(2) 자료 2가 질문에 맞고 자료 1을 되풀이하지 않는다','<span class="x">✕</span> 같은 사이트의 같은 기록을 또 올림'],
+  ['2-(3) 계산에 필요한 수치를 모두 얻을 수 있다','질문에 답하는 계산에 쓴 수가 올린 자료에서 왔는지만 봄 · 자료 이름이 수치 내용과 맞으면 ○ · 낱말이 조금 달라도(타수/타석) ○ · <span class="x">✕</span> 계산이 없는 본론']]],
+ ['3. 자료 분석 (4점)', [
+  ['3-(1) 자료 1의 수치를 본론에 활용했다','자료 1에서 온 수치·사실이 본론에 하나라도 있으면 ○'],
+  ['3-(2) 자료 2의 수치를 본론에 활용했다','자료 2에서 온 수치·사실이 본론에 하나라도 있으면 ○'],
+  ['3-(3) 분자·분모를 올바르게 정했다','<span class="x">✕</span> %만 옮겨 적음 · 학생 어림·가정 값을 넣음 · 분모가 경우의 수가 아님 · 고른 수가 글·자료 설명의 수와 안 맞음 · 분자가 분모 밖 · 서론에서 정한 전체를 다 안 넣음<br><span class="o">○</span> 작은 범위 차이 · 1/10 꼴 · 확률을 곱함 · 옮겨 적기 실수·거꾸로 쓴 분수(3-(4)에서 봄)'],
+  ['3-(4) 분수·소수·백분율로 올바르게 계산했다','중간 계산까지 모두 확인 · <span class="x">✕</span> 계산 실수 · 말로 거꾸로 쓴 나눗셈 · %와 소수를 섞음 · <span class="o">○</span> 마지막 자리 1 차이(반올림·버림)']]],
+ ['4. 글의 논리 (5점)', [
+  ['4-(1)~(3) 서론 150·본론 500·결론 150자','프로그램이 글자 수를 셈'],
+  ['4-(4) 확률값의 뜻을 알맞게 해석했다','<span class="x">✕</span> "예상과 같다"만 씀 · 건수 비·몇 배만 비교 · 값을 다시 쓰기만 함 · <span class="o">○</span> 조심스러운 표현 · 잘못 계산한 값을 바르게 해석'],
+  ['4-(5) 결론에 탐구 질문의 답이 있다','질문에 대한 답(어느 쪽·얼마)이 결론에 있으면 ○']]]];
+let rbTab = 'sum', rbFull = null;
+function paintRubric(){
+  document.querySelectorAll('#rbBox [data-rbt]').forEach(b=> b.classList.toggle('on', b.dataset.rbt===rbTab));
+  const body = document.getElementById('rbBody');
+  if(rbTab==='sum'){ body.innerHTML = `<div style="color:#666;font-size:13px;margin-bottom:8px;">공통: 2·3·4번은 ✕ 줄에 <b>분명히</b> 해당할 때만 ✕, 애매하면 ○ (11/11 세 선생님 협의). 총 15점.</div><table><tr><th style="width:30%">항목</th><th>판정 요점</th></tr>`
+      + RB_SUM.map(([h, rows])=> `<tr><td colspan="2" style="background:#fffde7;font-weight:bold;">${h}</td></tr>` + rows.map(([a,b])=>`<tr><td class="it">${a}</td><td>${b}</td></tr>`).join('')).join('') + '</table>'; return; }
+  if(rbFull){ body.innerHTML = `<div style="color:#666;font-size:13px;margin-bottom:8px;">AI 채점에 실제로 쓰는 기준 글 그대로예요(날짜는 정한 날).</div><pre>${esc(rbFull)}</pre>`; return; }
+  body.innerHTML = '⏳ 불러오는 중…';
+  fetch('/api/report-rubric').then(r=>r.json()).then(j=>{ rbFull = String(j.text||''); if(rbTab==='full') paintRubric(); }).catch(()=>{ body.innerHTML = '불러오지 못했어요. 다시 눌러 주세요.'; });
+}
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('#rubricBtn')){ let o = document.getElementById('rbOver');
+    if(!o){ o = document.createElement('div'); o.id = 'rbOver'; o.innerHTML = '<div id="rbBox"><div class="hd"><b>📋 2부 채점 기준표</b><button type="button" data-rbt="sum">요약</button><button type="button" data-rbt="full">자세히</button><button type="button" class="x" data-rbx="1">✕ 닫기</button></div><div id="rbBody"></div></div>'; document.body.appendChild(o); }
+    o.classList.add('on'); paintRubric(); return; }
+  const t = e.target.closest && e.target.closest('[data-rbt]'); if(t){ rbTab = t.dataset.rbt; paintRubric(); return; }
+  if((e.target.closest && e.target.closest('[data-rbx]')) || e.target.id==='rbOver'){ const o = document.getElementById('rbOver'); if(o) o.classList.remove('on'); }
+});
 /* ✏️ 2026-11-13 선생님 요청: 근거 문장·이유를 선생님이 직접 고른다 → students/{key}/teacherEv/{항목_번호} = {q, why, ts}
    [✎ 근거 직접 고르기] → 왼쪽 글에서 드래그 → 이유 → 저장. AI 근거보다 먼저 보이고, AI가 근거를 다시 만들어도 남는다. 학생에게는 안 보인다. */
 let evPick = null;   // {id, q, why}
