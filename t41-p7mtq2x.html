@@ -240,12 +240,12 @@ function ptRows(){
   studentList().forEach(x=> add(x.no, x.name));
   Object.values(ptEvents||{}).forEach(e=>{ const k = String(e && e.kind || ''); if(!k.startsWith('top41_')) return; const c = k.slice(6); if(!cols.includes(c)) return;
     (e.awards||[]).forEach(a=>{ const r = add(+a.no, a.name); if(r){ r.v[c] += +a.points||0; if(!r.name) r.name = a.name||''; } }); });
-  return Object.values(rows).filter(r=> r.no>0).sort((a,b)=> a.no-b.no).map(r=> Object.assign(r, {sum: cols.reduce((t,c)=> t + r.v[c], 0)}));
+  return Object.values(rows).filter(r=> r.no>0).map(r=> Object.assign(r, {sum: cols.reduce((t,c)=> t + r.v[c], 0)})).filter(r=> r.sum>0).sort((a,b)=> b.sum-a.sum || a.no-b.no);   // 2026-11-13 상점 받을 학생만, 점수 높은 순
 }
 const PT_NAME = {r1:'🏅 대회 대표', final:'🏆 결승 우승', design:'🎨 디자인 대표', vote:'👍 투표 1등'};
 function paintPoints(){
   const L = ptRows(), cols = GIVES.map(([k])=>k);
-  $('ptBox').innerHTML = !L.length ? '<div class="hint">아직 학생 명단이 없어요.</div>' : `<div class="pt-wrap"><table class="pt-t"><thead><tr><th>번호</th><th>이름</th><th>합계</th>${cols.map(c=>`<th>${PT_NAME[c]}</th>`).join('')}</tr></thead><tbody>`
+  $('ptBox').innerHTML = !L.length ? '<div class="hint">아직 상점 버튼으로 준 상점이 없어요.</div>' : `<div class="pt-wrap"><table class="pt-t"><thead><tr><th>번호</th><th>이름</th><th>합계</th>${cols.map(c=>`<th>${PT_NAME[c]}</th>`).join('')}</tr></thead><tbody>`
     + L.map(r=>`<tr><td>${r.no}</td><td class="nm">${esc(r.name)}</td><td class="sum">${r.sum||''}</td>${cols.map(c=>`<td>${r.v[c]||''}</td>`).join('')}</tr>`).join('') + `</tbody></table></div><div class="hint">상점 버튼으로 준 것만 세요. 발표 점수판에서 기록을 지우면 여기서도 빠져요.</div>`;
 }
 const XLSX_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
