@@ -848,7 +848,7 @@ const CK_KEYS = ['question','data','analysis','logic'];
 async function requestEvidence(key, roomKey){
   const rk = roomKey || currentRoomKey, s = allStudents[key]; if(!s || !s.aiGrade || !hasReport(s)) return false;
   const checks = {}; CK_KEYS.forEach(k=> checks[k] = checksOf(s, k) || '');
-  const r = await fetch('/api/report-evidence', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({ checks }, repOf(s))) });
+  const r = await fetch('/api/report-evidence', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({ checks, why: (s.aiGrade && s.aiGrade.xw) || null }, repOf(s))) });   // 2026-11-13 ✕ 이유를 함께 보내 근거 문장을 이유에 맞게
   const j = await r.json().catch(()=>({})); if(!r.ok || !j.ev) throw new Error(j.error || ('HTTP '+r.status));
   const ev = Object.assign({}, j.ev, { ck: checks, ts: Date.now() });
   await db.ref('rooms/'+rk+'/students/'+key+'/aiGrade/ev').set(ev);
