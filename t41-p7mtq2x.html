@@ -94,7 +94,7 @@
     <div class="row" style="margin-top:10px;" id="giveRow"></div>
     <div class="hint">누르면 버튼이 주황으로 바뀌고, <b>한 번 더</b> 누르면 발표 점수판(망고젤리 점수)에 '모둠 점수'로 기록돼요. 잘못 줬으면 발표 기록 화면의 「이 기록 취소」로 되돌려요.</div></div>
 
-  <div class="panel"><h3>👍 반 투표 결과 (실시간)</h3><div id="tallyBox"></div></div>
+  <div class="panel"><h3>👍 반 투표 결과 (실시간)</h3><div id="voteLine2" style="font-size:15px;margin-bottom:8px;"></div><div id="tallyBox"></div></div>
   <div class="panel"><h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">⭐ 학생별 상점 (팽이 대회) <button type="button" class="btn" id="ptXlsx" style="margin-left:auto">📥 엑셀</button></h3><div id="ptBox"></div></div>
   <div class="panel"><h3>✍️ 소감 (<span id="refCnt">0</span>명 냄)</h3><div id="refBox"></div></div>
 </div></div>
@@ -226,7 +226,7 @@ function paintTally(){
     const voted = new Set(Object.entries(students).filter(([k,v])=> v && Array.isArray(v.votes) && v.votes.length).map(([k])=> +String(k).split('_')[0]));
     let all = (S.roster||[]).map(x=> +x.no).filter(Boolean); if(!all.length) all = studentList().map(x=> x.no);
     all = [...new Set(all)].sort((a,b)=>a-b); const not = all.filter(n=> !voted.has(n));
-    $('voteLine').innerHTML = `· 투표 <b id="votedCnt" style="color:#2e7d32;font-size:18px;">${voted.size}</b> / 전체 <b style="font-size:18px;">${all.length}</b>명` + (not.length && voted.size ? ` · <span style="color:#e65100;font-weight:bold;">아직 안 함: ${not.map(n=>n+'번').join(', ')}</span>` : (all.length && !not.length ? ' · <span style="color:#2e7d32;font-weight:bold;">✅ 모두 투표</span>' : ''));
+    $('voteLine').innerHTML = $('voteLine2').innerHTML = `· 투표 <b style="color:#2e7d32;font-size:18px;">${voted.size}</b> / 전체 <b style="font-size:18px;">${all.length}</b>명` + (not.length && voted.size ? ` · <span style="color:#e65100;font-weight:bold;">아직 안 함: ${not.map(n=>n+'번').join(', ')}</span>` : (all.length && !not.length ? ' · <span style="color:#2e7d32;font-weight:bold;">✅ 모두 투표</span>' : ''));
   }
   const gs = GROUPS.filter(g=> photos[g]&&photos[g].img);
   if(!gs.length){ $('tallyBox').innerHTML = '<div class="hint">사진을 올리고 반 투표를 열면 여기에 표 수가 보여요.</div>'; return; }
