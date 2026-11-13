@@ -75,7 +75,7 @@
 
 <div id="teacherAppScreen"><div class="wrap">
   <div class="row" style="justify-content:space-between;margin-bottom:10px;">
-    <div><b id="currentRoomLabel">-</b> <span class="hint">· 투표한 학생 <b id="votedCnt">0</b>명</span></div>
+    <div><b id="currentRoomLabel">-</b> <span id="voteLine" style="font-size:15px;">· 투표 <b id="votedCnt">0</b>명</span></div>
     <div class="row"><a class="unitListLink btn" style="display:inline-flex;align-items:center;text-decoration:none;" href="mgmt-9x3k7f2p.html">📋 단원 목록</a><button class="btn" id="changeRoomBtn" type="button">반 바꾸기</button></div>
   </div>
   <div id="msg"></div>
@@ -221,7 +221,13 @@ function paintGive(){
   $('giveRow').querySelectorAll('[data-give]').forEach(b=> b.onclick = ()=> give(b.dataset.give));
 }
 function paintTally(){
-  const {t, voters} = tally(); $('votedCnt').textContent = voters;
+  const {t, voters} = tally();
+  { // 2026-11-13 선생님 요청: 전체 몇 명 중 몇 명이 투표했는지 + 아직 안 한 번호
+    const voted = new Set(Object.entries(students).filter(([k,v])=> v && Array.isArray(v.votes) && v.votes.length).map(([k])=> +String(k).split('_')[0]));
+    let all = (S.roster||[]).map(x=> +x.no).filter(Boolean); if(!all.length) all = studentList().map(x=> x.no);
+    all = [...new Set(all)].sort((a,b)=>a-b); const not = all.filter(n=> !voted.has(n));
+    $('voteLine').innerHTML = `· 투표 <b id="votedCnt" style="color:#2e7d32;font-size:18px;">${voted.size}</b> / 전체 <b style="font-size:18px;">${all.length}</b>명` + (not.length && voted.size ? ` · <span style="color:#e65100;font-weight:bold;">아직 안 함: ${not.map(n=>n+'번').join(', ')}</span>` : (all.length && !not.length ? ' · <span style="color:#2e7d32;font-weight:bold;">✅ 모두 투표</span>' : ''));
+  }
   const gs = GROUPS.filter(g=> photos[g]&&photos[g].img);
   if(!gs.length){ $('tallyBox').innerHTML = '<div class="hint">사진을 올리고 반 투표를 열면 여기에 표 수가 보여요.</div>'; return; }
   const max = Math.max(1, ...gs.map(g=>t[g])), {top, ties} = voteTop();
