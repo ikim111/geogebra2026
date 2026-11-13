@@ -48,6 +48,11 @@
   .zoom{position:absolute;top:6px;right:6px;border:0;background:rgba(0,0,0,.45);color:#fff;border-radius:8px;min-width:44px;min-height:44px;font-size:18px;cursor:pointer;}
   .okrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
   .okbtn{min-height:44px;padding:0 22px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;}
+  .rf-q{font-weight:bold;margin:12px 0 6px;font-size:15px;} .rf-q small{font-weight:normal;color:#777;}
+  .rf-ta{width:100%;box-sizing:border-box;min-height:70px;border:1.5px solid #c5cae9;border-radius:10px;padding:10px;font-size:15px;font-family:inherit;resize:vertical;}
+  .rf-ta:focus{outline:none;border-color:#1565c0;} .rf-cnt{font-size:12.5px;color:#888;text-align:right;margin-top:2px;} .rf-cnt.ok{color:#2e7d32;}
+  .rf-foot{display:flex;align-items:center;gap:10px;margin-top:12px;} .rf-foot .rf-msg{flex:1;font-size:13.5px;color:#666;}
+  .rf-lock{border:2px dashed #b0b8c4;border-radius:10px;padding:12px;color:#777;font-size:14.5px;}
   .okbtn:disabled{background:#fff;color:#999;border:2px dashed #b0b8c4;cursor:not-allowed;}
   .why{font-size:13px;color:#777;}
   .lock{border:2px dashed #b0b8c4;border-radius:10px;padding:12px;color:#777;font-size:14px;}
@@ -79,6 +84,7 @@
     <div class="me" id="meLine"></div>
     <div class="card" id="howCard"></div>
     <div class="card" id="voteCard"></div>
+    <div class="card" id="refCard"></div>
   </div>
 </div>
 <div id="zoomBox"><img alt="팽이 사진 크게 보기"><button type="button" aria-label="닫기">✕</button></div>
@@ -111,7 +117,7 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sanitize = s => (s||'').trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x';
 
-let st = { stage:null, photos:{}, myGroup:null, autoGroup:false, picks:[], saved:null, tally:null, busy:false, msg:'' };
+let st = { ref:{a:'',b:''}, refSaved:null, refMsg:'', stage:null, photos:{}, myGroup:null, autoGroup:false, picks:[], saved:null, tally:null, busy:false, msg:'' };
 let meRef = null, profile = null;
 
 /* ---------- 만드는 순서 그림 ---------- */
@@ -186,7 +192,35 @@ function paintMe(){
   $('meLine').innerHTML = `${esc(p.classNo||'')}반 ${esc(p.number||'')}번 · 우리 조: <b>${st.myGroup?st.myGroup+'조':'?'}</b>${st.myGroup&&!st.autoGroup?' <button type="button" id="chgG" style="border:0;background:none;color:#1565c0;font:inherit;font-size:13px;cursor:pointer;min-height:44px;">바꾸기</button>':''}${st.stage?` · 지금: <span class="stage">${STAGES[st.stage]||''}</span>`:''}`;
   const c = $('chgG'); if(c) c.onclick = ()=>{ st.myGroup = null; paintAll(); };
 }
-function paintAll(){ paintMe(); paintVote(); }
+/* ✍️ 2026-11-13 선생님 요청: 결과 발표 뒤 소감 쓰기(질문 2개, 각 20자 이상, AI 없음) → students/{번호_이름}/reflect {a,b,ts} */
+const RF_MIN = 20, RF_Q = [
+  {k:'a', q:'① 팽이를 만들고 대회를 하면서 무게중심에 대해 알게 된 점은?', ph:'예) 무게중심에 심을 꽂으니 …'},
+  {k:'b', q:'② 재미있었던 점이나 어려웠던 점은?', ph:'예) 우리 조 팽이가 … 해서 …'}];
+function paintRef(){
+  const box = $('refCard'); if(!box) return;
+  let h = `<h2>✍️ 소감 쓰기 ${st.stage==='result'?'<span class="stage">지금 쓰기</span>':''}</h2>`;
+  if(st.stage!=='result'){ box.innerHTML = h + '<div class="rf-lock">👉 결과 발표가 끝나면 열려요.</div>'; return; }
+  const done = st.refSaved && st.refSaved.a===st.ref.a.trim() && st.refSaved.b===st.ref.b.trim();
+  const ok = RF_Q.every(x=> st.ref[x.k].trim().length >= RF_MIN);
+  h += RF_Q.map(x=>{ const n = st.ref[x.k].trim().length; return `<div class="rf-q">${x.q} <small>(${RF_MIN}자 이상)</small></div><textarea class="rf-ta" data-rf="${x.k}" maxlength="400" placeholder="${esc(x.ph)}">${esc(st.ref[x.k])}</textarea><div class="rf-cnt${n>=RF_MIN?' ok':''}" data-rfc="${x.k}">${n}자</div>`; }).join('');
+  h += `<div class="rf-foot"><span class="rf-msg">${esc(st.refMsg || (done ? '✅ 냈어요. 고치면 다시 확인하기를 눌러 주세요.' : (ok ? '' : `👉 두 칸 모두 ${RF_MIN}자 이상 쓰면 낼 수 있어요.`)))}</span><button type="button" class="okbtn" id="rfOk" ${ok && !done && !st.busy ? '' : 'disabled'}>확인하기</button></div>`;
+  box.innerHTML = h;
+  box.querySelectorAll('.rf-ta').forEach(t=> t.addEventListener('input', ()=>{ st.ref[t.dataset.rf] = t.value; st.refMsg='';
+    const n = t.value.trim().length, c = box.querySelector('[data-rfc="'+t.dataset.rf+'"]'); c.textContent = n+'자'; c.classList.toggle('ok', n>=RF_MIN);
+    const ok2 = RF_Q.every(x=> st.ref[x.k].trim().length >= RF_MIN), d2 = st.refSaved && st.refSaved.a===st.ref.a.trim() && st.refSaved.b===st.ref.b.trim();
+    $('rfOk').disabled = !ok2 || d2; box.querySelector('.rf-msg').textContent = d2 ? '✅ 냈어요. 고치면 다시 확인하기를 눌러 주세요.' : (ok2 ? '' : `👉 두 칸 모두 ${RF_MIN}자 이상 쓰면 낼 수 있어요.`); }));
+  $('rfOk').onclick = submitRef;
+}
+async function submitRef(){
+  const v = { a: st.ref.a.trim().slice(0,400), b: st.ref.b.trim().slice(0,400) };
+  if(v.a.length < RF_MIN || v.b.length < RF_MIN) return;
+  if(PREVIEW_MODE){ st.refSaved = v; st.refMsg = '미리보기라 저장은 안 돼요'; paintRef(); return; }
+  st.busy = true; paintRef();
+  try{ await meRef.update({ reflect: Object.assign({}, v, { ts: firebase.database.ServerValue.TIMESTAMP }) }); st.refSaved = v; st.refMsg = ''; }
+  catch(e){ st.refMsg = '저장하지 못했어요. 다시 눌러 주세요.'; }
+  st.busy = false; paintRef();
+}
+function paintAll(){ paintMe(); paintVote(); paintRef(); }
 
 async function setMyGroup(g){
   st.myGroup = g; st.picks = st.picks.filter(x=> x!==g);
@@ -237,6 +271,7 @@ if(PREVIEW_MODE){
         const sg = t && seats && seats[t.m] && +seats[t.m].g;
         if(sg){ st.myGroup = sg; st.autoGroup = true; }
         else if(mine && mine.myGroup){ st.myGroup = +mine.myGroup; }
+        if(mine && mine.reflect){ st.ref = { a: String(mine.reflect.a||''), b: String(mine.reflect.b||'') }; st.refSaved = { a: st.ref.a, b: st.ref.b }; }
         if(mine && Array.isArray(mine.votes)){ st.saved = mine.votes.map(Number); st.picks = [...st.saved]; }
         if(sg && (!mine || +mine.myGroup!==sg)) meRef.update({ myGroup:sg, myGroupBy:'seat' }).catch(()=>{});
         showApp();

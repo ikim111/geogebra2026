@@ -20,6 +20,7 @@
   .panel{background:#fff;border-radius:10px;padding:12px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:6px solid var(--blue);}
   .panel.gold{border-left-color:var(--gold);} .panel.talk{border-left-color:var(--talk);}
   .panel h3{margin:0 0 10px;font-size:16px;}
+  .rf-item{border-top:1px solid #eee;padding:8px 0;font-size:14px;line-height:1.55;} .rf-item:first-child{border-top:0;} .rf-item b{color:#1a237e;} .rf-item .q{color:#777;font-size:12.5px;}
   .hint{font-size:12.5px;color:#667;margin-top:6px;}
   button{font-family:inherit;cursor:pointer;}
   .btn{min-height:44px;padding:0 14px;border:2px solid var(--blue);border-radius:10px;background:#fff;color:var(--blue);font-size:14px;font-weight:bold;}
@@ -93,6 +94,7 @@
     <div class="hint">누르면 버튼이 주황으로 바뀌고, <b>한 번 더</b> 누르면 발표 점수판(망고젤리 점수)에 '모둠 점수'로 기록돼요. 잘못 줬으면 발표 기록 화면의 「이 기록 취소」로 되돌려요.</div></div>
 
   <div class="panel"><h3>👍 반 투표 결과 (실시간)</h3><div id="tallyBox"></div></div>
+  <div class="panel"><h3>✍️ 소감 (<span id="refCnt">0</span>명 냄)</h3><div id="refBox"></div></div>
 </div></div>
 
 <script>
@@ -227,7 +229,14 @@ function paintTally(){
   $('tallyBox').innerHTML = h;
   $('tallyBox').querySelectorAll('[data-vw]').forEach(b=> b.onclick = ()=> setT('voteWin', +b.dataset.vw));
 }
-function paint(){ paintStages(); paintPhotos(); paintBoard(); paintTally(); }
+/* ✍️ 2026-11-13 학생 소감(결과 발표 뒤, 질문 2개) */
+function paintRef(){
+  const L = Object.entries(students||{}).map(([k,v])=>({no: parseInt(String(k).split('_')[0],10)||0, name: String(k).split('_').slice(1).join('_'), r: v && v.reflect})).filter(x=> x.r && (x.r.a||x.r.b)).sort((a,b)=> a.no-b.no);
+  $('refCnt').textContent = L.length;
+  $('refBox').innerHTML = !L.length ? `<div class="hint">${control.stage==='result' ? '아직 낸 학생이 없어요.' : '단계를 [결과]로 바꾸면 학생 화면에 소감 쓰기가 열려요.'}</div>`
+    : L.map(x=>`<div class="rf-item"><b>${x.no}번 ${esc(x.name)}</b><div><span class="q">① 알게 된 점</span> ${esc(x.r.a||'')}</div><div><span class="q">② 재미·어려움</span> ${esc(x.r.b||'')}</div></div>`).join('');
+}
+function paint(){ paintStages(); paintPhotos(); paintBoard(); paintTally(); paintRef(); }
 
 /* ---------- 쓰기 ---------- */
 async function setStage(k){
