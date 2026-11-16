@@ -30,6 +30,8 @@
   .item{border-top:1px solid #eceef3;padding:10px 0 6px;}
   .item h4{margin:0 0 4px;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
   .ck{display:flex;gap:6px;margin:3px 0;font-size:14px;}
+  .why{margin:0 0 6px 24px;padding:4px 10px;border-left:3px solid var(--red);font-size:13.5px;line-height:1.5;}
+  .why .wq{color:#555;word-break:break-all;} .why .ww{color:#222;}
   .ck .o{color:var(--green);font-weight:bold;flex:none;width:18px;} .ck .x{color:var(--red);font-weight:bold;flex:none;width:18px;}
   .ai-line{border-left:5px solid var(--ai);}
   .row{display:flex;gap:8px;margin:7px 0;}
@@ -64,8 +66,9 @@
 /* ============================================================
    26. 확률 탐구 글쓰기 ③ 점수 확인하기 (2026-11-02 선생님 요청, 시안 승인)
    2부(__prob33)의 내 기록을 읽기만 한다 — 아무것도 저장하지 않는다.
-   - 점수: 항목마다 선생님이 고친 점수(teacherGrade)가 있으면 그것, 없으면 AI 점수(aiGrade.scores). AI 채점 이유 문장은 보여 주지 않는다.
+   - 점수: 항목마다 선생님이 고친 점수(teacherGrade)가 있으면 그것, 없으면 AI 점수(aiGrade.scores). (✕ 이유는 2026-11-16부터 보여 줌)
    - ○✕: teacherChecks가 있으면 그것, 없으면 AI ○✕ (tpa3의 aiChecksOf와 같게: 자료 0점이면 모두 ✕).
+   - ✕ 칸 아래 틀린 이유: whyHTML(2026-11-16).
    - 보고서 피드백: aiReview(tpa3의 📝 보고서 피드백). 없으면 상자를 숨긴다.
    단원 열기는 교사 목차에서(rooms/{반}__access/units/26).
    ============================================================ */
@@ -102,6 +105,20 @@ function checksOf(s, k){
   if(k==='data' && ai.scores && ai.scores.data===0) return 'XXX';
   return c;
 }
+/* ✕ 칸 아래 틀린 이유(2026-11-16 선생님 요청, 시안 승인): 선생님이 고른 근거(teacherEv)가 먼저,
+   없으면 AI 근거 — AI도 ✕로 본 칸만(선생님이 ○→✕로 바꾼 칸에 AI 이유를 붙이지 않음). 선생님 메모(teacherMemo)는 보여 주지 않는다. */
+const countChars = t => Array.from(String(t == null ? '' : t).split(/\r?\n/).map(l => l.replace(/[\s\u3000]+/g, ' ').trim()).join('')).length;   // tpa3·studentpa3과 같은 방식
+function whyHTML(s, k, j, ck){
+  if(ck[j] !== 'X') return '';
+  if(k==='logic' && j<3){ const d = s.data || {}; const n = countChars([d.intro, d.body, d.concl][j]); return `<div class="why"><div class="ww">👉 지금 ${n.toLocaleString()}자예요.</div></div>`; }
+  const te = s.teacherEv && s.teacherEv[k+'_'+j], ai = s.aiGrade || {}, a = aiCk(s, k), aiX = a[j] === 'X';
+  let q = te && te.q ? te.q : '', w = te && te.why ? te.why : '';
+  if(!q && aiX){ const ev = ai.ev; q = (ev && ev[k] && ev.ck && ev.ck[k] && ev.ck[k][j] === 'X' && ev[k][j]) || (ai.xq && ai.xq[k] && ai.xq[k][j]) || ''; }
+  if(!w && aiX) w = (ai.xw && ai.xw[k] && ai.xw[k][j]) || '';
+  if(!q && !w) return '';
+  return `<div class="why">${q?`<div class="wq">“${esc(q)}”</div>`:''}${w?`<div class="ww">👉 ${esc(w)}</div>`:''}</div>`;
+}
+function aiCk(s, k){ const ai = s.aiGrade, c = ai ? String(ai[CHECK_KEY[k]]||'') : ''; if(c.length !== CHECK_LABELS[k].length) return ''; return (k==='data' && ai.scores && ai.scores.data===0) ? 'XXX' : c; }
 function paintScore(s){
   const tg = s.teacherGrade || {}, ai = (s.aiGrade && s.aiGrade.scores) || {};
   const items = CRITERIA.map(c=>({ ...c, v: isNum(tg[c.k]) ? tg[c.k] : (isNum(ai[c.k]) ? ai[c.k] : null) }));
@@ -111,7 +128,7 @@ function paintScore(s){
   items.forEach((it,i)=>{
     const ck = checksOf(s, it.k);
     h += `<div class="item"><h4><span>${i+1}. ${it.name}</span><span>${it.v==null?'-':it.v} / ${it.max}점</span></h4>`
-      + (ck ? CHECK_LABELS[it.k].map((t,j)=>`<div class="ck"><span class="${ck[j]==='O'?'o':'x'}">${ck[j]==='O'?'○':'✕'}</span><span>${esc(t)}</span></div>`).join('') : '')
+      + (ck ? CHECK_LABELS[it.k].map((t,j)=>`<div class="ck"><span class="${ck[j]==='O'?'o':'x'}">${ck[j]==='O'?'○':'✕'}</span><span>${esc(t)}</span></div>` + whyHTML(s, it.k, j, ck)).join('') : '')
       + '</div>';
   });
   $('scoreCard').innerHTML = h;
@@ -155,7 +172,7 @@ if(PREVIEW_MODE){
   $('previewBanner').style.display = 'block';
   showApp({
     data:{ title:'(예시) 2027년 기아와 삼성 중 누가 더 자주 이길까?', intro:'(예시) 학생이 쓴 서론이 여기에 보여요.', body:'(예시) 본론', concl:'(예시) 결론', sources:[{name:'KBO 기록실'}] },
-    aiGrade:{ scores:{question:3,data:2,analysis:3,logic:4}, qchecks:'OOO', dchecks:'OXO', achecks:'OOOX', lchecks:'OOOXO' },
+    aiGrade:{ scores:{question:3,data:2,analysis:3,logic:4}, qchecks:'OOO', dchecks:'OXO', achecks:'OOOX', lchecks:'OOOXO', xq:{data:['','(예시) 자료 2: 나무위키',''], analysis:['','','','(예시) 7 ÷ 16 = 0.4'], logic:['','','','(예시) 그래서 확률은 0.44이다.','']}, xw:{data:['','(예시) 누구나 고칠 수 있는 곳이라 믿을 수 있는 자료로 보지 않아요.',''], analysis:['','','','(예시) 7 ÷ 16은 0.4375예요.'], logic:['','','','(예시) 0.44가 무슨 뜻인지 풀어 쓰지 않았어요.','']} },
     aiReview:{ goal:'2027년 기아와 삼성 중 누가 더 자주 이길까요?', good:'(예시) 삼성이 2026년에만 잘한 것인지 보려고 2025년 기록도 비교했어요.', fixes:[{text:'(예시) 다른 팀과 한 경기 기록만으로는 맞대결 결과를 알 수 없어요.', how:'두 팀이 서로 맞붙은 경기의 승·무·패를 찾아 비교해 보세요.'}], next:'(예시) 맞대결 기록을 비교하면 무엇이 달라질까요?' }
   });
 } else {
