@@ -30,6 +30,7 @@
   .item{border-top:1px solid #eceef3;padding:10px 0 6px;}
   .item h4{margin:0 0 4px;font-size:15px;display:flex;justify-content:space-between;gap:8px;}
   .ck{display:flex;gap:6px;margin:3px 0;font-size:14px;}
+  .ask{margin-top:4px;font-size:13.5px;color:#e65100;}
   .why{margin:0 0 6px 24px;padding:4px 10px;border-left:3px solid var(--red);font-size:13.5px;line-height:1.5;}
   .why .wq{color:#555;word-break:break-all;} .why .ww{color:#222;}
   .ck .o{color:var(--green);font-weight:bold;flex:none;width:18px;} .ck .x{color:var(--red);font-weight:bold;flex:none;width:18px;}
@@ -84,13 +85,13 @@ const FIREBASE_CONFIG = {
 };
 const REPORT_SUFFIX = '__prob33';   // 2부 보고서 기록(studentpa3·tpa3와 같음)
 const UNIT_NO = 26;
-const CRITERIA = [ {k:'question', name:'탐구 질문', max:3}, {k:'data', name:'자료 수집', max:3}, {k:'analysis', name:'자료 분석', max:4}, {k:'logic', name:'글의 논리', max:5} ];
+const CRITERIA = [ {k:'question', name:'적절한 탐구 질문 형성', max:3}, {k:'data', name:'신뢰성 있는 자료 수집', max:3}, {k:'analysis', name:'자료의 타당한 분석', max:4}, {k:'logic', name:'글의 논리적 완성', max:5} ];
 const SCORE_MAX = 15;
-const CHECK_LABELS = {   // tpa3의 CHECK_LABELS와 같게
-  question: ['탐구 질문을 썼다', '확률을 구하는 질문이다', '예측형·비교선택형 질문이다'],
-  data: ['자료 1이 탐구 질문에 맞다', '자료 2가 질문에 맞고 글에서 쓰임이 있다', '확률 계산에 필요한 수치를 모두 얻을 수 있다'],
-  analysis: ['자료 1의 수치를 본론에 활용했다', '자료 2의 수치를 본론에 활용했다', '분자·분모를 올바르게 정했다', '분수·소수·백분율로 올바르게 계산했다'],
-  logic: ['서론 150자 이상', '본론 500자 이상', '결론 150자 이상', '확률값의 뜻을 알맞게 해석했다', '결론에 탐구 질문의 답이 있다'] };
+const CHECK_LABELS = {   // 학생 안내 슬라이드(확률 탐구 보고서 채점 기준) 문구와 같게(2026-11-16). 칸 순서는 tpa3 CHECK_LABELS와 같다
+  question: ['탐구 질문을 썼는가?', '확률을 구하는 질문인가?', '예측형 또는 비교·선택형 질문인가?'],
+  data: ['자료 1이 탐구 질문에 맞는 자료인가?', '자료 2가 탐구 질문에 맞는 자료인가?', '올린 자료로 확률 계산에 필요한 수치를 모두 얻을 수 있는가?'],
+  analysis: ['자료 1에서 찾은 내용(수치)을 본론에 활용했는가?', '자료 2에서 찾은 내용(수치)을 본론에 활용했는가?', '확률의 분자·분모 내용을 올바르게 선택했는가?', '확률값을 분수·소수를 이용하여 올바르게 계산했는가?'],
+  logic: ['서론 150자 이상', '본론 500자 이상', '결론 150자 이상', '확률값의 뜻을 알맞게 해석했는가?', '결론에 탐구 질문에 대한 답이 있는가?'] };
 const CHECK_KEY = { question:'qchecks', data:'dchecks', analysis:'achecks', logic:'lchecks' };
 const $ = id => document.getElementById(id);
 const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -122,9 +123,10 @@ function aiCk(s, k){ const ai = s.aiGrade, c = ai ? String(ai[CHECK_KEY[k]]||'')
 function paintScore(s){
   const tg = s.teacherGrade || {}, ai = (s.aiGrade && s.aiGrade.scores) || {};
   const items = CRITERIA.map(c=>({ ...c, v: isNum(tg[c.k]) ? tg[c.k] : (isNum(ai[c.k]) ? ai[c.k] : null) }));
+  { const d = s.data || {}; if(!['title','intro','body','concl'].some(f=> typeof d[f]==='string' && d[f].trim())){ $('scoreCard').innerHTML = '<h2>📊 내 점수</h2><div class="muted">제출한 글이 없어서 점수가 없어요. 궁금한 점은 선생님께 물어보세요.</div>'; return; } }   // 미제출(2026-11-16)
   if(items.every(it=> it.v==null)){ $('scoreCard').innerHTML = '<h2>📊 내 점수</h2><div class="muted">아직 점수가 정해지지 않았어요. 선생님이 채점을 마치면 여기에 보여요.</div>'; return; }
   const total = items.reduce((a,it)=> a + (it.v||0), 0);
-  let h = `<h2>📊 내 점수</h2><div><span class="big">${total}</span> / ${SCORE_MAX}점</div><div class="muted">선생님이 확인한 최종 점수예요.</div>`;
+  let h = `<h2>📊 내 점수</h2><div><span class="big">${total}</span> / ${SCORE_MAX}점</div><div class="muted">선생님이 확인한 최종 점수예요.</div><div class="ask">🙋 점수가 이상하면 확인하면서 바로 선생님께 물어보세요.</div>`;
   items.forEach((it,i)=>{
     const ck = checksOf(s, it.k);
     h += `<div class="item"><h4><span>${i+1}. ${it.name}</span><span>${it.v==null?'-':it.v} / ${it.max}점</span></h4>`
@@ -133,8 +135,10 @@ function paintScore(s){
   });
   $('scoreCard').innerHTML = h;
 }
+const SHOW_REVIEW = false;   // 2026-11-16 보고서 피드백이 5반에만 있어 이번 공개에서는 모든 반 숨김
 function paintReview(r){
   const box = $('reviewCard');
+  if(!SHOW_REVIEW){ box.style.display = 'none'; return; }
   if(!r || !r.good){ box.style.display = 'none'; return; }
   const row = (tag, col, body) => `<div class="row"><span class="tag" style="background:${col}">${tag}</span><span>${body}</span></div>`;
   let h = `<h2>📝 보고서 피드백</h2><div class="muted">점수와 상관없이, 탐구를 더 좋게 만드는 방법이에요. AI라서 틀릴 수 있으니 내 글과 비교해 보세요.</div>`;
