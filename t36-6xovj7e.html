@@ -122,6 +122,8 @@
   .flipseq .t{background:#dfe3e8;border:1.5px solid #7d8591;color:#39404a;}
   .kv{font-size:13px;color:#444;margin:2px 0;}
   .kv b{color:#1a237e;}
+  .sqths{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;} .sqth{border:1px solid #ddd;background:#fafafa;border-radius:6px;padding:2px 2px 3px;cursor:pointer;font:inherit;font-size:12px;font-weight:bold;color:#1565c0;display:flex;flex-direction:column;align-items:center;} .sqth svg{display:block;width:62px;height:62px;} .sqth.tilt{border-color:#ffb74d;background:#fff8f0;color:#e65100;}
+  .sqmodal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;} .sqbox{background:#fff;border-radius:12px;padding:12px 16px;max-width:92vw;} .sqbox svg{width:min(330px,80vw);height:auto;display:block;} .sqhd{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;} .sqx{border:1px solid #ccc;background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:15px;}
   .previewSvg{width:100%;max-width:220px;height:auto;border:1px solid #ddd;border-radius:8px;background:#fff;display:block;margin:0 auto 8px;}
   button.rv{background:#fff;color:#5d4200;border:1px solid #ffca28;font-weight:bold;}
   button.rv.on{background:#ffb300;color:#fff;border-color:#ffb300;}
@@ -382,13 +384,24 @@ const ANS = {lt:'>', gt:'<', eq:'90°'};
 function activityDetailHTML(s, id){
   const d = (s && s.data) || {};
   const kv = (k,v)=>`<div class="kv">${k}: <b>${v}</b></div>`;
-  if(id===1){ const x = ob(d.s1), f = Object.keys(ob(x.found)).map(Number).sort((a,b)=>a-b); if(!f.length && !x.wrong) return ''; return kv('찾은 넓이', `${f.length}가지 (${f.join(', ')||'-'})`) + (x.wrong ? kv('넓이 틀린 횟수', x.wrong) : ''); }
-  if(id===2){ const x = ob(d.s2), n = Object.keys(ob(x.ans)).length; if(!n && !x.f) return ''; return kv('넓이 구하기', `${n}/4`) + kv('규칙 식', `${esc(x.f||'-')} ${x.fok?'✅':x.f?'❌':''}`) + (x.fmiss ? kv('식 틀린 횟수', x.fmiss) : ''); }
+  if(id===1){ const x = ob(d.s1), f = Object.keys(ob(x.found)).map(Number).sort((a,b)=>a-b); if(!f.length && !x.wrong) return ''; return kv('찾은 넓이', `${f.length}가지 (${f.join(', ')||'-'})`) + (x.wrong ? kv('넓이 틀린 횟수', x.wrong) : '') + sqThumbs(ob(x.found), f); }
+  if(id===2){ const x = ob(d.s2), n = Object.keys(ob(x.ans)).length; if(!n && !x.f) return ''; const sqn = Object.entries(ob(x.sq)).reduce((c,[k,v])=>{ const [a,b] = k.split(',').map(Number); return c + (ob(v).a===a*a) + (ob(v).b===b*b); }, 0); return kv('넓이 구하기', `${n}/4`) + ((x.fmiss||0)>=2 ? kv('a²·b² 칸(힌트)', `${sqn}/8`) : '') + kv('규칙 식', `${esc(x.f||'-')} ${x.fok?'✅':x.f?'❌':''}`) + (x.fmiss ? kv('식 틀린 횟수', x.fmiss) : ''); }
   if(id===3){ const x = ob(d.s3); if(!x.ok && !x.rel) return ''; return kv('P·Q·R 넓이', x.ok?'✅':'아직') + kv('P·Q·R 관계식', `${esc(x.rel||'-')} ${x.relOk?'✅':x.rel?'❌':''}`) + kv('a·b·c 관계식', `${esc(x.abc||'-')} ${x.abcOk?'✅':x.abc?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
   if(id===4){ const x = ob(d.s4), r = ar(x.rec); if(!x.pred && !r.length) return ''; return kv('예측(∠C<90°)', esc(x.pred||'-')) + kv('기록', r.length+'개') + kv('∠C<90°', `P+Q ${esc(x.lt||'?')} R ${x.lt===ANS.lt?'✅':x.lt?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
   if(id===5){ const x = ob(d.s5), r = ar(x.rec); if(!x.pred && !r.length) return ''; return kv('예측(∠C>90°)', esc(x.pred||'-')) + kv('기록', r.length+'개') + kv('∠C>90°', `P+Q ${esc(x.gt||'?')} R ${x.gt===ANS.gt?'✅':x.gt?'❌':''}`) + kv('P+Q=R이면', `${esc(x.eq||'?')} ${x.eq===ANS.eq?'✅':x.eq?'❌':''}`) + (x.miss ? kv('틀린 횟수', x.miss) : ''); }
   return '';
 }
+/* 2026-11-17 1화면: 학생이 그린 정사각형 모양 보기(학생 화면이 점 4개 p를 저장한 뒤부터). 파랑=똑바로, 주황=기울어짐. 누르면 크게 */
+function sqSvg(p, tilt, U){ const O = U*0.6, W = O*2+U*4; let h = ''; for(let x=0;x<5;x++) for(let y=0;y<5;y++) h += `<circle cx="${O+x*U}" cy="${O+y*U}" r="${Math.max(1.8,U/8)}" fill="#9e9e9e"/>`;
+  if(p){ const c = tilt ? '#e65100' : '#1565c0'; h += `<polygon points="${p.map(q=>(O+q[0]*U)+','+(O+(4-q[1])*U)).join(' ')}" fill="${c}" fill-opacity=".18" stroke="${c}" stroke-width="${U/7}"/>`; }
+  return `<svg viewBox="0 0 ${W} ${W}" width="${W}" height="${W}">${h}</svg>`; }
+function sqThumbs(found, f){ const has = f.filter(a=>Array.isArray(ob(found[a]).p) || ob(ob(found[a]).p)[0]); if(!f.length) return '';
+  const P = a => { const p = ob(found[a]).p; const v = Array.isArray(p) ? p : Object.values(ob(p)); return v.length===4 ? v.map(q=>Array.isArray(q)?q.map(Number):Object.values(ob(q)).map(Number)) : null; };
+  const items = f.map(a=>{ const p = P(a), tl = [2,5,8,10].includes(a); return p ? `<button type="button" class="sqth${tl?' tilt':''}" data-sqp="${esc(JSON.stringify(p))}" data-sqa="${a}" title="크게 보기">${sqSvg(p, tl, 14)}<span>넓이 ${a}</span></button>` : ''; }).join('');
+  return items ? `<div class="sqths">${items}</div>` : (f.length ? '<div class="kv" style="color:#888;">모양 기록 없음(11/17 전에 찾은 정사각형)</div>' : ''); }
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('.sqth'); if(!b) return; e.stopPropagation(); const p = JSON.parse(b.dataset.sqp), a = +b.dataset.sqa, tl = [2,5,8,10].includes(a);
+  const m = document.createElement('div'); m.className = 'sqmodal'; m.innerHTML = `<div class="sqbox"><div class="sqhd"><b style="color:${tl?'#e65100':'#1565c0'}">넓이 ${a}${tl?' (기울어진 정사각형)':''}</b><button type="button" class="sqx">✕</button></div>${sqSvg(p, tl, 64)}</div>`;
+  m.addEventListener('click', ev=>{ if(ev.target===m || ev.target.closest('.sqx')) m.remove(); }); document.body.appendChild(m); }, true);
 function renderAggregate(){ renderStages(); }
 function barsHTML(rows, total){ return rows.map(r=>`<div class="barrow${r.answer?' answer':''}"><span class="bl">${esc(r.label)}</span><span class="bt"><i style="width:${total?Math.round(r.n/total*100):0}%"></i></span><span class="bn">${r.n}명</span></div>`).join(''); }
 function taskAggregateHTML(id){

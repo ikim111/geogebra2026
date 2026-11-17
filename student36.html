@@ -180,7 +180,7 @@
   .fx{width:220px;padding:7px 10px;border:1.5px solid #c5cad1;border-radius:8px;font-size:17px;font-family:'Times New Roman',serif;}
   .okb{border:none;background:#2e7d32;color:#fff;border-radius:10px;padding:8px 16px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;}
   .okb:disabled{background:#a5d6a7;cursor:default;}
-  .rtab tr.cur td{background:#e3f2fd;} .rtab tr[data-i]{cursor:pointer;}
+  .rtab tr.cur td{background:#e3f2fd;} .rtab th.sqc{background:#fff8e1;} .activity .rtab td.sqc input.num{width:48px !important;border-color:#ffb74d;} .activity .rtab td.sqc input.num.wrong{border-color:#ef9a9a;background:#fff6f6;} .rtab tr[data-i]{cursor:pointer;}
   .pred{border:1.5px solid #ffcc80;background:#fff8e1;border-radius:10px;padding:8px 12px;margin-bottom:10px;}
   .pred .jq{margin-top:0;}
   .g-layout.locked{opacity:.35;pointer-events:none;}
@@ -474,7 +474,7 @@ const NREC = 2;
 
 const state = {
   s1:{found:{}, wrong:0},          // found[넓이] = {tilt:true/false}
-  s2:{ans:{}, wrong:{}, f:'', fok:false, fmiss:0},   // ans['1,2'] = 넓이(맞힌 것만)
+  s2:{ans:{}, wrong:{}, f:'', fok:false, fmiss:0, sq:{}},   // sq['1,2'] = {a:1, b:4} 식을 두 번 틀리면 생기는 a²·b² 칸(2026-11-17)   // ans['1,2'] = 넓이(맞힌 것만)
   s3:{t:0, ok:false, rel:'', relOk:false, abc:'', abcOk:false, miss:0},
   s4:{pred:'', C:[8,9], rec:[], lt:'', miss:0},
   s5:{pred:'', C:[12,10], rec:[], gt:'', eq:'', miss:0}
@@ -710,7 +710,7 @@ function check1Area(){
   if(Math.abs(v-sq) > 1e-9){ state.s1.wrong++; msg1 = `<span class="bad">다시 구해 보세요.</span> ${help1 ? '보라색 큰 정사각형의 넓이에서 네 귀퉁이 직각삼각형의 넓이를 빼 보세요.' : '「💡 넓이 구하는 도움 그림」을 눌러 보세요.'}`; render1(); check1({now:true}); return; }
   const o = orderPts(sel1), tilt = o[0][0]!==o[1][0] && o[0][1]!==o[1][1];
   if(state.s1.found[sq]) msg1 = `<span class="ok">맞아요! 넓이 ${sq}.</span> 그런데 이 넓이는 이미 찾았어요. 다른 크기를 찾아보세요.`;
-  else { state.s1.found[sq] = {tilt}; msg1 = `<span class="ok">맞아요! 넓이 ${sq}인 정사각형을 찾았어요.</span>${tilt?' 기울어진 정사각형이네요! 🎉':''}`; }
+  else { state.s1.found[sq] = {tilt, p:o}; msg1 = `<span class="ok">맞아요! 넓이 ${sq}인 정사각형을 찾았어요.</span>${tilt?' 기울어진 정사각형이네요! 🎉':''}`; }
   sel1 = []; render1(); check1({now:true});
 }
 function check1(opts){ const f = foundAreas(), t = f.filter(a=>[2,5,8,10].includes(a)).length;
@@ -730,15 +730,26 @@ function render2(){
   $('g2').innerHTML = h;
   $('help2').classList.toggle('on', help2);
   const s = state.s2;
-  $('tab2').innerHTML = `<tr><th>a</th><th>b</th><th>넓이</th><th></th></tr>` + TILT_ROWS.map(([x,y],i)=>{ const k = x+','+y, ok = s.ans[k];
-    return `<tr class="${i===cur2?'cur':''}" data-i="${i}"><td>${x}</td><td>${y}</td><td>${ok ? `<b>${ok}</b> ✅` : `<input type="text" class="num" data-k="${k}" inputmode="numeric" autocomplete="off">`}</td><td>${ok?'':`<button type="button" class="sbtn" data-ck="${k}">확인</button>`}${s.wrong[k]?` <span class="note">틀림 ${s.wrong[k]}</span>`:''}</td></tr>`; }).join('');
+  const showSq = s.fmiss>=2;
+  const sqCell = (k, w, want) => { const v = obj(s.sq[k])[w]; return v===want ? `<td class="sqc"><b>${v}</b></td>` : `<td class="sqc"><input type="text" class="num${v!=null?' wrong':''}" data-sq="${k}|${w}" inputmode="numeric" autocomplete="off" value="${v!=null?v:''}"></td>`; };
+  $('tab2').innerHTML = `<tr><th>a</th><th>b</th>${showSq?'<th class="sqc">a²</th><th class="sqc">b²</th>':''}<th>넓이</th><th></th></tr>` + TILT_ROWS.map(([x,y],i)=>{ const k = x+','+y, ok = s.ans[k];
+    return `<tr class="${i===cur2?'cur':''}" data-i="${i}"><td>${x}</td><td>${y}</td>${showSq ? sqCell(k,'a',x*x)+sqCell(k,'b',y*y) : ''}<td>${ok ? `<b>${ok}</b> ✅` : `<input type="text" class="num" data-k="${k}" inputmode="numeric" autocomplete="off">`}</td><td>${ok?'':`<button type="button" class="sbtn" data-ck="${k}">확인</button>`}${s.wrong[k]?` <span class="note">틀림 ${s.wrong[k]}</span>`:''}</td></tr>`; }).join('');
   const open = TILT_ROWS.every(r=>s.ans[r.join(',')]);
   $('q2').classList.toggle('locked', !open || isLocked());
   if(s.fok){ $('f2').value = s.f; $('f2').readOnly = true; }
+  hint2();
 }
 $('tab2').addEventListener('click', e=>{ const tr = e.target.closest('tr[data-i]'); if(!tr) return; if(e.target.closest('[data-ck]')){ chk2(e.target.closest('[data-ck]').dataset.ck); return; } if(+tr.dataset.i!==cur2 && e.target.tagName!=='INPUT'){ cur2 = +tr.dataset.i; render2(); } });
-$('tab2').addEventListener('focusin', e=>{ const tr = e.target.closest('tr[data-i]'); if(tr && +tr.dataset.i!==cur2){ cur2 = +tr.dataset.i; const k = e.target.dataset.k, v = e.target.value; render2(); const ni = document.querySelector(`#tab2 input[data-k="${k}"]`); if(ni){ ni.value = v; ni.focus(); } } });
-$('tab2').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset.k){ e.preventDefault(); chk2(e.target.dataset.k); } });
+$('tab2').addEventListener('focusin', e=>{ const tr = e.target.closest('tr[data-i]'); if(tr && +tr.dataset.i!==cur2){ cur2 = +tr.dataset.i; const sel = e.target.dataset.k ? `input[data-k="${e.target.dataset.k}"]` : e.target.dataset.sq ? `input[data-sq="${e.target.dataset.sq}"]` : '', v = e.target.value; render2(); const ni = sel && document.querySelector('#tab2 '+sel); if(ni){ ni.value = v; ni.focus(); } } });
+$('tab2').addEventListener('change', e=>{ const q = e.target.dataset && e.target.dataset.sq; if(q) chkSq(q, e.target.value); });
+$('tab2').addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset.k){ e.preventDefault(); chk2(e.target.dataset.k); } else if(e.key==='Enter' && e.target.dataset.sq){ e.preventDefault(); chkSq(e.target.dataset.sq, e.target.value); } });
+/* a²·b² 칸(2026-11-17): 학생이 직접 계산해 넣고, 다 채우면 넓이와 비교하게 한다. 완료 조건에는 넣지 않음(힌트) */
+function chkSq(q, raw){ if(isLocked()) return; const [k, w] = q.split('|'), t = String(raw).trim(), s = state.s2; s.sq[k] = obj(s.sq[k]);
+  if(!t){ delete s.sq[k][w]; } else { const v = Number(t); if(!Number.isFinite(v)) return; s.sq[k][w] = v; }
+  const [a,b] = k.split(',').map(Number), want = w==='a' ? a*a : b*b, nxt = s.sq[k][w]===want;
+  render2(); check2({now:true});
+  if(nxt){ const ni = document.querySelector('#tab2 input[data-sq]'); if(ni) ni.focus(); } }
+const sqDone = () => TILT_ROWS.every(([a,b])=>{ const v = obj(state.s2.sq[a+','+b]); return v.a===a*a && v.b===b*b; });
 function chk2(k){ if(isLocked()) return; const inp = document.querySelector(`#tab2 input[data-k="${k}"]`); if(!inp || !inp.value.trim()) return; const [a,b] = k.split(',').map(Number), v = Number(inp.value.trim()), s = state.s2;
   if(v===a*a+b*b){ s.ans[k] = v; } else { s.wrong[k] = (s.wrong[k]||0)+1; }
   render2(); if(!s.ans[k]){ const ni = document.querySelector(`#tab2 input[data-k="${k}"]`); if(ni){ ni.value = inp.value; ni.classList.add('wrong'); } $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}의 넓이를 다시 구해 보세요.</span> 「💡 도움 그림」을 눌러 보세요.`; } else $('msg2').innerHTML = '';
@@ -749,12 +760,12 @@ function chk2f(){
   if(isLocked() || state.s2.fok) return; const s = state.s2, src = $('f2').value.trim(); if(!src) return;
   const f = parseExpr(src, ['a','b']);
   s.f = src;
-  if(!f){ $('msg2').innerHTML = '<span class="bad">식을 읽을 수 없어요.</span> a, b, 숫자, + − × ^ ( ) 만 써 주세요. 예) 3*a+b'; check2(); return; }
+  if(!f){ $('msg2').innerHTML = '<span class="bad">식을 읽을 수 없어요.</span> 아래 버튼(a, b, 숫자, ², ×, +, −, 괄호)으로 써 주세요. a²은 a를 누르고 ²를 눌러요. 예) 3×a+b'; check2(); return; }
   const bad = TILT_ROWS.concat([[3,4],[5,1]]).find(([a,b])=>!(Math.abs(f({a,b})-(a*a+b*b))<1e-6));
   if(bad){ s.fmiss++; const [a,b] = bad, v = f({a,b}); $('msg2').innerHTML = `<span class="bad">a = ${a}, b = ${b}이면 내 식의 값은 ${Number.isFinite(v)?Math.round(v*100)/100:'계산할 수 없음'}, 실제 넓이는 ${a*a+b*b}.</span> 표의 수들을 다시 살펴보세요.`; hint2(); check2({now:true}); return; }
   s.fok = true; $('hint2').innerHTML = ''; $('msg2').innerHTML = '<span class="ok">✅ 맞아요! 기울어진 정사각형의 넓이 = a² + b² 예요. 둘러싼 정사각형 (a+b)²에서 직각삼각형 4개 2ab를 빼도 같아요.</span>'; render2(); check2({now:true});
 }
-function hint2(){ const s = state.s2; $('hint2').innerHTML = s.fok || s.fmiss<2 ? '' : `💡 <b>힌트</b> 넓이를 두 수의 합으로 나눠 보세요. ${TILT_ROWS.map(([a,b])=>`${a*a+b*b} = ${a*a} + ${b*b}`).join(', ')}` + (s.fmiss>=4 ? ' — 1, 4, 9, 16은 어떤 수를 두 번 곱한 수일까요? a, b와 비교해 보세요.' : ' — 이 수들은 표의 a, b와 어떤 관계일까요?'); }
+function hint2(){ const s = state.s2; $('hint2').innerHTML = s.fok || s.fmiss<2 ? '' : sqDone() ? '💡 <b>힌트</b> a², b²과 넓이 사이에 어떤 관계가 있나요?' : '💡 <b>힌트</b> 표에 a²과 b² 칸이 생겼어요. a²과 b²을 구해 보자! 다 채우면 넓이와 비교해 보세요.'; }   // 2026-11-17 선생님 요청: 답을 쪼개 보여 주던 힌트 대신 a²·b²을 직접 구하게 함
 function check2(opts){ const n = Object.keys(state.s2.ans).length; setWhy(2, '✅ 완료! '+NEXT, n<4 ? `표의 넓이를 모두 구해 보세요. (지금 ${n}/4)` : '넓이를 a, b로 나타내는 식을 써 보세요.'); refreshAll(opts); }
 
 /* ================= 화면 3: 직각삼각형의 세 변 위 정사각형 ================= */
@@ -864,11 +875,14 @@ const str = (v, n) => String(v==null?'':v).slice(0, n||80);
 function restoreData(d){
   if(!d) return;
   const s1 = obj(d.s1), s2 = obj(d.s2), s3 = obj(d.s3), s4 = obj(d.s4);
-  const found = {}; Object.keys(obj(s1.found)).forEach(k=>{ const a = Number(k); if(AREAS.includes(a)) found[a] = {tilt: [2,5,8,10].includes(a)}; });
+  const found = {}; Object.keys(obj(s1.found)).forEach(k=>{ const a = Number(k); if(!AREAS.includes(a)) return; const f = {tilt: [2,5,8,10].includes(a)};
+    const P = arr(obj(obj(s1.found)[k]).p).map(q=>arr(q).map(Number)); if(P.length===4 && P.every(q=>q.length===2 && q.every(v=>Number.isInteger(v)&&v>=0&&v<=4)) && isSquare(P)===a) f.p = P;   // 2026-11-17 교사 화면에서 모양을 보려고 점 4개도 저장
+    found[a] = f; });
   state.s1 = {found, wrong:int(s1.wrong,0,9999,0)};
   const ans = {}; TILT_ROWS.forEach(([a,b])=>{ const k = a+','+b; if(Number(obj(s2.ans)[k])===a*a+b*b) ans[k] = a*a+b*b; });
   const wr = {}; Object.keys(obj(s2.wrong)).forEach(k=>{ wr[k] = int(obj(s2.wrong)[k],0,999,0); });
-  state.s2 = {ans, wrong:wr, f:str(s2.f), fok:!!s2.fok, fmiss:int(s2.fmiss,0,999,0)};
+  const sq = {}; TILT_ROWS.forEach(([a,b])=>{ const k = a+','+b, o = obj(obj(s2.sq)[k]), v = {}; ['a','b'].forEach(w=>{ const n = Number(o[w]); if(o[w]!=null && Number.isFinite(n) && Math.abs(n)<1e6) v[w] = n; }); if(Object.keys(v).length) sq[k] = v; });
+  state.s2 = {ans, wrong:wr, f:str(s2.f), fok:!!s2.fok, fmiss:int(s2.fmiss,0,999,0), sq};
   state.s3 = {t:int(s3.t,0,TRI3.length-1,0), ok:!!s3.ok, rel:str(s3.rel), relOk:!!s3.relOk, abc:str(s3.abc), abcOk:!!s3.abcOk, miss:int(s3.miss,0,999,0)};
   const s5 = obj(d.s5), legacy = !d.s5 && (s4.gt || s4.eq);   // 예전 판(화면 4 하나)에서 쓴 답은 화면 4·5로 나눠 옮김(기록은 새로 해야 함)
   const pos = (n, v) => { const C = arr(v).map(Number); return (C.length===2 && okCn(n, C)) ? C : PG[n].start.slice(); };
