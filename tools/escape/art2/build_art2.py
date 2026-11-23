@@ -22,7 +22,7 @@ DIS = R.DIS; T = {}; TALL = set()
 g = {'re': re, 'os': os, 'math': math, 'H': H, 'cards': cards, 'DIS': DIS, 'ART': ART, 'T': T, 'TALL': TALL}
 exec('TYPE={' + body, g)
 g['SPEC'] = {k: (IMG + v.get('img', f'a{k}.jpg'), [(g['tagkind'](t[0]), t[0], t[1], t[2]) for t in v.get('tags', [])]) for k, v in LAY.items()}
-g['HID'] = {k: (v['hid'][0], v['hid'][1], v['hid'][2]) for k, v in LAY.items() if 'hid' in v}
+g['HID'] = {k: tuple(v['hid'][:4]) for k, v in LAY.items() if 'hid' in v}   # 4번째 값 = 숨은 번호 추가 style(2026-11-23)
 g['OVER'] = {k: g['SV'](v['over']) for k, v in LAY.items() if v.get('over','') not in ('','note')}; g['ETCH'] = set(); g['SVGART'] = {k for k, v in LAY.items() if v.get('svgart')}; g['DROP'] = set()
 import figs2
 for k, v in LAY.items():

@@ -214,18 +214,18 @@ def journal41d():
     s += f'<path d="M{C},{gy} L{C},{ty} L{C+2.6},{ty} L{C+2.6},{gy}" fill="#d8c8a6" fill-opacity=".5" stroke="{g}" stroke-width=".6"/>'
     s += f'<circle cx="{P}" cy="{ey-1.1:.1f}" r="1.1" fill="none" stroke="{g}" stroke-width=".5"/><line x1="{P}" y1="{ey:.1f}" x2="{P}" y2="{gy}" stroke="{g}" stroke-width=".6"/>'
     s += f'<line x1="{P-1.2}" y1="{gy}" x2="{P}" y2="{gy-1.6:.1f}" stroke="{g}" stroke-width=".5"/><line x1="{P+1.2}" y1="{gy}" x2="{P}" y2="{gy-1.6:.1f}" stroke="{g}" stroke-width=".5"/>'
-    s += f'<rect x="{Mx-1.4:.1f}" y="{gy-.7}" width="2.8" height=".9" fill="#3a6ea5"/>'
+    s += f'<rect x="{Mx-.9:.1f}" y="{gy-.6}" width="1.8" height=".8" fill="#3a6ea5"/>'
     s += f'<polyline points="{P},{ey:.1f} {Mx:.2f},{gy} {C},{ty:.1f}" fill="none" stroke="#3a6ea5" stroke-width=".6" stroke-dasharray="1.4 .9"/>'
-    for x, sg in ((P, 1), (C, -1)):
-        s += f'<polyline points="{x+sg*1.8},{gy} {x+sg*1.8},{gy-1.8} {x},{gy-1.8}" fill="none" stroke="{red}" stroke-width=".45"/>'
+    for x, sg, q in ((P, -1, 1.7), (C, -1, 1.8)):   # 2026-11-23: 사람 쪽 직각 표시는 바깥(왼쪽)으로·작게 — 반사각 표시와 겹치지 않게
+        s += f'<polyline points="{x+sg*q},{gy} {x+sg*q},{gy-q} {x},{gy-q}" fill="none" stroke="{red}" stroke-width=".45"/>'
     import math
     a = math.atan2(1.5*v, 3*k)
-    r = 3
+    r = 2.3   # 2026-11-23: 반사각 표시를 3m 칸 안에 들어가게(전에는 3이라 사람과 겹침), 거울은 얇게
     s += f'<path d="M{Mx-r:.2f},{gy} A{r},{r} 0 0 1 {Mx-r*math.cos(a):.2f},{gy-r*math.sin(a):.2f}" fill="none" stroke="{red}" stroke-width=".55"/>'
     s += f'<path d="M{Mx+r:.2f},{gy} A{r},{r} 0 0 0 {Mx+r*math.cos(a):.2f},{gy-r*math.sin(a):.2f}" fill="none" stroke="{red}" stroke-width=".55"/>'
     def dim(x1, x2, y, t):
         return (f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{g}" stroke-width=".45"/><line x1="{x1}" y1="{y-1.3}" x2="{x1}" y2="{y+1.3}" stroke="{g}" stroke-width=".45"/>'
                 f'<line x1="{x2}" y1="{y-1.3}" x2="{x2}" y2="{y+1.3}" stroke="{g}" stroke-width=".45"/>' + pen((x1+x2)/2, y+5, t, 4.6, 'middle'))
     s += dim(P, Mx, 69, '') + pen((P+Mx)/2, 75, '3m', 4.6, 'middle') + dim(Mx, C, 69, '24m')
-    s += pen(Mx + 1, gy - 3.5, '거울', 3.6, 'start') + pen(C - 1.5, (gy+ty)/2, '?', 6.5, 'end', col=red) + pen(P - 1.5, ey - 1, '나', 4, 'end')
+    s += pen(Mx + 4.2, gy - 1.2, '거울', 3.6, 'start') + pen(C - 1.5, (gy+ty)/2, '?', 6.5, 'end', col=red) + pen(P - 1.5, ey - 1, '나', 4, 'end')
     return s

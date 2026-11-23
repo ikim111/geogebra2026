@@ -123,7 +123,7 @@ def front(c):
     elif svg and bl in PANEL: OVERX=f'<div style="position:absolute;left:4%;right:4%;bottom:3%;height:50%;flex-direction:column;font-size:2.6mm;color:#3b2a12;background:rgba(251,243,220,.93);border-radius:1.5mm;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 1mm 2mm rgba(0,0,0,.4)">{svg}</div>'
     else: OVERX=''
     inner=OVER.get(bl,'')+OVERX+''.join(f'<div class="tag {k}" style="left:{pos(x,y)[0]:.1f}%;top:{pos(x,y)[1]:.1f}%"><i>{num}</i></div>' for k,num,x,y in tags)
-    if bl in HID: h=HID[bl];inner+=f'<div class="hidn{" etch" if bl in ETCH else ""}" style="left:{pos(h[1],h[2])[0]:.1f}%;top:{pos(h[1],h[2])[1]:.1f}%">{h[0]}</div>'
+    if bl in HID: h=HID[bl];inner+=f'<div class="hidn{" etch" if bl in ETCH else ""}" style="left:{pos(h[1],h[2])[0]:.1f}%;top:{pos(h[1],h[2])[1]:.1f}%;{h[3] if len(h)>3 else ''}">{h[0]}</div>'
     extra='' if disl or not dis else f'<div class="sus">🗑 {dis}</div>'
     art=f'<div class="art"><img src="{ART+img}">{inner}</div>' if img else '<div class="art" style="background:#0d1a2e"></div>'
     ic=TICON.get(t,'')

@@ -96,8 +96,9 @@
 ],
 "hid": [
 "15",
-0.43,
-0.66
+0.405,
+0.74,
+"font-size:2.4mm;color:#3b2412;transform:rotate(-74deg);text-shadow:0 .12mm 0 rgba(230,190,140,.6)"
 ]
 },
 "41": {
