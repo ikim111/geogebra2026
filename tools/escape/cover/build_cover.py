@@ -25,7 +25,7 @@ def front(r):
     img, c, k, h, rl = r; rl = rl or MAIN
     return (f'<div class="card cv" style="--c:{c}"><img class="bg" src="{os.path.join(BACK, img)}"><div class="band"></div>'
             f'<div class="tt"><div class="k">{k}</div><div class="h">{h}</div></div>'
-            f'<div class="rl">' + ''.join(f'<div>{x}</div>' for x in rl) + '</div><div class="sr">나침반 시리즈 · 표지</div></div>')
+            '<div class="sr">나침반 시리즈 · 표지</div></div>')   # 2026-11-23 선생님: 시간·별 안내 상자는 빼기
 def back(r):
     return f'<div class="card bk2"><img src="{os.path.join(BACK, r[0])}"><div class="bv"></div><div class="bw s">표지</div></div>'
 order = [0, 1, 2, 3, 0, 1, 2, 3, None]
