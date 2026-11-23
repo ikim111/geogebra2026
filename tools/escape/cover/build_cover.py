@@ -32,6 +32,8 @@ order = [0, 1, 2, 3, 0, 1, 2, 3, None]
 fr = [front(R[i]) if i is not None else '<div></div>' for i in order]
 bk = [back(R[i]) if i is not None else '<div></div>' for i in order]
 bk = sum([bk[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
-html = head + css + '</head><body><div class="sheet">' + ''.join(fr) + '</div><div class="sheet">' + ''.join(bk) + '</div></body></html>'
+import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
+_, cutjs = cut_css_js('#f4dfc1')   # 2026-11-23: 카드 묶음과 같은 절취선(앞면)·뒷면 색 여백(bleed)
+html = head + css + '</head><body><div class="sheet">' + ''.join(fr) + '</div><div class="sheet">' + ''.join(bk) + '</div>' + cutjs + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_표지카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
