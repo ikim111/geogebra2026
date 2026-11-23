@@ -37,7 +37,8 @@ g['ART'] = ''
 FONT = '/tmp/claude-0/escape/fonts/'
 FONTLINKS = ''.join(f'<link rel="stylesheet" href="file://{FONT}{p}">' for p in ['fontsource-hahmlet-5.3.0/package/700.css', 'fontsource-hahmlet-5.3.0/package/800.css', 'fontsource-gowun-dodum-5.3.0/package/400.css', 'fontsource-nanum-pen-script-5.3.0/package/index.css'])
 FIT = '<script>document.fonts.ready.then(()=>{for(const c of document.querySelectorAll(".cap")){let f=3.05;const tx=c.querySelector(".tx");while(c.scrollHeight>c.clientHeight+1&&f>2.1){f-=.1;tx.style.fontSize=f+"mm"}}})</script>'
-BACK = IMG + 'aback.jpg' if os.path.exists(IMG + 'aback.jpg') else '/tmp/claude-0/escape/art2/aback_blue.jpg'   # 회차별 뒷면(3회 황금 나침반, 2026-11-03)
+BACK = os.path.join(HERE, '..', 'art3', 'back', f'aback_r{N}.jpg')   # 2026-11-23: 저장소의 회차별 아이보리 나침반 뒷면(2026-11-03 결정)을 항상 씀 — 예전 파란 뒷면(aback_blue)이 끼어드는 것 막기
+BACK = os.path.abspath(BACK) if os.path.exists(BACK) else (IMG + 'aback.jpg')   # 회차별 뒷면(3회 황금 나침반, 2026-11-03)
 def back(c):
     lab = c[0]; small = ' s' if re.search('[가-힣]', lab) else ''
     return f'<div class="card bk2"><img src="{BACK}"><div class="bv"></div><div class="bw{small}">{H.escape(lab)}</div></div>'
