@@ -114,12 +114,7 @@
 },
 "6": {
 "img": "a6b.jpg",
-"py": "note_half:R",
-"hid": [
-"27",
-0.8,
-0.84
-]
+"py": "note_half:R"
 },
 "27": {
 "img": "a27b.jpg"

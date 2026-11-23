@@ -114,6 +114,7 @@ def note_half(side):
         a, b = ln.split('|'); y = 22 + i*9.2
         if side == 'L': s += pen(80, y, ('"' if i == 0 else '') + a, 5.2, 'end', rot=-1)
         else: s += pen(19, y, b + ('"' if i == len(NOTE)-1 else ''), 5.2, 'start', rot=-1)
+    if side == 'R': s += pen(52, 22 + (len(NOTE)-1)*9.2 + 0.5, '27', 6.2, 'start', col='#4a3018', rot=-6)   # 숨은 번호: 마지막 줄 끝에 낙서처럼 작게(2026-11-23 선생님 B안)
     return s
 def rock48():
     s = ''
