@@ -73,13 +73,13 @@ def setb(r):
 # 2026-11-25 선생님: A4 한 장에 한 종류(9장) — 필요한 회차 쪽만 골라 뽑게. 3회 구성 카드는 3회 최종판이 나오면 SET_ROUNDS에 3을 넣는다
 RULE_ROUNDS = [0, 1, 2, 3]; SET_ROUNDS = [0, 1, 2, 3]
 import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
-_, cutjs = cut_css_js('#fbf6ea')
+_, cutjs = cut_css_js('#fbf6ea', Z=.87, G=4)   # 2026-11-26 선생님: 앞뒤가 밀려도 되게 카드 사이 4mm 틈(카드 약 61×86mm)
 flip = lambda xs: sum([xs[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
 pages = ''
 for i in RULE_ROUNDS:
     pages += '<div class="sheet rs">' + front(R[i]) * 9 + '</div><div class="sheet rs">' + ''.join(flip([back(R[i])] * 9)) + '</div>'
 for i in SET_ROUNDS:
-    pages += '<div class="sheet">' + setc(R[i]) * 9 + '</div><div class="sheet">' + setb(R[i]) * 9 + '</div>'
+    pages += '<div class="sheet rs">' + setc(R[i]) * 9 + '</div><div class="sheet">' + setb(R[i]) * 9 + '</div>'
 html = head + css + '</head><body>' + pages + cutjs + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_규칙카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
