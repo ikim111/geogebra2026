@@ -40,8 +40,37 @@ SL.warn = S('유의사항', '⚠️ 시작 전에 꼭!', `<div class="eg-warn">
 <div>🔄 디벗은 새로고침해도 이어져요.<br><b>[처음부터 다시]</b>는 누르지 않기</div>
 <div>🧹 끝나면 카드를 <b>번호 순</b>으로 모아<br>표지에 적힌 장수 확인</div>
 <div>💡 막히면 <b>힌트 → 📖 규칙</b> 먼저,<br>그래도 안 되면 손 들기</div></div>`);
-const PAGES = r => r === 0 ? [cover(0), SL.ready, SL.rules, SL.warn, SL.go(0)] : [cover(r), SL.warn, SL.go(r)];
-const LABELS = r => r === 0 ? ['📜 이야기', '🃏 카드 놓기', '🧭 규칙 한눈에', '⚠️ 유의사항', '🚀 출발'] : ['📜 이야기', '⚠️ 유의사항', '🚀 출발'];
+/* 2026-11-25 선생님 요청: 훈련소(연습)는 한 쪽에 하나씩 그림 예시와 함께 차분히, 1·2·3회는 규칙 복습 한 쪽으로 간단히.
+   예시 카드 번호(12·30·42·33·45·88·99)는 실제 게임에 없는 번호로. 안 펼친 카드는 번호 구간별로 나눠 갖기. */
+const dev = (inner) => `<div class="eg-dev">${inner}</div>`;
+const big = (emo, txt) => `<div class="eg-big"><div class="e">${emo}</div><div class="t">${txt}</div></div>`;
+SL.deal = S('준비 ①', '🃏 안 펼친 카드는 나눠 들어요', `<div class="eg-deal">${['1~20','21~40','41~60','61~'].map((r,i)=>`<div class="hand"><div class="fan">${[0,1,2].map(k=>`<span style="transform:rotate(${(k-1)*12}deg)">${['🧭','🧭','🧭'][k]}</span>`).join('')}</div><b>${r}번</b><small>${['가','나','다','라'][i]} 모둠원</small></div>`).join('')}</div>
+  <p>카드를 <b>번호 순</b>으로 정리해 구간별로 나눠 들어요. 번호가 나오면 <b>"37번!"</b> 하고 부르고, 가진 사람이 가운데에 펼쳐요.</p><p class="eg-note">🚫 들고 있는 카드의 앞면은 보지 않아요.</p>`);
+SL.start = S('준비 ②', '🃏 시작 카드부터', `<div class="eg-two"><div class="eg-cen">${card('w','📜','시작','시작 카드')}</div>
+  <div><p>가운데에 <b>시작 카드</b>만 펼쳐요.</p><p>카드 그림에 나온 <b>번호 동그라미</b>를 보고, 그 번호 카드를 찾아 펼쳐요.</p><p class="eg-note">📱 디벗 담당 1명 · 📝 기록 담당 1명을 정해요.</p></div></div>`);
+SL.add = S('규칙 1', '🔴 + 🔵 = 더한 번호', `<div class="eg-combo">${card('r','🔑','12','열쇠')}<span class="op">+</span>${card('b','📦','30','상자')}<span class="op">=</span>${card('w','🎁','42','열린 상자')}</div>
+  <p>빨간 번호 카드와 파란 번호 카드를 함께 쓰려면 <b>두 번호를 더해요</b>. 12 + 30 = <b>42번</b> 카드를 펼쳐요.</p>`);
+SL.trap = S('규칙 2', '⏳ 함정 조심!', `<div class="eg-combo">${card('r','🔑','12','열쇠')}<span class="op">+</span>${card('b','🪣','33','양동이')}<span class="op">=</span>${card('p','⏳','45','벌점')}</div>
+  <p>아무거나 더하면 <b>벌점 카드</b>가 나와요. 디벗 <b>⏳ 벌점</b>에 번호를 넣으면 시간이 1분 줄어요.</p><p class="eg-note">벌점 카드만 치우고, 나머지 카드는 그대로 둬요.</p>`);
+SL.hid = S('규칙 3', '🔍 그림 속 숨은 번호', `<div class="eg-two"><div class="eg-hid"><div class="eg-pic">🏝️<span class="tiny ring">7</span></div></div>
+  <div><p>그림을 <b>구석까지</b> 잘 봐요.</p><p>작은 숫자가 숨어 있으면 <b>그 번호 카드</b>를 펼쳐요.</p><p class="eg-note">못 찾겠으면 디벗 <b>🔍 숨은 번호</b> 버튼이 어느 카드를 볼지 알려 줘요.</p></div></div>`);
+SL.clr = S('규칙 4', '🗑 빨간 줄 = 치우기', `<div class="eg-two"><div class="eg-cen">${card('w','🚪','42','열린 상자')}<div class="eg-strike"><span>12</span><span>30</span></div></div>
+  <div><p>카드 위쪽에 <b>빨간 줄이 그어진 번호</b>가 있으면,</p><p>그 번호 카드는 <b>이제 필요 없어요</b>. 치워서 책상을 정리해요.</p></div></div>`);
+SL.mach = S('규칙 5', '⚙️ 초록 기계 카드', `<div class="eg-two"><div class="eg-cen">${card('g','⚙️','88','기계')}</div>
+  <div>${dev('⚙️ 기계 → <b>88</b> 입력 → 화면에서 직접 조작')}<p>초록 카드가 나오면 디벗 <b>⚙️ 기계</b>에 카드 번호를 넣어요.</p><p>문제를 풀어 구한 값으로 <b>직접 움직이거나 눌러요</b>.</p></div></div>`);
+SL.lock = S('규칙 6', '🔒 노란 자물쇠 카드', `<div class="eg-two"><div class="eg-cen">${card('y','🔒','99','자물쇠')}</div>
+  <div>${dev('🔒 자물쇠 → <span class="sl">3</span><span class="sl">0</span><span class="sl">1</span><span class="sl">2</span>')}<p>흩어진 단서를 모아 <b>4자리 비밀번호</b>를 찾아요.</p><p>디벗 <b>🔒 자물쇠</b>에 카드 번호와 4자리를 넣어요. 틀리면 1분 줄어요.</p></div></div>`);
+SL.help = S('규칙 7', '💡 막히면 힌트 · 📖 규칙', `<div class="eg-two"><div>${dev('💡 힌트 → 막힌 <b>카드 번호</b> 입력')}<p>한 번 누르면 귀띔, 한 번 더 누르면 더 큰 힌트가 나와요. 힌트를 많이 쓰면 별 ⭐이 줄어요.</p></div>
+  <div>${dev('📖 규칙')}<p>규칙이 헷갈리면 디벗 왼쪽 아래 <b>📖 규칙</b>을 눌러요.</p><p>그래도 안 되면 <b>손을 들어요</b>.</p></div></div>`);
+SL.end = S('규칙 8', '🏁 탈출!', `<div class="eg-two"><div class="eg-cen">${card('w','🏁','?','마지막 카드')}</div>
+  <div><p>마지막 카드에는 <b>"🏁 탈출에 이 번호를"</b>이라고 적혀 있어요.</p><p>디벗 <b>🏁 탈출</b>에 그 번호를 넣으면 끝!</p></div></div>`);
+SL.warn1 = S('유의사항 ①', '⚠️ 시작 전에 꼭!', `${big('🙈','들고 있는 카드는 <b>앞면을 보지 않기</b>')}${big('🚫','다른 모둠 카드와 <b>섞지 않기</b>')}${big('⏳','벌점 카드도 꼭 <b>디벗에 입력</b>하기')}`);
+SL.warn2 = S('유의사항 ②', '⚠️ 시작 전에 꼭!', `${big('🔄','디벗은 새로고침해도 이어져요. <b>[처음부터 다시]</b>는 누르지 않기')}${big('🧹','끝나면 다음 반을 위해 <b>번호 순으로 모으고</b> 장수 세기')}${big('💡','막히면 <b>힌트 → 📖 규칙</b>, 그래도 안 되면 손 들기')}`);
+SL.recap = S('규칙 복습', '🧭 기억나죠?', SL.rules.slice(SL.rules.indexOf('<div class="eg-grid">')));
+const PAGES = r => r === 0 ? [cover(0), SL.deal, SL.start, SL.add, SL.trap, SL.hid, SL.clr, SL.mach, SL.lock, SL.help, SL.end, SL.warn1, SL.warn2, SL.go(0)]
+                           : [cover(r), SL.recap, SL.warn1, SL.warn2, SL.go(r)];
+const LABELS = r => r === 0 ? ['📜 이야기','🃏 카드 나눠 들기','🃏 시작 카드','🔴+🔵 합치기','⏳ 함정','🔍 숨은 번호','🗑 치우기','⚙️ 기계','🔒 자물쇠','💡 힌트·📖 규칙','🏁 탈출','⚠️ 유의사항 ①','⚠️ 유의사항 ②','🚀 출발']
+                            : ['📜 이야기','🧭 규칙 복습','⚠️ 유의사항 ①','⚠️ 유의사항 ②','🚀 출발'];
 
 const CSS = `.eg-slide{aspect-ratio:16/9;width:100%;background:#1a237e;border-radius:14px;color:#fff;position:relative;overflow:hidden;padding:4% 5%;box-sizing:border-box;display:flex;flex-direction:column;container-type:inline-size}
 .eg-slide .eg-tag{font-size:2.2cqw;opacity:.75}.eg-slide h3{font-size:4.6cqw;margin:.25em 0 .35em}.eg-slide p{font-size:2.6cqw;margin:.3em 0;line-height:1.45}
@@ -54,7 +83,7 @@ const CSS = `.eg-slide{aspect-ratio:16/9;width:100%;background:#1a237e;border-ra
 .eg-two{display:flex;gap:4%;margin:auto 0}.eg-two>div{flex:1;background:rgba(255,255,255,.1);border-radius:12px;padding:2.5%}
 .eg-two b.y{color:#ffd54f}.eg-two b.g{color:#81c784}
 .eg-hid{display:flex;align-items:center;justify-content:center}.eg-pic{position:relative;font-size:16cqw;line-height:1}.eg-pic .tiny{position:absolute;right:8%;bottom:14%;font-size:2.2cqw;font-weight:bold;color:#fff;background:#5d4037;border-radius:4px;padding:0 .5cqw}
-.eg-grid b.hl{color:#ffd54f}.eg-warn{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw;margin:auto 0}.eg-warn>div{background:rgba(255,255,255,.1);border-radius:12px;padding:1.6cqw 2cqw;font-size:2.35cqw;line-height:1.45}.eg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2cqw;margin:auto 0}.eg-grid>div{background:rgba(255,255,255,.1);border-radius:12px;padding:2cqw;font-size:2.4cqw;line-height:1.5;text-align:center}`;
+.eg-sc.g{border-top-color:#2e7d32}.eg-sc.y{border-top-color:#f9a825}.eg-sc.p{border-top-color:#6d4c41;background:#efebe9}.eg-sc.w{border-top-color:#9e9e9e}.eg-deal{display:flex;gap:3%;justify-content:center;margin:auto 0 1cqw}.eg-deal .hand{background:rgba(255,255,255,.1);border-radius:12px;padding:1.6cqw 2cqw;text-align:center;min-width:14cqw}.eg-deal .fan{font-size:5cqw;height:7cqw;display:flex;justify-content:center}.eg-deal .fan span{display:inline-block;margin:0 -1cqw}.eg-deal b{display:block;font-size:3cqw;color:#ffd54f}.eg-deal small{font-size:1.8cqw;opacity:.8}.eg-cen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw}.eg-strike{display:flex;gap:1.5cqw}.eg-strike span{position:relative;background:#fbf3dc;color:#3b2412;border-radius:50%;width:6cqw;height:6cqw;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:2.6cqw}.eg-strike span:after{content:"";position:absolute;left:-8%;right:-8%;top:47%;height:.6cqw;background:#e53935;transform:rotate(-30deg)}.eg-dev{background:#fff;color:#1a237e;border-radius:10px;padding:1.4cqw 1.8cqw;font-size:2.4cqw;margin-bottom:1.2cqw;display:inline-block}.eg-dev .sl{display:inline-block;width:3.6cqw;height:4.4cqw;line-height:4.4cqw;text-align:center;border:.3cqw solid #1a237e;border-radius:6px;margin:0 .3cqw;font-weight:900}.eg-pic .tiny.ring{box-shadow:0 0 0 .5cqw #ffd54f}.eg-big{display:flex;align-items:center;gap:2.5cqw;background:rgba(255,255,255,.1);border-radius:14px;padding:1.6cqw 2.4cqw;margin:1.1cqw 0}.eg-big .e{font-size:5.6cqw}.eg-big .t{font-size:3cqw;line-height:1.35}.eg-big b{color:#ffd54f}.eg-grid b.hl{color:#ffd54f}.eg-warn{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw;margin:auto 0}.eg-warn>div{background:rgba(255,255,255,.1);border-radius:12px;padding:1.6cqw 2cqw;font-size:2.35cqw;line-height:1.45}.eg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2cqw;margin:auto 0}.eg-grid>div{background:rgba(255,255,255,.1);border-radius:12px;padding:2cqw;font-size:2.4cqw;line-height:1.5;text-align:center}`;
 
 window.EGUIDE = {
   ROUNDS, count: r => PAGES(r).length, label: (r, p) => LABELS(r)[p] || '',
