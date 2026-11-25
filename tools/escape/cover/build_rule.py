@@ -70,14 +70,16 @@ def setc(r):
 def setb(r):
     img = ['aback_practice.jpg', 'aback_r1.jpg', 'aback_r2.jpg', 'aback_r3.jpg'][r[0]]
     return f'<div class="card bk2"><img src="{os.path.join(BACK, img)}"><div class="bv"></div><div class="bw s">구성</div></div>'
-order = [0, 1, 2, 3, 0, 1, 2, 3, None]
-fr = [front(R[i]) if i is not None else '<div></div>' for i in order]
-bk = [back(R[i]) if i is not None else '<div></div>' for i in order]
-bk = sum([bk[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
+# 2026-11-25 선생님: A4 한 장에 한 종류(9장) — 필요한 회차 쪽만 골라 뽑게. 3회 구성 카드는 3회 최종판이 나오면 SET_ROUNDS에 3을 넣는다
+RULE_ROUNDS = [0, 1, 2, 3]; SET_ROUNDS = [0, 1, 2]
 import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
 _, cutjs = cut_css_js('#fbf6ea')
-sf = [setc(R[i]) if i is not None else '<div></div>' for i in order]; sb = [setb(R[i]) if i is not None else '<div></div>' for i in order]
-sb = sum([sb[j:j+3][::-1] for j in range(0, 9, 3)], [])
-html = head + css + '</head><body><div class="sheet rs">' + ''.join(fr) + '</div><div class="sheet rs">' + ''.join(bk) + '</div><div class="sheet">' + ''.join(sf) + '</div><div class="sheet">' + ''.join(sb) + '</div>' + cutjs + '</body></html>'
+flip = lambda xs: sum([xs[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
+pages = ''
+for i in RULE_ROUNDS:
+    pages += '<div class="sheet rs">' + front(R[i]) * 9 + '</div><div class="sheet rs">' + ''.join(flip([back(R[i])] * 9)) + '</div>'
+for i in SET_ROUNDS:
+    pages += '<div class="sheet">' + setc(R[i]) * 9 + '</div><div class="sheet">' + setb(R[i]) * 9 + '</div>'
+html = head + css + '</head><body>' + pages + cutjs + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_규칙카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
