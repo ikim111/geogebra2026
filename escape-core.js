@@ -275,5 +275,25 @@ if(ESC_C && !P){
         D.querySelectorAll('.prolog-end, a.startbtn').forEach(x=>x.style.display='none'); }
     }); }).catch(()=>{});
 }
+/* 📖 2026-11-25 선생님 요청(시안 승인): 게임 중 언제든 '규칙 한눈에'를 다시 보는 버튼(안내 TV 화면과 같은 내용) */
+(function(){
+  const st=document.createElement('style'); st.textContent=`#rulesBtn{position:fixed;left:12px;bottom:10px;z-index:60;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid #c9a55a;background:#fbf3dc;color:#3b2412;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+#rulesOv{position:fixed;inset:0;z-index:70;background:rgba(10,15,30,.72);display:none;align-items:center;justify-content:center;padding:14px}#rulesOv.on{display:flex}
+#rulesOv .bx{background:#1a237e;color:#fff;border-radius:16px;max-width:880px;width:100%;padding:18px 18px 14px;box-sizing:border-box}
+#rulesOv h3{margin:0 0 12px;font-size:22px}#rulesOv .gd{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#rulesOv .gd>div{background:rgba(255,255,255,.12);border-radius:12px;padding:12px 8px;text-align:center;font-size:15px;line-height:1.55}#rulesOv .gd b{color:#ffd54f}
+#rulesOv .cl{display:block;margin:14px auto 0;min-height:44px;padding:0 26px;border-radius:10px;border:2px solid #fff;background:#fff;color:#1a237e;font-weight:bold;font-size:15px;cursor:pointer}
+@media (max-width:640px){#rulesOv .gd{grid-template-columns:repeat(2,1fr)}}`;
+  document.head.appendChild(st);
+  const ov=document.createElement('div'); ov.id='rulesOv';
+  ov.innerHTML=`<div class="bx"><h3>📖 규칙 한눈에</h3><div class="gd">
+<div>🔴 + 🔵<br>두 번호를 <b>더한 번호</b><br>카드를 펼쳐요</div><div>🔍 그림 속 <b>작은 숫자</b><br>= 펼칠 카드 번호</div>
+<div>🔒 노란 자물쇠<br>단서를 모아 <b>4자리</b><br>🔒 자물쇠에 입력</div><div>⚙️ 초록 기계<br>⚙️ 기계에 <b>카드 번호</b><br>넣고 직접 조작</div>
+<div>🗑 <b>빨간 줄</b> 그어진 번호<br>= 그 카드는 치워요</div><div>💡 막히면 <b>힌트</b><br>⏳ 벌점 카드 = 시간 −1분</div></div>
+<button class="cl" type="button">닫기</button></div>`;
+  document.body.appendChild(ov);
+  const b=document.createElement('button'); b.id='rulesBtn'; b.type='button'; b.textContent='📖 규칙'; document.body.appendChild(b);
+  b.onclick=()=>ov.classList.add('on'); ov.onclick=e=>{ if(e.target===ov||e.target.classList.contains('cl')) ov.classList.remove('on'); };
+})();
 window.__S=S; window.__got=got;
 })();

@@ -32,14 +32,14 @@
   .pick a{min-height:44px;display:flex;align-items:center;justify-content:center;border:2px solid #1565c0;border-radius:10px;color:#1565c0;font-weight:bold;text-decoration:none}
 </style></head><body>
 <div class="head"><a id="backLink" href="mgmt-9x3k7f2p.html">← 목차</a><b id="hd">🧭 방탈출 보드게임 안내</b><span></span></div>
-<div class="pick" id="pick" style="display:none"><h3>들어갈 반을 누르세요</h3><div class="g" id="pickG"></div></div>
+<div class="pick" id="pick" style="display:none"><h3>들어갈 학년·반을 누르세요</h3><div class="g" id="pickG"></div></div>
 <div class="wrap" id="main">
   <div class="rounds" id="rounds"></div>
   <div id="slide"></div>
   <div class="bar"><button class="btn" id="prev">◀ 이전</button><button class="btn p" id="next">다음 ▶</button>
     <button class="btn r" id="end" disabled>⏹ 게임 끝내기</button><button class="btn" id="reset">↺ 처음으로</button><button class="btn g" id="go" disabled>🚀 시작!</button></div>
   <div class="st"><span class="live" id="live">● 연결 중…</span> <span class="why" id="why"></span></div>
-  <div class="note">← → 방향키로도 넘길 수 있어요. 학생 디벗은 이 화면을 그대로 따라가고, [🚀 시작!]을 누르면 모두 게임 화면으로 바뀌어요.<br>잘못 눌렀으면 다시 「다음/이전」을 누르면 시작 신호가 꺼져요(이미 게임으로 넘어간 디벗은 그대로예요).</div>
+  <div class="note">← → 방향키로도 넘길 수 있어요. 학생 디벗에는 "앞 화면(TV)을 보세요"와 지금 장 이름이 뜨고, [🚀 시작!]을 누르면 모두 게임 화면으로 바뀌어요.<br>잘못 눌렀으면 다시 「다음/이전」을 누르면 시작 신호가 꺼져요(이미 게임으로 넘어간 디벗은 그대로예요).</div>
 </div>
 <script>
 (function(){
@@ -50,7 +50,7 @@
   let round = Math.max(0, Math.min(3, parseInt(q.get('round')||'0',10)||0)), page = 0, ref = null, viewers = {};
   const paint = () => {
     const R = EGUIDE.ROUNDS[round], N = EGUIDE.count(round);
-    $('hd').textContent = `🧭 방탈출 보드게임 안내${classNo ? ' · ' + classNo + '반' : ''}`;
+    $('hd').textContent = `🧭 방탈출 보드게임 안내${classNo ? ' · ' + EGUIDE.cls(classNo) : ''}`;
     $('slide').innerHTML = EGUIDE.html(round, page);
     $('rounds').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.r === round));
     $('prev').disabled = page === 0; $('next').disabled = page >= N-1;
@@ -72,7 +72,7 @@
   paint();
   if(!classNo){   // 2026-11-06 다른 교사 화면처럼 반부터 고르기
     $('main').style.display = 'none'; $('pick').style.display = '';
-    $('pickG').innerHTML = Array.from({length:12}, (_, i) => `<a href="?classNo=${i+1}&round=${round}">${i+1}반</a>`).join('');
+    $('pickG').innerHTML = [2,3].map(gr => `<div style="grid-column:1/-1;font-weight:bold;color:#1a237e;margin-top:6px">${gr}학년</div>` + Array.from({length:12}, (_, i) => `<a href="?classNo=${gr===2 ? i+1 : gr+'-'+(i+1)}&round=${round}">${i+1}반</a>`).join('')).join('');   // 2026-11-25: 3학년 전환기 수업('3-5')
     return; }
   try{
     if(!firebase.apps.length) firebase.initializeApp(EGUIDE.FB);

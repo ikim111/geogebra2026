@@ -1,7 +1,7 @@
 /* 🧭 방탈출 시작 전 안내 화면 (2026-11-05 선생님 요청)
    교사 화면(tesc-r8k2w.html)이 넘기면 학생 디벗(studentesc.html)이 실시간으로 같은 장을 본다.
    Firebase: rooms/{반}__escape/guide = {round, page, go(시작 누른 시각)} / rooms/{반}__escape/viewers/{uid} = 접속 시각
-   연습(0)은 규칙을 자세히, 1·2·3회는 규칙 복습 + 그 회차 이야기. 예시 카드는 게임에 없는 카드로 그린다. */
+   2026-11-25: 연습(0)=이야기·카드 놓기·규칙 한눈에·유의사항·출발, 1·2·3회=이야기·유의사항·출발. 학생 디벗은 슬라이드 대신 'TV를 보세요' 대기 화면. 3학년(전환기)은 반을 '3-5'처럼. 예시 카드는 게임에 없는 카드로 그린다. */
 (function(){
 const ROUNDS = {
   0:{ep:'연습', series:'선원 훈련소', title:'규칙 익히기', color:'#8d6e63', game:'escape0.html', min:0,
@@ -23,18 +23,25 @@ const cover = r => { const R = ROUNDS[r]; return S(`나침반 시리즈 · ${R.e
 const SL = {
   ready: S('준비', '🃏 카드 놓기', `<div class="eg-two"><div><p>① 카드 더미는 <b>번호가 보이게</b> 쌓아 둬요.</p><p>② <b>시작 카드</b>만 펼쳐요.</p><p>③ 카드에 나온 번호는 더미에서 찾아 펼쳐요.</p></div>
     <div><p><b>모둠 역할</b></p><p>🃏 카드 담당 — 카드 찾기·펼치기</p><p>📱 디벗 담당 — 번호 넣기</p><p>📝 기록 담당 — 계산·메모</p></div></div>`),
-  combo: S('규칙 1', '🔴 + 🔵 = 새 카드', `<p>빨간 번호 카드와 파란 번호 카드를 합치면, <b>두 수를 더한 번호</b>의 카드를 펼쳐요.</p>
-    <div class="eg-combo">${card('r','🔑','12','열쇠')}<span class="op">+</span>${card('b','📦','30','상자')}<span class="op">=</span>${card('w','🎁','42','열린 상자')}</div><p class="eg-note">더한 번호의 카드가 없으면 맞지 않는 조합이에요.</p>`),
-  hidden: S('규칙 2', '🔍 그림 속 숨은 번호', `<div class="eg-two"><div class="eg-hid"><div class="eg-pic">🏝️<span class="tiny">7</span></div></div>
-    <div><p>그림을 구석까지 잘 보세요.</p><p>작은 숫자가 숨어 있으면 <b>그 번호의 카드</b>를 펼쳐요.</p></div></div>`),
-  lockmach: S('규칙 3', '🔒 자물쇠 · ⚙️ 기계', `<div class="eg-two"><div><p><b class="y">🟡 노란 자물쇠 카드</b></p><p>흩어진 단서를 모아 <b>4자리 비밀번호</b>를 찾고, 디벗 <b>🔒 자물쇠</b>에 넣어요.</p></div>
-    <div><p><b class="g">🟢 초록 기계 카드</b></p><p>디벗 <b>⚙️ 기계</b>에 카드 번호를 넣고, 구한 값으로 직접 조작해요.</p></div></div>`),
-  clear: S('규칙 4', '🗑 치우기 · 벌점 · 힌트', `<div class="eg-two"><div><p><b>빨간 줄</b>이 그어진 번호가 나오면 그 카드는 치워요.</p><div class="eg-combo sm">${card('r','🔑','12','열쇠',true)}</div></div>
-    <div><p><b>⚠️ 벌점 카드</b>가 나오면 디벗 <b>⏳ 벌점</b>에 번호를 넣어요. 시간이 줄어요.</p><p><b>💡 힌트</b>는 막힌 카드 번호를 넣으면 나와요. 쓸수록 별 ⭐이 줄어요.</p></div></div>`),
-  recap: S('규칙 복습', '🧭 기억나죠?', `<div class="eg-grid"><div>🔴 + 🔵<br><b>더한 번호</b> 펼치기</div><div>🔍 그림 속<br><b>숨은 번호</b></div><div>🔒 자물쇠<br><b>4자리</b> 비밀번호</div><div>⚙️ 기계<br>구한 값으로 <b>조작</b></div><div>🗑 빨간 줄<br>카드 <b>치우기</b></div><div>⚠️ 벌점 · 💡 힌트<br>시간 · 별 ⭐ 줄어요</div></div>`),
   go: r => S('출발', r ? '🚀 시간이 흐르기 시작해요!' : '🚀 연습 시작!', `<p>마지막 카드를 찾으면 디벗 <b>🏁 탈출</b>에 그 번호를 넣어요.</p><p>모르는 게 있으면 <b>💡 힌트</b>부터! 그래도 막히면 손을 들어요.</p>${r ? '<p>모둠이 모두 의논하고, 한 사람만 디벗을 눌러요.</p>' : ''}`)
 };
-const PAGES = r => r === 0 ? [cover(0), SL.ready, SL.combo, SL.hidden, SL.lockmach, SL.clear, SL.go(0)] : [cover(r), SL.recap, SL.go(r)];
+/* 2026-11-25 선생님 요청(시안 승인): 규칙 5쪽 대신 '규칙 한눈에' 한 쪽(연습 전) + 매 회 '유의사항'. 규칙은 훈련소에서 직접 해 보며 익히고, 게임 중에는 디벗 📖 규칙 버튼 */
+SL.rules = S('규칙 한눈에', '🧭 이것만 기억해요', `<div class="eg-grid">
+<div>🔴 + 🔵<br>두 번호를 <b class="hl">더한 번호</b><br>카드를 펼쳐요</div>
+<div>🔍 그림 속 <b class="hl">작은 숫자</b><br>= 펼칠 카드 번호</div>
+<div>🔒 노란 자물쇠<br>단서를 모아 <b class="hl">4자리</b><br>디벗 🔒에 입력</div>
+<div>⚙️ 초록 기계<br>디벗 ⚙️에 <b class="hl">카드 번호</b><br>넣고 직접 조작</div>
+<div>🗑 <b class="hl">빨간 줄</b> 그어진 번호<br>= 그 카드는 치워요</div>
+<div>💡 막히면 <b class="hl">힌트</b><br>⏳ 벌점 카드 = 시간 −1분</div></div>`);
+SL.warn = S('유의사항', '⚠️ 시작 전에 꼭!', `<div class="eg-warn">
+<div>🃏 카드 더미는 <b>번호가 보이게</b>.<br>미리 뒤집거나 뒷면을 엿보지 않기</div>
+<div>⏳ 벌점 카드도 버리지 말고<br><b>디벗에 입력</b> 후 옆에 두기</div>
+<div>🚫 다른 모둠 카드와 <b>섞지 않기</b></div>
+<div>🔄 디벗은 새로고침해도 이어져요.<br><b>[처음부터 다시]</b>는 누르지 않기</div>
+<div>🧹 끝나면 카드를 <b>번호 순</b>으로 모아<br>표지에 적힌 장수 확인</div>
+<div>💡 막히면 <b>힌트 → 📖 규칙</b> 먼저,<br>그래도 안 되면 손 들기</div></div>`);
+const PAGES = r => r === 0 ? [cover(0), SL.ready, SL.rules, SL.warn, SL.go(0)] : [cover(r), SL.warn, SL.go(r)];
+const LABELS = r => r === 0 ? ['📜 이야기', '🃏 카드 놓기', '🧭 규칙 한눈에', '⚠️ 유의사항', '🚀 출발'] : ['📜 이야기', '⚠️ 유의사항', '🚀 출발'];
 
 const CSS = `.eg-slide{aspect-ratio:16/9;width:100%;background:#1a237e;border-radius:14px;color:#fff;position:relative;overflow:hidden;padding:4% 5%;box-sizing:border-box;display:flex;flex-direction:column;container-type:inline-size}
 .eg-slide .eg-tag{font-size:2.2cqw;opacity:.75}.eg-slide h3{font-size:4.6cqw;margin:.25em 0 .35em}.eg-slide p{font-size:2.6cqw;margin:.3em 0;line-height:1.45}
@@ -47,10 +54,11 @@ const CSS = `.eg-slide{aspect-ratio:16/9;width:100%;background:#1a237e;border-ra
 .eg-two{display:flex;gap:4%;margin:auto 0}.eg-two>div{flex:1;background:rgba(255,255,255,.1);border-radius:12px;padding:2.5%}
 .eg-two b.y{color:#ffd54f}.eg-two b.g{color:#81c784}
 .eg-hid{display:flex;align-items:center;justify-content:center}.eg-pic{position:relative;font-size:16cqw;line-height:1}.eg-pic .tiny{position:absolute;right:8%;bottom:14%;font-size:2.2cqw;font-weight:bold;color:#fff;background:#5d4037;border-radius:4px;padding:0 .5cqw}
-.eg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2cqw;margin:auto 0}.eg-grid>div{background:rgba(255,255,255,.1);border-radius:12px;padding:2cqw;font-size:2.4cqw;line-height:1.5;text-align:center}`;
+.eg-grid b.hl{color:#ffd54f}.eg-warn{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw;margin:auto 0}.eg-warn>div{background:rgba(255,255,255,.1);border-radius:12px;padding:1.6cqw 2cqw;font-size:2.35cqw;line-height:1.45}.eg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2cqw;margin:auto 0}.eg-grid>div{background:rgba(255,255,255,.1);border-radius:12px;padding:2cqw;font-size:2.4cqw;line-height:1.5;text-align:center}`;
 
 window.EGUIDE = {
-  ROUNDS, count: r => PAGES(r).length,
+  ROUNDS, count: r => PAGES(r).length, label: (r, p) => LABELS(r)[p] || '',
+  cls: c => { const m = String(c||'').match(/^(\d+)-(\d+)$/); return m ? m[1] + '학년 ' + m[2] + '반' : (c ? c + '반' : ''); },   // 2026-11-25: 3학년은 '3-5', 2학년은 '5'
   html: (r, p) => { const P = PAGES(r), i = Math.max(0, Math.min(P.length-1, p|0)); return `<div class="eg-slide">${P[i]}<div class="eg-pg">${i+1} / ${P.length}</div></div>`; },
   css: () => { if(!document.getElementById('egcss')){ const s = document.createElement('style'); s.id = 'egcss'; s.textContent = CSS; document.head.appendChild(s); } },
   FB: { apiKey:'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI', authDomain:'brojuntest.firebaseapp.com', databaseURL:'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app',
