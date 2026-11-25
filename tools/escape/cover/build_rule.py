@@ -66,7 +66,7 @@ def setc(r):
     return (f'<div class="card rk" style="--c:{c}"><div class="band"></div><div class="ls" style="top:10mm;bottom:6mm"><div class="hd">📦 {k} 구성 카드 · {h}</div>'
             f'<div class="cnt">게임 카드 <b>{len(d)}장</b> <span style="font:400 2.6mm Gowun Dodum">+ 표지·규칙·구성 카드</span></div><div class="nb">{nb}</div>'
             '<div class="how">정리할 때: ① 카드를 <b>번호 순</b>으로 늘어놓고 ② 이 표와 하나씩 맞춰 봐요. ③ 빠진 번호가 있으면 <b>책상 밑·옆 모둠</b>을 찾아보고, 그래도 없으면 선생님께!</div>'
-            '</div><div class="sr">나침반 시리즈 · 구성</div></div>')
+            '</div></div>')
 def setb(r):
     img = ['aback_practice.jpg', 'aback_r1.jpg', 'aback_r2.jpg', 'aback_r3.jpg'][r[0]]
     return f'<div class="card bk2"><img src="{os.path.join(BACK, img)}"><div class="bv"></div><div class="bw s">구성</div></div>'
