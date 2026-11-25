@@ -54,12 +54,12 @@ def front(r):
     return (f'<div class="card rk" style="--c:{c}"><div class="band"></div><div class="tt"><div class="tx"><div class="k">{k} · 규칙 카드</div><div class="h">{h}</div>'
             f'<div class="s">카메라로 찍으면<br>이 판이 열려요</div></div><img src="{qr(url)}"></div>'
             '<div class="ls"><div class="hd">🧭 규칙</div><div class="gd">' + ''.join(f'<div class="tl"><div class="e">{e}</div><div>{t}</div></div>' for e, t in RULES) + '</div>' +
-            '</div><div class="sr">나침반 시리즈 · 규칙</div></div>')
+            '</div></div>')   # 2026-11-26 선생님: 아래 '나침반 시리즈' 글씨 빼기
 def back(r):
     n, c, k, h = r
     return (f'<div class="card rk bk" style="--c:{c}"><div class="band"></div><div class="ls"><div class="hd">⚠️ 유의사항</div>' +
             ''.join(f'<div class="it"><span class="n">{i}</span><span>{t}</span></div>' for i, (e, t) in enumerate(WARN, 1)) +
-            f'</div><div class="sr">{k} · {h}</div></div>')
+            '</div></div>')
 def setc(r):
     n, c, k, h = r; d = DECK[n]
     nb = ''.join(f'<span class="{"w" if isinstance(x, str) and len(x) > 1 else ""}">{x}</span>' for x in d)
@@ -72,14 +72,30 @@ def setb(r):
     return f'<div class="card bk2"><img src="{os.path.join(BACK, img)}"><div class="bv"></div><div class="bw s">구성</div></div>'
 # 2026-11-25 선생님: A4 한 장에 한 종류(9장) — 필요한 회차 쪽만 골라 뽑게. 3회 구성 카드는 3회 최종판이 나오면 SET_ROUNDS에 3을 넣는다
 RULE_ROUNDS = [0, 1, 2, 3]; SET_ROUNDS = [0, 1, 2, 3]
-import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
-_, cutjs = cut_css_js('#fbf6ea', Z=.87, G=4)   # 2026-11-26 선생님: 앞뒤가 밀려도 되게 카드 사이 4mm 틈(카드 약 61×86mm)
+# 2026-11-26 선생님: 카드마다 자리가 조금씩 달라 보임·짝수 쪽 다른 색 테두리 → 공용 cutlayout 대신 mm 단위로 직접 배치.
+# 카드 60.9×86.1mm(0.87배), 사이 틈 4mm, 점선은 앞면에만 틈 한가운데. 앞뒤 모두 종이 전체 아이보리, 뒷면은 줄마다 좌우를 뒤집어 같은 자리.
+Z = .87; W = 70*Z; H = 99*Z; G = 4; L = (210 - 3*W - 2*G)/2; T = (297 - 3*H - 2*G)/2
+X = [L + c*(W+G) for c in range(3)]; Y = [T + r*(H+G) for r in range(3)]
+lay = f"""<style>@page{{size:A4;margin:0}} body{{margin:0!important;padding:0!important;display:block!important;gap:0!important;background:#fbf6ea!important}} .pg{{position:relative;width:210mm;height:297mm;background:#fbf6ea;overflow:hidden;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.pg .slot{{position:absolute;width:{W:.2f}mm;height:{H:.2f}mm;overflow:hidden}} .pg .slot>.card{{zoom:{Z};outline:none!important;box-shadow:none!important;margin:0}}
+.pg .slot.bl{{width:{W+G:.2f}mm;height:{H+G:.2f}mm}} .pg .slot.bl>.card{{zoom:{(W+G)/70:.4f}}}
+.pg .cv,.pg .ch{{position:absolute;border:0 dashed #9a9a9a}} .pg .cv{{top:0;bottom:0;width:0;border-left-width:.25mm}} .pg .ch{{left:0;right:0;height:0;border-top-width:.25mm}}</style>"""
+def page(cards, front_side, bleed=False):
+    h = '<div class="pg">'
+    for i, c in enumerate(cards):
+        r, col = divmod(i, 3); x, y = X[col], Y[r]
+        if bleed: x -= G/2; y -= G/2
+        h += f'<div class="slot{" bl" if bleed else ""}" style="left:{x:.2f}mm;top:{y:.2f}mm">{c}</div>'
+    if front_side:
+        for x in [L - G/2] + [X[c] + W + G/2 for c in range(3)]: h += f'<div class="cv" style="left:{x:.2f}mm"></div>'
+        for y in [T - G/2] + [Y[r] + H + G/2 for r in range(3)]: h += f'<div class="ch" style="top:{y:.2f}mm"></div>'
+    return h + '</div>'
 flip = lambda xs: sum([xs[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
 pages = ''
 for i in RULE_ROUNDS:
-    pages += '<div class="sheet rs">' + front(R[i]) * 9 + '</div><div class="sheet rs">' + ''.join(flip([back(R[i])] * 9)) + '</div>'
+    pages += page([front(R[i])] * 9, True) + page(flip([back(R[i])] * 9), False)
 for i in SET_ROUNDS:
-    pages += '<div class="sheet rs">' + setc(R[i]) * 9 + '</div><div class="sheet">' + setb(R[i]) * 9 + '</div>'
-html = head + css + '</head><body>' + pages + cutjs + '</body></html>'
+    pages += page([setc(R[i])] * 9, True) + page(flip([setb(R[i])] * 9), False)
+html = head + css + lay + '</head><body>' + pages + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_규칙카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
