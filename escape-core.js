@@ -11,7 +11,7 @@ const P = G.mode === 'practice';
 if(P) document.body.classList.add('practice'); else document.body.classList.add('nostart');
 
 /* ---------- 화면 뼈대 ---------- */
-const BTN = [['p','hint','💡','힌트',50.0,9.0], ['y','code','🔒','자물쇠',89.0,37.3], ['g','machine','⚙️','기계',74.1,83.2], ['r','pen','⏳','벌점',25.9,83.2], ['','hid','🔍','숨은 번호',11.0,37.3]];
+const BTN = [['p','hint','💡','힌트',50.0,9.0], ['y','code','🔒','자물쇠',89.0,37.3], ['g','machine','⚙️','기계',74.1,83.2], ['r','pen','🔗','합치기',25.9,83.2], ['','hid','🔍','숨은 번호',11.0,37.3]];
 const ring = BTN.map(([c,m,i,t,x,y])=>`<button class="btn ${c}" style="left:${x}%;top:${y}%" data-act="${m}" id="b_${m}"><i>${i}</i><span>${t}</span></button>`).join('');
 const ttl = `<div class="ep">${G.series||"붉은 나침반"} · ${G.ep}</div><div class="nm">${G.title}</div>`;
 document.body.insertAdjacentHTML('afterbegin', `
@@ -102,7 +102,7 @@ function sub(el, cls, html){ const m=$(el); m.className='sc pm'+(cls?' '+cls:'')
 let padMode='', buf='';
 const PT = {machine:['⚙️ 기계','초록 카드의 번호를 넣고 열어 보기를 누르세요.',2], code:['🔒 자물쇠','4자리 비밀번호를 넣으세요.',4],
   hint:['💡 힌트','막힌 카드의 번호를 넣으세요.'+(G.zeroHint?' (시작 카드는 0)':''),2], end:['🏁 탈출','마지막 카드의 번호를 넣으세요.',2],
-  pen:['⏳ 벌점','펼친 벌점 카드의 번호를 넣으세요.',2]};
+  pen:['🔗 합치기','빨강 카드 번호 + 파랑 카드 번호, 더한 수를 넣으세요.',2]}   // 2026-11-26: ⏳벌점 → 🔗합치기(11/6 선생님 결정);
 function paint(){ const n = padMode==='code' ? 4 : Math.max(PT[padMode][2], buf.length); let h='';
   if(padMode!=='code'){ $('slots').innerHTML=`<div class="sl wide mono${buf?'':' e'}">${buf||'<span class=ph>번호</span>'}</div>`; return; } for(let i=0;i<n;i++){ const c = buf[i]; h += `<div class="sl mono${c===undefined?' e':''}">${c===undefined?'·':c}</div>`; } $('slots').innerHTML=h; }
 function openPad(mode){ if(!S.begun){ homeSay('info','먼저 <b>항해 시작</b>을 누르세요.'); return; }
@@ -133,11 +133,14 @@ $('padOk').onclick=()=>{
     const head = lv===2 ? '🗝 정답' : (G.hintBy||'🏮 등대지기 할머니');
     const more = lv+1<L ? '<small>같은 번호를 한 번 더 넣으면 '+(lv+1===2?'<b>정답</b>이 나와요. 정답은 힌트 2번으로 세요.':'다음 힌트가 나와요.')+(P?'':' 힌트를 많이 쓰면 별이 줄어요.')+'</small>' : '';
     sub('padMsg','info', head+': "'+h[lv]+'"'+more); return; }
-  if(padMode==='pen'){ const pc=(G.pens||{})[v];
-    if(G.pens && !pc){ sub('padMsg','info','그 번호는 벌점 카드가 아니에요. 카드 위의 번호를 다시 보세요.'); buf=''; paint(); return; }
-    const m=(pc&&pc.m)||1; emit('pen', v); show('home');
-    homeSay('no', resultHTML({msg:((pc&&pc.msg)||G.penMsg||'')+'<br>그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen', m)})+(P?'':'<small><a href="#" id="undoPen" style="color:#7a1d10;font-weight:900">잘못 넣었어요 · 되돌리기</a></small>'));
-    const u=$('undoPen'); if(u) u.onclick=e=>{ e.preventDefault(); if(S.pen>0){ S.pen--; S.penMs-=60000*m; } homeSay('info',`벌점을 되돌렸어요. ${m}분이 다시 돌아왔어요.`); tick(); }; return; }
+  if(padMode==='pen'){ const n=+v, cb=(G.combos||{})[n], pc=(G.pens||{})[v];
+    /* 🔗 2026-11-26 합치기(11/6 선생님 결정): 빨강+파랑 합을 넣으면 맞는 합 → 'N번 펼치세요', 함정 합 → 벌점 카드·시간 감점, 카드가 없는 합 → 틀린 답 */
+    if(cb){ emit('combo', n); show('home'); homeSay('ok', `<b>✅ 합치기 성공!</b> ${cb[0]} + ${cb[1]} = ${n}<br><b>${n}번</b> 카드를 찾아 펼치세요.`); return; }
+    if(G.pens && !pc){ sub('padMsg','no', resultHTML({msg:'그 합으로 펼칠 카드는 없어요. 빨강과 파랑 번호를 다시 더해 보세요.', lose:lose('wrong')})); buf=''; paint(); return; }
+    S.penDone=S.penDone||{}; if(S.penDone[v]){ sub('padMsg','info','그 함정은 이미 벌점을 받았어요. 벌점 카드만 치우고 다른 조합을 찾아요.'); buf=''; paint(); return; }
+    S.penDone[v]=1; const m=(pc&&pc.m)||1; emit('pen', v); show('home');
+    homeSay('no', resultHTML({msg:`<b>⏳ 함정!</b> <b>${v}번 벌점 카드</b>를 펼쳐 보세요. `+((pc&&pc.msg)||G.penMsg||'')+'<br>그 <b>벌점 카드만</b> 치우세요. 합쳤던 카드는 그대로 둬요.', lose:lose('pen', m)})+(P?'':'<small><a href="#" id="undoPen" style="color:#7a1d10;font-weight:900">잘못 넣었어요 · 되돌리기</a></small>'));
+    const u=$('undoPen'); if(u) u.onclick=e=>{ e.preventDefault(); if(S.pen>0){ S.pen--; S.penMs-=60000*m; } delete S.penDone[v]; homeSay('info',`벌점을 되돌렸어요. ${m}분이 다시 돌아왔어요.`); tick(); }; return; }
   if(padMode==='end'){ if(+v===+G.endCard){ emit('end'); finish(); } else { sub('padMsg','no', resultHTML({msg:'아직 끝이 아니에요! 마지막 카드의 번호를 넣으세요.', lose:lose('wrong')})); buf=''; paint(); } }
 };
 
@@ -292,12 +295,12 @@ function saveRec(cls, data, n, ok, fail){
   .then(()=>ok(), ()=>{ if(n<2) setTimeout(()=>saveRec(cls, data, n+1, ok, fail), 2000); else fail(); }); }
 /* ---------- 새로고침해도 이어 하기 (이 디벗 안에만 저장, 3시간 지나면 버림) ---------- */
 function save(){ if(saveOff) return; if(P ? !(flow||Object.keys(got).length) : !S.begun) return;
-  const d={t:Date.now(), t0:S.t0, pauseMs:S.pauseMs, pauseAt:S.pauseAt, acc:S.acc+(S.running?Date.now()-S.start:0), running:S.running, pen:S.pen, hint:S.hint, wrong:S.wrong, penMs:S.penMs, wrongMs:S.wrongMs, solved:S.solved, hintLv:S.hintLv, seen:S.seen, flow, got};
+  const d={t:Date.now(), t0:S.t0, pauseMs:S.pauseMs, pauseAt:S.pauseAt, acc:S.acc+(S.running?Date.now()-S.start:0), running:S.running, pen:S.pen, hint:S.hint, wrong:S.wrong, penMs:S.penMs, wrongMs:S.wrongMs, solved:S.solved, hintLv:S.hintLv, seen:S.seen, penDone:S.penDone||{}, flow, got};
   try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
 setInterval(save, 1000); window.addEventListener('pagehide', save);
 (function restore(){ let d=null; try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
   if(!d || Date.now()-d.t > 3*3600000) return;
-  ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen','t0','pauseMs','pauseAt'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
+  ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen','t0','pauseMs','pauseAt','penDone'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
   if(P){ flow=d.flow||0; Object.assign(got, d.got||{}); paintBadges(); glowNow(); }
   else { S.begun=true; document.body.classList.remove('nostart'); S.running=!!d.running; if(S.running) S.start=Date.now(); else $('pauseBtn').textContent='▶';
     $('startBtn').style.display='none'; $('endBtn').style.display=''; $('outBtn').style.display='';
@@ -342,9 +345,9 @@ function toast(t){ const d=document.createElement('div'); d.className='escToast'
   document.head.appendChild(st);
   const ov=document.createElement('div'); ov.id='rulesOv';
   ov.innerHTML=`<div class="bx"><h3>📖 규칙 한눈에</h3><div class="gd">
-<div>🔴 + 🔵<br>두 번호를 <b>더한 번호</b><br>카드를 펼쳐요</div><div>🔍 그림 속 <b>작은 숫자</b><br>= 펼칠 카드 번호</div>
+<div>🔴 + 🔵<br>두 번호를 <b>더해</b><br><b>🔗 합치기</b>에 넣어요</div><div>🔍 그림 속 <b>작은 숫자</b><br>= 펼칠 카드 번호</div>
 <div>🔒 노란 자물쇠<br>단서를 모아 <b>4자리</b><br>🔒 자물쇠에 입력</div><div>⚙️ 초록 기계<br>⚙️ 기계에 <b>카드 번호</b><br>넣고 직접 조작</div>
-<div>🗑 <b>빨간 줄</b> 그어진 번호<br>= 그 카드는 치워요</div><div>💡 막히면 <b>힌트</b><br>⏳ 벌점 카드 = 시간 −1분</div></div>
+<div>🗑 <b>빨간 줄</b> 그어진 번호<br>= 그 카드는 치워요</div><div>💡 막히면 <b>힌트</b><br>⏳ 함정 합 = 시간 −1분</div></div>
 <button class="cl" type="button">닫기</button></div>`;
   document.body.appendChild(ov);
   const b=document.createElement('button'); b.id='rulesBtn'; b.type='button'; b.textContent='📖 규칙'; document.body.appendChild(b);

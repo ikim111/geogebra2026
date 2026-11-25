@@ -27,15 +27,15 @@ const SL = {
 };
 /* 2026-11-25 선생님 요청(시안 승인): 규칙 5쪽 대신 '규칙 한눈에' 한 쪽(연습 전) + 매 회 '유의사항'. 규칙은 훈련소에서 직접 해 보며 익히고, 게임 중에는 디벗 📖 규칙 버튼 */
 SL.rules = S('규칙 한눈에', '🧭 이것만 기억해요', `<div class="eg-grid">
-<div>🔴 + 🔵<br>두 번호를 <b class="hl">더한 번호</b><br>카드를 펼쳐요</div>
+<div>🔴 + 🔵<br>두 번호를 <b class="hl">더해</b><br>디벗 <b class="hl">🔗 합치기</b>에 넣어요</div>
 <div>🔍 그림 속 <b class="hl">작은 숫자</b><br>= 펼칠 카드 번호</div>
 <div>🔒 노란 자물쇠<br>단서를 모아 <b class="hl">4자리</b><br>디벗 🔒에 입력</div>
 <div>⚙️ 초록 기계<br>디벗 ⚙️에 <b class="hl">카드 번호</b><br>넣고 직접 조작</div>
 <div>🗑 <b class="hl">빨간 줄</b> 그어진 번호<br>= 그 카드는 치워요</div>
-<div>💡 막히면 <b class="hl">힌트</b><br>⏳ 벌점 카드 = 시간 −1분</div></div>`);
+<div>💡 막히면 <b class="hl">힌트</b><br>⏳ 함정 합 = 시간 −1분</div></div>`);
 SL.warn = S('유의사항', '⚠️ 시작 전에 꼭!', `<div class="eg-warn">
 <div>🃏 카드 더미는 <b>번호가 보이게</b>.<br>미리 뒤집거나 뒷면을 엿보지 않기</div>
-<div>⏳ 벌점 카드도 버리지 말고<br><b>디벗에 입력</b> 후 옆에 두기</div>
+<div>🔗 카드를 합칠 땐 먼저<br><b>디벗 🔗 합치기</b>에 더한 수 넣기</div>
 <div>🚫 다른 모둠 카드와 <b>섞지 않기</b></div>
 <div>🔄 디벗은 새로고침해도 이어져요.<br><b>[처음부터 다시]</b>는 누르지 않기</div>
 <div>🧹 끝나면 카드를 <b>번호 순</b>으로 모아<br>표지에 적힌 장수 확인</div>
@@ -72,8 +72,8 @@ const dev = (inner) => `<div class="eg-dev">${inner}</div>`;
 const big = (emo, txt) => `<div class="eg-big"><div class="e">${emo}</div><div class="t">${txt}</div></div>`;
 SL.deal = S('준비 ①', '🃏 안 펼친 카드는 나눠 들어요', `<div class="eg-deal">${[1,2,3,4].map(i=>`<div class="hand"><div class="fan">${[0,1,2].map(k=>`<img src="esc-img/b_practice.jpg" style="transform:rotate(${(k-1)*12}deg)">`).join('')}</div><b>${i}번 선원</b></div>`).join('')}</div><p>카드를 <b>번호 순</b>으로 정리해 차례대로 나눠 들어요. 번호가 나오면 <b>"12번!"</b> 하고 부르고, 가진 사람이 가운데에 펼쳐요.</p><p class="eg-sm">🚫 들고 있는 카드의 앞면은 보지 않아요.</p>`);
 SL.start = S('준비 ②', '🃏 시작 카드부터', `<div class="eg-two"><div class="eg-cen">${C.s()}</div><div><p>가운데에 <b>시작 카드</b>만 펼쳐요.</p><p>그림 속 <b>번호 동그라미</b>(빨강 12, 파랑 31·33)를 보고, 그 번호 카드를 찾아 펼쳐요.</p><p class="eg-sm">📱 디벗 담당 1명 · 📝 기록 담당 1명을 정해요.</p></div></div>`);
-SL.add = S('규칙 1', '🔴 + 🔵 = 더한 번호', `<div class="eg-combo">${C.r12()}<span class="op">+</span>${C.b31()}<span class="op">=</span>${C.g43()}</div><p>위 띠가 <b>빨강</b>인 카드와 <b>파랑</b>인 카드는 함께 쓸 수 있어요. 두 번호를 <b>더해요</b>. 12 + 31 = <b>43번</b> 카드를 펼쳐요.</p>`);
-SL.trap = S('규칙 2', '⏳ 함정 조심!', `<div class="eg-combo">${C.r12()}<span class="op">+</span>${C.b33()}<span class="op">=</span>${C.p45()}</div><p>아무거나 더하면 <b>벌점 카드</b>(갈색 띠, ⏳)가 나와요. 디벗 <b>⏳ 벌점</b>에 번호를 넣으면 시간이 1분 줄어요.</p><p class="eg-sm">벌점 카드만 치우고, 나머지 카드는 그대로 둬요.</p>`);
+SL.add = S('규칙 1', '🔴 + 🔵 = 더한 번호', `<div class="eg-combo">${C.r12()}<span class="op">+</span>${C.b31()}<span class="op">=</span>${C.g43()}</div><p>위 띠가 <b>빨강</b>인 카드와 <b>파랑</b>인 카드는 함께 쓸 수 있어요. 두 번호를 <b>더해서</b> 디벗 <b>🔗 합치기</b>에 넣어요. 12 + 31 = 43 → 화면에 "<b>43번</b> 카드를 펼치세요"가 나와요.</p>`);
+SL.trap = S('규칙 2', '⏳ 함정 조심!', `<div class="eg-combo">${C.r12()}<span class="op">+</span>${C.b33()}<span class="op">=</span>${C.p45()}</div><p>아무거나 더하면 함정! 🔗 합치기에 45를 넣으면 "<b>45번 벌점 카드</b>를 펼쳐 보세요"가 나오고 시간이 1분 줄어요.</p><p class="eg-sm">벌점 카드만 치우고, 나머지 카드는 그대로 둬요.</p>`);
 SL.hid = S('규칙 3', '🔍 그림 속 숨은 번호', `<div class="eg-two"><div class="eg-cen">${C.g43({ring:[70,8+0.62*64.6,16,10]})}</div><div><p>그림을 <b>구석까지</b> 잘 봐요.</p><p>그림 속에 작은 <b>7</b>이 숨어 있어요. → <b>7번 카드</b>를 펼쳐요.</p><p class="eg-sm">못 찾겠으면 디벗 🔍 <b>숨은 번호</b> 버튼이 어느 카드를 볼지 알려 줘요.</p></div></div>`);
 SL.clr = S('규칙 4', '🗑 줄 그은 번호 = 치우기', `<div class="eg-two"><div class="eg-cen">${C.g43({ring:[84,4.8,26,9]})}</div><div><p>카드 <b>오른쪽 위</b>에 <b>빨간 줄</b>이 그어진 번호가 있으면,</p><p>그 번호 카드(12·31)는 <b>이제 필요 없어요</b>. 치워서 책상을 정리해요.</p></div></div>`);
 SL.mach = S('규칙 5', '⚙️ 초록 기계 카드', `<div class="eg-two"><div class="eg-cen">${C.m7()}</div><div>${dev('⚙️ 기계 → <b>7</b> 입력 → 화면에서 직접 조작')}<p>위 띠가 <b>초록</b>이고 오른쪽 위에 ⚙️가 있으면 기계 카드예요. 디벗 ⚙️ <b>기계</b>에 카드 번호를 넣어요.</p><p>문제를 풀어 구한 값으로 <b>직접 움직이거나 눌러요</b>.</p></div></div>`);
@@ -81,7 +81,7 @@ SL.lock = S('규칙 6', '🔒 노란 자물쇠 카드', `<div class="eg-two"><di
 SL.help = S('규칙 7', '💡 막히면 힌트 · 📖 규칙', `<div class="eg-two"><div>${dev('💡 힌트 → 막힌 <b>카드 번호</b> 입력')}<p>한 번 누르면 귀띔, 한 번 더 누르면 더 큰 힌트가 나와요. 힌트를 많이 쓰면 별 ⭐이 줄어요.</p></div>
   <div>${dev('📖 규칙')}<p>규칙이 헷갈리면 디벗 왼쪽 아래 <b>📖 규칙</b>을 눌러요.</p><p>그래도 안 되면 <b>손을 들어요</b>.</p></div></div>`);
 SL.end = S('규칙 8', '🏁 탈출!', `<div class="eg-two"><div class="eg-cen">${C.e99()}</div><div><p>마지막 카드에는 <b>"🏁 탈출에 이 카드 번호를 넣어"</b>라고 적혀 있어요.</p><p>디벗 🏁 <b>탈출</b>에 그 번호를 넣으면 끝!</p></div></div>`);
-SL.warn1 = S('유의사항 ①', '⚠️ 시작 전에 꼭!', `${big('🙈','들고 있는 카드는 <b>앞면을 보지 않기</b>')}${big('🚫','다른 모둠 카드와 <b>섞지 않기</b>')}${big('⏳','벌점 카드도 꼭 <b>디벗에 입력</b>하기')}`);
+SL.warn1 = S('유의사항 ①', '⚠️ 시작 전에 꼭!', `${big('🙈','들고 있는 카드는 <b>앞면을 보지 않기</b>')}${big('🚫','다른 모둠 카드와 <b>섞지 않기</b>')}${big('🔗','카드를 합칠 땐 먼저 <b>🔗 합치기</b>에 더한 수 넣기')}`);
 SL.warn2 = S('유의사항 ②', '⚠️ 시작 전에 꼭!', `${big('🔄','디벗은 새로고침해도 이어져요. <b>[처음부터 다시]</b>는 누르지 않기')}${big('🧹','끝나면 다음 반을 위해 <b>번호 순으로 모으고</b> 장수 세기')}${big('💡','막히면 <b>힌트 → 📖 규칙</b>, 그래도 안 되면 손 들기')}`);
 SL.recap = S('규칙 복습', '🧭 기억나죠?', SL.rules.slice(SL.rules.indexOf('<div class="eg-grid">')));
 const PAGES = r => r === 0 ? [cover(0), prep(0), SL.deal, SL.start, SL.add, SL.trap, SL.hid, SL.clr, SL.mach, SL.lock, SL.help, SL.end, SL.warn1, SL.warn2, SL.go(0)]
