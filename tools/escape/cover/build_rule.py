@@ -71,7 +71,7 @@ def setb(r):
     img = ['aback_practice.jpg', 'aback_r1.jpg', 'aback_r2.jpg', 'aback_r3.jpg'][r[0]]
     return f'<div class="card bk2"><img src="{os.path.join(BACK, img)}"><div class="bv"></div><div class="bw s">구성</div></div>'
 # 2026-11-25 선생님: A4 한 장에 한 종류(9장) — 필요한 회차 쪽만 골라 뽑게. 3회 구성 카드는 3회 최종판이 나오면 SET_ROUNDS에 3을 넣는다
-RULE_ROUNDS = [0, 1, 2, 3]; SET_ROUNDS = [0, 1, 2]
+RULE_ROUNDS = [0, 1, 2, 3]; SET_ROUNDS = [0, 1, 2, 3]
 import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
 _, cutjs = cut_css_js('#fbf6ea')
 flip = lambda xs: sum([xs[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
