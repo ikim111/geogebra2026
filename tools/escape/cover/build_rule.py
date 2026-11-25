@@ -5,6 +5,11 @@ HERE = os.path.dirname(os.path.abspath(__file__)); BACK = os.path.join(HERE, '..
 head = open(os.path.join(HERE, '..', 'art2', 'out', '방탈출2회_카드.html'), encoding='utf-8').read()
 head = head[:head.index('<body')]
 SITE = 'https://geogebra2026.vercel.app/'
+# 회차별 카드 번호(최종 인쇄본: 1회 v15·2회 v16·3회 v10 — 카드가 바뀌면 여기도 고친다)
+DECK = {0: ['연습', 5, 9, 10, 11, 20, 21, 30, 'X', '규칙'],
+        1: ['시작', 2, 3, 4, 5, 6, 14, 18, 23, 24, 26, 27, 29, 31, 35, 36, 38, 40, 42, 43, 44, 47, 49, 50, 51, 52, 58, 59, 61, 63, 69, 73, 85, 86, 91, 94, 96, 98, 99],
+        2: ['시작', 3, 5, 6, 7, 10, 12, 14, 15, 16, 17, 18, 19, 21, 22, 24, 25, 26, 27, 30, 32, 33, 34, 37, 41, 43, 46, 48, 49, 53, 55, 58, 59, 61, 63, 65, 66, 70, 73, 76, 81, 83, 84, 89, 90, 92],
+        3: ['시작', 5, 11, 13, 14, 17, 23, 25, 27, 28, 31, 33, 34, 36, 42, 45, 46, 47, 49, 52, 54, 56, 57, 59, 61, 62, 63, 65, 68, 75, 76, 77, 80, 81, 85, 88, 90, 92, 94, 98]}
 R = [  # (회차 번호, 색, 윗줄, 제목)
  (0, '#8d6e63', '연습', '선원 훈련소'),
  (1, '#d32f2f', '제1회', '찢어진 지도'),
@@ -21,7 +26,7 @@ RULES = [('🔴+🔵', '두 번호를 <b>더한 번호</b><br>카드를 펼쳐�
 WARN = [('🙈', '들고 있는 카드는 <b>앞면을 보지 않기</b>'), ('🚫', '다른 모둠 카드와 <b>섞지 않기</b>'),
         ('💡', '막히면 <b>힌트</b> → 📖 규칙 → 손 들기'), ('🔄', '새로고침해도 이어져요. <b>처음부터 다시</b>는 누르지 않기'),
         ('📝', '끝나면 항해 일지에 <b>반·모둠·번호</b> 남기기'), ('🏳', '못 끝냈으면 <b>여기까지 하기</b>로 기록'),
-        ('🧹', '카드를 <b>번호 순</b>으로 모아 장수 세기')]
+        ('🧹', '카드를 <b>번호 순</b>으로 모아 <b>구성 카드</b>와 맞춰 보기')]
 css = '''<style>
 .rk{background:#fbf6ea;color:#2b1a0a}.rk .band{position:absolute;left:0;right:0;top:0;height:7mm;background:var(--c)}
 .rk .tt{position:absolute;left:4mm;right:4mm;top:9mm;display:flex;gap:2.5mm;align-items:center}
@@ -37,7 +42,11 @@ css = '''<style>
 .rk .gd .tl{background:#fff;border:.3mm solid #e0d2b0;border-radius:1.8mm;padding:1.2mm 1.4mm;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8mm;font:400 2.75mm/1.3 "Gowun Dodum",sans-serif;word-break:keep-all}
 .rk .gd .tl .e{font-size:5.6mm;line-height:1}.rk .gd .tl b{color:#7a1d10}
 .rk .ls .it .n{flex:none;width:5mm;height:5mm;border-radius:50%;background:var(--c);color:#fff;font:800 2.9mm/5mm "Hahmlet",serif;text-align:center}
-.rk.bk .ls{top:11mm}.rk.bk .ls .it{font-size:2.75mm;padding:1mm 1.6mm}
+.rk.bk .ls{top:11mm}
+.rk .cnt{font:800 3.3mm "Hahmlet",serif;color:#3e2818;margin-top:1.2mm}.rk .cnt b{color:var(--c);font-size:4.4mm}
+.rk .nb{display:grid;grid-template-columns:repeat(7,1fr);gap:.9mm;margin-top:1mm}.rk .nb span{border:.3mm solid #b9a578;border-radius:1mm;background:#fff;text-align:center;font:700 2.7mm/4.6mm "DejaVu Sans Mono",monospace;position:relative}
+.rk .nb span.w{font:700 2.3mm/4.6mm "Gowun Dodum",sans-serif}
+.rk .how{font:400 2.6mm/1.45 "Gowun Dodum",sans-serif;color:#3b2a12;margin-top:1.4mm}.rk .how b{color:#7a1d10}.rk.bk .ls .it{font-size:2.75mm;padding:1mm 1.6mm}
 </style>'''
 def front(r):
     n, c, k, h = r; url = SITE + f'escape{n}.html'
@@ -50,12 +59,24 @@ def back(r):
     return (f'<div class="card rk bk" style="--c:{c}"><div class="band"></div><div class="ls"><div class="hd">⚠️ 유의사항</div>' +
             ''.join(f'<div class="it"><span class="n">{i}</span><span>{t}</span></div>' for i, (e, t) in enumerate(WARN, 1)) +
             f'</div><div class="sr">{k} · {h}</div></div>')
+def setc(r):
+    n, c, k, h = r; d = DECK[n]
+    nb = ''.join(f'<span class="{"w" if isinstance(x, str) and len(x) > 1 else ""}">{x}</span>' for x in d)
+    return (f'<div class="card rk" style="--c:{c}"><div class="band"></div><div class="ls" style="top:10mm;bottom:6mm"><div class="hd">📦 {k} 구성 카드 · {h}</div>'
+            f'<div class="cnt">게임 카드 <b>{len(d)}장</b> <span style="font:400 2.6mm Gowun Dodum">+ 표지·규칙·구성 카드</span></div><div class="nb">{nb}</div>'
+            '<div class="how">정리할 때: ① 카드를 <b>번호 순</b>으로 늘어놓고 ② 이 표와 하나씩 맞춰 봐요. ③ 빠진 번호가 있으면 <b>책상 밑·옆 모둠</b>을 찾아보고, 그래도 없으면 선생님께!</div>'
+            '</div><div class="sr">나침반 시리즈 · 구성</div></div>')
+def setb(r):
+    img = ['aback_practice.jpg', 'aback_r1.jpg', 'aback_r2.jpg', 'aback_r3.jpg'][r[0]]
+    return f'<div class="card bk2"><img src="{os.path.join(BACK, img)}"><div class="bv"></div><div class="bw s">구성</div></div>'
 order = [0, 1, 2, 3, 0, 1, 2, 3, None]
 fr = [front(R[i]) if i is not None else '<div></div>' for i in order]
 bk = [back(R[i]) if i is not None else '<div></div>' for i in order]
 bk = sum([bk[j:j+3][::-1] for j in range(0, 9, 3)], [])   # 긴 쪽 넘김: 줄마다 좌우 뒤집기
 import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import cut_css_js
 _, cutjs = cut_css_js('#fbf6ea')
-html = head + css + '</head><body><div class="sheet">' + ''.join(fr) + '</div><div class="sheet">' + ''.join(bk) + '</div>' + cutjs + '</body></html>'
+sf = [setc(R[i]) if i is not None else '<div></div>' for i in order]; sb = [setb(R[i]) if i is not None else '<div></div>' for i in order]
+sb = sum([sb[j:j+3][::-1] for j in range(0, 9, 3)], [])
+html = head + css + '</head><body><div class="sheet">' + ''.join(fr) + '</div><div class="sheet">' + ''.join(bk) + '</div><div class="sheet">' + ''.join(sf) + '</div><div class="sheet">' + ''.join(sb) + '</div>' + cutjs + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_규칙카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
