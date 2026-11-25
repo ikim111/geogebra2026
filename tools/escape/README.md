@@ -29,6 +29,7 @@
 
 ## 3회 그림 카드 (2026-11-03)
 - 그림: 같은 ChatGPT 방에서 2×2로 9장(방탈출3_A~I.png) + 숙소 다시(J60, 그물침대 5개). 프롬프트는 `art3/prompts3.md`, 잘라 둔 그림과 원본 묶음은 `방탈출_그림_3회.zip`(다운로드 폴더).
+- ⚠️ 2026-11-26: 52번 석판 문은 zip 속 a52.jpg가 아니라 다운로드 폴더의 `방탈출3_52다이얼.png`(ChatGPT 새 그림)를 617px로 줄여 `a52.jpg`로 덮어쓴다(zip은 맥 권한 때문에 못 고침). 손글씨 글꼴(나눔펜)은 `restore.sh`가 받아 둔다.
 - 풀어서 `/tmp/claude-0/escape/art3/`에 두고: `cd tools/escape/art2 && python3 build_art2.py 3` → `node topdf2.js "$PWD/out/방탈출3회_카드.html" out/방탈출3회_카드.pdf`
 - 번호 위치·숨은 번호(23은 저울 주머니 위)·겹쳐 그린 것(11 동굴 길, 52 🔥 표시, 49 숫자 1~30)·줄인 카드 글은 `art2/layout3.json`.
 - 1회 CSS(c3.html)가 없으면 2회 카드 html의 <style>로 되살릴 수 있다.
