@@ -8,7 +8,7 @@ cp "$SRC"/print/* "$R"/print/
 cp "$SRC"/art/* "$R"/art/
 cp "$SRC"/sim/* "$R"/sim/
 cd "$R"/fonts
-for p in hahmlet gowun-dodum; do
+for p in hahmlet gowun-dodum nanum-pen-script; do
   [ -d fontsource-$p-5.3.0 ] && continue
   npm pack @fontsource/$p@5.3.0 >/dev/null 2>&1
   mkdir -p fontsource-$p-5.3.0 && tar xzf fontsource-$p-5.3.0.tgz -C fontsource-$p-5.3.0
