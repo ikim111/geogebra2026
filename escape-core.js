@@ -28,7 +28,8 @@ document.body.insertAdjacentHTML('afterbegin', `
        <button class="startbtn" id="startBtn">⚓ 항해 시작</button>
        <div class="stat"><div>벌점<b class="mono" id="sPen">0</b></div><div>틀린 답<b class="mono" id="sWrong">0</b></div><div>힌트<b class="mono" id="sHint">0</b></div></div>
        <button class="startbtn" id="endBtn" style="display:none">🏁 탈출 (마지막 카드 번호)</button>
-       <button class="snd" id="sndBtn">♪ 파도 소리 꺼짐</button>`}
+       <button class="snd" id="sndBtn">♪ 파도 소리 꺼짐</button>
+       <button class="snd" id="outBtn" style="display:none">🏳 여기까지 하기 (기록 남기기)</button>`}
   </div>
 </div>
 <div class="scr pane" id="pad">
@@ -61,14 +62,17 @@ document.body.insertAdjacentHTML('afterbegin', `
 <div class="note">테스트용 · 기록은 이 디벗 안에만 잠깐 남아요</div>`);
 
 const $ = id => document.getElementById(id);
-const S = {start:null, acc:0, running:false, begun:P, pen:0, hint:0, wrong:0, penMs:0, wrongMs:0, solved:{}, hintLv:{}, seen:[]};
+const S = {start:null, acc:0, running:false, begun:P, pen:0, hint:0, wrong:0, penMs:0, wrongMs:0, solved:{}, hintLv:{}, seen:[], t0:0, pauseMs:0, pauseAt:0, up:0};   // t0=시작 시각, pauseMs=멈춘 시간(기록용), up=시간 끝 알림(2026-11-25)
 const KEY='escape:'+location.pathname.replace(/\.html$/,''); let saveOff=false;
+const DONE_KEY=KEY+':done', ROUND=(G.round!=null)?G.round:+((location.pathname.match(/escape(\d)/)||[])[1]||0);   // 기록용 회차 번호(2026-11-25)
 const LIMIT = (G.limitMin||45)*60000;
 const elapsed = ()=> S.acc + (S.running ? Date.now()-S.start : 0) + S.penMs + S.wrongMs;
 function fmtLeft(ms){ const r=LIMIT-ms, a=Math.abs(r), m=Math.floor(a/60000), s=Math.floor(a%60000/1000); return (r<0?'+':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
 function tick(){ if(P){ $('padTm').textContent='연습'; $('mTm').textContent='연습'; return; }
   const e=elapsed(), t=fmtLeft(e); $('timer').textContent=t; $('timer').classList.toggle('over', e>LIMIT); $('padTm').textContent=t; $('mTm').textContent=t;
-  $('sPen').textContent=S.pen; $('sWrong').textContent=S.wrong; $('sHint').textContent=S.hint; }
+  $('sPen').textContent=S.pen; $('sWrong').textContent=S.wrong; $('sHint').textContent=S.hint;
+  if(S.begun && !S.up && e>LIMIT && !$('done').classList.contains('on')){ S.up=1; toast('⏰ 시간 끝! 계속 풀어도 되지만 별은 1개예요. 수업이 끝나면 🏳 여기까지 하기를 눌러 기록을 남겨요.'); }
+  if(S.begun && S.t0 && Date.now()-S.t0 > 60*60000 && !askedStale && !$('done').classList.contains('on')) askStale(); }
 setInterval(tick, 250); tick();
 function flash(){ const t=$('timer'); t.classList.remove('pen'); void t.offsetWidth; t.classList.add('pen'); }
 function lose(kind, m){ m=m||1; if(P) return `<span class="lost">⏳ 본게임이면 ${m}분 잃어요</span> (연습이라 괜찮아요)`;
@@ -204,10 +208,12 @@ document.querySelectorAll('[data-act]').forEach(b=> b.onclick=()=>{
   if(a==='hid'){ emit('hid'); homeSay('info','🔍 '+G.hidden(S)); }
 });
 if(!P){
-  $('startBtn').onclick=()=>{ S.begun=true; document.body.classList.remove('nostart'); S.start=Date.now(); S.running=true; $('startBtn').style.display='none'; $('endBtn').style.display='';
+  $('startBtn').onclick=()=>{ S.begun=true; document.body.classList.remove('nostart'); S.start=Date.now(); S.t0=Date.now(); S.running=true; $('startBtn').style.display='none'; $('endBtn').style.display=''; $('outBtn').style.display='';
     homeSay('info', resultHTML({msg:G.startMsg||'<b>시작</b> 카드를 펼치세요.', open:['시작']})); };
 
-  $('pauseBtn').onclick=()=>{ if(!S.begun) return; if(S.running){ S.acc+=Date.now()-S.start; S.running=false; $('pauseBtn').textContent='▶'; } else { S.start=Date.now(); S.running=true; $('pauseBtn').textContent='❚❚'; } };
+  $('pauseBtn').onclick=()=>{ if(!S.begun) return; if(S.running){ S.acc+=Date.now()-S.start; S.running=false; S.pauseAt=Date.now(); $('pauseBtn').textContent='▶'; } else { if(S.pauseAt) S.pauseMs+=Date.now()-S.pauseAt; S.pauseAt=0; S.start=Date.now(); S.running=true; $('pauseBtn').textContent='❚❚'; } };
+  /* 🏳 2026-11-25: 수업이 끝나 못 나온 모둠도 기록을 남기게(두 번 눌러야 끝남) */
+  $('outBtn').onclick=()=>{ const b=$('outBtn'); if(b.dataset.sure){ finish(true); return; } b.dataset.sure=1; b.textContent='정말 여기까지? 한 번 더 누르세요'; setTimeout(()=>{ delete b.dataset.sure; b.textContent='🏳 여기까지 하기 (기록 남기기)'; }, 4000); };
   let AC=null, gain=null;
   $('sndBtn').onclick=()=>{
     if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); const len=AC.sampleRate*4, bf=AC.createBuffer(1,len,AC.sampleRate), d=bf.getChannelData(0); let last=0; for(let i=0;i<len;i++){ last=(last+0.02*(Math.random()*2-1))/1.02; d[i]=last*3; }
@@ -230,51 +236,100 @@ function emit(ev, arg){ if(!P) return; if(G.flowOn){ const t=G.flowOn(ev,arg); i
 paintBadges(); if(P){ glowNow(); homeSay('', G.intro||''); }
 
 /* ---------- 결과 ---------- */
-function finish(){
+function finish(out){
   saveOff=true; try{ localStorage.removeItem(KEY); }catch(e){}
   if(S.running){ S.acc+=Date.now()-S.start; S.running=false; }
-  const f=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
+  if(S.pauseAt){ S.pauseMs+=Date.now()-S.pauseAt; S.pauseAt=0; }
   if(P){ $('stars').innerHTML='★★★★★'; $('resTb').innerHTML='<div class="badges" style="justify-content:center;margin:12px 0 4px">'+G.badges.map(b=>`<span class="bd${got[b.k]?' on':''}">${got[b.k]?'✔':b.i} ${b.name}</span>`).join('')+'</div>'; show('done'); return; }
   const ms=elapsed(), min=ms/60000;
-  const L=G.limitMin||45; let st=min<=L-15?5:min<=L-10?4:min<=L-5?3:min<=L?2:1;   // 2026-11-06: 제한 시간(40분)에 맞춰 5분씩(25·30·35·40분) st=Math.max(0, st-Math.floor(S.hint/4));
-  $('stars').innerHTML='★'.repeat(st)+'<em>'+'★'.repeat(5-st)+'</em>';
-  $('resTb').innerHTML=`<div class="ln"><span>걸린 시간 · 힌트</span><b class="mono">${f(ms)} · ${S.hint}번</b></div><div class="ln"><span>벌점으로 잃은 시간</span><b class="mono">${S.pen}분 (${S.pen}번)</b></div><div class="ln"><span>틀린 답으로 잃은 시간</span><b class="mono">${S.wrong}분 (${S.wrong}번)</b></div>`;
-  show('done'); }
+  const L=G.limitMin||45; let st=min<=L-15?5:min<=L-10?4:min<=L-5?3:min<=L?2:1;   // 2026-11-06: 제한 시간(40분)에 맞춰 5분씩(25·30·35·40분)
+  st=Math.max(0, st-Math.floor(S.hint/4));   // 힌트 4번마다 별 −1 (2026-11-25: 주석 속에 들어가 빠져 있던 것 되살림)
+  if(out) st=0;
+  const rec={r:ROUND, ms:Math.round(ms), st, hint:S.hint, pen:S.pen, wrong:S.wrong, pause:Math.round(S.pauseMs), over:ms>LIMIT?1:0, out:out?1:0, solved:Object.keys(S.solved||{}).length, end:Date.now()};
+  try{ localStorage.setItem(DONE_KEY, JSON.stringify(rec)); }catch(e){}
+  renderDone(rec); }
+const fmtMs=x=>Math.floor(x/60000)+'분 '+String(Math.floor(x%60000/1000)).padStart(2,'0')+'초';
+function renderDone(rec){
+  const D=$('done'), q=sel=>D.querySelector(sel);
+  if(rec.out){ if(q('.nm')) q('.nm').textContent='여기까지!'; if(q('.seal')) q('.seal').textContent='기록';
+    $('stars').innerHTML=`<div style="font-size:17px;color:#7a1d10;font-weight:bold">🏳 못 나옴 · 푼 자물쇠·기계 ${rec.solved}개</div>`;
+    D.querySelectorAll('.prolog-end, a.startbtn').forEach(x=>x.style.display='none'); }
+  else $('stars').innerHTML='★'.repeat(rec.st)+'<em>'+'★'.repeat(5-rec.st)+'</em>'+(rec.over?'<div style="font-size:14px;color:#7a1d10;font-weight:bold">⏰ 시간을 넘겼어요</div>':'');
+  $('resTb').innerHTML=`<div class="ln"><span>걸린 시간 · 힌트</span><b class="mono">${fmtMs(rec.ms)} · ${rec.hint}번</b></div><div class="ln"><span>벌점으로 잃은 시간</span><b class="mono">${rec.pen}분 (${rec.pen}번)</b></div><div class="ln"><span>틀린 답으로 잃은 시간</span><b class="mono">${rec.wrong}분 (${rec.wrong}번)</b></div>`
+    + (rec.pause>=60000?`<div class="ln"><span>멈춘 시간</span><b class="mono">${fmtMs(rec.pause)}</b></div>`:'');
+  recForm(rec); show('done'); }
+/* 📝 2026-11-25 선생님 요청(시안 승인): 끝난 뒤 학년·반·모둠·모둠원 번호를 골라 기록 남기기 → rooms/{반}__escape/results (TV 안내 화면 📊 기록 탭) */
+function recForm(rec){
+  let old=$('recBox'); if(old) old.remove();
+  const box=document.createElement('div'); box.id='recBox'; $('resTb').after(box);
+  if(rec.saved){ box.innerHTML=`<div class="ok">✔ 기록 저장됐어요 · ${rec.who}</div>`; return; }
+  let pk={}; try{ pk=JSON.parse(localStorage.getItem('escRec')||'{}')||{}; }catch(e){}
+  let g=pk.g||0, c=pk.c||0, m=pk.m||0, mem=new Set(pk.mem||[]);
+  /* 2학년이 학생 목차(로그인)에서 들어오면 반·번호를 자동으로 채운다(2026-11-25 선생님 요청). 이름은 저장하지 않음 */
+  { const U=new URLSearchParams(location.search), uc=U.get('classNo')||'', un=parseInt(U.get('number')||'',10); if(/^\d{1,2}$/.test(uc)){ if(g!==2||c!==+uc){ g=2; c=+uc; m=0; mem=new Set(); } if(un>0&&un<=40) mem.add(un); } }
+  const btns=(arr,on,k,suf)=>arr.map(x=>`<button type="button" class="${on(x)?'on':''}" data-${k}="${x}">${x}${suf||''}</button>`).join('');
+  const who=()=>`${g}학년 ${c}반 ${m}모둠(${[...mem].sort((a,b)=>a-b).join('·')}번)`;
+  const paint=()=>{ const ok=g&&c&&m&&mem.size;
+    box.innerHTML=`<h4>📝 항해 일지에 이름 남기기</h4><p class="s">순위표에 올라가요. 다 고르고 [기록 남기기]를 누르세요.</p>
+<div class="lb">학년 · 반</div><div class="r">${btns([2,3],x=>x===g,'g','학년')}<span class="gap"></span>${btns([1,2,3,4,5,6,7,8,9,10,11,12],x=>x===c,'c','반')}</div>
+<div class="lb">모둠</div><div class="r">${btns([1,2,3,4,5,6,7,8],x=>x===m,'m','모둠')}</div>
+<div class="lb">모둠원 번호 <span>(우리 모둠 번호를 모두 눌러요)</span></div><div class="r mb">${btns(Array.from({length:Math.max(35,...[...mem])},(_,i)=>i+1),x=>mem.has(x),'n')}</div>
+<div class="ft"><span class="why" id="recWhy">${ok?'':'👉 학년·반·모둠·번호를 골라요'}</span><button type="button" class="sv" id="recSave" ${ok?'':'disabled'}>✔ ${ok?who()+' ':''}기록 남기기</button></div>`; };
+  box.onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const d=b.dataset;
+    if(d.g) g=+d.g; else if(d.c) c=+d.c; else if(d.m) m=+d.m; else if(d.n){ const n=+d.n; mem.has(n)?mem.delete(n):mem.add(n); }
+    else if(b.id==='recSave'){ try{ localStorage.setItem('escRec', JSON.stringify({g,c,m,mem:[...mem]})); }catch(_){}
+      const cls = g===2 ? String(c) : g+'-'+c, data=Object.assign({}, rec, {g, c, m, mem:[...mem].sort((a,b)=>a-b)}); delete data.saved; delete data.who;
+      b.disabled=true; b.textContent='저장 중…'; saveRec(cls, data, 0, w=>{ rec.saved=1; rec.who=who(); try{ localStorage.setItem(DONE_KEY, JSON.stringify(rec)); }catch(_){} recForm(rec); },
+        ()=>{ b.disabled=false; b.textContent='↻ 다시 저장'; $('recWhy').innerHTML='⚠️ 인터넷 문제로 저장 못 했어요. 다시 눌러 보고, 안 되면 <b>이 화면을 사진</b> 찍어 두세요.'; }); return; }
+    else return; paint(); };
+  paint(); }
+const fbLoad = src => new Promise((ok, no) => { const sc=document.createElement('script'); sc.src=src; sc.onload=ok; sc.onerror=no; document.head.appendChild(sc); });
+function saveRec(cls, data, n, ok, fail){
+  const V='https://www.gstatic.com/firebasejs/10.12.2/', FB={ apiKey:'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI', authDomain:'brojuntest.firebaseapp.com', databaseURL:'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'brojuntest' };
+  (window.firebase && firebase.database ? Promise.resolve() : fbLoad(V+'firebase-app-compat.js').then(()=>Promise.all([fbLoad(V+'firebase-auth-compat.js'), fbLoad(V+'firebase-database-compat.js')])))
+  .then(()=>{ if(!firebase.apps.length) firebase.initializeApp(FB); return firebase.auth().signInAnonymously(); })
+  .then(()=>{ data.ts=firebase.database.ServerValue.TIMESTAMP; return Promise.race([firebase.database().ref('rooms/'+cls.replace(/[.#$\[\]\/\s]+/g,'_')+'__escape/results').push(data), new Promise((_,no)=>setTimeout(()=>no('timeout'),8000))]); })
+  .then(()=>ok(), ()=>{ if(n<2) setTimeout(()=>saveRec(cls, data, n+1, ok, fail), 2000); else fail(); }); }
 /* ---------- 새로고침해도 이어 하기 (이 디벗 안에만 저장, 3시간 지나면 버림) ---------- */
 function save(){ if(saveOff) return; if(P ? !(flow||Object.keys(got).length) : !S.begun) return;
-  const d={t:Date.now(), acc:S.acc+(S.running?Date.now()-S.start:0), running:S.running, pen:S.pen, hint:S.hint, wrong:S.wrong, penMs:S.penMs, wrongMs:S.wrongMs, solved:S.solved, hintLv:S.hintLv, seen:S.seen, flow, got};
+  const d={t:Date.now(), t0:S.t0, pauseMs:S.pauseMs, pauseAt:S.pauseAt, acc:S.acc+(S.running?Date.now()-S.start:0), running:S.running, pen:S.pen, hint:S.hint, wrong:S.wrong, penMs:S.penMs, wrongMs:S.wrongMs, solved:S.solved, hintLv:S.hintLv, seen:S.seen, flow, got};
   try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
 setInterval(save, 1000); window.addEventListener('pagehide', save);
 (function restore(){ let d=null; try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
   if(!d || Date.now()-d.t > 3*3600000) return;
-  ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
+  ['acc','pen','hint','wrong','penMs','wrongMs','solved','hintLv','seen','t0','pauseMs','pauseAt'].forEach(k=>{ if(d[k]!==undefined) S[k]=d[k]; });
   if(P){ flow=d.flow||0; Object.assign(got, d.got||{}); paintBadges(); glowNow(); }
   else { S.begun=true; document.body.classList.remove('nostart'); S.running=!!d.running; if(S.running) S.start=Date.now(); else $('pauseBtn').textContent='▶';
-    $('startBtn').style.display='none'; $('endBtn').style.display=''; }
+    $('startBtn').style.display='none'; $('endBtn').style.display=''; $('outBtn').style.display='';
+    if(!S.t0) S.t0=d.t-(d.acc||0); if(Date.now()-S.t0 > 50*60000) setTimeout(askStale, 300); }
   homeSay('info','💾 하던 곳부터 이어서 해요. (새로고침 전 기록을 불러왔어요)<small><a href="#" id="resetGame" style="color:#7a1d10;font-weight:900">처음부터 다시 하기</a></small>');
   const r=$('resetGame'); r.onclick=e=>{ e.preventDefault(); if(r.dataset.sure){ saveOff=true; try{ localStorage.removeItem(KEY); }catch(_){} location.reload(); } else { r.dataset.sure=1; r.textContent='정말 처음부터? 한 번 더 누르세요'; } };
   tick(); })();
-/* 🚀 2026-11-05: 안내 화면(studentesc.html)에서 선생님이 [시작!]을 누르면 ?go=1로 들어와 바로 시간이 흐른다(이어 하던 게임은 그대로) */
-if(!P && !S.begun && /[?&]go=1/.test(location.search)){ const sb=$('startBtn'); if(sb) sb.click(); }
-/* ⏹↺ 2026-11-06: 안내 화면에서 ?classNo=로 들어오면 선생님 화면의 [게임 끝내기]·[처음으로]를 따른다(rooms/{반}__escape/guide.end·reset) */
-const ESC_Q = new URLSearchParams(location.search), ESC_C = ESC_Q.get('classNo') || (()=>{ try{ return sessionStorage.getItem('escCls')||''; }catch(e){ return ''; } })(), ESC_R = ESC_Q.get('round') || '';
-if(ESC_C){ try{ sessionStorage.setItem('escCls', ESC_C); }catch(e){} }
+/* 2026-11-25: TV 연동을 없앰(선생님 결정). 끝났는데 기록을 못 남긴 화면은 새로고침해도 다시 보여 준다(2시간) */
+if(!P){ let d=null; try{ d=JSON.parse(localStorage.getItem(DONE_KEY)||'null'); }catch(e){}
+  if(d && !d.saved && Date.now()-d.end < 2*3600000 && !S.begun){ saveOff=true; renderDone(d); } }
 if(/[?&]go=1/.test(location.search)) try{ history.replaceState(null,'',location.pathname); }catch(e){}
-if(ESC_C && !P){
-  const T0 = Date.now(), FB = { apiKey:'AIzaSyBK7NlpKOr1ozAXF96vS8p7YyjiNaAJlfI', authDomain:'brojuntest.firebaseapp.com', databaseURL:'https://brojuntest-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'brojuntest' };
-  const room = (String(ESC_C).trim().replace(/[.#$\[\]\/\s]+/g,'_').slice(0,30) || 'x') + '__escape';
-  const load = src => new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
-  const V = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  (window.firebase ? Promise.resolve() : load(V+'firebase-app-compat.js').then(()=>Promise.all([load(V+'firebase-auth-compat.js'), load(V+'firebase-database-compat.js')])))
-  .then(()=>{ if(!firebase.apps.length) firebase.initializeApp(FB); return firebase.auth().signInAnonymously(); })
-  .then(()=>{ let done=false; firebase.database().ref('rooms/'+room+'/guide').on('value', s=>{ const g=s.val()||{};
-      if(+g.reset > T0){ saveOff=true; try{ localStorage.removeItem(KEY); }catch(e){} location.href='studentesc.html?round='+encodeURIComponent(ESC_R||g.round||0)+'&classNo='+encodeURIComponent(ESC_C); return; }
-      if(!done && +g.end > T0 && S.begun && !$('done').classList.contains('on')){ done=true; finish(); const D=$('done'), q=sel=>D.querySelector(sel);
-        if(q('.nm')) q('.nm').textContent='시간 종료';   // 선생님이 끝냄: 탈출 성공·별·결말 이야기는 숨기고 기록만
-        if(q('.seal')) q('.seal').textContent='종료'; const st=$('stars'); if(st) st.innerHTML='<div style="font-size:15px;color:#7a1d10;font-weight:bold">⏹ 선생님이 게임을 끝냈어요 · 푼 자물쇠·기계 '+Object.keys(S.solved||{}).length+'개</div>';
-        D.querySelectorAll('.prolog-end, a.startbtn').forEach(x=>x.style.display='none'); }
-    }); }).catch(()=>{});
-}
+/* 🧹 2026-11-25: 앞 모둠(앞 반)이 하던 게임이 남아 있으면(시작한 지 50분 넘음) 새로 시작할지 묻는다 */
+var askedStale=false;
+function askStale(){ if(askedStale||P) return; askedStale=true;
+  const ov=document.createElement('div'); ov.id='staleOv';
+  ov.innerHTML=`<div class="bx"><h3>🧭 앞 모둠이 하던 게임이 있어요</h3><p>시작한 지 ${Math.round((Date.now()-S.t0)/60000)}분 지났어요. 우리 모둠이 처음 하는 거면 <b>새로 시작</b>을 누르세요.</p><p class="s">앞 모둠 게임은 기록 없이 지워져요.</p><div class="ft"><button type="button" class="bk" id="stKeep">이어 하기</button><button type="button" class="nw" id="stNew">새로 시작</button></div></div>`;
+  document.body.appendChild(ov);
+  $('stNew').onclick=()=>{ saveOff=true; try{ localStorage.removeItem(KEY); localStorage.removeItem(DONE_KEY); }catch(_){} location.reload(); };
+  $('stKeep').onclick=()=>ov.remove(); }
+function toast(t){ const d=document.createElement('div'); d.className='escToast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(), 9000); }
+(function(){ const st=document.createElement('style'); st.textContent=`
+#recBox{margin:16px 0 0;background:#fffaf0;border:2px solid #c9a55a;border-radius:12px;padding:12px 14px;color:#3b2a12;text-align:left;font-family:inherit}
+#recBox h4{margin:0 0 2px;font-size:18px;color:#1a237e}#recBox .s{font-size:13px;color:#6b5330;margin:0 0 4px}#recBox .lb{font-weight:900;font-size:13px;margin:8px 0 4px}#recBox .lb span{font-weight:normal;color:#6b5330}
+#recBox .r{display:flex;flex-wrap:wrap;gap:5px}#recBox .gap{width:8px}#recBox .r button{min-width:44px;min-height:44px;border-radius:8px;border:2px solid #1565c0;background:#fff;color:#1565c0;font-weight:bold;font-size:14px;padding:0 6px;cursor:pointer}
+#recBox .r button.on{background:#1565c0;color:#fff}#recBox .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}#recBox .why{font-size:13px;color:#6b5330}
+#recBox .sv{min-height:48px;border-radius:10px;border:0;background:#2e7d32;color:#fff;font-weight:bold;font-size:15px;padding:0 14px;cursor:pointer}#recBox .sv:disabled{background:#fff;border:2px dashed #b0b6bb;color:#9aa0a6;cursor:default}
+#recBox .ok{font-size:17px;font-weight:bold;color:#2e7d32;text-align:center;padding:6px}
+#staleOv{position:fixed;inset:0;z-index:80;background:rgba(5,10,25,.78);display:flex;align-items:center;justify-content:center;padding:14px}
+#staleOv .bx{background:#fbf3dc;border:3px solid #c9a55a;border-radius:16px;max-width:520px;width:100%;padding:20px 22px;color:#3b2a12}#staleOv h3{margin:0 0 8px;color:#1a237e;font-size:21px}#staleOv p{font-size:16px;margin:6px 0}#staleOv .s{font-size:13px;color:#6b5330}
+#staleOv .ft{display:flex;justify-content:space-between;gap:10px;margin-top:14px}#staleOv button{min-height:50px;border-radius:10px;font-weight:bold;font-size:16px;padding:0 18px;cursor:pointer}#staleOv .bk{border:2px solid #1565c0;background:#fff;color:#1565c0}#staleOv .nw{border:0;background:#1565c0;color:#fff;flex:1}
+.escToast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:90;max-width:min(680px,92vw);background:#c25400;color:#fff;font-weight:bold;font-size:17px;padding:14px 18px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.45);line-height:1.45}
+#outBtn{margin-top:8px}`; document.head.appendChild(st); })();
 /* 📖 2026-11-25 선생님 요청(시안 승인): 게임 중 언제든 '규칙 한눈에'를 다시 보는 버튼(안내 TV 화면과 같은 내용) */
 (function(){
   const st=document.createElement('style'); st.textContent=`#rulesBtn{position:fixed;left:12px;bottom:10px;z-index:60;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid #c9a55a;background:#fbf3dc;color:#3b2412;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.35)}
