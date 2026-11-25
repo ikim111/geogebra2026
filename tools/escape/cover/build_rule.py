@@ -28,7 +28,8 @@ WARN = [('🙈', '들고 있는 카드는 <b>앞면을 보지 않기</b>'), ('�
         ('📝', '끝나면 항해 일지에 <b>반·모둠·번호</b> 남기기'), ('🏳', '못 끝냈으면 <b>여기까지 하기</b>로 기록'),
         ('🧹', '카드를 <b>번호 순</b>으로 모아 <b>구성 카드</b>와 맞춰 보기')]
 css = '''<style>
-.rk{background:#fbf6ea;color:#2b1a0a}.rk .band{position:absolute;left:0;right:0;top:0;height:7mm;background:var(--c)}
+.rk{background:#fbf6ea;color:#2b1a0a}.rk .band{position:absolute;left:4mm;right:4mm;top:4mm;height:2.2mm;border-radius:1.1mm;background:var(--c)}
+.sheet.rs{background:#fbf6ea!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .rk .tt{position:absolute;left:4mm;right:4mm;top:9mm;display:flex;gap:2.5mm;align-items:center}
 .rk .tt .tx{flex:1}.rk .tt .k{font:700 3.2mm "Gowun Dodum",sans-serif;color:var(--c)}.rk .tt .h{font:800 5.2mm/1.15 "Hahmlet",serif;word-break:keep-all;margin-top:.6mm}
 .rk .tt .s{font:400 2.5mm/1.35 "Gowun Dodum",sans-serif;color:#5a4330;margin-top:1mm}
@@ -77,6 +78,6 @@ import sys; sys.path.insert(0, os.path.join(HERE, '..')); from cutlayout import 
 _, cutjs = cut_css_js('#fbf6ea')
 sf = [setc(R[i]) if i is not None else '<div></div>' for i in order]; sb = [setb(R[i]) if i is not None else '<div></div>' for i in order]
 sb = sum([sb[j:j+3][::-1] for j in range(0, 9, 3)], [])
-html = head + css + '</head><body><div class="sheet">' + ''.join(fr) + '</div><div class="sheet">' + ''.join(bk) + '</div><div class="sheet">' + ''.join(sf) + '</div><div class="sheet">' + ''.join(sb) + '</div>' + cutjs + '</body></html>'
+html = head + css + '</head><body><div class="sheet rs">' + ''.join(fr) + '</div><div class="sheet rs">' + ''.join(bk) + '</div><div class="sheet">' + ''.join(sf) + '</div><div class="sheet">' + ''.join(sb) + '</div>' + cutjs + '</body></html>'
 os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
 p = os.path.join(HERE, 'out', '방탈출_규칙카드.html'); open(p, 'w', encoding='utf-8').write(html); print(p)
