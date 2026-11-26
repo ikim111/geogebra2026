@@ -45,17 +45,17 @@
     const active = db.ref('rooms/' + r + '__present20/events');
     ledger = active;
     reqRef = db.ref('rooms/' + r + '__present20/requests');
-    reqRef.on('value', snap => { if (ledger !== active) return; requests = snap.val() || {}; pendingCount = Object.values(requests).filter(x=>x && x.status==='pending').length; paintBadge(); if (tab === 'presentation') draw(); });
+    reqRef.on('value', snap => { if (ledger !== active) return; requests = snap.val() || {}; pendingCount = Object.values(requests).filter(x=>x && x.status==='pending').length; paintBadge(); if (tab === 'presentation' || tab === 'snorkel') draw(); });
     resetRef = db.ref('rooms/' + r + '__present20/resetAt');
-    resetRef.on('value', snap => { if (ledger !== active) return; resetAt = +snap.val() || 0; if (tab === 'presentation') draw(); });
+    resetRef.on('value', snap => { if (ledger !== active) return; resetAt = +snap.val() || 0; if (tab === 'presentation' || tab === 'snorkel') draw(); });
     active.on('value', snap => {
       if (ledger !== active) return;
       events = snap.val() || {}; ready = true;
-      if (tab === 'presentation') draw();
+      if (tab === 'presentation' || tab === 'snorkel') draw();
     }, err => {
       if (ledger !== active) return;
       ready = false; message = '기록을 불러오지 못했습니다: ' + err.message;
-      if (tab === 'presentation') draw();
+      if (tab === 'presentation' || tab === 'snorkel') draw();
     });
   };
   const list = () => Object.entries(events).map(([id,e]) => ({...e,id})).filter(e => e && e.date && e.awards);
@@ -65,7 +65,7 @@
   const sums = () => {
     const out = {};
     list().filter(e=>!e.voided && (+e.createdAt||0) > resetAt).forEach(e=>Object.values(e.awards).forEach(a=>{
-      const v = out[a.no] ||= {direct:0,mentor:0,group:0,redeem:0,penalty:0,total:0};
+      const v = out[a.no] ||= {direct:0,mentor:0,group:0,snorkel:0,redeem:0,penalty:0,total:0};
       v[a.reason] = (v[a.reason]||0) + a.points; v.total += a.points;
     })); return out;
   };
@@ -98,7 +98,7 @@
     ${(()=>{ const rq = Object.entries(requests).map(([id,r])=>({...r,id})).filter(r=>r && r.status==='pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); if(!rq.length) return ''; return `<div class="panel ps-req"><b>🛒 학생 주문 신청 ${rq.length}건</b> <span class="hint">— 물건을 건네주면서 ✔ 승인을 누르면 그때 점수가 빠져요</span><div class="ps-reqlist">${rq.map(r=>{ const bal=(totals[+r.no]||{}).total||0, it=reqInfo(r), ok=it && bal>=it.cost; return `<span class="ps-reqitem"><b>${esc((byNo(+r.no)||{}).name||r.name||'')}</b> ${r.no}번 · ${esc(it?it.label:r.item)} (−${it?it.cost:'?'}) · 남은 ${bal}점 <button class="btn primary" data-ps-approve="${esc(r.id)}" ${!ready||busy||!ok?'disabled':''}>✔ 승인</button><button class="btn" data-ps-reject="${esc(r.id)}" ${!ready||busy?'disabled':''}>✖ 거절</button>${ok?'':'<small class="hint">점수 부족</small>'}</span>`; }).join('')}</div></div>`; })()}
     ${pending?`<div class="panel ps-pending"><b>${esc(pending.label)}</b><p>${pending.awards.map(a=>esc(a.name)+' '+(a.points>0?'+':'')+a.points).join(' · ')}${pending.note?` <span class="hint">${esc(pending.note)}</span>`:''}</p>${pending.choices?pending.choices.map(c=>`<button class="btn ${c.ok?'primary':''}" data-ps-choice="${c.key}" ${busy||!c.ok?'disabled':''}>${esc(c.label)}</button> `).join(''):`<button class="btn primary" id="ps-confirm" ${busy?'disabled':''}>확정</button> `}<button class="btn" id="ps-cancel">취소</button></div>`:''}
     <div class="ps-board">${cards}</div>${unseated.length?`<div class="panel"><h3>자리 미배정</h3><div class="ps-unseated">${unseated.map(x=>studentButton(x.no,totals)).join('')}</div></div>`:''}
-    <div class="panel"><h3>날짜별 기록</h3>${historyHTML}</div><div class="panel"><h3>집계 (${esc(resetTxt)})</h3><div style="overflow:auto"><table class="roster"><tr><th>번호</th><th>이름</th><th>남은 점수</th><th class="ps-plus">직접 발표</th><th class="ps-plus">멘토 점수</th><th class="ps-plus">모둠 점수</th><th class="ps-neg">주문 차감</th><th class="ps-neg">감점</th></tr>${roster().map(x=>{const t=totals[x.no]||{};return `<tr><td>${x.no}</td><td>${esc(x.name)}</td><td><b>${t.total||0}</b></td><td class="ps-plus">${t.direct||0}</td><td class="ps-plus">${t.mentor||0}</td><td class="ps-plus">${t.group||0}</td><td class="ps-neg">${t.redeem?'-'+Math.abs(t.redeem):0}</td><td class="ps-neg">${t.penalty?'-'+Math.abs(t.penalty):0}</td></tr>`;}).join('')}</table></div><details class="ps-danger" ${dangerOpen?'open':''}><summary>⚙ 집계 초기화 (새 학기·새 집계 기간을 시작할 때만)</summary><p class="hint">누르면 그 시각부터 모든 학생의 점수가 0에서 다시 시작해요. 지난 기록은 날짜별 기록·백업에 그대로 남아요. 실수 방지를 위해 반 번호를 입력해야 해요.</p><button class="btn" id="ps-reset" ${!ready||busy?'disabled':''}>🔄 ${esc(room)}반 집계 초기화…</button></details></div>`;
+    <div class="panel"><h3>날짜별 기록</h3>${historyHTML}</div><div class="panel"><h3>집계 (${esc(resetTxt)})</h3><div style="overflow:auto"><table class="roster"><tr><th>번호</th><th>이름</th><th>남은 점수</th><th class="ps-plus">직접 발표</th><th class="ps-plus">멘토 점수</th><th class="ps-plus">모둠 점수</th><th class="ps-plus">스노클</th><th class="ps-neg">주문 차감</th><th class="ps-neg">감점</th></tr>${roster().map(x=>{const t=totals[x.no]||{};return `<tr><td>${x.no}</td><td>${esc(x.name)}</td><td><b>${t.total||0}</b></td><td class="ps-plus">${t.direct||0}</td><td class="ps-plus">${t.mentor||0}</td><td class="ps-plus">${t.group||0}</td><td class="ps-plus">${t.snorkel||0}</td><td class="ps-neg">${t.redeem?'-'+Math.abs(t.redeem):0}</td><td class="ps-neg">${t.penalty?'-'+Math.abs(t.penalty):0}</td></tr>`;}).join('')}</table></div><details class="ps-danger" ${dangerOpen?'open':''}><summary>⚙ 집계 초기화 (새 학기·새 집계 기간을 시작할 때만)</summary><p class="hint">누르면 그 시각부터 모든 학생의 점수가 0에서 다시 시작해요. 지난 기록은 날짜별 기록·백업에 그대로 남아요. 실수 방지를 위해 반 번호를 입력해야 해요.</p><button class="btn" id="ps-reset" ${!ready||busy?'disabled':''}>🔄 ${esc(room)}반 집계 초기화…</button></details></div>`;
   }
   function award(no,reason,points) { return {no,name:byNo(no).name,points:points==null?1:points,reason}; }
   async function write(data) {
@@ -177,13 +177,61 @@
     } else if(b.id==='ps-json') download(room+'반_발표기록.json',JSON.stringify({schema:2,classNo:room,resetAt,events},null,2),'application/json');
     else if(b.id==='ps-csv'){
       const t=sums(), since=resetAt?new Date(resetAt).toISOString().slice(0,10):'처음';
-      const rows=[['반','번호','이름','집계 시작','남은 점수','직접 발표','멘토 점수','모둠 점수','주문 차감','감점'],...roster().map(x=>{const v=t[x.no]||{};return [room,x.no,x.name,since,v.total||0,v.direct||0,v.mentor||0,v.group||0,v.redeem?-Math.abs(v.redeem):0,v.penalty?-Math.abs(v.penalty):0];})];
+      const rows=[['반','번호','이름','집계 시작','남은 점수','직접 발표','멘토 점수','모둠 점수','스노클','주문 차감','감점'],...roster().map(x=>{const v=t[x.no]||{};return [room,x.no,x.name,since,v.total||0,v.direct||0,v.mentor||0,v.group||0,v.snorkel||0,v.redeem?-Math.abs(v.redeem):0,v.penalty?-Math.abs(v.penalty):0];})];
       const quote=v=>'"'+String(v).replace(/"/g,'""')+'"';
       download(room+'반_발표점수_'+day+'.csv','\uFEFF'+rows.map(r=>r.map(quote).join(',')).join('\r\n'),'text/csv;charset=utf-8');
     }
   });
+
+  /* 🤿 2026-11-26 선생님 요청(시안 승인): 스노클 탭 — 스노클 한 섹션(상점 1점) = 발표점수 10점. 이름을 한 번 누르면 바로 +10, 한 학생 최대 4번.
+     같은 기록 장부(events)에 kind:'snorkel'로 저장 → 학생 화면 '내 발표 점수'와 🛒 주문(상점 10점·망고젤리 1점)에 그대로 쓰인다. 횟수는 집계 초기화와 상관없이 취소 안 된 기록 전체로 센다. */
+  const SNK_MAX = 4, SNK_PT = 10;
+  const snkPanel = document.createElement('section'); snkPanel.id = 't-snorkel'; snkPanel.hidden = true; document.querySelector('main').append(snkPanel);
+  const snkBtn = document.createElement('button'); snkBtn.dataset.t = 'snorkel'; snkBtn.textContent = '🤿 스노클';
+  button.after(snkBtn); snkBtn.onclick = () => { tab = 'snorkel'; render(); };
+  let snkMsg = '', snkFlash = 0;
+  const snkList = n => list().filter(e => !e.voided && e.kind === 'snorkel' && +e.actorNo === n).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  function snkCell(n){
+    const x = byNo(n); if(!x) return '<div class="ps-empty">빈자리</div>';
+    const k = snkList(n).length, full = k >= SNK_MAX;
+    return `<div class="ps-cell snk-cell"><button class="ps-student ${x.mentor?'ps-mentor':''} ${full?'snk-full':''}" data-snk-add="${n}" ${!ready||busy||full?'disabled':''}><b>${esc(x.name)}</b><strong class="snk-pt">${full?'✓ 다 받음':'+'+SNK_PT}</strong><small>${n}번 · ${x.mentor?'멘토':'멘티'}</small><span class="snk-dots">${Array.from({length:SNK_MAX},(_,i)=>`<i class="${i<k?'f':''}"></i>`).join('')}<em>${k}/${SNK_MAX}</em></span>${snkFlash===n?'<span class="snk-ok">✓ +10</span>':''}</button>${k?`<button class="snk-undo" data-snk-undo="${n}" ${!ready||busy?'disabled':''} title="마지막 한 번 취소">−1회</button>`:''}</div>`;
+  }
+  function snkDraw(){
+    if(!S || !S.roster){ snkPanel.innerHTML = '<p class="hint">반을 고르세요.</p>'; return; }
+    const cards = [6,5,4,3,2,1].map(g=>{
+      const L=setAt(g,'L'), Rr=setAt(g,'R'), ls=L?S.seats[L.m]:{}, rs=Rr?S.seats[Rr.m]:{};
+      const top = isSix(g) ? [ls.top,rs.top] : [ls.top];
+      const nums = [...top,L?.m,rs.bot,ls.bot,Rr?.m];
+      return `<article class="ps-group"><div class="row ps-ghead"><b>${g}모둠</b></div><div class="ps-seats ${isSix(g)?'':'ps-five'}">${nums.map(snkCell).join('')}</div></article>`;
+    }).join('');
+    const seated = new Set([1,2,3,4,5,6].flatMap(members)); const unseated = roster().filter(x=>!seated.has(x.no));
+    const given = roster().reduce((a,x)=>a+snkList(x.no).length,0);
+    snkPanel.innerHTML = `<div class="panel ps-top snk-top"><div class="row"><h2 style="margin:0;">${esc(room)}반 🤿 스노클 섹션</h2><span class="ps-status">${ready?'● 연결됨 · 자동 저장':'연결 중…'}</span></div><p class="hint ps-hint">이름을 <b>한 번 누르면 +${SNK_PT}점</b>(스노클 1섹션)이 바로 들어가요. 한 학생 <b>최대 ${SNK_MAX}번</b> · 잘못 눌렀으면 [−1회]. 학생은 🛒 주문에서 상점(10점)·망고젤리(1점씩)로 바꿔요. 지금까지 ${given}섹션.</p>${snkMsg?`<p class="snk-msg">${esc(snkMsg)}</p>`:''}</div>
+      <div class="ps-board">${cards}</div>${unseated.length?`<div class="panel"><h3>자리 미배정</h3><div class="ps-unseated">${unseated.map(x=>snkCell(x.no)).join('')}</div></div>`:''}`;
+  }
+  snkPanel.addEventListener('click', async e=>{
+    const b=e.target.closest('button'); if(!b || b.disabled || !ready || busy || !ledger) return;
+    if(b.dataset.snkAdd){
+      const n=+b.dataset.snkAdd, x=byNo(n), k=snkList(n).length; if(!x || k>=SNK_MAX) return;
+      busy=true; snkDraw();
+      try{ await ledger.push().set({kind:'snorkel',actorNo:n,label:`${x.name} 스노클 섹션 ${k+1}번째`,awards:[award(n,'snorkel',SNK_PT)],date:day,createdAt:firebase.database.ServerValue.TIMESTAMP}); snkMsg=`${x.name} +${SNK_PT} (${k+1}/${SNK_MAX})`; snkFlash=n; setTimeout(()=>{ if(snkFlash===n){ snkFlash=0; if(tab==='snorkel') snkDraw(); } },2500); }
+      catch(err){ snkMsg='저장 실패: '+err.message; }
+      finally{ busy=false; if(tab==='snorkel') snkDraw(); }
+    } else if(b.dataset.snkUndo){
+      const n=+b.dataset.snkUndo, L=snkList(n), last=L[L.length-1]; if(!last) return;
+      busy=true; snkDraw();
+      try{ await ledger.child(last.id).child('voided').set(true); snkMsg=`${byNo(n).name} 마지막 1회 취소 (${L.length-1}/${SNK_MAX})`; }
+      catch(err){ snkMsg='취소 실패: '+err.message; }
+      finally{ busy=false; if(tab==='snorkel') snkDraw(); }
+    }
+  });
+  const render2 = render;
+  render = function(){ render2(); snkPanel.hidden = tab !== 'snorkel'; if(!snkPanel.hidden) snkDraw(); };
+  const draw0 = draw;
+  draw = function(){ draw0(); if(tab==='snorkel') snkDraw(); };
   const style=document.createElement('style');
   style.textContent='.ps-top .row{align-items:center;gap:10px;flex-wrap:wrap}.ps-top label{font-size:13px}.ps-status{font-size:13px;color:#2e7d32;margin-left:auto}.ps-hint{margin:4px 0 0;font-size:12px}.ps-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}.ps-group{background:white;border:1px solid #b9c5db;border-radius:10px;padding:8px 10px}.ps-group>.row{justify-content:space-between;margin-bottom:6px;align-items:center}.ps-group>.row .btn{padding:4px 10px;font-size:13px}.ps-seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.ps-five>:first-child{grid-column:span 2}.ps-cell{position:relative}.ps-cell .ps-student{width:100%}.ps-plus{color:#1565c0 !important}.ps-neg{color:#c62828 !important}.ps-ghead{display:flex;align-items:center;gap:8px}.ps-gbtns{margin-left:auto;display:flex;gap:6px}.ps-gminus{color:#c62828 !important;border-color:#ef9a9a !important;background:#fff5f5 !important}.ps-gplus{color:#1565c0 !important;border-color:#90caf9 !important;background:#f3f8ff !important}.ps-minus{position:absolute;left:6px;top:50%;transform:translateY(-50%);border:1.5px solid #ef9a9a;background:#fff5f5;color:#c62828;border-radius:8px;font-size:16px;font-weight:bold;padding:6px 8px;min-width:38px;cursor:pointer;line-height:1.2}.ps-order{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:1.5px solid #c4cedd;background:#fff;border-radius:8px;font-size:18px;padding:4px 7px;min-width:38px;cursor:pointer;line-height:1.2}.ps-order:disabled{opacity:.5}.ps-pending .btn{margin-bottom:4px}.ps-req{border:2px solid #f0a500;background:#fffbe6}.ps-reqlist{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.ps-reqitem{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #f3d27a;border-radius:8px;padding:4px 8px;font-size:14px}.ps-reqitem .btn{padding:3px 9px;font-size:13px}.ps-has-req{color:#b26a00 !important;font-weight:bold}.ps-day{border:1px solid #d6dce6;border-radius:8px;padding:6px 12px;margin:6px 0;background:#fff}.ps-today{border-color:#1565c0;background:#f5f9ff}.ps-dayhead{font-weight:bold;cursor:pointer;padding:2px 0}.ps-today .ps-dayhead{cursor:default;color:#1565c0}.ps-day .ps-history{padding:6px 0}.ps-danger{margin:14px 0;border:1px dashed #e57373;border-radius:8px;padding:6px 10px;background:#fff8f8}.ps-danger summary{cursor:pointer;color:#b71c1c;font-size:13.5px}.ps-student{border:1px solid #c4cedd;border-radius:8px;background:#f7faff;padding:7px 6px 5px;cursor:pointer;color:#172443;font:inherit;min-height:56px;line-height:1.25}.ps-student b{font-size:15px}.ps-student strong{color:#2157bd;margin-left:6px;font-size:14px}.ps-student small{display:block;margin-top:2px;font-size:11px;color:#667}.ps-mentor{background:#fff2bb}.ps-empty{min-height:56px;display:grid;place-items:center;color:#aaa;font-size:13px}.ps-unseated{display:flex;gap:8px;flex-wrap:wrap}.ps-unseated .ps-student{min-width:120px;padding-left:48px !important;padding-right:48px !important}.ps-history{padding:10px 0;border-bottom:1px solid #ddd}.ps-student:disabled{opacity:.55;cursor:wait}@media(max-width:760px){.ps-board{grid-template-columns:1fr}}';
+  style.textContent+='.snk-top{border-top:6px solid #1565c0}.snk-dots{display:flex;gap:3px;justify-content:center;align-items:center;margin-top:3px}.snk-dots i{width:10px;height:10px;border-radius:50%;border:1.5px solid #2e7d32}.snk-dots i.f{background:#2e7d32}.snk-dots em{font-style:normal;font-size:11px;font-weight:bold;color:#2e7d32;margin-left:3px}.snk-pt{color:#1565c0}.ps-student.snk-full{background:#fff!important;border:2px dashed #b0b6bb!important;color:#888;cursor:default}.ps-student.snk-full .snk-pt{color:#2e7d32}.snk-undo{min-width:44px;min-height:32px;border-radius:8px;border:1px solid #c62828;background:#fff;color:#c62828;font-size:12px;cursor:pointer}.snk-ok{display:block;font-size:12px;font-weight:bold;color:#2e7d32}.snk-msg{margin:6px 0 0;font-size:13px;color:#2e7d32;font-weight:bold}';
   document.head.append(style);
   // 최초 익명 인증이 끝나면 위에서 감싼 loadRoom으로 연결한다.
   if(ref) loadRoom(room);
